@@ -1,4 +1,4 @@
-Complete all settings for POA mining with the help of [POA operation guide](https://github.com/hashahead/hah-code/wiki/POA-Guide)
+Complete all settings for POA mining with the help of [POA operation guide](https://github.com/Block-Way/hashahead/wiki/POA-Guide)
 --------------------------------------------------------------------------------------------------------------
 
 **NOTE:**  
@@ -8,7 +8,7 @@ Complete all settings for POA mining with the help of [POA operation guide](http
 2) Download address of executable program (please select the latest version):  
 
 ```  
-https://github.com/hashahead/hah-code/releases  
+https://github.com/Block-Way/hashahead/releases  
 ```
 
 3) In the windows operating system,when executing the program in your current directory, please change the "./hashahead" command to "hashahead". Same below. 
@@ -40,7 +40,7 @@ Second key pairs (for mining):
 
 Modify the configuration file used in POA
 --------------------------------------------------------------------------------------------------------------
-In the previous [POA Guide](https://github.com/hashahead/hah-code/wiki/poa-guide),we have described the configuration file **"hashahead.conf"**, which we will modify it as follows:
+In the previous [POA Guide](https://github.com/Block-Way/hashahead/wiki/poa-guide),we have described the configuration file **"hashahead.conf"**, which we will modify it as follows:
 
 ```
 # use test net,do not set this parameter in real environment

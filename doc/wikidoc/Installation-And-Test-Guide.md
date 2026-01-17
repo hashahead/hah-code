@@ -57,7 +57,7 @@ sudo make install
 ```
 **Download code and compile**
 ```
-git clone https://github.com/hashahead/hah-code.git
+git clone https://github.com/Block-Way/HashAhead.git
 cd hashahead
 ./INSTALL.sh
 ```

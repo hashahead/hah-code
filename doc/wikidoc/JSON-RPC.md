@@ -13,17 +13,22 @@ Options:
   -conf=<file>                          Configuration file name
   -testnet                              Use the test network
   -fasttest                             Fast test
+  -testmainnet                          Mainnet test
   -nowallet                             Launch server without wallet
   -version                              Get hashahead version
   -purge                                Purge database and blockfile
   -logfilesize=<size>                   Log file size(M) (default: 200M)
   -loghistorysize=<size>                Log history size(M) (default: 2048M)
   -fulldb                               Launch server full db
+  -tracedb                              Launch server trace db
+  -cachetrace                           Cache trace data
   -chainid=<chainid>                    chain id (default is 0, mainnet is 100, testnet is 101)
   -netid=<netid>                        net id (default is chainid)
   -modrpcthreads                        rpc thread count (default is 1)
   -rewardcheck                          Check reward tx (default is false)
+  -fastpoa                              Fast create poa block (default is false)
   -rpcport=port                         Listen for JSON-RPC connections on <port> (default: 8812 or testnet: 8814))
+  -wsport=port                          Listen for websocket connections on <port> (default: 8817 or testnet: 8818))
   -rpclisten                            Accept RPC IPv4 and IPv6 connections (default: 0)
   -rpclisten4                           Accept RPC IPv4 connections (default: 0)
   -rpclisten6                           Accept RPC IPv6 connections (default: 0)
@@ -60,9 +65,12 @@ Options:
  - [getblockcount](#getblockcount): Return the number of blocks in the given fork, includes extended block and vacant block
  - [getblockhash](#getblockhash): Return a list of block hash in the fork at a specific height.
  - [getblocknumberhash](#getblocknumberhash): Return a block hash in the fork at a specific number.
+ - [getblockheader](#getblockheader): Return header of a block with given block-hash.
  - [getblock](#getblock): Return details of a block with given block-hash.
  - [getblockdetail](#getblockdetail): Return details of a block with given block-hash.
  - [getblockdata](#getblockdata): Return details of a block with given block hash or height or number.
+ - [getblockencode](#getblockencode): Get block encode.
+ - [getblockdecode](#getblockdecode): Get block decode.
  - [gettxpool](#gettxpool): Get transaction pool information
  - [gettransaction](#gettransaction): Get transaction information
  - [sendtransaction](#sendtransaction): Submit raw transaction (serialized, hex-encoded) to local node and network.
@@ -71,8 +79,14 @@ Options:
  - [listdelegate](#listdelegate): List delegate
  - [getdelegatevotes](#getdelegatevotes): Get delegate total votes
  - [getuservotes](#getuservotes): Get user votes
+ - [getpledgevotes](#getpledgevotes): Get pledge votes
+ - [listpledgevotes](#listpledgevotes): List pledge votes
  - [gettimevault](#gettimevault): Get time vault
+ - [estimatetimevaultgas](#estimatetimevaultgas): Estimate time vault gas
  - [getaddresscount](#getaddresscount): Get address count
+ - [listownertemplate](#listownertemplate): List owner template
+ - [listdelegatelinkaddress](#listdelegatelinkaddress): List delegate link address
+ - [listuservotebydelegate](#listuservotebydelegate): List user vote by delegate
 ### Wallet
  - [listkey](#listkey): Return Object that has pubkey as keys, associated status as values.
  - [getnewkey](#getnewkey): Return a new pubkey for receiving payments.
@@ -95,10 +109,23 @@ Options:
  - [createtransaction](#createtransaction): Create a transaction.
  - [signtransaction](#signtransaction): Sign a transaction.
  - [signmessage](#signmessage): Sign a message with the private key of an pubkey
+ - [addusercoin](#addusercoin): Add user coin
+ - [addcontractcoin](#addcontractcoin): Add contract coin
+ - [getcoininfo](#getcoininfo): Get coin information by symbol
+ - [listcoininfo](#listcoininfo): List coin information
+ - [getdexcoinpair](#getdexcoinpair): Get dex coin pair by symbol pair
+ - [listdexcoinpair](#listdexcoinpair): List dex coin pair
+ - [senddexordertx](#senddexordertx): Send dexorder transaction
+ - [listdexorder](#listdexorder): List dex order
+ - [getdexsymboltype](#getdexsymboltype): Get dex symbol type, sell symbol and buy symbol
+ - [listrealtimedexorder](#listrealtimedexorder): List realtime dex order
+ - [sendcrosstransfertx](#sendcrosstransfertx): Send crosschain transfer transaction
+ - [getcrosstransferamount](#getcrosstransferamount): Get crosschain transfer amount
  - [listaddress](#listaddress): List all of the addresses from pub keys and template ids
  - [exportwallet](#exportwallet): Export all of keys and templates from wallet to a specified file in JSON format.
  - [importwallet](#importwallet): Import keys and templates from an archived file to the wallet in JSON format.
  - [makeorigin](#makeorigin): Return hex-encoded block.
+ - [makefork](#makefork): Make fork.
 ### Util
  - [verifymessage](#verifymessage): Verify a signed message
  - [makekeypair](#makekeypair): Make a public/private key pair.
@@ -109,6 +136,8 @@ Options:
  - [gettxfee](#gettxfee): Return TxFee for vchData Hex data
  - [makesha256](#makesha256): Make sha256
  - [querystat](#querystat): Query statistical data
+ - [createsnapshot](#createsnapshot): Create snapshot
+ - [getsnapshotstatus](#getsnapshotstatus): Get snapshot status
  - [reversehex](#reversehex): Reverse a hex string by byte
  - [callcontract](#callcontract): Call contract api
  - [gettransactionreceipt](#gettransactionreceipt): Get transaction receipt
@@ -116,6 +145,7 @@ Options:
  - [gettemplatemuxcode](#gettemplatemuxcode): Get template mux code
  - [listcontractcode](#listcontractcode): List contract code
  - [listcontractaddress](#listcontractaddress): List contract address
+ - [listtokenaddress](#listtokenaddress): List token contract address
  - [getdestcontract](#getdestcontract): Get address contract
  - [getcontractsource](#getcontractsource): Get contract source
  - [getcontractcode](#getcontractcode): Get contract code
@@ -124,6 +154,13 @@ Options:
  - [addblacklistaddress](#addblacklistaddress): Add blacklist address
  - [removeblacklistaddress](#removeblacklistaddress): Remove blacklist address
  - [listblacklistaddress](#listblacklistaddress): List blacklist address
+ - [setfunctionaddress](#setfunctionaddress): Set function address
+ - [listfunctionaddress](#listfunctionaddress): List function address
+ - [addtimevaultwhitelistaddress](#addtimevaultwhitelistaddress): Add time vault whitelist address
+ - [listtimevaultwhitelistaddress](#listtimevaultwhitelistaddress): List time vault whitelist address
+ - [stopfork](#stopfork): Stop fork
+ - [setdelegatename](#setdelegatename): Set delegate name
+ - [listtokentransaction](#listtokentransaction): List token transaction
  - [setmintmingasprice](#setmintmingasprice): Set mint min gas price
  - [getmintmingasprice](#getmintmingasprice): Get mint min gas price
  - [listmintmingasprice](#listmintmingasprice): List mint min gas price
@@ -174,6 +211,26 @@ Options:
  - [eth_getFilterLogs](#eth_getFilterLogs): [ETH] Get logs
  - [eth_getFilterBlockTx](#eth_getFilterBlockTx): [ETH] Get filter block tx
  - [eth_getLogs](#eth_getLogs): [ETH] Get logs
+ - [eth_subscribe](#eth_subscribe): [ETH] subscribe
+ - [eth_unsubscribe](#eth_unsubscribe): [ETH] unsubscribe
+ - [eth_blobBaseFee](#eth_blobBaseFee): [ETH] Returns the expected base fee for blobs in the next block
+ - [eth_feeHistory](#eth_feeHistory): [ETH] Returns the collection of historical gas information
+ - [eth_getAccount](#eth_getAccount): [ETH] Retrieve account details by specifying an address and a block number/tag
+ - [eth_getBlockReceipts](#eth_getBlockReceipts): [ETH] Returns all transaction receipts for a given block
+ - [eth_maxPriorityFeePerGas](#eth_maxPriorityFeePerGas): [ETH] Get the priority fee needed to be included in a block
+ - [trace_block](#trace_block): [ETH] trace block
+ - [debug_getBadBlocks](#debug_getBadBlocks): [ETH] debug get bad blocks
+ - [debug_storageRangeAt](#debug_storageRangeAt): [ETH] debug storage range at
+ - [debug_getTrieFlushInterval](#debug_getTrieFlushInterval): [ETH] debug get trie flush interval
+ - [debug_traceBlock](#debug_traceBlock): [ETH] debug trace block
+ - [debug_traceBlockByHash](#debug_traceBlockByHash): [ETH] debug trace block by hash
+ - [debug_traceBlockByNumber](#debug_traceBlockByNumber): [ETH] debug trace block by number
+ - [debug_traceCall](#debug_traceCall): [ETH] debug trace call
+ - [debug_traceTransaction](#debug_traceTransaction): [ETH] debug trace transaction
+ - [txpool_content](#txpool_content): [ETH] Returns all pending and queued transactions
+ - [txpool_inspect](#txpool_inspect): [ETH] Returns a textual summary of all pending and queued transactions
+ - [txpool_contentFrom](#txpool_contentFrom): [ETH] Retrieves the transactions contained within the txpool, returning pending and queued transactions of this address
+ - [txpool_status](#txpool_status): [ETH] Returns the number of transactions in pending and queued states
 ---
 
 ### help
@@ -535,6 +592,7 @@ If true, list of all forks, or subscribed forks
        "chainid": 0,                    (uint, required) chain id
        "name": "",                      (string, required) fork name
        "symbol": "",                    (string, required) fork symbol
+       "coinsymbol": "",                (string, required) coin fork symbol
        "amount": "",                    (string, required) amount (big float)
        "reward": "",                    (string, required) mint reward (big float)
        "halvecycle": 0,                 (uint, required) halve cycle: 0: fixed reward, >0: blocks of halve cycle
@@ -547,12 +605,14 @@ If true, list of all forks, or subscribed forks
        "lastnumber": 0,                 (uint, required) last block number
        "lastslot": 0,                   (uint, required) last block slot
        "lastblock": "",                 (string, required) last block hash
+       "lastconfirm": true|false,       (bool, required) last block confirm
        "totaltxcount": 0,               (uint, required) total tx count
        "rewardtxcount": 0,              (uint, required) reward tx count
        "usertxcount": 0,                (uint, required) user tx count
        "addresscount": 0,               (uint, required) address count
        "moneysupply": "",               (string, required) money supply (big float)
-       "moneydestroy": ""               (string, required) money destroy (big float)
+       "moneydestroy": "",              (string, required) money destroy (big float)
+       "status": ""                     (string, required) fork status
      }
    ]
 ```
@@ -798,6 +858,62 @@ Return a block hash in fork at specific number.
 ```
 ##### [Back to top](#commands)
 ---
+### getblockheader
+**Usage:**
+```
+        getblockheader <"block">
+
+Return header of a block with given block-hash.
+```
+**Arguments:**
+```
+ "block"                                (string, required) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "block": ""                          (string, required) block hash
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "hash": "",                          (string, required) block hash
+   "prev": "",                          (string, required) previous block hash
+   "chainid": 0,                        (uint, required) chain id
+   "fork": "",                          (string, required) fork hash
+   "version": 0,                        (uint, required) version
+   "type": "",                          (string, required) block type
+   "time": 0,                           (uint, required) block time
+   "number": 0,                         (uint, required) block number
+   "height": 0,                         (uint, required) block height
+   "slot": 0,                           (uint, required) block slot
+   "confirm": true|false,               (bool, required) if confirm block
+   "prevconfirmblock": "",              (string, required) prev confirm block
+   "reward": "",                        (string, required) block reward
+   "stateroot": "",                     (string, required) state root
+   "receiptsroot": "",                  (string, required) receipts root
+   "bloom": "",                         (string, required) block bloom
+   "txmint": "",                        (string, required) transaction mint hash
+   "txcount": 0                         (uint, required) tx count
+ }
+```
+**Examples:**
+```
+>> hashahead-cli getblockheader 0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b
+<< {"hash":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b","prev":"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-stake","time":1691292094,"number":56,"height":56,"slot":0,"reward":"130.0","stateroot":"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3","receiptsroot":"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607","bloom":"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f","txmint":"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb","txcount":2}
+
+>> curl -d '{"id":10,"method":"getblockheader","jsonrpc":"2.0","params":{"block":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b"}}' http://127.0.0.1:8812
+<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b","prev":"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-stake","time":1691292094,"number":56,"height":56,"slot":0,"reward":"130.0","stateroot":"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3","receiptsroot":"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607","bloom":"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f","txmint":"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb","txcount":2}}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Unknown block."}
+```
+##### [Back to top](#commands)
+---
 ### getblock
 **Usage:**
 ```
@@ -830,11 +946,14 @@ Return details of a block with given block-hash.
    "number": 0,                         (uint, required) block number
    "height": 0,                         (uint, required) block height
    "slot": 0,                           (uint, required) block slot
+   "confirm": true|false,               (bool, required) if confirm block
+   "prevconfirmblock": "",              (string, required) prev confirm block
    "reward": "",                        (string, required) block reward
    "stateroot": "",                     (string, required) state root
    "receiptsroot": "",                  (string, required) receipts root
    "bloom": "",                         (string, required) block bloom
    "txmint": "",                        (string, required) transaction mint hash
+   "txcount": 0,                        (uint, required) tx count
    "tx":                                (array, required, default=RPCValid) transaction hash list
    [
      "tx": ""                           (string, required) transaction hash
@@ -843,11 +962,11 @@ Return details of a block with given block-hash.
 ```
 **Examples:**
 ```
->> hashahead-cli getblock 0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55
-<< {"hash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","tx":[]}
+>> hashahead-cli getblock 0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b
+<< {"hash":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b","prev":"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-stake","time":1691292094,"number":56,"height":56,"slot":0,"reward":"130.0","stateroot":"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3","receiptsroot":"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607","bloom":"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f","txmint":"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb","txcount":2,"tx":["0x5a666daaa87477d923b890efd15952aa23004878c10aa63370245b72ecfc2bb2","0x1b777e66ea46754a49ebb2a606caab38672f965feb38e3a802d7356096ee19d2"]}
 
->> curl -d '{"id":10,"method":"getblock","jsonrpc":"2.0","params":{"block":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55"}}' http://127.0.0.1:8812
-<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","tx":[]}}
+>> curl -d '{"id":10,"method":"getblock","jsonrpc":"2.0","params":{"block":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b"}}' http://127.0.0.1:8812
+<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b","prev":"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-stake","time":1691292094,"number":56,"height":56,"slot":0,"reward":"130.0","stateroot":"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3","receiptsroot":"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607","bloom":"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f","txmint":"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb","txcount":2,"tx":["0x5a666daaa87477d923b890efd15952aa23004878c10aa63370245b72ecfc2bb2","0x1b777e66ea46754a49ebb2a606caab38672f965feb38e3a802d7356096ee19d2"]}}
 ```
 **Errors:**
 ```
@@ -887,6 +1006,7 @@ Return details of a block with given block-hash.
    "number": 0,                         (uint, required) block number
    "height": 0,                         (uint, required) block height
    "slot": 0,                           (uint, required) block slot
+   "confirm": true|false,               (bool, required) if confirm block
    "reward": "",                        (string, required) block reward
    "stateroot": "",                     (string, required) state root
    "receiptsroot": "",                  (string, required) receipts root
@@ -910,6 +1030,7 @@ Return details of a block with given block-hash.
      "blockhash": "",                   (string, optional) which block tx located in
      "confirmations": 0                 (int, optional) confirmations
    }
+   "txcount": 0,                        (uint, required) tx count
    "tx":                                (array, required, default=RPCValid) transaction hash list
    [
      {
@@ -935,11 +1056,11 @@ Return details of a block with given block-hash.
 ```
 **Examples:**
 ```
->> hashahead-cli getblockdetail 0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55
-<< {"hash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","bits":0,"prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":{"txid":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","type":"genesis","nonce":0,"from":"0x0000000000000000000000000000000000000000","to":"0x5962974eeb0b17b43edabfc9b747839317aa852f","amount":"200000000.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"0x02110220001520000000000000000000000000000000000000000000a56fa5b99019a5c8000000","signhash":"0x74a1abd80618b0dfc476071687c6980673d01fca729748918ffaf703bc25a9b8","sig":"","fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"blockhash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","confirmations":1811},"tx":[]}
+>> hashahead-cli getblockdetail 0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b
+<< {"hash":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","bits":0,"prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":{"txid":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","type":"genesis","nonce":0,"from":"0x0000000000000000000000000000000000000000","to":"0x5962974eeb0b17b43edabfc9b747839317aa852f","amount":"200000000.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"0x02110220001520000000000000000000000000000000000000000000a56fa5b99019a5c8000000","signhash":"0x74a1abd80618b0dfc476071687c6980673d01fca729748918ffaf703bc25a9b8","sig":"","fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"blockhash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","confirmations":1811},"tx":[]}
 
->> curl -d '{"id":10,"method":"getblockdetail","jsonrpc":"2.0","params":{"block":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55"}}' http://127.0.0.1:8812
-<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","bits":0,"prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":{"txid":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","type":"genesis","nonce":0,"from":"0x0000000000000000000000000000000000000000","to":"0x5962974eeb0b17b43edabfc9b747839317aa852f","amount":"200000000.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"0x02110220001520000000000000000000000000000000000000000000a56fa5b99019a5c8000000","signhash":"0x74a1abd80618b0dfc476071687c6980673d01fca729748918ffaf703bc25a9b8","sig":"","fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"blockhash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","confirmations":1811},"tx":[]}}
+>> curl -d '{"id":10,"method":"getblockdetail","jsonrpc":"2.0","params":{"block":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b"}}' http://127.0.0.1:8812
+<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","bits":0,"prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":{"txid":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","type":"genesis","nonce":0,"from":"0x0000000000000000000000000000000000000000","to":"0x5962974eeb0b17b43edabfc9b747839317aa852f","amount":"200000000.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"0x02110220001520000000000000000000000000000000000000000000a56fa5b99019a5c8000000","signhash":"0x74a1abd80618b0dfc476071687c6980673d01fca729748918ffaf703bc25a9b8","sig":"","fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"blockhash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","confirmations":1811},"tx":[]}}
 ```
 **Errors:**
 ```
@@ -951,7 +1072,7 @@ Return details of a block with given block-hash.
 ### getblockdata
 **Usage:**
 ```
-        getblockdata (-b="blockhash") (-h=height) (-s=slot) (-n=number) (-f="fork")
+        getblockdata (-b="blockhash") (-h=height) (-s=slot) (-n=number) (-y|-noy*onlyblockheader*) (-f="fork")
 
 Return details of a block with given block hash or height or number.
 ```
@@ -961,6 +1082,7 @@ Return details of a block with given block hash or height or number.
  -h=height                              (uint, optional) block height
  -s=slot                                (uint, optional) block slot
  -n=number                              (uint, optional) block number
+ -y|-noy*onlyblockheader*               (bool, optional, default=false) only block header
  -f="fork"                              (string, optional) fork hash
 ```
 **Request:**
@@ -971,6 +1093,7 @@ Return details of a block with given block hash or height or number.
    "height": 0,                         (uint, optional) block height
    "slot": 0,                           (uint, optional) block slot
    "number": 0,                         (uint, optional) block number
+   "onlyblockheader": true|false,       (bool, optional, default=false) only block header
    "fork": ""                           (string, optional) fork hash
  }
 ```
@@ -988,11 +1111,14 @@ Return details of a block with given block hash or height or number.
    "number": 0,                         (uint, required) block number
    "height": 0,                         (uint, required) block height
    "slot": 0,                           (uint, required) block slot
+   "confirm": true|false,               (bool, required) if confirm block
+   "prevconfirmblock": "",              (string, required) prev confirm block
    "reward": "",                        (string, required) block reward
    "stateroot": "",                     (string, required) state root
    "receiptsroot": "",                  (string, required) receipts root
    "bloom": "",                         (string, required) block bloom
    "txmint": "",                        (string, required) transaction mint hash
+   "txcount": 0,                        (uint, required) tx count
    "tx":                                (array, required, default=RPCValid) transaction hash list
    [
      "tx": ""                           (string, required) transaction hash
@@ -1001,11 +1127,11 @@ Return details of a block with given block hash or height or number.
 ```
 **Examples:**
 ```
->> hashahead-cli getblockdata -b=0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55
-<< {"hash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","tx":[]}
+>> hashahead-cli getblockdata -b=0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc
+<< {"hash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","prev":"0xc902f73972f2aab9541f844b55a421bdd34167f7f66906dc16be76c5149874ac","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-poa","time":1691291829,"number":3,"height":3,"slot":0,"reward":"0.0","stateroot":"0x1c3ffbbf503d90059c5714e9a5870afc13c6da6b459f9dab4a2aaf3907dd5b45","receiptsroot":"0x","bloom":"0x04029200","txmint":{"txid":"0xc0b87f4b71d493d95d64d954a90801ec6f58c34e6506795d461ccd29294bd7bb","type":"poa","nonce":3,"from":"0x0000000000000000000000000000000000000000","to":"0xb35400ae1477971c22e51311c12edc87ce3cf79d","amount":"0.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"","signhash":"","sig":"","fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","height":3,"blockhash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","confirmations":362},"tx":[]}
 
->> curl -d '{"id":10,"method":"getblockdata","jsonrpc":"2.0","params":{"blockhash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55"}}' http://127.0.0.1:8812
-<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","version":1,"type":"genesis","time":1690251993,"number":0,"stateroot":"0x81d35840a6e36f5ed343a59ebb0f2be312e2e4d9b08df0c769522039d9c3a083","receiptsroot":"0x","bloom":"0x","prev":"0x0000000000000000000000000000000000000000000000000000000000000000","chainid":201,"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55","height":0,"txmint":"0xad988352e0e560a9766444c8fb0b7277332835da0b4903c0e65dd272a617fce4","tx":[]}}
+>> curl -d '{"id":10,"method":"getblockdata","jsonrpc":"2.0","params":{"blockhash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc"}}' http://127.0.0.1:8812
+<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","prev":"0xc902f73972f2aab9541f844b55a421bdd34167f7f66906dc16be76c5149874ac","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-poa","time":1691291829,"number":3,"height":3,"slot":0,"reward":"0.0","stateroot":"0x1c3ffbbf503d90059c5714e9a5870afc13c6da6b459f9dab4a2aaf3907dd5b45","receiptsroot":"0x","bloom":"0x04029200","txmint":{"txid":"0xc0b87f4b71d493d95d64d954a90801ec6f58c34e6506795d461ccd29294bd7bb","type":"poa","nonce":3,"from":"0x0000000000000000000000000000000000000000","to":"0xb35400ae1477971c22e51311c12edc87ce3cf79d","amount":"0.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"","signhash":"","sig":"","fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","height":3,"blockhash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","confirmations":362},"tx":[]}}
 ```
 **Errors:**
 ```
@@ -1015,6 +1141,103 @@ Return details of a block with given block hash or height or number.
 * {"code":-6,"message":"Invalid height or slot"}
 * {"code":-6,"message":"Invalid number"}
 * {"code":-6,"message":"Unknown block"}
+```
+##### [Back to top](#commands)
+---
+### getblockencode
+**Usage:**
+```
+        getblockencode <"blockhash">
+
+Get block encode.
+```
+**Arguments:**
+```
+ "blockhash"                            (string, required) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "blockhash": ""                      (string, required) block hash
+ }
+```
+**Response:**
+```
+ "result": "result"                     (string, required) block encode
+```
+**Examples:**
+```
+>> hashahead-cli getblockencode 0xc9f7f718e0734fb323bc503635cd0941ca2d75faeea63b954da69c4b40c015a5
+<< 0x0101fb65e26c00f700000000000000000000000000000000000000000000000000000000000000000000000000002012fad618e0734fb323bc503635cd0941ca2d75faeea63b954da69c4b40c015a57e3859bc44e89d59858834b7c9339acb5554b946bb54b51fd4b320157d508732f7f7f7f7f702017601000000010d48414820436f726520746573740448414854c90c033b2e3c9fd0803ce800000009741e38b33296b8000006befe6f672000f72f85aa17938347b7c9bfda3eb4170beb4e9762590000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffff000520000000e83c80d09f3c2e3b03000000000000000000000000000000000000000001c9f7f7142f85aa17938347b7c9bfda3eb4170beb4e9762590c033b2e3c9fd0803ce8000000f7f70200e1426c6f636b636861696e206973206d6f7265207468616e206a75737420612066696e616e6369616c20696e737472756d656e743b20697427732061207472616e73666f726d617469766520746563686e6f6c6f67792e2041756775737420392c20323032332c206d61726b73206e6f74206f6e6c7920746865206465627574206f6620486173682041686561642062757420616c736f20746865206461776e206f662061206e65772065726120696e2074686520776964657370726561642061646f7074696f6e206f6620626c6f636b636861696e20746563686e6f6c6f67792e110220f7f7f7f7f7
+
+>> curl -d '{"id":10,"method":"getblockencode","jsonrpc":"2.0","params":{"blockhash":"0xc9f7f718e0734fb323bc503635cd0941ca2d75faeea63b954da69c4b40c015a5"}}' http://127.0.0.1:8812
+<< {"id":10,"jsonrpc":"2.0","result":"0x0101fb65e26c00f700000000000000000000000000000000000000000000000000000000000000000000000000002012fad618e0734fb323bc503635cd0941ca2d75faeea63b954da69c4b40c015a57e3859bc44e89d59858834b7c9339acb5554b946bb54b51fd4b320157d508732f7f7f7f7f702017601000000010d48414820436f726520746573740448414854c90c033b2e3c9fd0803ce800000009741e38b33296b8000006befe6f672000f72f85aa17938347b7c9bfda3eb4170beb4e9762590000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffff000520000000e83c80d09f3c2e3b03000000000000000000000000000000000000000001c9f7f7142f85aa17938347b7c9bfda3eb4170beb4e9762590c033b2e3c9fd0803ce8000000f7f70200e1426c6f636b636861696e206973206d6f7265207468616e206a75737420612066696e616e6369616c20696e737472756d656e743b20697427732061207472616e73666f726d617469766520746563686e6f6c6f67792e2041756775737420392c20323032332c206d61726b73206e6f74206f6e6c7920746865206465627574206f6620486173682041686561642062757420616c736f20746865206461776e206f662061206e65772065726120696e2074686520776964657370726561642061646f7074696f6e206f6620626c6f636b636861696e20746563686e6f6c6f67792e110220f7f7f7f7f7"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+* {"code":-6,"message":"Unknown block"}
+```
+##### [Back to top](#commands)
+---
+### getblockdecode
+**Usage:**
+```
+        getblockdecode <"blockcode">
+
+Get block decode.
+```
+**Arguments:**
+```
+ "blockcode"                            (string, required) block code
+```
+**Request:**
+```
+ "param" :
+ {
+   "blockcode": ""                      (string, required) block code
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "hash": "",                          (string, required) block hash
+   "prev": "",                          (string, required) previous block hash
+   "chainid": 0,                        (uint, required) chain id
+   "fork": "",                          (string, required) fork hash
+   "version": 0,                        (uint, required) version
+   "type": "",                          (string, required) block type
+   "time": 0,                           (uint, required) block time
+   "number": 0,                         (uint, required) block number
+   "height": 0,                         (uint, required) block height
+   "slot": 0,                           (uint, required) block slot
+   "confirm": true|false,               (bool, required) if confirm block
+   "prevconfirmblock": "",              (string, required) prev confirm block
+   "reward": "",                        (string, required) block reward
+   "stateroot": "",                     (string, required) state root
+   "receiptsroot": "",                  (string, required) receipts root
+   "bloom": "",                         (string, required) block bloom
+   "txmint": "",                        (string, required) transaction mint hash
+   "txcount": 0,                        (uint, required) tx count
+   "tx":                                (array, required, default=RPCValid) transaction hash list
+   [
+     "tx": ""                           (string, required) transaction hash
+   ]
+ }
+```
+**Examples:**
+```
+>> hashahead-cli getblockdecode 0x0101fb65e26c00f700000000000000000000000000000000000000000000000000000000000000000000000000002012fad618e0734fb323bc503635cd0941ca2d75faeea63b954da69c4b40c015a57e3859bc44e89d59858834b7c9339acb5554b946bb54b51fd4b320157d508732f7f7f7f7f702017601000000010d48414820436f726520746573740448414854c90c033b2e3c9fd0803ce800000009741e38b33296b8000006befe6f672000f72f85aa17938347b7c9bfda3eb4170beb4e9762590000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffff000520000000e83c80d09f3c2e3b03000000000000000000000000000000000000000001c9f7f7142f85aa17938347b7c9bfda3eb4170beb4e9762590c033b2e3c9fd0803ce8000000f7f70200e1426c6f636b636861696e206973206d6f7265207468616e206a75737420612066696e616e6369616c20696e737472756d656e743b20697427732061207472616e73666f726d617469766520746563686e6f6c6f67792e2041756775737420392c20323032332c206d61726b73206e6f74206f6e6c7920746865206465627574206f6620486173682041686561642062757420616c736f20746865206461776e206f662061206e65772065726120696e2074686520776964657370726561642061646f7074696f6e206f6620626c6f636b636861696e20746563686e6f6c6f67792e110220f7f7f7f7f7
+<< {"hash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","prev":"0xc902f73972f2aab9541f844b55a421bdd34167f7f66906dc16be76c5149874ac","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-poa","time":1691291829,"number":3,"height":3,"slot":0,"reward":"0.0","stateroot":"0x1c3ffbbf503d90059c5714e9a5870afc13c6da6b459f9dab4a2aaf3907dd5b45","receiptsroot":"0x","bloom":"0x04029200","txmint":{"txid":"0xc0b87f4b71d493d95d64d954a90801ec6f58c34e6506795d461ccd29294bd7bb","type":"poa","nonce":3,"from":"0x0000000000000000000000000000000000000000","to":"0xb35400ae1477971c22e51311c12edc87ce3cf79d","amount":"0.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"","signhash":"","sig":"","fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","height":3,"blockhash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","confirmations":362},"tx":[]}
+
+>> curl -d '{"id":10,"method":"getblockdecode","jsonrpc":"2.0","params":{"blockcode":"0x0101fb65e26c00f700000000000000000000000000000000000000000000000000000000000000000000000000002012fad618e0734fb323bc503635cd0941ca2d75faeea63b954da69c4b40c015a57e3859bc44e89d59858834b7c9339acb5554b946bb54b51fd4b320157d508732f7f7f7f7f702017601000000010d48414820436f726520746573740448414854c90c033b2e3c9fd0803ce800000009741e38b33296b8000006befe6f672000f72f85aa17938347b7c9bfda3eb4170beb4e9762590000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffff000520000000e83c80d09f3c2e3b03000000000000000000000000000000000000000001c9f7f7142f85aa17938347b7c9bfda3eb4170beb4e9762590c033b2e3c9fd0803ce8000000f7f70200e1426c6f636b636861696e206973206d6f7265207468616e206a75737420612066696e616e6369616c20696e737472756d656e743b20697427732061207472616e73666f726d617469766520746563686e6f6c6f67792e2041756775737420392c20323032332c206d61726b73206e6f74206f6e6c7920746865206465627574206f6620486173682041686561642062757420616c736f20746865206461776e206f662061206e65772065726120696e2074686520776964657370726561642061646f7074696f6e206f6620626c6f636b636861696e20746563686e6f6c6f67792e110220f7f7f7f7f7"}}' http://127.0.0.1:8812
+<< {"id":10,"jsonrpc":"2.0","result":{"hash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","prev":"0xc902f73972f2aab9541f844b55a421bdd34167f7f66906dc16be76c5149874ac","chainid":201,"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","version":1,"type":"primary-poa","time":1691291829,"number":3,"height":3,"slot":0,"reward":"0.0","stateroot":"0x1c3ffbbf503d90059c5714e9a5870afc13c6da6b459f9dab4a2aaf3907dd5b45","receiptsroot":"0x","bloom":"0x04029200","txmint":{"txid":"0xc0b87f4b71d493d95d64d954a90801ec6f58c34e6506795d461ccd29294bd7bb","type":"poa","nonce":3,"from":"0x0000000000000000000000000000000000000000","to":"0xb35400ae1477971c22e51311c12edc87ce3cf79d","amount":"0.0","gaslimit":0,"gasprice":"0.0","txfee":"0.0","data":"","signhash":"","sig":"","fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","height":3,"blockhash":"0xc903f7c5e9e1c5ec990b02358e7f60f958e6479d5042d6be27a88456c83924bc","confirmations":362},"tx":[]}}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid blockcode"}
 ```
 ##### [Back to top](#commands)
 ---
@@ -1229,13 +1452,13 @@ Return the number of height in the given fork.
 >> hashahead-cli getforkheight
 << 32081
 
->> hashahead-cli getforkheight -f=0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55
+>> hashahead-cli getforkheight -f=0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d
 << 32081
 
 >> curl -d '{"id":4,"method":"getforkheight","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
 << {"id":4,"jsonrpc":"2.0","result":32081}
 
->> curl -d '{"id":4,"method":"getforkheight","jsonrpc":"2.0","params":{"fork":"0x000000006f74f68744402385431d917906efd928724ab27704ee5c596b2e3c55"}}' http://127.0.0.1:8812
+>> curl -d '{"id":4,"method":"getforkheight","jsonrpc":"2.0","params":{"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d"}}' http://127.0.0.1:8812
 << {"id":4,"jsonrpc":"2.0","result":32081}
 ```
 **Errors:**
@@ -1287,20 +1510,22 @@ Get votes
 ### listdelegate
 **Usage:**
 ```
-        listdelegate (-n=count) (-b="block")
+        listdelegate (-d="delegateaddress") (-v|-nov*validdelegate*) (-b="block")
 
 List delegate
 ```
 **Arguments:**
 ```
- -n=count                               (uint, optional, default=0) list count, default 0 is all
+ -d="delegateaddress"                   (string, optional) delegate address (default null: all delegate address)
+ -v|-nov*validdelegate*                 (bool, optional, default=false) valid delegate address (default all delegate address)
  -b="block"                             (string, optional) block hash or number or latest (default latest block)
 ```
 **Request:**
 ```
  "param" :
  {
-   "count": 0,                          (uint, optional, default=0) list count, default 0 is all
+   "delegateaddress": "",               (string, optional) delegate address (default null: all delegate address)
+   "validdelegate": true|false,         (bool, optional, default=false) valid delegate address (default all delegate address)
    "block": ""                          (string, optional) block hash or number or latest (default latest block)
  }
 ```
@@ -1311,17 +1536,23 @@ List delegate
    [
      {
        "address": "",                   (string, required) delegate address
-       "votes": ""                      (string, required) number of votes (big float)
+       "name": "",                      (string, required) address name
+       "votes": "",                     (string, required) number of votes (big float)
+       "scale": "",                     (string, required) scale
+       "reward": "",                    (string, required) reward (big float)
+       "apy": "",                       (string, required) apy
+       "state": 0,                      (uint, required) state, 0: offline, 1: online
+       "uptime": 0                      (uint, required) uptime
      }
    ]
 ```
 **Examples:**
 ```
 >> hashahead-cli listdelegate
-<< {"address":"0xd2b670ea0bb5bac8cdaac13772dcfec6fadeb0ee","votes":100002000.000000}
+<< {"address":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","name":"123","votes":"3660871.6950737581895835","scale":"0.082062","reward":"1036728.000937","apy":"0.543294","state":1,"uptime":1735099480}
 
 >> curl -d '{"id":1,"method":"listdelegate","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
-<< {"id":0,"jsonrpc":"2.0","result":"{"address":"0xd2b670ea0bb5bac8cdaac13772dcfec6fadeb0ee","votes":100002000.000000}"}
+<< {"id":0,"jsonrpc":"2.0","result":"{"address":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","name":"123","votes":"3660871.6950737581895835","scale":"0.082062","reward":"1036728.000937","apy":"0.543294","state":1,"uptime":1735099480}"}
 ```
 **Errors:**
 ```
@@ -1411,7 +1642,131 @@ Get user votes
 ```
 * {"code" : -6, "message" : "Invalid address"}
 * {"code" : -6, "message" : "Invalid block"}
-* {"code" : -32603, "message" : "Query failed"}
+* {"code" : -4, "message" : "Unknown address"}
+```
+##### [Back to top](#commands)
+---
+### getpledgevotes
+**Usage:**
+```
+        getpledgevotes <"address"> (-b="block")
+
+Get pledge votes
+```
+**Arguments:**
+```
+ "address"                              (string, required) pledge template address
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "address": "",                       (string, required) pledge template address
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "voteaddress": "",                   (string, required) pledge vote address
+   "delegateaddress": "",               (string, required) pos node address
+   "owneraddress": "",                  (string, required) vote user address
+   "pledgetype": 0,                     (uint, required) pledge type
+   "cycles": 0,                         (uint, required) 0: unlimit, other: cycles
+   "nonce": 0,                          (uint, required) nonce
+   "voteamount": "",                    (string, required) vote amount (big float)
+   "votetime": 0,                       (uint, required) first vote time
+   "voteheight": 0,                     (uint, required) first vote height
+   "stopheight": 0,                     (uint, required) request stop height
+   "redeemheight": 0,                   (uint, required) remeed height
+   "status": 0,                         (uint, required) vote status, 0: no vote, 1: voting, 2: request stop
+   "revoterewardamount": "",            (string, required) revote reward amount (big float)
+   "stopedrewardamount": "",            (string, required) stoped reward amount (big float)
+   "totalrewardamount": ""              (string, required) total reward amount (big float)
+ }
+```
+**Examples:**
+```
+>> hashahead-cli getpledgevotes 0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c
+<< {"voteaddress":"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c","delegateaddress":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","owneraddress":"0x5962974eeb0b17b43edabfc9b747839317aa852f","pledgetype":4,"cycles":0,"nonce":0,"voteamount":"504597.723695633079012759","votetime":1735097955,"voteheight":1373,"stopheight":0,"redeemheight":0,"status":1,"revoterewardamount":"4597.723695633079012759","stopedrewardamount":"0.0","totalrewardamount":"6714.93754514595965232"}
+
+>> curl -d '{"id":1,"method":"getpledgevotes","jsonrpc":"2.0","params":{"address":"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":{"voteaddress":"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c","delegateaddress":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","owneraddress":"0x5962974eeb0b17b43edabfc9b747839317aa852f","pledgetype":4,"cycles":0,"nonce":0,"voteamount":"504597.723695633079012759","votetime":1735097955,"voteheight":1373,"stopheight":0,"redeemheight":0,"status":1,"revoterewardamount":"4597.723695633079012759","stopedrewardamount":"0.0","totalrewardamount":"6714.93754514595965232"}}
+```
+**Errors:**
+```
+* {"code" : -6, "message" : "Invalid address"}
+* {"code" : -6, "message" : "Invalid block"}
+* {"code" : -4, "message" : "Unknown address"}
+```
+##### [Back to top](#commands)
+---
+### listpledgevotes
+**Usage:**
+```
+        listpledgevotes <"owneraddress"> (-d="delegateaddress") (-p=pledgetype) (-s=status) (-b="block")
+
+List pledge votes
+```
+**Arguments:**
+```
+ "owneraddress"                         (string, required) pledge owner address
+ -d="delegateaddress"                   (string, optional) delegate address (default null: all delegate address)
+ -p=pledgetype                          (uint, optional, default=0) pledge type, 0: all
+ -s=status                              (uint, optional, default=9) vote status, 0: no vote, 1: voting, 2: request stop, 9: all (default is 9: all vote)
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "owneraddress": "",                  (string, required) pledge owner address
+   "delegateaddress": "",               (string, optional) delegate address (default null: all delegate address)
+   "pledgetype": 0,                     (uint, optional, default=0) pledge type, 0: all
+   "status": 0,                         (uint, optional, default=9) vote status, 0: no vote, 1: voting, 2: request stop, 9: all (default is 9: all vote)
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+   "pledgevotelist":                    (array, required, default=RPCValid) pledge vote list
+   [
+     {
+       "voteaddress": "",               (string, required) pledge vote address
+       "delegateaddress": "",           (string, required) pos node address
+       "owneraddress": "",              (string, required) vote user address
+       "pledgetype": 0,                 (uint, required) pledge type
+       "cycles": 0,                     (uint, required) 0: unlimit, other: cycles
+       "nonce": 0,                      (uint, required) nonce
+       "voteamount": "",                (string, required) vote amount (big float)
+       "votetime": 0,                   (uint, required) first vote time
+       "voteheight": 0,                 (uint, required) first vote height
+       "stopheight": 0,                 (uint, required) request stop height
+       "redeemheight": 0,               (uint, required) remeed height
+       "status": 0,                     (uint, required) vote status, 0: no vote, 1: voting, 2: request stop
+       "revoterewardamount": "",        (string, required) revote reward amount (big float)
+       "stopedrewardamount": "",        (string, required) stoped reward amount (big float)
+       "totalrewardamount": ""          (string, required) total reward amount (big float)
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listpledgevotes
+<< [{"voteaddress":"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c","delegateaddress":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","owneraddress":"0x5962974eeb0b17b43edabfc9b747839317aa852f","pledgetype":4,"cycles":0,"nonce":0,"voteamount":"504597.723695633079012759","votetime":1735097955,"voteheight":1373,"stopheight":0,"redeemheight":0,"status":1,"revoterewardamount":"4597.723695633079012759","stopedrewardamount":"0.0","totalrewardamount":"6714.93754514595965232"}]
+
+>> curl -d '{"id":1,"method":"listpledgevotes","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":[{"voteaddress":"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c","delegateaddress":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","owneraddress":"0x5962974eeb0b17b43edabfc9b747839317aa852f","pledgetype":4,"cycles":0,"nonce":0,"voteamount":"504597.723695633079012759","votetime":1735097955,"voteheight":1373,"stopheight":0,"redeemheight":0,"status":1,"revoterewardamount":"4597.723695633079012759","stopedrewardamount":"0.0","totalrewardamount":"6714.93754514595965232"}]}
+```
+**Errors:**
+```
+* {"code" : -6, "message" : "Invalid address"}
+* {"code" : -6, "message" : "Invalid block"}
+* {"code" : -4, "message" : "Unknown address"}
+* {"code" : -4, "message" : "No such owner address"}
 ```
 ##### [Back to top](#commands)
 ---
@@ -1464,6 +1819,59 @@ Get time vault
 ```
 ##### [Back to top](#commands)
 ---
+### estimatetimevaultgas
+**Usage:**
+```
+        estimatetimevaultgas <"address"> <"amount"> (-t=time) (-g="gasprice") (-f="fork") (-b="block")
+
+Estimate time vault gas
+```
+**Arguments:**
+```
+ "address"                              (string, required) pubkey address
+ "amount"                               (string, required) amount (big float)
+ -t=time                                (uint, optional) time
+ -g="gasprice"                          (string, optional) gas price (big float)
+ -f="fork"                              (string, optional) fork hash
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "address": "",                       (string, required) pubkey address
+   "amount": "",                        (string, required) amount (big float)
+   "time": 0,                           (uint, optional) time
+   "gasprice": "",                      (string, optional) gas price (big float)
+   "fork": "",                          (string, optional) fork hash
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result": result                       (uint, required) time vault gas
+```
+**Examples:**
+```
+>> hashahead-cli estimatetimevaultgas 0x1882823f69b35fbf58833f2892b0cfdabddf0c63 5000000
+<< 82659024607
+
+>> curl -d '{"id":1,"method":"estimatetimevaultgas","jsonrpc":"2.0","params":{"address":"0x1882823f69b35fbf58833f2892b0cfdabddf0c63","amount":"5000000","duration":30}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":82659024607}
+```
+**Errors:**
+```
+* {"code" : -6, "message" : "Invalid address"}
+* {"code" : -6, "message" : "Invalid amount"}
+* {"code" : -6, "message" : "Invalid time"}
+* {"code" : -6, "message" : "Invalid gasprice"}
+* {"code" : -6, "message" : "Invalid fork"}
+* {"code" : -6, "message" : "Unknown fork"}
+* {"code" : -6, "message" : "Invalid block"}
+* {"code" : -6, "message" : "Block status error"}
+```
+##### [Back to top](#commands)
+---
 ### getaddresscount
 **Usage:**
 ```
@@ -1507,7 +1915,188 @@ Get address count
 * {"code" : -6, "message" : "Unknown fork"}
 * {"code" : -6, "message" : "Invalid block"}
 * {"code" : -6, "message" : "Block status error"}
-* {"code" : -4, "message" : "Get address count fail"}
+* {"code" : -4, "message" : "No such address"}
+```
+##### [Back to top](#commands)
+---
+### listownertemplate
+**Usage:**
+```
+        listownertemplate <"owner"> (-f="fork") (-b="block")
+
+List owner template
+```
+**Arguments:**
+```
+ "owner"                                (string, required) owner address
+ -f="fork"                              (string, optional) fork hash
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "owner": "",                         (string, required) owner address
+   "fork": "",                          (string, optional) fork hash
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+   "templateaddress":                   (array, required, default=RPCValid) template address list
+   [
+     {
+       "type": "",                      (string, required) template type
+       "address": ""                    (string, required) template address
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listownertemplate 0xd888fa3b343579474985383858803f8c267dc036
+<< [{"type":"pledge","address":"0xf3a4b07c356312b277cf6d10d4322bee215d79b8"},{"type":"pledge","address":"0xd14f8efa824d3281e164375fc77060ef3931e5a2"}]
+
+>> curl -d '{"id":1,"method":"listownertemplate","jsonrpc":"2.0","params":{"owner":"0xd888fa3b343579474985383858803f8c267dc036"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":[{"type":"pledge","address":"0xf3a4b07c356312b277cf6d10d4322bee215d79b8"},{"type":"pledge","address":"0xd14f8efa824d3281e164375fc77060ef3931e5a2"}]}
+```
+**Errors:**
+```
+* {"code" : -6, "message" : "Invalid owner"}
+* {"code" : -6, "message" : "Invalid fork"}
+* {"code" : -6, "message" : "Unknown fork"}
+* {"code" : -6, "message" : "Invalid block"}
+* {"code" : -6, "message" : "Block status error"}
+* {"code" : -4, "message" : "No such owner address"}
+```
+##### [Back to top](#commands)
+---
+### listdelegatelinkaddress
+**Usage:**
+```
+        listdelegatelinkaddress <"delegate"> (-g=begin) (-c=count) (-f="fork") (-b="block")
+
+List delegate link address
+```
+**Arguments:**
+```
+ "delegate"                             (string, required) delegate address
+ -g=begin                               (uint, optional, default=0) begin index, default: 0
+ -c=count                               (uint, optional, default=100) get count, default: 100, 0: all
+ -f="fork"                              (string, optional) fork hash
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "delegate": "",                      (string, required) delegate address
+   "begin": 0,                          (uint, optional, default=0) begin index, default: 0
+   "count": 0,                          (uint, optional, default=100) get count, default: 100, 0: all
+   "fork": "",                          (string, optional) fork hash
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+   "templateaddress":                   (array, required, default=RPCValid) template address list
+   [
+     {
+       "type": "",                      (string, required) template type
+       "address": ""                    (string, required) template address
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listdelegatelinkaddress 0x888629a65cfadc11110bec2c6e3c5facda8ad433
+<< [{"type":"pledge","address":"0xf3a4b07c356312b277cf6d10d4322bee215d79b8"},{"type":"pledge","address":"0xd14f8efa824d3281e164375fc77060ef3931e5a2"}]
+
+>> curl -d '{"id":1,"method":"listdelegatelinkaddress","jsonrpc":"2.0","params":{"delegate":"0x888629a65cfadc11110bec2c6e3c5facda8ad433"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":[{"type":"pledge","address":"0xf3a4b07c356312b277cf6d10d4322bee215d79b8"},{"type":"pledge","address":"0xd14f8efa824d3281e164375fc77060ef3931e5a2"}]}
+```
+**Errors:**
+```
+* {"code":-32600,"message":"Only suitable for the main chain"}
+* {"code" : -6, "message" : "Invalid delegate"}
+* {"code" : -6, "message" : "Invalid fork"}
+* {"code" : -6, "message" : "Unknown fork"}
+* {"code" : -6, "message" : "Invalid block"}
+* {"code" : -6, "message" : "Block status error"}
+* {"code" : -4, "message" : "No such delegate address"}
+```
+##### [Back to top](#commands)
+---
+### listuservotebydelegate
+**Usage:**
+```
+        listuservotebydelegate <"delegate"> (-t=type) (-p=pagenumber) (-s=pagesize) (-f="fork") (-b="block")
+
+List user vote by delegate
+```
+**Arguments:**
+```
+ "delegate"                             (string, required) delegate address
+ -t=type                                (uint, optional, default=0) vote type, 0: all, 4: user vote, 5: pledge vote, default: 0
+ -p=pagenumber                          (uint, optional, default=0) page number, begin 0, default is 0
+ -s=pagesize                            (uint, optional, default=100) page size, default is 100, 0: all
+ -f="fork"                              (string, optional) fork hash
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "delegate": "",                      (string, required) delegate address
+   "type": 0,                           (uint, optional, default=0) vote type, 0: all, 4: user vote, 5: pledge vote, default: 0
+   "pagenumber": 0,                     (uint, optional, default=0) page number, begin 0, default is 0
+   "pagesize": 0,                       (uint, optional, default=100) page size, default is 100, 0: all
+   "fork": "",                          (string, optional) fork hash
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "delegateaddress": "",               (string, required) delegate address
+   "delegatename": "",                  (string, required) delegate node name
+   "delegatetotalvotes": "",            (string, required) delegate total node votes (big float)
+   "delegateselfvotes": "",             (string, required) delegate self votes (big float)
+   "totalrecordcount": 0,               (uint, required) total record count
+   "totalpagecount": 0,                 (uint, required) total page count
+   "pagenumber": 0,                     (uint, required) page number
+   "pagesize": 0,                       (uint, required) page size
+   "datalist":                          (array, required, default=RPCValid) 
+   [
+     {
+       "type": 0,                       (uint, required) template type, 4: user vote, 5: pledge vote
+       "voteflagaddress": "",           (string, required) vote flag address
+       "useraddress": "",               (string, required) user address
+       "pledgetype": 0,                 (uint, required) pledge type, when type 5 is valid
+       "votes": ""                      (string, required) number of votes (big float)
+     }
+   ]
+ }
+```
+**Examples:**
+```
+>> hashahead-cli listuservotebydelegate 0x888629a65cfadc11110bec2c6e3c5facda8ad433
+<< {"delegateaddress":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","delegatename":"","delegatetotalvotes":"60005197.1286516313508464","delegateselfvotes":"59999188.705901056615205106","totalrecordcount":1,"totalpagecount":1,"pagenumber":0,"pagesize":100,"datalist":[{"type":5,"voteflagaddress":"0x19f33cbe2a5fd7635a56181950d3c3d28a560e20","useraddress":"0xba2c61b77f04140389338a7416e11851224d7685","pledgetype":3,"votes":"6008.422750574735641294"}]}
+
+>> curl -d '{"id":1,"method":"listuservotebydelegate","jsonrpc":"2.0","params":{"delegate":"0x888629a65cfadc11110bec2c6e3c5facda8ad433"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":{"delegateaddress":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","delegatename":"","delegatetotalvotes":"60005197.1286516313508464","delegateselfvotes":"59999188.705901056615205106","totalrecordcount":1,"totalpagecount":1,"pagenumber":0,"pagesize":100,"datalist":[{"type":5,"voteflagaddress":"0x19f33cbe2a5fd7635a56181950d3c3d28a560e20","useraddress":"0xba2c61b77f04140389338a7416e11851224d7685","pledgetype":3,"votes":"6008.422750574735641294"}]}}
+```
+**Errors:**
+```
+* {"code":-32600,"message":"Only suitable for the main chain"}
+* {"code" : -6, "message" : "Invalid delegate"}
+* {"code" : -6, "message" : "Invalid type"}
+* {"code" : -6, "message" : "Unknown fork"}
+* {"code" : -6, "message" : "Invalid block"}
+* {"code" : -6, "message" : "Block status error"}
+* {"code" : -4, "message" : "No such delegate address"}
 ```
 ##### [Back to top](#commands)
 ---
@@ -2176,6 +2765,8 @@ Return information about <address>.
    "addressdata":                       (object, required) address data
    {
      "address": "",                     (string, required) wallet address
+     "name": "",                        (string, required) address name
+     "describe": "",                    (string, required) address describe
      "ismine": true|false,              (bool, required) is mine
      "type": "",                        (string, required) type, pubkey or template
      (if type=pubkey)
@@ -2254,7 +2845,7 @@ Return information about <address>.
 ### getbalance
 **Usage:**
 ```
-        getbalance (-f="fork") (-a="address") (-b="block") (-p=page) (-n=count)
+        getbalance (-f="fork") (-c="coinsymbol") (-r="coinaddress") (-a="address") (-b="block") (-p=page) (-n=count)
 
 Get balance of address.
 If (address) is not specified, return the balance for wallet's each address.
@@ -2263,6 +2854,8 @@ If (address) is specified, return the balance in the address.
 **Arguments:**
 ```
  -f="fork"                              (string, optional) fork hash, default is genesis
+ -c="coinsymbol"                        (string, optional) coin symbol
+ -r="coinaddress"                       (string, optional) coin contract address
  -a="address"                           (string, optional) address, default is all
  -b="block"                             (string, optional) block hash or number or latest, default is latest block
  -p=page                                (uint, optional, default=0) page, default is 0
@@ -2273,6 +2866,8 @@ If (address) is specified, return the balance in the address.
  "param" :
  {
    "fork": "",                          (string, optional) fork hash, default is genesis
+   "coinsymbol": "",                    (string, optional) coin symbol
+   "coinaddress": "",                   (string, optional) coin contract address
    "address": "",                       (string, optional) address, default is all
    "block": "",                         (string, optional) block hash or number or latest, default is latest block
    "page": 0,                           (uint, optional, default=0) page, default is 0
@@ -2287,6 +2882,7 @@ If (address) is specified, return the balance in the address.
      {
        "address": "",                   (string, required) address
        "type": "",                      (string, required) address type
+       "coinsymbol": "",                (string, required) coin symbol
        "nonce": 0,                      (uint, required) last tx nonce
        "avail": "",                     (string, required) balance available amount (big float)
        "locked": "",                    (string, required) locked amount (big float)
@@ -2385,7 +2981,7 @@ return up to (count) most recent transactions skipping the first (offset) transa
 ### sendfrom
 **Usage:**
 ```
-        sendfrom <"from"> <"to"> <"amount"> (-n=nonce) (-p="gasprice") (-g=gas) (-f="fork") (-d="data") (-fd="fdata") (-td="todata") (-cc="contractcode") (-cp="contractparam")
+        sendfrom <"from"> <"to"> <"amount"> (-n=nonce) (-p="gasprice") (-g=gas) (-f="fork") (-d="data") (-fd="fdata") (-td="todata") (-cc="contractcode") (-cp="contractparam") (-cs="coinsymbol") (-ca="coinaddress") (-et|-noet*ethtx*)
 
 <amount> and <txfee> are real and rounded to the nearest 0.000001
 Return transaction id
@@ -2404,6 +3000,9 @@ Return transaction id
  -td="todata"                           (string, optional) If the 'to' address of transaction is a template, this option allows to save the template hex data. The hex data is equal output of RPC 'exporttemplate'
  -cc="contractcode"                     (string, optional) contract code, code or code hash or contract address
  -cp="contractparam"                    (string, optional) contract param
+ -cs="coinsymbol"                       (string, optional) coin symbol
+ -ca="coinaddress"                      (string, optional) coin contract address, erc20
+ -et|-noet*ethtx*                       (bool, optional) eth tx
 ```
 **Request:**
 ```
@@ -2420,7 +3019,10 @@ Return transaction id
    "fdata": "",                         (string, optional) format data
    "todata": "",                        (string, optional) If the 'to' address of transaction is a template, this option allows to save the template hex data. The hex data is equal output of RPC 'exporttemplate'
    "contractcode": "",                  (string, optional) contract code, code or code hash or contract address
-   "contractparam": ""                  (string, optional) contract param
+   "contractparam": "",                 (string, optional) contract param
+   "coinsymbol": "",                    (string, optional) coin symbol
+   "coinaddress": "",                   (string, optional) coin contract address, erc20
+   "ethtx": true|false                  (bool, optional) eth tx
  }
 ```
 **Response:**
@@ -2621,6 +3223,634 @@ Sign a message with the private key of an pubkey
 * {"code":-4,"message":"Unknown key"}
 * {"code":-405,"message":"Key is locked"}
 * {"code":-401,"message":"Failed to sign message"}
+```
+##### [Back to top](#commands)
+---
+### addusercoin
+**Usage:**
+```
+        addusercoin <"from"> <"symbol"> <chainid>
+
+Add user coin
+```
+**Arguments:**
+```
+ "from"                                 (string, required) from address
+ "symbol"                               (string, required) coin symbol
+ chainid                                (uint, required) at chainid
+```
+**Request:**
+```
+ "param" :
+ {
+   "from": "",                          (string, required) from address
+   "symbol": "",                        (string, required) coin symbol
+   "chainid": 0                         (uint, required) at chainid
+ }
+```
+**Response:**
+```
+ "result": "txid"                       (string, required) txid
+```
+**Examples:**
+```
+>> hashahead-cli addusercoin 0xb955034fcefb66112bab47483c8d243b86cb2c1d ABC 202
+<< 0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f
+
+>> curl -d '{"id":1,"method":"addusercoin","jsonrpc":"2.0","params":{"from":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","symbol":"ABC","chainid":202}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid from"}
+* {"code":-6,"message":"Invalid symbol"}
+* {"code":-6,"message":"Invalid chainid"}
+* {"code":-4,"message":"Unknown chainid"}
+```
+##### [Back to top](#commands)
+---
+### addcontractcoin
+**Usage:**
+```
+        addcontractcoin <"from"> <"symbol"> <chainid> <"contractaddress">
+
+Add contract coin
+```
+**Arguments:**
+```
+ "from"                                 (string, required) from address
+ "symbol"                               (string, required) coin symbol
+ chainid                                (uint, required) at chainid
+ "contractaddress"                      (string, required) contract address
+```
+**Request:**
+```
+ "param" :
+ {
+   "from": "",                          (string, required) from address
+   "symbol": "",                        (string, required) coin symbol
+   "chainid": 0,                        (uint, required) at chainid
+   "contractaddress": ""                (string, required) contract address
+ }
+```
+**Response:**
+```
+ "result": "txid"                       (string, required) txid
+```
+**Examples:**
+```
+>> hashahead-cli addcontractcoin 0xb955034fcefb66112bab47483c8d243b86cb2c1d ABC 202 0x3e80fb38ae4e71beaccb053b716921eb6b03519f
+<< 0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f
+
+>> curl -d '{"id":1,"method":"addcontractcoin","jsonrpc":"2.0","params":{"from":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","symbol":"ABC","chainid":202,"contractaddress":"0x3e80fb38ae4e71beaccb053b716921eb6b03519f"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid from"}
+* {"code":-6,"message":"Invalid symbol"}
+* {"code":-6,"message":"Invalid contractaddress"}
+* {"code":-6,"message":"Invalid chainid"}
+* {"code":-4,"message":"Unknown chainid"}
+```
+##### [Back to top](#commands)
+---
+### getcoininfo
+**Usage:**
+```
+        getcoininfo <"symbol"> (-b="block")
+
+Get coin information by symbol
+```
+**Arguments:**
+```
+ "symbol"                               (string, required) coin symbol
+ -b="block"                             (string, optional) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "symbol": "",                        (string, required) coin symbol
+   "block": ""                          (string, optional) block hash
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "coinsymbol": "",                    (string, required) coin symbol
+   "cointype": "",                      (string, required) coin type
+   "fork": "",                          (string, required) at fork hash
+   "chainid": 0                         (uint, required) at fork chainid
+ }
+```
+**Examples:**
+```
+>> hashahead-cli getcoininfo HAH
+<< {"coinsymbol":"HAH","cointype":"forkcoin","fork":"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0","chainid":201}
+
+>> curl -d '{"id":1,"method":"getcoininfo","jsonrpc":"2.0","params":{"symbol":"HAH"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":{"coinsymbol":"HAH","cointype":"forkcoin","fork":"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0","chainid":201}}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid symbol"}
+* {"code":-6,"message":"Invalid block"}
+* {"code":-4,"message":"Unknown symbol"}
+```
+##### [Back to top](#commands)
+---
+### listcoininfo
+**Usage:**
+```
+        listcoininfo (-b="block")
+
+List coin information
+```
+**Arguments:**
+```
+ -b="block"                             (string, optional) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "block": ""                          (string, optional) block hash
+ }
+```
+**Response:**
+```
+ "result" :
+   "coindata":                          (array, required, default=RPCValid) 
+   [
+     {
+       "coinsymbol": "",                (string, required) coin symbol
+       "cointype": "",                  (string, required) coin type
+       "fork": "",                      (string, required) at fork hash
+       "chainid": 0,                    (uint, required) at fork chainid
+       "contractaddress": ""            (string, required) at contract address
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listcoininfo
+<< [{"coinsymbol":"HAH","cointype":"forkcoin","fork":"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0","chainid":201,"contractaddress":""}]
+
+>> curl -d '{"id":1,"method":"listcoininfo","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":[{"coinsymbol":"HAH","cointype":"forkcoin","fork":"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0","chainid":201,"contractaddress":""}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+* {"code":-7,"message":"Get coin fail"}
+```
+##### [Back to top](#commands)
+---
+### getdexcoinpair
+**Usage:**
+```
+        getdexcoinpair <"symbol1"> <"symbol2"> (-b="block")
+
+Get dex coin pair by symbol pair
+```
+**Arguments:**
+```
+ "symbol1"                              (string, required) coin symbol1
+ "symbol2"                              (string, required) coin symbol2
+ -b="block"                             (string, optional) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "symbol1": "",                       (string, required) coin symbol1
+   "symbol2": "",                       (string, required) coin symbol2
+   "block": ""                          (string, optional) block hash
+ }
+```
+**Response:**
+```
+ "result": coinpair                     (uint, required) coin pair
+```
+**Examples:**
+```
+>> hashahead-cli getdexcoinpair HAH YUS
+<< 1
+
+>> curl -d '{"id":1,"method":"getdexcoinpair","jsonrpc":"2.0","params":{"symbol1":"HAH","symbol1":"YUS"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":1}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid symbol1"}
+* {"code":-6,"message":"Invalid symbol2"}
+* {"code":-6,"message":"Invalid block"}
+* {"code":-4,"message":"Unknown symbol"}
+```
+##### [Back to top](#commands)
+---
+### listdexcoinpair
+**Usage:**
+```
+        listdexcoinpair (-c=coinpair) (-s="coinsymbol") (-b="block")
+
+List dex coin pair
+```
+**Arguments:**
+```
+ -c=coinpair                            (uint, optional) coin pair
+ -s="coinsymbol"                        (string, optional) coin symbol
+ -b="block"                             (string, optional) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "coinpair": 0,                       (uint, optional) coin pair
+   "coinsymbol": "",                    (string, optional) coin symbol
+   "block": ""                          (string, optional) block hash
+ }
+```
+**Response:**
+```
+ "result" :
+   "coinpairdata":                      (array, required, default=RPCValid) 
+   [
+     {
+       "coinpair": 0,                   (uint, required) coin pair
+       "coin1":                         (object, required) coin1
+       {
+         "coinsymbol": "",              (string, required) coin symbol
+         "cointype": "",                (string, required) coin type
+         "fork": "",                    (string, required) at fork hash
+         "chainid": 0                   (uint, required) at fork chainid
+       }
+       "coin2":                         (object, required) coin2
+       {
+         "coinsymbol": "",              (string, required) coin symbol
+         "cointype": "",                (string, required) coin type
+         "fork": "",                    (string, required) at fork hash
+         "chainid": 0                   (uint, required) at fork chainid
+       }
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listdexcoinpair
+<< [{"coinpair":1,"coin1":{"coinsymbol":"HAHT","cointype":"forkcoin","fork":"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0","chainid":201},"coin2":{"coinsymbol":"SY202","cointype":"forkcoin","fork":"0xcab0f744f00351c05d9035b22f737325596a3b94337542dbecf623f054a6172a","chainid":202}}]
+
+>> curl -d '{"id":1,"method":"listdexcoinpair","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":[{"coinpair":1,"coin1":{"coinsymbol":"HAHT","cointype":"forkcoin","fork":"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0","chainid":201},"coin2":{"coinsymbol":"SY202","cointype":"forkcoin","fork":"0xcab0f744f00351c05d9035b22f737325596a3b94337542dbecf623f054a6172a","chainid":202}}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+* {"code":-7,"message":"Get coin pair fail"}
+* {"code":-7,"message":"Get coin context fail"}
+```
+##### [Back to top](#commands)
+---
+### senddexordertx
+**Usage:**
+```
+        senddexordertx <"from"> <"coinsymbolowner"> <"coinsymbolpeer"> <"amount"> <"price"> (-n=ordernumber) (-f="fork")
+
+Send dexorder transaction
+```
+**Arguments:**
+```
+ "from"                                 (string, required) from address
+ "coinsymbolowner"                      (string, required) coin symbol owner
+ "coinsymbolpeer"                       (string, required) coin symbol peer
+ "amount"                               (string, required) order amount (big float)
+ "price"                                (string, required) order amount (big float)
+ -n=ordernumber                         (uint, optional) order number, default is 0
+ -f="fork"                              (string, optional) fork hash or chainid, default is local fork
+```
+**Request:**
+```
+ "param" :
+ {
+   "from": "",                          (string, required) from address
+   "coinsymbolowner": "",               (string, required) coin symbol owner
+   "coinsymbolpeer": "",                (string, required) coin symbol peer
+   "amount": "",                        (string, required) order amount (big float)
+   "price": "",                         (string, required) order amount (big float)
+   "ordernumber": 0,                    (uint, optional) order number, default is 0
+   "fork": ""                           (string, optional) fork hash or chainid, default is local fork
+ }
+```
+**Response:**
+```
+ "result": "result"                     (string, required) transaction hash
+```
+**Examples:**
+```
+>> hashahead-cli senddexordertx 0xc0f0ddde81c1dff508e038d20295d8001493d8bc AAA BBB 11 0 234.98 1.23
+<< 0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f
+
+>> curl -d '{"id":4,"method":"senddexordertx","jsonrpc":"2.0","params":{"from":"0xc0f0ddde81c1dff508e038d20295d8001493d8bc","coinsymbolowner":"AAA","coinsymbolpeer":"BBB","ordernumber":0,"amount":"234.98","price":"1.23"}}' http://127.0.0.1:8812
+<< {"id":4,"jsonrpc":"2.0","result":"0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid from"}
+* {"code":-6,"message":"Invalid coinsymbolowner"}
+* {"code":-6,"message":"Invalid coinsymbolpeer"}
+* {"code":-6,"message":"Invalid ordernumber"}
+* {"code":-6,"message":"Invalid amount"}
+* {"code":-6,"message":"Invalid price"}
+* {"code":-6,"message":"Invalid fork"}
+* {"code":-6,"message":"Unknown fork"}
+* {"code":-4,"message":"Get tx nonce fail"}
+* {"code":-401,"message":"Failed to sign transaction"}
+* {"code":-10,"message":"Tx rejected : xxx"}
+```
+##### [Back to top](#commands)
+---
+### listdexorder
+**Usage:**
+```
+        listdexorder <"address"> (-co="coinsymbolowner") (-cp="coinsymbolpeer") (-b=beginnumber) (-s=status) (-n=count) (-f="fork") (-h="block")
+
+List dex order
+```
+**Arguments:**
+```
+ "address"                              (string, required) order address
+ -co="coinsymbolowner"                  (string, optional) coin symbol owner
+ -cp="coinsymbolpeer"                   (string, optional) coin symbol owner
+ -b=beginnumber                         (uint, optional, default=0) begin order number
+ -s=status                              (uint, optional, default=0) get order status, 0: uncompleted status, 1: completed status, 2: all status, default is 0
+ -n=count                               (uint, optional, default=1000) count, default is 1000
+ -f="fork"                              (string, optional) fork hash or chainid
+ -h="block"                             (string, optional) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "address": "",                       (string, required) order address
+   "coinsymbolowner": "",               (string, optional) coin symbol owner
+   "coinsymbolpeer": "",                (string, optional) coin symbol owner
+   "beginnumber": 0,                    (uint, optional, default=0) begin order number
+   "status": 0,                         (uint, optional, default=0) get order status, 0: uncompleted status, 1: completed status, 2: all status, default is 0
+   "count": 0,                          (uint, optional, default=1000) count, default is 1000
+   "fork": "",                          (string, optional) fork hash or chainid
+   "block": ""                          (string, optional) block hash
+ }
+```
+**Response:**
+```
+ "result" :
+   "dexorderdata":                      (array, required, default=RPCValid) 
+   [
+     {
+       "ordernumber": 0,                (uint, required) order number
+       "coinsymbolowner": "",           (string, required) coin symbol owner
+       "coinsymbolpeer": "",            (string, required) coin symbol peer
+       "amount": "",                    (string, required) order amount (big float)
+       "price": "",                     (string, required) order amount (big float)
+       "surplusamount": "",             (string, required) surplus amount (big float)
+       "completeamount": "",            (string, required) complete amount (big float)
+       "completecount": 0,              (uint, required) complete count
+       "height": 0,                     (uint, required) at height
+       "slot": 0                        (uint, required) at slot
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listdexorder 0xb955034fcefb66112bab47483c8d243b86cb2c1d
+<< [{"ordernumber":1,"coinsymbolowner":"AAA","coinsymbolpeer":"BBB","amount":"100.45","price":"0.5","surplusamount":"30.0","completeamount":"70.5","completecount":2,"height":398,"slot":0}]
+
+>> curl -d '{"id":1,"method":"listdexorder","jsonrpc":"2.0","params":{"address":"0xb955034fcefb66112bab47483c8d243b86cb2c1d"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":[{"ordernumber":1,"coinsymbolowner":"AAA","coinsymbolpeer":"BBB","amount":"100.45","price":"0.5","surplusamount":"30.0","completeamount":"70.5","completecount":2,"height":398,"slot":0}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid address"}
+* {"code":-6,"message":"Invalid fork"}
+* {"code":-6,"message":"Unknown fork"}
+* {"code":-7,"message":"Query fail"}
+```
+##### [Back to top](#commands)
+---
+### getdexsymboltype
+**Usage:**
+```
+        getdexsymboltype <"coinsymbol1"> <"coinsymbol2">
+
+Get dex symbol type, sell symbol and buy symbol
+```
+**Arguments:**
+```
+ "coinsymbol1"                          (string, required) coin symbol1
+ "coinsymbol2"                          (string, required) coin symbol2
+```
+**Request:**
+```
+ "param" :
+ {
+   "coinsymbol1": "",                   (string, required) coin symbol1
+   "coinsymbol2": ""                    (string, required) coin symbol2
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "coinsymbol1": "",                   (string, required) coin symbol1
+   "type1": "",                         (string, required) type1: SELL or BUY
+   "coinsymbol2": "",                   (string, required) coin symbol2
+   "type2": ""                          (string, required) type2: SELL or BUY
+ }
+```
+**Examples:**
+```
+>> hashahead-cli getdexsymboltype AAA BBB
+<< {"coinsymbol1":"AAA","type1":"SELL","coinsymbol2":"BBB","type2":"BUY"}
+
+>> curl -d '{"id":1,"method":"getdexsymboltype","jsonrpc":"2.0","params":{"coinsymbol1":"AAA","coinsymbol2":"BBB"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":{"coinsymbol1":"AAA","type1":"SELL","coinsymbol2":"BBB","type2":"BUY"}}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid coinsymbol1"}
+* {"code":-6,"message":"Invalid coinsymbol2"}
+```
+##### [Back to top](#commands)
+---
+### listrealtimedexorder
+**Usage:**
+```
+        listrealtimedexorder <"coinsymbolsell"> <"coinsymbolbuy"> (-n=count) (-d|-nod*detail*) (-f="fork") (-h="block")
+
+List realtime dex order
+```
+**Arguments:**
+```
+ "coinsymbolsell"                       (string, required) coin symbol sell
+ "coinsymbolbuy"                        (string, required) coin symbol buy
+ -n=count                               (uint, optional, default=1000) count, default is 1000
+ -d|-nod*detail*                        (bool, optional, default=false) detail order, default is false
+ -f="fork"                              (string, optional) fork hash or chainid
+ -h="block"                             (string, optional) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "coinsymbolsell": "",                (string, required) coin symbol sell
+   "coinsymbolbuy": "",                 (string, required) coin symbol buy
+   "count": 0,                          (uint, optional, default=1000) count, default is 1000
+   "detail": true|false,                (bool, optional, default=false) detail order, default is false
+   "fork": "",                          (string, optional) fork hash or chainid
+   "block": ""                          (string, optional) block hash
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "coinsymbolsell": "",                (string, required) coin symbol sell
+   "coinsymbolbuy": "",                 (string, required) coin symbol buy
+   "prevcompleteprice": "",             (string, required) previous complete price
+   "sellchainid": 0,                    (uint, required) sell chain id
+   "buychainid": 0,                     (uint, required) buy chain id
+   "maxmatchheight": 0,                 (uint, required) max match height
+   "maxmatchslot": 0,                   (uint, required) max match slot
+   "sellorder":                         (array, required, default=RPCValid) sell order
+   [
+     {
+       "price": "",                     (string, required) price
+       "orderamount": "",               (string, required) order amount
+       "dealamount": "",                (string, required) deal amount
+       "orderaddress": "",              (string, optional) order address
+       "ordernumber": 0,                (uint, optional) order number
+       "oriorderamount": "",            (string, optional) original order amount
+       "height": 0,                     (uint, optional) at height
+       "slot": 0                        (uint, optional) at slot
+     }
+   ]
+   "buyorder":                          (array, required, default=RPCValid) buy order
+   [
+     {
+       "price": "",                     (string, required) price
+       "orderamount": "",               (string, required) order amount
+       "dealamount": "",                (string, required) deal amount
+       "orderaddress": "",              (string, optional) order address
+       "ordernumber": 0,                (uint, optional) order number
+       "oriorderamount": "",            (string, optional) original order amount
+       "height": 0,                     (uint, optional) at height
+       "slot": 0                        (uint, optional) at slot
+     }
+   ]
+ }
+```
+**Examples:**
+```
+>> hashahead-cli listrealtimedexorder AAA BBB
+<< {"coinsymbolsell":"AAA","coinsymbolbuy":"BBB","prevcompleteprice":"1.2","sellorder":[{"price":"1.2","orderamount":"66.666666666666666667","dealamount":"80.0"}],"buyorder":[]}
+
+>> curl -d '{"id":1,"method":"listrealtimedexorder","jsonrpc":"2.0","params":{"coinsymbolsell":"AAA","coinsymbolbuy":"BBB"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":{"coinsymbolsell":"AAA","coinsymbolbuy":"BBB","prevcompleteprice":"1.2","sellorder":[{"price":"1.2","orderamount":"66.666666666666666667","dealamount":"80.0"}],"buyorder":[]}}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid coinsymbolsell"}
+* {"code":-6,"message":"Invalid coinsymbolbuy"}
+* {"code":-6,"message":"Invalid fork"}
+* {"code":-6,"message":"Unknown fork"}
+* {"code":-7,"message":"Query fail"}
+```
+##### [Back to top](#commands)
+---
+### sendcrosstransfertx
+**Usage:**
+```
+        sendcrosstransfertx <"address"> <peerchainid> <"amount"> (-f="fork")
+
+Send crosschain transfer transaction
+```
+**Arguments:**
+```
+ "address"                              (string, required) transfer address
+ peerchainid                            (uint, required) peer chainid
+ "amount"                               (string, required) transfer amount (big float)
+ -f="fork"                              (string, optional) fork hash or chainid
+```
+**Request:**
+```
+ "param" :
+ {
+   "address": "",                       (string, required) transfer address
+   "peerchainid": 0,                    (uint, required) peer chainid
+   "amount": "",                        (string, required) transfer amount (big float)
+   "fork": ""                           (string, optional) fork hash or chainid
+ }
+```
+**Response:**
+```
+ "result": "result"                     (string, required) transaction hash
+```
+**Examples:**
+```
+>> hashahead-cli sendcrosstransfertx 0xcc963a4ca2a9032e41668756cc4ccb7c59f112be 201 33.67
+<< 0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f
+
+>> curl -d '{"id":1,"method":"sendcrosstransfertx","jsonrpc":"2.0","params":{"address":"0xcc963a4ca2a9032e41668756cc4ccb7c59f112be","peerchainid":201,"amount":"33.67"}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":"0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f"}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid address"}
+* {"code":-6,"message":"Invalid peerchainid"}
+* {"code":-6,"message":"Invalid amount"}
+* {"code":-6,"message":"Invalid fork"}
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### getcrosstransferamount
+**Usage:**
+```
+        getcrosstransferamount (-f="fork") (-h="block")
+
+Get crosschain transfer amount
+```
+**Arguments:**
+```
+ -f="fork"                              (string, optional) fork hash or chainid
+ -h="block"                             (string, optional) block hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "fork": "",                          (string, optional) fork hash or chainid
+   "block": ""                          (string, optional) block hash
+ }
+```
+**Response:**
+```
+ "result": "result"                     (string, required) transfer amount (big float)
+```
+**Examples:**
+```
+>> hashahead-cli getcrosstransferamount
+<< 8845.987
+
+>> curl -d '{"id":1,"method":"sendcrosstransfertx","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
+<< {"id":0,"jsonrpc":"2.0","result":"8845.987"}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid fork"}
+* {"code":-6,"message":"Unknown fork"}
 ```
 ##### [Back to top](#commands)
 ---
@@ -2854,11 +4084,11 @@ Return hex-encoded block.
 ```
 **Examples:**
 ```
->> hashahead-cli makeorigin user 0x000000055d34d87b832051d897245d7c7c643c6fe7e32061bab2c5d5543d0938 0x5962974eeb0b17b43edabfc9b747839317aa852f 300000000 test-fork tfs 208 200 0
-<< {"hash":"0x000000066ca56076968219bf5c290ed432bcc5c5cdfa4e9363fe3a139906521e","hex":"0x0111fe5e44bf640038093d54d5c5b2ba6120e3e76f3c647c7c5d2497d85120837bd8345d05000000001e06865d7b088885d75f64c9d73d11d3dea6f6145016c9b5b63773929a0eb33800000000010168010000000309746573742d666f726b03746673d00bf8277896582678ac000000090ad78ebc5ac6200000074a9b6384488000002f85aa17938347b7c9bfda3eb4170beb4e976259553c2e6b595cee0477b24a7228d9ef0679911d438523404487f6746f000000000501d00000142f85aa17938347b7c9bfda3eb4170beb4e9762590bf8277896582678ac000000000002110220001520000000000000000000000000000000000000000000f8277896582678ac0000000000412e01171ce99e96e235fd29c49c916b8dd1f7b81ca8959623f95ab16b7b3935042ca42698d4068710767cbca3d254407a9514b419dc90dc86184b145d846da0aa01"}
+>> hashahead-cli makeorigin user 0xc907f7b8e50ea811dce40844ef9435e60d59edd4a9cb0b209289e3c623b8cb68 0x5962974eeb0b17b43edabfc9b747839317aa852f 300000000 test-fork tfs 208 200 0
+<< {"hash":"0xca95f7efe0d568dd59d98e0423f80ce292d29590e5b98fb4e059d1e69aaeb288","hex":"0x0111fe5e44bf640038093d54d5c5b2ba6120e3e76f3c647c7c5d2497d85120837bd8345d05000000001e06865d7b088885d75f64c9d73d11d3dea6f6145016c9b5b63773929a0eb33800000000010168010000000309746573742d666f726b03746673d00bf8277896582678ac000000090ad78ebc5ac6200000074a9b6384488000002f85aa17938347b7c9bfda3eb4170beb4e976259553c2e6b595cee0477b24a7228d9ef0679911d438523404487f6746f000000000501d00000142f85aa17938347b7c9bfda3eb4170beb4e9762590bf8277896582678ac000000000002110220001520000000000000000000000000000000000000000000f8277896582678ac0000000000412e01171ce99e96e235fd29c49c916b8dd1f7b81ca8959623f95ab16b7b3935042ca42698d4068710767cbca3d254407a9514b419dc90dc86184b145d846da0aa01"}
 
->> curl -d '{"id":4,"method":"makeorigin","jsonrpc":"2.0","params":{"type":"user","prev":"0x000000055d34d87b832051d897245d7c7c643c6fe7e32061bab2c5d5543d0938","owner":"0x5962974eeb0b17b43edabfc9b747839317aa852f","amount":"300000000","name":"test-fork","symbol":"tfs","reward":"200","chainid":208,"halvecycle":0}}' http://127.0.0.1:8812
-<< {"id":4,"jsonrpc":"2.0","result":{"hash":"0x000000066ca56076968219bf5c290ed432bcc5c5cdfa4e9363fe3a139906521e","hex":"0x0111fe5e44bf640038093d54d5c5b2ba6120e3e76f3c647c7c5d2497d85120837bd8345d05000000001e06865d7b088885d75f64c9d73d11d3dea6f6145016c9b5b63773929a0eb33800000000010168010000000309746573742d666f726b03746673d00bf8277896582678ac000000090ad78ebc5ac6200000074a9b6384488000002f85aa17938347b7c9bfda3eb4170beb4e976259553c2e6b595cee0477b24a7228d9ef0679911d438523404487f6746f000000000501d00000142f85aa17938347b7c9bfda3eb4170beb4e9762590bf8277896582678ac000000000002110220001520000000000000000000000000000000000000000000f8277896582678ac0000000000412e01171ce99e96e235fd29c49c916b8dd1f7b81ca8959623f95ab16b7b3935042ca42698d4068710767cbca3d254407a9514b419dc90dc86184b145d846da0aa01"}}
+>> curl -d '{"id":4,"method":"makeorigin","jsonrpc":"2.0","params":{"type":"user","prev":"0xc907f7b8e50ea811dce40844ef9435e60d59edd4a9cb0b209289e3c623b8cb68","owner":"0x5962974eeb0b17b43edabfc9b747839317aa852f","amount":"300000000","name":"test-fork","symbol":"tfs","reward":"200","chainid":208,"halvecycle":0}}' http://127.0.0.1:8812
+<< {"id":4,"jsonrpc":"2.0","result":{"hash":"0xca95f7efe0d568dd59d98e0423f80ce292d29590e5b98fb4e059d1e69aaeb288","hex":"0x0111fe5e44bf640038093d54d5c5b2ba6120e3e76f3c647c7c5d2497d85120837bd8345d05000000001e06865d7b088885d75f64c9d73d11d3dea6f6145016c9b5b63773929a0eb33800000000010168010000000309746573742d666f726b03746673d00bf8277896582678ac000000090ad78ebc5ac6200000074a9b6384488000002f85aa17938347b7c9bfda3eb4170beb4e976259553c2e6b595cee0477b24a7228d9ef0679911d438523404487f6746f000000000501d00000142f85aa17938347b7c9bfda3eb4170beb4e9762590bf8277896582678ac000000000002110220001520000000000000000000000000000000000000000000f8277896582678ac0000000000412e01171ce99e96e235fd29c49c916b8dd1f7b81ca8959623f95ab16b7b3935042ca42698d4068710767cbca3d254407a9514b419dc90dc86184b145d846da0aa01"}}
 ```
 **Errors:**
 ```
@@ -2871,6 +4101,71 @@ Return hex-encoded block.
 * {"code":-6,"message":"Prev block should not be extended/vacant block"}
 * {"code":-405,"message":"Key is locked"}
 * {"code":-401,"message":"Failed to sign message"}
+```
+##### [Back to top](#commands)
+---
+### makefork
+**Usage:**
+```
+        makefork <"owner"> (-t="type") (-p="prev") (-a="amount") (-m="name") (-s="symbol") (-c=chainid) (-r="reward") (-h=halvecycle) (-n=nonce)
+
+Make fork.
+```
+**Arguments:**
+```
+ "owner"                                (string, required) owner address
+ -t="type"                              (string, optional) fork type: clonemap, user
+ -p="prev"                              (string, optional) prev block hash
+ -a="amount"                            (string, optional) amount (big float)
+ -m="name"                              (string, optional) unique fork name
+ -s="symbol"                            (string, optional) fork symbol
+ -c=chainid                             (uint, optional) chain id
+ -r="reward"                            (string, optional) mint reward (big float)
+ -h=halvecycle                          (uint, optional) halve cycle: 0: fixed reward, >0: blocks of halve cycle
+ -n=nonce                               (uint, optional, default=0) fork nonce
+```
+**Request:**
+```
+ "param" :
+ {
+   "owner": "",                         (string, required) owner address
+   "type": "",                          (string, optional) fork type: clonemap, user
+   "prev": "",                          (string, optional) prev block hash
+   "amount": "",                        (string, optional) amount (big float)
+   "name": "",                          (string, optional) unique fork name
+   "symbol": "",                        (string, optional) fork symbol
+   "chainid": 0,                        (uint, optional) chain id
+   "reward": "",                        (string, optional) mint reward (big float)
+   "halvecycle": 0,                     (uint, optional) halve cycle: 0: fixed reward, >0: blocks of halve cycle
+   "nonce": 0                           (uint, optional, default=0) fork nonce
+ }
+```
+**Response:**
+```
+ "result": "transaction"                (string, required) transaction id
+```
+**Examples:**
+```
+>> hashahead-cli makefork 0x5962974eeb0b17b43edabfc9b747839317aa852f
+<< {"id":18,"jsonrpc":"2.0","result":"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f"}
+
+>> curl -d '{"id":4,"method":"makefork","jsonrpc":"2.0","params":{"owner":"0x5962974eeb0b17b43edabfc9b747839317aa852f"}}' http://127.0.0.1:8812
+<< {"id":18,"jsonrpc":"2.0","result":"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f"}
+```
+**Errors:**
+```
+* {"code":-4,"message":"Owner' address should be pubkey address"}
+* {"code":-4,"message":"Unknown key"}
+* {"code":-6,"message":"Unknown prev block"}
+* {"code":-6,"message":"Invalid owner"}
+* {"code":-6,"message":"Invalid amount"}
+* {"code":-6,"message":"Invalid name or symbol"}
+* {"code":-6,"message":"Prev block should not be extended/vacant block"}
+* {"code":-405,"message":"Key is locked"}
+* {"code":-401,"message":"Failed to sign message"}
+* {"code":-401,"message":"Failed to create transaction"}
+* {"code":-401,"message":"Failed to sign transaction"}
+* {"code":-10,"message":"Tx rejected : xxx"}
 ```
 ##### [Back to top](#commands)
 ---
@@ -3294,8 +4589,8 @@ Query statistical data
  "result": "stattable"                  (string, required) statistical data table
                                         1) maker: block maker
                                         -- time: statistical time, format: hh:mm:ss
-                                        -- powblocks: number of POA blocks produced in one minute
-                                        -- dposblocks: number of POS blocks produced in one minute
+                                        -- poablocks: number of POA blocks produced in one minute
+                                        -- posblocks: number of POS blocks produced in one minute
                                         -- tps: number of TX produced in one second
                                         2) p2psyn: p2p synchronization
                                         -- time: statistical time, format: hh:mm:ss
@@ -3323,6 +4618,83 @@ Query statistical data
 * {"code" : -6, "message" : "Invalid fork"}
 * {"code" : -6, "message" : "Invalid count"}
 * {"code" : -32603, "message" : "query error"}
+```
+##### [Back to top](#commands)
+---
+### createsnapshot
+**Usage:**
+```
+        createsnapshot (-h=height) (-b="block")
+
+Create snapshot
+```
+**Arguments:**
+```
+ -h=height                              (uint, optional) snapshot height
+ -b="block"                             (string, optional) snapshot block
+```
+**Request:**
+```
+ "param" :
+ {
+   "height": 0,                         (uint, optional) snapshot height
+   "block": ""                          (string, optional) snapshot block
+ }
+```
+**Response:**
+```
+ "result": "snapblock"                  (string, required) snapshot block
+```
+**Examples:**
+```
+>> hashahead-cli createsnapshot 5369
+<< 0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8
+
+>> curl -d '{"id":15,"method":"createsnapshot","jsonrpc":"2.0","params":{"height":5369}}' http://127.0.0.1:8812
+<< {"id":15,"jsonrpc":"2.0","result":"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8"}
+```
+**Errors:**
+```
+* {"code" : -6, "message" : "Invalid height"}
+* {"code" : -6, "message" : "Invalid block"}
+```
+##### [Back to top](#commands)
+---
+### getsnapshotstatus
+**Usage:**
+```
+        getsnapshotstatus
+
+Get snapshot status
+```
+**Arguments:**
+```
+	none
+```
+**Request:**
+```
+ "param" : {}
+```
+**Response:**
+```
+ "result" :
+ {
+   "status": 0,                         (uint, required) snapshot status, 0: no snapshot, 1: shapshoting, 2: shapshot completed
+   "snapshotheight": 0,                 (uint, required) snapshot height
+   "snapshotblock": ""                  (string, required) snapshot block
+ }
+```
+**Examples:**
+```
+>> hashahead-cli getsnapshotstatus 0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8
+<< {"status":1,"snapshotheight":5369,"snapshotblock":"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8"}
+
+>> curl -d '{"id":15,"method":"getsnapshotstatus","jsonrpc":"2.0","params":{"snapshotblock":"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8"}}' http://127.0.0.1:8812
+<< {"id":15,"jsonrpc":"2.0","result":{"status":1,"snapshotheight":5369,"snapshotblock":"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8"}}
+```
+**Errors:**
+```
+* {"code":-32603,"message":"Get fail"}
 ```
 ##### [Back to top](#commands)
 ---
@@ -3657,12 +5029,13 @@ List contract code
 ### listcontractaddress
 **Usage:**
 ```
-        listcontractaddress (-f="fork") (-b="block")
+        listcontractaddress (-a="address") (-f="fork") (-b="block")
 
 List contract address
 ```
 **Arguments:**
 ```
+ -a="address"                           (string, optional) address
  -f="fork"                              (string, optional) fork
  -b="block"                             (string, optional) block hash or number or latest (default latest block)
 ```
@@ -3670,6 +5043,7 @@ List contract address
 ```
  "param" :
  {
+   "address": "",                       (string, optional) address
    "fork": "",                          (string, optional) fork
    "block": ""                          (string, optional) block hash or number or latest (default latest block)
  }
@@ -3694,13 +5068,75 @@ List contract address
 **Examples:**
 ```
 >> hashahead-cli listcontractaddress
-<< [{"address":"0x00000000000000000000000000000000000000a1","owner":"0x00000000000000000000000000000000000000a1","txid":"0x0000000000000000000000000000000000000000000000000000000000000000","codehash":"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7"},{"address":"0x06963e6599ae8a485491a9008bf01c778bdf80c2","owner":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","txid":"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27","codehash":"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b"}]
+<< [{"address":"0x6262931a0ebcc5af849c901c164077f904313374","owner":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","txid":"0x0000000000000000000000000000000000000000000000000000000000000000","codehash":"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7"},{"address":"0x06963e6599ae8a485491a9008bf01c778bdf80c2","owner":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","txid":"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27","codehash":"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b"}]
 
 >> curl -d '{"id":3,"method":"listcontractaddress","jsonrpc":"2.0","params":{}' http://127.0.0.1:8812
-<< {"id":3,"jsonrpc":"2.0","result":"[{"address":"0x00000000000000000000000000000000000000a1","owner":"0x00000000000000000000000000000000000000a1","txid":"0x0000000000000000000000000000000000000000000000000000000000000000","codehash":"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7"},{"address":"0x06963e6599ae8a485491a9008bf01c778bdf80c2","owner":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","txid":"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27","codehash":"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b"}]"}
+<< {"id":3,"jsonrpc":"2.0","result":"[{"address":"0x6262931a0ebcc5af849c901c164077f904313374","owner":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","txid":"0x0000000000000000000000000000000000000000000000000000000000000000","codehash":"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7"},{"address":"0x06963e6599ae8a485491a9008bf01c778bdf80c2","owner":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","txid":"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27","codehash":"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b"}]"}
 ```
 **Errors:**
 ```
+* {"code":-6,"message":"Invalid address"}
+* {"code":-6,"message":"Invalid fork"}
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### listtokenaddress
+**Usage:**
+```
+        listtokenaddress (-a="contractaddress") (-n="name") (-s="symbol") (-f="fork") (-b="block")
+
+List token contract address
+```
+**Arguments:**
+```
+ -a="contractaddress"                   (string, optional) contract address
+ -n="name"                              (string, optional) token name (support fuzzy queries)
+ -s="symbol"                            (string, optional) token symbol (support fuzzy queries)
+ -f="fork"                              (string, optional) fork
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "contractaddress": "",               (string, optional) contract address
+   "name": "",                          (string, optional) token name (support fuzzy queries)
+   "symbol": "",                        (string, optional) token symbol (support fuzzy queries)
+   "fork": "",                          (string, optional) fork
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+   "addressdata":                       (array, required, default=RPCValid) 
+   [
+     {
+       "address": "",                   (string, required) token contract address
+       "blocknumber": 0,                (uint, required) block number
+       "createtxid": "",                (string, required) create txid
+       "createaddress": "",             (string, required) create address
+       "name": "",                      (string, required) token name
+       "symbol": "",                    (string, required) token symbol
+       "decimals": 0,                   (uint, required) token decimals
+       "totalsupply": ""                (string, required) token total supply
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listtokenaddress
+<< [{"address":"0x41e963357852db2183841df4b6b737ee79fefd13","blocknumber":33,"createtxid":"0x98d2a062756fbac2a1a8d31d5991d12bf7f08c47164c6170d9f4f9014f194336","createaddress":"0xba2c61b77f04140389338a7416e11851224d7685","name":"CodeWithJoe","symbol":"CWJ","decimals":18,"totalsupply":"100000000.0"}]
+
+>> curl -d '{"id":3,"method":"listtokenaddress","jsonrpc":"2.0","params":{}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":[{"address":"0x41e963357852db2183841df4b6b737ee79fefd13","blocknumber":33,"createtxid":"0x98d2a062756fbac2a1a8d31d5991d12bf7f08c47164c6170d9f4f9014f194336","createaddress":"0xba2c61b77f04140389338a7416e11851224d7685","name":"CodeWithJoe","symbol":"CWJ","decimals":18,"totalsupply":"100000000.0"}]}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid contractaddress"}
+* {"code":-6,"message":"Invalid name"}
+* {"code":-6,"message":"Invalid symbol"}
 * {"code":-6,"message":"Invalid fork"}
 * {"code":-6,"message":"Unknown fork"}
 ```
@@ -4022,6 +5458,345 @@ List blacklist address
 ```
 ##### [Back to top](#commands)
 ---
+### setfunctionaddress
+**Usage:**
+```
+        setfunctionaddress <funcid> <"newaddress"> (-d|-nod*disablemodify*)
+
+Set function address
+```
+**Arguments:**
+```
+ funcid                                 (uint, required) function id
+ "newaddress"                           (string, required) new address
+ -d|-nod*disablemodify*                 (bool, optional, default=false) if disable modify
+```
+**Request:**
+```
+ "param" :
+ {
+   "funcid": 0,                         (uint, required) function id
+   "newaddress": "",                    (string, required) new address
+   "disablemodify": true|false          (bool, optional, default=false) if disable modify
+ }
+```
+**Response:**
+```
+ "result": "txid"                       (string, required) transaction id
+```
+**Examples:**
+```
+>> hashahead-cli setfunctionaddress 1 0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115
+<< 0xc175947a6265c969165efa03170b35a1fca3d4c9d424c012648bf9250b4ce5ed
+
+>> curl -d '{"id":3,"method":"setfunctionaddress","jsonrpc":"2.0","params":{"funcid":1,"newaddress":"0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115"}}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":"0xc175947a6265c969165efa03170b35a1fca3d4c9d424c012648bf9250b4ce5ed"}
+```
+**Errors:**
+```
+* {"code":-32600,"message":"Only suitable for the main chain"}
+* {"code":-6,"message":"Invalid from"}
+* {"code":-6,"message":"Invalid funcid"}
+* {"code":-6,"message":"Invalid newaddress"}
+* {"code":-4,"message":"Default address not import"}
+* {"code":-401,"message":"Default address is locked"}
+* {"code":-9"message":"Verify tx fail"}
+* {"code":-10"message":"Rejected modify"}
+```
+##### [Back to top](#commands)
+---
+### listfunctionaddress
+**Usage:**
+```
+        listfunctionaddress (-b="block")
+
+List function address
+```
+**Arguments:**
+```
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+   "functionaddresslist":               (array, required, default=RPCValid) 
+   [
+     {
+       "funcid": 0,                     (uint, required) function id
+       "funcname": "",                  (string, required) function name
+       "defaultaddress": "",            (string, required) default function address
+       "funcaddress": "",               (string, required) function address
+       "disablemodify": true|false      (bool, required) if disable modify
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listfunctionaddress
+<< [{"funcid":1,"funcname":"Pledge surplus reward address","defaultaddress":"0x420757b308d1273215ddd5e8dfea1802e2983245","funcaddress":"0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115","disablemodify":false}]
+
+>> curl -d '{"id":3,"method":"listfunctionaddress","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":[{"funcid":1,"funcname":"Pledge surplus reward address","defaultaddress":"0x420757b308d1273215ddd5e8dfea1802e2983245","funcaddress":"0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115","disablemodify":false}]}
+```
+**Errors:**
+```
+* {"code":-32600,"message":"Only suitable for the main chain"}
+```
+##### [Back to top](#commands)
+---
+### addtimevaultwhitelistaddress
+**Usage:**
+```
+        addtimevaultwhitelistaddress <"from"> <"address">
+
+Add time vault whitelist address
+```
+**Arguments:**
+```
+ "from"                                 (string, required) from address
+ "address"                              (string, required) time vault whitelist address
+```
+**Request:**
+```
+ "param" :
+ {
+   "from": "",                          (string, required) from address
+   "address": ""                        (string, required) time vault whitelist address
+ }
+```
+**Response:**
+```
+ "result": "result"                     (string, required) txid
+```
+**Examples:**
+```
+>> hashahead-cli addtimevaultwhitelistaddress 0xb955034fcefb66112bab47483c8d243b86cb2c1d 0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115
+<< 0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554
+
+>> curl -d '{"id":3,"method":"addtimevaultwhitelistaddress","jsonrpc":"2.0","params":{"from":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","address":"0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115"}}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":"0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554"}
+```
+**Errors:**
+```
+* {"code":-32600,"message":"Only suitable for the main chain"}
+* {"code":-6,"message":"Invalid from"}
+* {"code":-6,"message":"Invalid address"}
+* {"code":-6,"message":"Get primary owner fail"}
+* {"code":-6,"message":"From not is primary owner"}
+* {"code":-6,"message":"Address already exists"}
+* {"code":-4,"message":"Default address not import"}
+* {"code":-401,"message":"Default address is locked"}
+* {"code":-9,"message":"Verify tx fail"}
+```
+##### [Back to top](#commands)
+---
+### listtimevaultwhitelistaddress
+**Usage:**
+```
+        listtimevaultwhitelistaddress (-b="block")
+
+List time vault whitelist address
+```
+**Arguments:**
+```
+ -b="block"                             (string, optional) block hash or number or latest (default latest block)
+```
+**Request:**
+```
+ "param" :
+ {
+   "block": ""                          (string, optional) block hash or number or latest (default latest block)
+ }
+```
+**Response:**
+```
+ "result" :
+   "address":                           (array, required, default=RPCValid) 
+   [
+     "address": ""                      (string, required) time vault whitelist address
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli listtimevaultwhitelistaddress
+<< ["0xea811cbcfa6c892340261072d9ecdc7008d28a2e"]
+
+>> curl -d '{"id":3,"method":"listtimevaultwhitelistaddress","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":["0xea811cbcfa6c892340261072d9ecdc7008d28a2e"]}
+```
+**Errors:**
+```
+	none
+```
+##### [Back to top](#commands)
+---
+### stopfork
+**Usage:**
+```
+        stopfork <"from"> <chainid>
+
+Stop fork
+```
+**Arguments:**
+```
+ "from"                                 (string, required) from address
+ chainid                                (uint, required) stop fork chainid
+```
+**Request:**
+```
+ "param" :
+ {
+   "from": "",                          (string, required) from address
+   "chainid": 0                         (uint, required) stop fork chainid
+ }
+```
+**Response:**
+```
+ "result": "result"                     (string, required) txid
+```
+**Examples:**
+```
+>> hashahead-cli stopfork 0xb955034fcefb66112bab47483c8d243b86cb2c1d 202
+<< 0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554
+
+>> curl -d '{"id":3,"method":"stopfork","jsonrpc":"2.0","params":{"from":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","chainid":202}}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":"0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554"}
+```
+**Errors:**
+```
+* {"code":-32600,"message":"Only suitable for the main chain"}
+* {"code":-6,"message":"Invalid from"}
+* {"code":-6,"message":"Invalid chainid"}
+* {"code":-4,"message":"Chain id error"}
+* {"code":-4,"message":"Get fork error"}
+* {"code":-9,"message":"From address is not fork owner address"}
+* {"code":-9,"message":"Verify tx fail"}
+* {"code":-10,"message":"Fork is stopped"}
+```
+##### [Back to top](#commands)
+---
+### setdelegatename
+**Usage:**
+```
+        setdelegatename <"from"> <"delegateaddress"> <"name"> <"describe">
+
+Set delegate name
+```
+**Arguments:**
+```
+ "from"                                 (string, required) from address
+ "delegateaddress"                      (string, required) delegate address
+ "name"                                 (string, required) name
+ "describe"                             (string, required) describe
+```
+**Request:**
+```
+ "param" :
+ {
+   "from": "",                          (string, required) from address
+   "delegateaddress": "",               (string, required) delegate address
+   "name": "",                          (string, required) name
+   "describe": ""                       (string, required) describe
+ }
+```
+**Response:**
+```
+ "result": "result"                     (string, required) txid
+```
+**Examples:**
+```
+>> hashahead-cli setdelegatename 0xb955034fcefb66112bab47483c8d243b86cb2c1d 0x888629a65cfadc11110bec2c6e3c5facda8ad433 nodename nodedescribe
+<< 0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554
+
+>> curl -d '{"id":3,"method":"setdelegatename","jsonrpc":"2.0","params":{"from":"0xb955034fcefb66112bab47483c8d243b86cb2c1d","delegateaddress":"0x888629a65cfadc11110bec2c6e3c5facda8ad433","name":"nodename""describe":"nodedescribe"}}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":"0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid from"}
+* {"code":-6,"message":"Invalid delegateaddress"}
+* {"code":-6,"message":"Invalid name"}
+* {"code":-6,"message":"Invalid describe"}
+```
+##### [Back to top](#commands)
+---
+### listtokentransaction
+**Usage:**
+```
+        listtokentransaction <"tokenaddress"> (-a="useraddress") (-p=pagenumber) (-s=pagesize) (-r|-nor*reverse*) (-f="fork")
+
+List token transaction
+```
+**Arguments:**
+```
+ "tokenaddress"                         (string, required) token contract address
+ -a="useraddress"                       (string, optional) user address
+ -p=pagenumber                          (uint, optional, default=0) page number, begin 0, default is 0
+ -s=pagesize                            (uint, optional, default=100) page size, default is 100, 0: all
+ -r|-nor*reverse*                       (bool, optional, default=true) reverse
+ -f="fork"                              (string, optional) fork hash
+```
+**Request:**
+```
+ "param" :
+ {
+   "tokenaddress": "",                  (string, required) token contract address
+   "useraddress": "",                   (string, optional) user address
+   "pagenumber": 0,                     (uint, optional, default=0) page number, begin 0, default is 0
+   "pagesize": 0,                       (uint, optional, default=100) page size, default is 100, 0: all
+   "reverse": true|false,               (bool, optional, default=true) reverse
+   "fork": ""                           (string, optional) fork hash
+ }
+```
+**Response:**
+```
+ "result" :
+ {
+   "totalrecordcount": 0,               (uint, required) total record count
+   "totalpagecount": 0,                 (uint, required) total page count
+   "pagenumber": 0,                     (uint, required) page number
+   "pagesize": 0,                       (uint, required) page size
+   "datalist":                          (array, required, default=RPCValid) 
+   [
+     {
+       "id": 0,                         (uint, required) id
+       "blocknumber": 0,                (uint, required) block number
+       "blocktime": 0,                  (uint, required) block time
+       "txid": "",                      (string, required) txid
+       "from": "",                      (string, required) from address
+       "to": "",                        (string, required) to address
+       "amount": ""                     (string, required) amount (bit float)
+     }
+   ]
+ }
+```
+**Examples:**
+```
+>> hashahead-cli listtokentransaction 0x8d9a8ad94950ebd89fd5231554b1dd4af915c7b7
+<< {"totalrecordcount":1,"totalpagecount":1,"pagenumber":0,"pagesize":100,"datalist":[{"id":0,"txid":"0x9e9309a8ecba90eace5ce113a1d77ce2c0ecd7121db42fb0b394f4fd6844bc05","from":"0xba2c61b77f04140389338a7416e11851224d7685","to":"0x9835c12d95f059eb4eaecb4b00f2ea2c99b2a0d4","amount":"0.88888"}]}
+
+>> curl -d '{"id":3,"method":"listtokentransaction","jsonrpc":"2.0","params":{"tokenaddress":"0x8d9a8ad94950ebd89fd5231554b1dd4af915c7b7"}}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":{"totalrecordcount":1,"totalpagecount":1,"pagenumber":0,"pagesize":100,"datalist":[{"id":0,"txid":"0x9e9309a8ecba90eace5ce113a1d77ce2c0ecd7121db42fb0b394f4fd6844bc05","from":"0xba2c61b77f04140389338a7416e11851224d7685","to":"0x9835c12d95f059eb4eaecb4b00f2ea2c99b2a0d4","amount":"0.88888"}]}}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid tokenaddress"}
+* {"code":-4,"message":"Unknown tokenaddress"}
+* {"code":-6,"message":"Invalid pagenumber"}
+* {"code":-6,"message":"Invalid pagesize"}
+* {"code":-6,"message":"Invalid fork"}
+* {"code":-4,"message":"Unknown fork"}
+* {"code":-6,"message":"Invalid block"}
+```
+##### [Back to top](#commands)
+---
 ### setmintmingasprice
 **Usage:**
 ```
@@ -4086,10 +5861,10 @@ Get mint min gas price
 ```
 **Examples:**
 ```
->> hashahead-cli getmintmingasprice 0x000000152e03037902d6bdc1d10b29b4a940a2972dfe06976ebcc8c4353cc7d0
+>> hashahead-cli getmintmingasprice 0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d
 << 0.00001
 
->> curl -d '{"id":3,"method":"getmintmingasprice","jsonrpc":"2.0","params":{"fork":"0x000000152e03037902d6bdc1d10b29b4a940a2972dfe06976ebcc8c4353cc7d0"}}' http://127.0.0.1:8812
+>> curl -d '{"id":3,"method":"getmintmingasprice","jsonrpc":"2.0","params":{"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d"}}' http://127.0.0.1:8812
 << {"id":3,"jsonrpc":"2.0","result":"0.00001"}
 ```
 **Errors:**
@@ -4128,10 +5903,10 @@ List mint min gas price
 **Examples:**
 ```
 >> hashahead-cli listmintmingasprice
-<< [{"fork":"0x000000152e03037902d6bdc1d10b29b4a940a2972dfe06976ebcc8c4353cc7d0","mingasprice":"0.0000001"}]
+<< [{"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","mingasprice":"0.0000001"}]
 
 >> curl -d '{"id":3,"method":"listmintmingasprice","jsonrpc":"2.0","params":{}}' http://127.0.0.1:8812
-<< {"id":3,"jsonrpc":"2.0","result":[{"fork":"0x000000152e03037902d6bdc1d10b29b4a940a2972dfe06976ebcc8c4353cc7d0","mingasprice":"0.0000001"}]}
+<< {"id":3,"jsonrpc":"2.0","result":[{"fork":"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d","mingasprice":"0.0000001"}]}
 ```
 **Errors:**
 ```
@@ -4199,7 +5974,7 @@ Check if the data is in bloomfilter
 ```
 **Response:**
 ```
- "result": "result"                     (string, required) sha3 result
+ "result": "result"                     (string, required) client version
 ```
 **Examples:**
 ```
@@ -4505,10 +6280,10 @@ Check if the data is in bloomfilter
 **Examples:**
 ```
 >> hashahead-cli eth_coinbase []
-<< ["10"]
+<< ["0x93b09f6e5a5a3e7122a7ce468d4e5d2b0fc8d41d"]
 
 >> curl -d '{"id":3,"method":"eth_coinbase","jsonrpc":"2.0","params":[]}' http://127.0.0.1:8812
-<< {"id":3,"jsonrpc":"2.0","result":["10"]}
+<< {"id":3,"jsonrpc":"2.0","result":["0x93b09f6e5a5a3e7122a7ce468d4e5d2b0fc8d41d"]}
 ```
 **Errors:**
 ```
@@ -4897,9 +6672,21 @@ Check if the data is in bloomfilter
        "nonce": "",                     (string, required) tx nonce(hex)
        "from": "",                      (string, required) from address
        "value": "",                     (string, required) transaction amount(hex), unit: wei
-       "gasPrice": "",                  (string, required) gas price(hex), unit: wei
+       "gasPrice": "",                  (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+       "maxFeePerGas": "",              (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+       "maxPriorityFeePerGas": "",      (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
        "gas": "",                       (string, required) gas(hex)
        "input": "",                     (string, required) input data
+       "accessList":                    (array, required, default=RPCValid) access list
+       [
+         {
+           "address": "",               (string, required) address
+           "storageKeys":               (array, required, default=RPCValid) storage keys list
+           [
+             "key": ""                  (string, required) key
+           ]
+         }
+       ]
        "blockHash": "",                 (string, optional) block hash
        "blockNumber": "",               (string, optional) block number
        "transactionIndex": "",          (string, optional) transaction index(hex)
@@ -5187,7 +6974,8 @@ Check if the data is in bloomfilter
        "value": "",                     (string, optional) transaction amount(hex), unit: wei
        "gasPrice": "",                  (string, optional) gas price(hex), unit: wei
        "gas": "",                       (string, optional) gas(hex)
-       "data": ""                       (string, optional) input data
+       "data": "",                      (string, optional) input data
+       "fork": ""                       (string, optional) fork
      }
    ]
 ```
@@ -5239,7 +7027,8 @@ Check if the data is in bloomfilter
        "value": "",                     (string, optional) transaction amount(hex), unit: wei
        "gasPrice": "",                  (string, optional) gas price(hex), unit: wei
        "gas": "",                       (string, optional) gas(hex)
-       "data": ""                       (string, optional) input data
+       "data": "",                      (string, optional) input data
+       "fork": ""                       (string, optional) fork
      }
    ]
 ```
@@ -5427,30 +7216,48 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
-   "number": "",                        (string, optional) block number
-   "hash": "",                          (string, optional) block hash
-   "parentHash": "",                    (string, optional) parent block hash
-   "nonce": "",                         (string, optional) block nonce
-   "sha3Uncles": "",                    (string, optional) block sha3Uncles
-   "logsBloom": "",                     (string, optional) block logsBloom
-   "transactionsRoot": "",              (string, optional) block transactionsRoot
-   "stateRoot": "",                     (string, optional) block stateRoot
-   "receiptsRoot": "",                  (string, optional) block receiptsRoot
-   "miner": "",                         (string, optional) block miner
-   "difficulty": "",                    (string, optional) block difficulty
-   "totalDifficulty": "",               (string, optional) block totalDifficulty
-   "extraData": "",                     (string, optional) block extraData
-   "size": "",                          (string, optional) block size
-   "gasLimit": "",                      (string, optional) block gasLimit
-   "gasUsed": "",                       (string, optional) block gasUsed
-   "timestamp": "",                     (string, optional) block timestamp
-   "transactionids":                    (array, optional) transaction hash list
+   "number": "",                        (string, required) block number
+   "hash": "",                          (string, required) block hash
+   "parentHash": "",                    (string, required) parent block hash
+   "nonce": "",                         (string, required) block nonce
+   "sha3Uncles": "",                    (string, required) block sha3Uncles
+   "logsBloom": "",                     (string, required) block logsBloom
+   "transactionsRoot": "",              (string, required) block transactionsRoot
+   "stateRoot": "",                     (string, required) block stateRoot
+   "receiptsRoot": "",                  (string, required) block receiptsRoot
+   "miner": "",                         (string, required) block miner
+   "mixHash": "",                       (string, required) block mix hash
+   "difficulty": "",                    (string, required) block difficulty
+   "totalDifficulty": "",               (string, required) block totalDifficulty
+   "extraData": "",                     (string, required) block extraData
+   "size": "",                          (string, required) block size
+   "gasLimit": "",                      (string, required) block gasLimit
+   "gasUsed": "",                       (string, required) block gasUsed
+   "timestamp": "",                     (string, required) block timestamp
+   "uncles":                            (array, required, default=RPCValid) block uncle list
+   [
+     "uncle": ""                        (string, required) block uncle hash
+   ]
+   "transactions":                      (array, optional) transaction hash list
    [
      "tx": ""                           (string, required) transaction hash
    ]
    "transactiondetails":                (array, optional) transaction detail list
    [
      {
+       "gasPrice": "",                  (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+       "maxFeePerGas": "",              (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+       "maxPriorityFeePerGas": "",      (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
+       "accessList":                    (array, required, default=RPCValid) access list
+       [
+         {
+           "address": "",               (string, required) address
+           "storageKeys":               (array, required, default=RPCValid) storage keys list
+           [
+             "key": ""                  (string, required) key
+           ]
+         }
+       ]
        "hash": "",                      (string, optional) tx hash
        "nonce": "",                     (string, optional) tx nonce
        "blockHash": "",                 (string, optional) block hash
@@ -5459,14 +7266,14 @@ Check if the data is in bloomfilter
        "from": "",                      (string, optional) tx from
        "to": "",                        (string, optional) tx to
        "value": "",                     (string, optional) tx value
-       "gasPrice": "",                  (string, optional) tx gas price
        "gas": "",                       (string, optional) tx gas
-       "input": ""                      (string, optional) tx input data
+       "input": "",                     (string, optional) tx input data
+       "type": "",                      (string, optional) tx type
+       "chainId": "",                   (string, optional) chain id
+       "v": "",                         (string, optional) v
+       "r": "",                         (string, optional) r
+       "s": ""                          (string, optional) s
      }
-   ]
-   "uncles":                            (array, optional) block uncle list
-   [
-     "uncle": ""                        (string, required) block uncle hash
    ]
  }
 ```
@@ -5508,30 +7315,48 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
-   "number": "",                        (string, optional) block number
-   "hash": "",                          (string, optional) block hash
-   "parentHash": "",                    (string, optional) parent block hash
-   "nonce": "",                         (string, optional) block nonce
-   "sha3Uncles": "",                    (string, optional) block sha3Uncles
-   "logsBloom": "",                     (string, optional) block logsBloom
-   "transactionsRoot": "",              (string, optional) block transactionsRoot
-   "stateRoot": "",                     (string, optional) block stateRoot
-   "receiptsRoot": "",                  (string, optional) block receiptsRoot
-   "miner": "",                         (string, optional) block miner
-   "difficulty": "",                    (string, optional) block difficulty
-   "totalDifficulty": "",               (string, optional) block totalDifficulty
-   "extraData": "",                     (string, optional) block extraData
-   "size": "",                          (string, optional) block size
-   "gasLimit": "",                      (string, optional) block gasLimit
-   "gasUsed": "",                       (string, optional) block gasUsed
-   "timestamp": "",                     (string, optional) block timestamp
-   "transactionids":                    (array, optional) transaction hash list
+   "number": "",                        (string, required) block number
+   "hash": "",                          (string, required) block hash
+   "parentHash": "",                    (string, required) parent block hash
+   "nonce": "",                         (string, required) block nonce
+   "sha3Uncles": "",                    (string, required) block sha3Uncles
+   "logsBloom": "",                     (string, required) block logsBloom
+   "transactionsRoot": "",              (string, required) block transactionsRoot
+   "stateRoot": "",                     (string, required) block stateRoot
+   "receiptsRoot": "",                  (string, required) block receiptsRoot
+   "miner": "",                         (string, required) block miner
+   "mixHash": "",                       (string, required) block mix hash
+   "difficulty": "",                    (string, required) block difficulty
+   "totalDifficulty": "",               (string, required) block totalDifficulty
+   "extraData": "",                     (string, required) block extraData
+   "size": "",                          (string, required) block size
+   "gasLimit": "",                      (string, required) block gasLimit
+   "gasUsed": "",                       (string, required) block gasUsed
+   "timestamp": "",                     (string, required) block timestamp
+   "uncles":                            (array, required, default=RPCValid) block uncle list
+   [
+     "uncle": ""                        (string, required) block uncle hash
+   ]
+   "transactions":                      (array, optional) transaction hash list
    [
      "tx": ""                           (string, required) transaction hash
    ]
    "transactiondetails":                (array, optional) transaction detail list
    [
      {
+       "gasPrice": "",                  (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+       "maxFeePerGas": "",              (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+       "maxPriorityFeePerGas": "",      (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
+       "accessList":                    (array, required, default=RPCValid) access list
+       [
+         {
+           "address": "",               (string, required) address
+           "storageKeys":               (array, required, default=RPCValid) storage keys list
+           [
+             "key": ""                  (string, required) key
+           ]
+         }
+       ]
        "hash": "",                      (string, optional) tx hash
        "nonce": "",                     (string, optional) tx nonce
        "blockHash": "",                 (string, optional) block hash
@@ -5540,14 +7365,14 @@ Check if the data is in bloomfilter
        "from": "",                      (string, optional) tx from
        "to": "",                        (string, optional) tx to
        "value": "",                     (string, optional) tx value
-       "gasPrice": "",                  (string, optional) tx gas price
        "gas": "",                       (string, optional) tx gas
-       "input": ""                      (string, optional) tx input data
+       "input": "",                     (string, optional) tx input data
+       "type": "",                      (string, optional) tx type
+       "chainId": "",                   (string, optional) chain id
+       "v": "",                         (string, optional) v
+       "r": "",                         (string, optional) r
+       "s": ""                          (string, optional) s
      }
-   ]
-   "uncles":                            (array, optional) block uncle list
-   [
-     "uncle": ""                        (string, required) block uncle hash
    ]
  }
 ```
@@ -5590,6 +7415,19 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
+   "gasPrice": "",                      (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+   "maxFeePerGas": "",                  (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+   "maxPriorityFeePerGas": "",          (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
+   "accessList":                        (array, required, default=RPCValid) access list
+   [
+     {
+       "address": "",                   (string, required) address
+       "storageKeys":                   (array, required, default=RPCValid) storage keys list
+       [
+         "key": ""                      (string, required) key
+       ]
+     }
+   ]
    "hash": "",                          (string, optional) tx hash
    "nonce": "",                         (string, optional) tx nonce
    "blockHash": "",                     (string, optional) block hash
@@ -5598,9 +7436,13 @@ Check if the data is in bloomfilter
    "from": "",                          (string, optional) tx from
    "to": "",                            (string, optional) tx to
    "value": "",                         (string, optional) tx value
-   "gasPrice": "",                      (string, optional) tx gas price
    "gas": "",                           (string, optional) tx gas
-   "input": ""                          (string, optional) tx input data
+   "input": "",                         (string, optional) tx input data
+   "type": "",                          (string, optional) tx type
+   "chainId": "",                       (string, optional) chain id
+   "v": "",                             (string, optional) v
+   "r": "",                             (string, optional) r
+   "s": ""                              (string, optional) s
  }
 ```
 **Examples:**
@@ -5641,6 +7483,19 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
+   "gasPrice": "",                      (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+   "maxFeePerGas": "",                  (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+   "maxPriorityFeePerGas": "",          (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
+   "accessList":                        (array, required, default=RPCValid) access list
+   [
+     {
+       "address": "",                   (string, required) address
+       "storageKeys":                   (array, required, default=RPCValid) storage keys list
+       [
+         "key": ""                      (string, required) key
+       ]
+     }
+   ]
    "hash": "",                          (string, optional) tx hash
    "nonce": "",                         (string, optional) tx nonce
    "blockHash": "",                     (string, optional) block hash
@@ -5649,9 +7504,13 @@ Check if the data is in bloomfilter
    "from": "",                          (string, optional) tx from
    "to": "",                            (string, optional) tx to
    "value": "",                         (string, optional) tx value
-   "gasPrice": "",                      (string, optional) tx gas price
    "gas": "",                           (string, optional) tx gas
-   "input": ""                          (string, optional) tx input data
+   "input": "",                         (string, optional) tx input data
+   "type": "",                          (string, optional) tx type
+   "chainId": "",                       (string, optional) chain id
+   "v": "",                             (string, optional) v
+   "r": "",                             (string, optional) r
+   "s": ""                              (string, optional) s
  }
 ```
 **Examples:**
@@ -5693,6 +7552,19 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
+   "gasPrice": "",                      (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+   "maxFeePerGas": "",                  (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+   "maxPriorityFeePerGas": "",          (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
+   "accessList":                        (array, required, default=RPCValid) access list
+   [
+     {
+       "address": "",                   (string, required) address
+       "storageKeys":                   (array, required, default=RPCValid) storage keys list
+       [
+         "key": ""                      (string, required) key
+       ]
+     }
+   ]
    "hash": "",                          (string, optional) tx hash
    "nonce": "",                         (string, optional) tx nonce
    "blockHash": "",                     (string, optional) block hash
@@ -5701,9 +7573,13 @@ Check if the data is in bloomfilter
    "from": "",                          (string, optional) tx from
    "to": "",                            (string, optional) tx to
    "value": "",                         (string, optional) tx value
-   "gasPrice": "",                      (string, optional) tx gas price
    "gas": "",                           (string, optional) tx gas
-   "input": ""                          (string, optional) tx input data
+   "input": "",                         (string, optional) tx input data
+   "type": "",                          (string, optional) tx type
+   "chainId": "",                       (string, optional) chain id
+   "v": "",                             (string, optional) v
+   "r": "",                             (string, optional) r
+   "s": ""                              (string, optional) s
  }
 ```
 **Examples:**
@@ -5745,24 +7621,23 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
-   "transactionHash": "",               (string, optional) transaction hash
-   "transactionIndex": 0,               (uint, optional) transaction index
-   "blockHash": "",                     (string, optional) block hash
-   "blockNumber": 0,                    (uint, optional) block number
-   "from": "",                          (string, optional) tx from
-   "to": "",                            (string, optional) tx to
-   "cumulativeGasUsed": "",             (string, optional) cumulative gas used
-   "gasUsed": "",                       (string, optional) gas used
-   "contractAddress": "",               (string, optional) contract address
-   "logs":                              (array, optional) 
+   "transactionHash": "",               (string, required) transaction hash
+   "transactionIndex": "",              (string, required) transaction index(hex)
+   "blockHash": "",                     (string, required) block hash
+   "blockNumber": "",                   (string, required) block number(hex)
+   "from": "",                          (string, required) tx from
+   "to": "",                            (string, required) tx to
+   "cumulativeGasUsed": "",             (string, required) cumulative gas used(hex)
+   "gasUsed": "",                       (string, required) gas used(hex)
+   "logs":                              (array, required, default=RPCValid) 
    [
      {
        "removed": true|false,           (bool, optional) removed
-       "logIndex": 0,                   (uint, optional) log index
-       "transactionIndex": 0,           (uint, optional) transaction index
+       "logIndex": "",                  (string, optional) log index(hex)
+       "transactionIndex": "",          (string, optional) transaction index(hex)
        "transactionHash": "",           (string, optional) transaction hash
        "blockHash": "",                 (string, optional) block hash
-       "blockNumber": 0,                (uint, optional) block number
+       "blockNumber": "",               (string, optional) block number(hex)
        "address": "",                   (string, optional) address
        "data": "",                      (string, optional) data
        "topics":                        (array, optional) topic list
@@ -5773,10 +7648,11 @@ Check if the data is in bloomfilter
        "id": ""                         (string, optional) id
      }
    ]
-   "logsBloom": "",                     (string, optional) logs bloom
-   "root": "",                          (string, optional) root
-   "status": "",                        (string, optional) status, 0x1: ok, 0x0: fail
-   "effectiveGasPrice": ""              (string, optional) effective gas price
+   "logsBloom": "",                     (string, required) logs bloom
+   "status": "",                        (string, required) status, 0x1: ok, 0x0: fail
+   "effectiveGasPrice": "",             (string, required) effective gas price(hex)
+   "contractAddress": "",               (string, optional) contract address
+   "root": ""                           (string, optional) root
  }
 ```
 **Examples:**
@@ -5818,30 +7694,48 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
-   "number": "",                        (string, optional) block number
-   "hash": "",                          (string, optional) block hash
-   "parentHash": "",                    (string, optional) parent block hash
-   "nonce": "",                         (string, optional) block nonce
-   "sha3Uncles": "",                    (string, optional) block sha3Uncles
-   "logsBloom": "",                     (string, optional) block logsBloom
-   "transactionsRoot": "",              (string, optional) block transactionsRoot
-   "stateRoot": "",                     (string, optional) block stateRoot
-   "receiptsRoot": "",                  (string, optional) block receiptsRoot
-   "miner": "",                         (string, optional) block miner
-   "difficulty": "",                    (string, optional) block difficulty
-   "totalDifficulty": "",               (string, optional) block totalDifficulty
-   "extraData": "",                     (string, optional) block extraData
-   "size": "",                          (string, optional) block size
-   "gasLimit": "",                      (string, optional) block gasLimit
-   "gasUsed": "",                       (string, optional) block gasUsed
-   "timestamp": "",                     (string, optional) block timestamp
-   "transactionids":                    (array, optional) transaction hash list
+   "number": "",                        (string, required) block number
+   "hash": "",                          (string, required) block hash
+   "parentHash": "",                    (string, required) parent block hash
+   "nonce": "",                         (string, required) block nonce
+   "sha3Uncles": "",                    (string, required) block sha3Uncles
+   "logsBloom": "",                     (string, required) block logsBloom
+   "transactionsRoot": "",              (string, required) block transactionsRoot
+   "stateRoot": "",                     (string, required) block stateRoot
+   "receiptsRoot": "",                  (string, required) block receiptsRoot
+   "miner": "",                         (string, required) block miner
+   "mixHash": "",                       (string, required) block mix hash
+   "difficulty": "",                    (string, required) block difficulty
+   "totalDifficulty": "",               (string, required) block totalDifficulty
+   "extraData": "",                     (string, required) block extraData
+   "size": "",                          (string, required) block size
+   "gasLimit": "",                      (string, required) block gasLimit
+   "gasUsed": "",                       (string, required) block gasUsed
+   "timestamp": "",                     (string, required) block timestamp
+   "uncles":                            (array, required, default=RPCValid) block uncle list
+   [
+     "uncle": ""                        (string, required) block uncle hash
+   ]
+   "transactions":                      (array, optional) transaction hash list
    [
      "tx": ""                           (string, required) transaction hash
    ]
    "transactiondetails":                (array, optional) transaction detail list
    [
      {
+       "gasPrice": "",                  (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+       "maxFeePerGas": "",              (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+       "maxPriorityFeePerGas": "",      (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
+       "accessList":                    (array, required, default=RPCValid) access list
+       [
+         {
+           "address": "",               (string, required) address
+           "storageKeys":               (array, required, default=RPCValid) storage keys list
+           [
+             "key": ""                  (string, required) key
+           ]
+         }
+       ]
        "hash": "",                      (string, optional) tx hash
        "nonce": "",                     (string, optional) tx nonce
        "blockHash": "",                 (string, optional) block hash
@@ -5850,14 +7744,14 @@ Check if the data is in bloomfilter
        "from": "",                      (string, optional) tx from
        "to": "",                        (string, optional) tx to
        "value": "",                     (string, optional) tx value
-       "gasPrice": "",                  (string, optional) tx gas price
        "gas": "",                       (string, optional) tx gas
-       "input": ""                      (string, optional) tx input data
+       "input": "",                     (string, optional) tx input data
+       "type": "",                      (string, optional) tx type
+       "chainId": "",                   (string, optional) chain id
+       "v": "",                         (string, optional) v
+       "r": "",                         (string, optional) r
+       "s": ""                          (string, optional) s
      }
-   ]
-   "uncles":                            (array, optional) block uncle list
-   [
-     "uncle": ""                        (string, required) block uncle hash
    ]
  }
 ```
@@ -5898,30 +7792,48 @@ Check if the data is in bloomfilter
 ```
  "result" :
  {
-   "number": "",                        (string, optional) block number
-   "hash": "",                          (string, optional) block hash
-   "parentHash": "",                    (string, optional) parent block hash
-   "nonce": "",                         (string, optional) block nonce
-   "sha3Uncles": "",                    (string, optional) block sha3Uncles
-   "logsBloom": "",                     (string, optional) block logsBloom
-   "transactionsRoot": "",              (string, optional) block transactionsRoot
-   "stateRoot": "",                     (string, optional) block stateRoot
-   "receiptsRoot": "",                  (string, optional) block receiptsRoot
-   "miner": "",                         (string, optional) block miner
-   "difficulty": "",                    (string, optional) block difficulty
-   "totalDifficulty": "",               (string, optional) block totalDifficulty
-   "extraData": "",                     (string, optional) block extraData
-   "size": "",                          (string, optional) block size
-   "gasLimit": "",                      (string, optional) block gasLimit
-   "gasUsed": "",                       (string, optional) block gasUsed
-   "timestamp": "",                     (string, optional) block timestamp
-   "transactionids":                    (array, optional) transaction hash list
+   "number": "",                        (string, required) block number
+   "hash": "",                          (string, required) block hash
+   "parentHash": "",                    (string, required) parent block hash
+   "nonce": "",                         (string, required) block nonce
+   "sha3Uncles": "",                    (string, required) block sha3Uncles
+   "logsBloom": "",                     (string, required) block logsBloom
+   "transactionsRoot": "",              (string, required) block transactionsRoot
+   "stateRoot": "",                     (string, required) block stateRoot
+   "receiptsRoot": "",                  (string, required) block receiptsRoot
+   "miner": "",                         (string, required) block miner
+   "mixHash": "",                       (string, required) block mix hash
+   "difficulty": "",                    (string, required) block difficulty
+   "totalDifficulty": "",               (string, required) block totalDifficulty
+   "extraData": "",                     (string, required) block extraData
+   "size": "",                          (string, required) block size
+   "gasLimit": "",                      (string, required) block gasLimit
+   "gasUsed": "",                       (string, required) block gasUsed
+   "timestamp": "",                     (string, required) block timestamp
+   "uncles":                            (array, required, default=RPCValid) block uncle list
+   [
+     "uncle": ""                        (string, required) block uncle hash
+   ]
+   "transactions":                      (array, optional) transaction hash list
    [
      "tx": ""                           (string, required) transaction hash
    ]
    "transactiondetails":                (array, optional) transaction detail list
    [
      {
+       "gasPrice": "",                  (string, required) The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei
+       "maxFeePerGas": "",              (string, required) The maximum fee per gas set in the transaction(hex), unit: wei
+       "maxPriorityFeePerGas": "",      (string, required) The maximum priority gas fee set in the transaction(hex), unit: wei
+       "accessList":                    (array, required, default=RPCValid) access list
+       [
+         {
+           "address": "",               (string, required) address
+           "storageKeys":               (array, required, default=RPCValid) storage keys list
+           [
+             "key": ""                  (string, required) key
+           ]
+         }
+       ]
        "hash": "",                      (string, optional) tx hash
        "nonce": "",                     (string, optional) tx nonce
        "blockHash": "",                 (string, optional) block hash
@@ -5930,14 +7842,14 @@ Check if the data is in bloomfilter
        "from": "",                      (string, optional) tx from
        "to": "",                        (string, optional) tx to
        "value": "",                     (string, optional) tx value
-       "gasPrice": "",                  (string, optional) tx gas price
        "gas": "",                       (string, optional) tx gas
-       "input": ""                      (string, optional) tx input data
+       "input": "",                     (string, optional) tx input data
+       "type": "",                      (string, optional) tx type
+       "chainId": "",                   (string, optional) chain id
+       "v": "",                         (string, optional) v
+       "r": "",                         (string, optional) r
+       "s": ""                          (string, optional) s
      }
-   ]
-   "uncles":                            (array, optional) block uncle list
-   [
-     "uncle": ""                        (string, required) block uncle hash
    ]
  }
 ```
@@ -6311,6 +8223,791 @@ Check if the data is in bloomfilter
 **Errors:**
 ```
 * {"code":-15,"message":"Requested function is obsolete"}
+```
+##### [Back to top](#commands)
+---
+### eth_subscribe
+**Usage:**
+```
+        eth_subscribe <[paramlist]>
+
+[ETH] subscribe
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) subscribe name
+   ]
+```
+**Response:**
+```
+ "result": "result"                     (string, required) subscribe id
+```
+**Examples:**
+```
+>> hashahead-cli eth_subscribe ["newHeads"]
+<< {"0x5cef478723ff08bf67fde6c64013153e"}
+
+>> curl -d '{"id":3,"method":"eth_subscribe","jsonrpc":"2.0","params":["newHeads"]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result":{"0x5cef478723ff08bf67fde6c64013153e"}}
+```
+**Errors:**
+```
+* {"code":-15,"message":"No websocket"}
+```
+##### [Back to top](#commands)
+---
+### eth_unsubscribe
+**Usage:**
+```
+        eth_unsubscribe <[paramlist]>
+
+[ETH] unsubscribe
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) subscribe id
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) unsubscribe result
+```
+**Examples:**
+```
+>> hashahead-cli eth_unsubscribe ["0x5cef478723ff08bf67fde6c64013153e"]
+<< true
+
+>> curl -d '{"id":3,"method":"eth_unsubscribe","jsonrpc":"2.0","params":["0x5cef478723ff08bf67fde6c64013153e"]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-15,"message":"No websocket"}
+* {"code":-15,"message":"No subscribe id"}
+```
+##### [Back to top](#commands)
+---
+### eth_blobBaseFee
+**Usage:**
+```
+        eth_blobBaseFee <[paramlist]>
+
+[ETH] Returns the expected base fee for blobs in the next block
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": "result"                     (string, required) 
+```
+**Examples:**
+```
+>> hashahead-cli eth_blobBaseFee []
+<< 0x1
+
+>> curl -d '{"id":3,"method":"eth_blobBaseFee","jsonrpc":"2.0","params":[]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": "0x1"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### eth_feeHistory
+**Usage:**
+```
+        eth_feeHistory <[paramlist]>
+
+[ETH] Returns the collection of historical gas information
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli eth_feeHistory [4, "latest", [25, 75]]
+<< true
+
+>> curl -d '{"id":3,"method":"eth_feeHistory","jsonrpc":"2.0","params":[4, "latest", [25, 75]]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### eth_getAccount
+**Usage:**
+```
+        eth_getAccount <[paramlist]>
+
+[ETH] Retrieve account details by specifying an address and a block number/tag
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result" :
+ {
+   "codeHash": "",                      (string, required) hash of the code of the account
+   "storageRoot": "",                   (string, required) hash of the account's storage data
+   "balance": "",                       (string, required) current balance of the account in wei
+   "nonce": ""                          (string, required) transaction count of an account
+ }
+```
+**Examples:**
+```
+>> hashahead-cli eth_getAccount ["0x5962974eeb0b17b43edabfc9b747839317aa852f", "latest"]
+<< {"codeHash": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470","storageRoot": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421","balance": "0x7e3161993d90","nonce": "0x20"}
+
+>> curl -d '{"id":3,"method":"eth_getAccount","jsonrpc":"2.0","params":["0x5962974eeb0b17b43edabfc9b747839317aa852f", "latest"]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": {"codeHash": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470","storageRoot": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421","balance": "0x7e3161993d90","nonce": "0x20"}}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid address"}
+* {"code":-6,"message":"Invalid block"}
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### eth_getBlockReceipts
+**Usage:**
+```
+        eth_getBlockReceipts <[paramlist]>
+
+[ETH] Returns all transaction receipts for a given block
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli eth_getBlockReceipts ["0x5043"]
+<< true
+
+>> curl -d '{"id":3,"method":"eth_getBlockReceipts","jsonrpc":"2.0","params":["0x5043"]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block number"}
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### eth_maxPriorityFeePerGas
+**Usage:**
+```
+        eth_maxPriorityFeePerGas <[paramlist]>
+
+[ETH] Get the priority fee needed to be included in a block
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": "result"                     (string, required) 
+```
+**Examples:**
+```
+>> hashahead-cli eth_maxPriorityFeePerGas []
+<< 0x0
+
+>> curl -d '{"id":3,"method":"eth_maxPriorityFeePerGas","jsonrpc":"2.0","params":[]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": "0x0"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### trace_block
+**Usage:**
+```
+        trace_block <[paramlist]>
+
+[ETH] trace block
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) block number
+   ]
+```
+**Response:**
+```
+ "result" :
+   "result":                            (array, required, default=RPCValid) 
+   [
+     {
+       "action":                        (object, required) 
+       {
+         "callType": "",                (string, optional) call type: call, delegatecall, callcode, staticcall
+         "from": "",                    (string, optional) from address
+         "to": "",                      (string, optional) to address
+         "value": "",                   (string, optional) value
+         "gas": "",                     (string, optional) gas
+         "input": "",                   (string, optional) input
+         "address": "",                 (string, optional) address
+         "refundAddress": ""            (string, optional) refundAddress
+       }
+       "blockHash": "",                 (string, required) block hash
+       "blockNumber": 0,                (uint, required) block number
+       "result":                        (object, required) 
+       {
+         "gasUsed": "",                 (string, optional) gas used
+         "output": "",                  (string, optional) output
+         "address": "",                 (string, optional) address
+         "code": ""                     (string, optional) code
+       }
+       "subtraces": 0,                  (uint, required) subtraces
+       "traceAddress":                  (array, required, default=RPCValid) 
+       [
+         "pos": 0                       (uint, required) pos
+       ]
+       "transactionHash": "",           (string, required) transaction hash
+       "transactionPosition": 0,        (uint, required) transaction position
+       "type": ""                       (string, required) type: create, suicide, call
+     }
+   ]
+```
+**Examples:**
+```
+>> hashahead-cli trace_block ["0x2ed1"]
+<< true
+
+>> curl -d '{"id":3,"method":"trace_block","jsonrpc":"2.0","params":["0x2ed1"]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid number"}
+```
+##### [Back to top](#commands)
+---
+### debug_getBadBlocks
+**Usage:**
+```
+        debug_getBadBlocks <[paramlist]>
+
+[ETH] debug get bad blocks
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli debug_getBadBlocks []
+<< true
+
+>> curl -d '{"id":3,"method":"debug_getBadBlocks","jsonrpc":"2.0","params":[]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+```
+##### [Back to top](#commands)
+---
+### debug_storageRangeAt
+**Usage:**
+```
+        debug_storageRangeAt <[paramlist]>
+
+[ETH] debug storage range at
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) block hash
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli debug_storageRangeAt ["0x2ed1", {"tracer": "callTracer"}]
+<< true
+
+>> curl -d '{"id":3,"method":"debug_storageRangeAt","jsonrpc":"2.0","params":["0x2ed1", {"tracer": "callTracer"}]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+```
+##### [Back to top](#commands)
+---
+### debug_getTrieFlushInterval
+**Usage:**
+```
+        debug_getTrieFlushInterval <[paramlist]>
+
+[ETH] debug get trie flush interval
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": "result"                     (string, required) trie flush interval time: 1h0m0s
+```
+**Examples:**
+```
+>> hashahead-cli debug_getTrieFlushInterval []
+<< 1h0m0s
+
+>> curl -d '{"id":3,"method":"debug_getTrieFlushInterval","jsonrpc":"2.0","params":[]' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": "1h0m0s"}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+```
+##### [Back to top](#commands)
+---
+### debug_traceBlock
+**Usage:**
+```
+        debug_traceBlock <[paramlist]>
+
+[ETH] debug trace block
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) RLP encoded block
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli debug_traceBlock ["0x2ed1", {"tracer": "callTracer"}]
+<< true
+
+>> curl -d '{"id":3,"method":"debug_traceBlock","jsonrpc":"2.0","params":["0x2ed1", {"tracer": "callTracer"}]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+```
+##### [Back to top](#commands)
+---
+### debug_traceBlockByHash
+**Usage:**
+```
+        debug_traceBlockByHash <[paramlist]>
+
+[ETH] debug trace block by hash
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) block hash
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli debug_traceBlockByHash ["0x2ed1", {"tracer": "callTracer"}]
+<< true
+
+>> curl -d '{"id":3,"method":"debug_traceBlockByHash","jsonrpc":"2.0","params":["0x2ed1", {"tracer": "callTracer"}]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid block"}
+```
+##### [Back to top](#commands)
+---
+### debug_traceBlockByNumber
+**Usage:**
+```
+        debug_traceBlockByNumber <[paramlist]>
+
+[ETH] debug trace block by number
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) block number, earliest, latest, pending, safe, finalized
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli debug_traceBlockByNumber ["0x2ed1", {"tracer": "callTracer"}]
+<< true
+
+>> curl -d '{"id":3,"method":"debug_traceBlockByNumber","jsonrpc":"2.0","params":["0x2ed1", {"tracer": "callTracer"}]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid number"}
+```
+##### [Back to top](#commands)
+---
+### debug_traceCall
+**Usage:**
+```
+        debug_traceCall <[paramlist]>
+
+[ETH] debug trace call
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) txid
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli debug_traceCall ["0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f", {"tracer": "callTracer"}]
+<< true
+
+>> curl -d '{"id":3,"method":"debug_traceCall","jsonrpc":"2.0","params":["0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f", {"tracer": "callTracer"}]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid txid"}
+```
+##### [Back to top](#commands)
+---
+### debug_traceTransaction
+**Usage:**
+```
+        debug_traceTransaction <[paramlist]>
+
+[ETH] debug trace transaction
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) txid
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli debug_traceTransaction ["0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f", {"tracer": "callTracer"}]
+<< true
+
+>> curl -d '{"id":3,"method":"debug_traceTransaction","jsonrpc":"2.0","params":["0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f", {"tracer": "callTracer"}]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid txid"}
+```
+##### [Back to top](#commands)
+---
+### txpool_content
+**Usage:**
+```
+        txpool_content <[paramlist]>
+
+[ETH] Returns all pending and queued transactions
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli txpool_content []
+<< true
+
+>> curl -d '{"id":3,"method":"txpool_content","jsonrpc":"2.0","params":[]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### txpool_inspect
+**Usage:**
+```
+        txpool_inspect <[paramlist]>
+
+[ETH] Returns a textual summary of all pending and queued transactions
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli txpool_inspect []
+<< true
+
+>> curl -d '{"id":3,"method":"txpool_inspect","jsonrpc":"2.0","params":[]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### txpool_contentFrom
+**Usage:**
+```
+        txpool_contentFrom <[paramlist]>
+
+[ETH] Retrieves the transactions contained within the txpool, returning pending and queued transactions of this address
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) address
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli txpool_contentFrom ["0x0004787d8c7c9ca114890b20eb4637221ffa6ff2"]
+<< true
+
+>> curl -d '{"id":3,"method":"txpool_contentFrom","jsonrpc":"2.0","params":["0x0004787d8c7c9ca114890b20eb4637221ffa6ff2"]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Invalid paramlist"}
+* {"code":-6,"message":"Invalid address"}
+* {"code":-6,"message":"Unknown fork"}
+```
+##### [Back to top](#commands)
+---
+### txpool_status
+**Usage:**
+```
+        txpool_status <[paramlist]>
+
+[ETH] Returns the number of transactions in pending and queued states
+```
+**Arguments:**
+```
+ [paramlist]                            (array, required, default=RPCValid) 
+```
+**Request:**
+```
+ "param" :
+   "paramlist":                         (array, required, default=RPCValid) 
+   [
+     "param": ""                        (string, required) param
+   ]
+```
+**Response:**
+```
+ "result": result                       (bool, required) 
+```
+**Examples:**
+```
+>> hashahead-cli txpool_status []
+<< true
+
+>> curl -d '{"id":3,"method":"txpool_status","jsonrpc":"2.0","params":[]}' http://127.0.0.1:8812
+<< {"id":3,"jsonrpc":"2.0","result": true}
+```
+**Errors:**
+```
+* {"code":-6,"message":"Unknown fork"}
 ```
 ##### [Back to top](#commands)
 ---
