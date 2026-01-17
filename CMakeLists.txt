@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # CMake file for HashAhead
 #
-# Copyright (c) 2021-2023 The HashAhead developers
+# Copyright (c) 2021-2025 The HashAhead developers
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 # ------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ endif()
 
 # warnings
 if(UNIX AND NOT CYGWIN)
-    string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Werror -Wno-char-subscripts -Wno-unused-parameter -Wno-sign-compare -Wno-reorder -Wno-unused-local-typedefs -Wno-implicit-fallthrough -Wno-overloaded-virtual -Wno-strict-aliasing -Wno-narrowing -Wno-unused-variable -Wno-uninitialized")
+    string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Werror -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-variable -Wno-char-subscripts -Wno-unused-parameter -Wno-sign-compare -Wno-reorder -Wno-unused-local-typedefs -Wno-implicit-fallthrough -Wno-overloaded-virtual -Wno-strict-aliasing -Wno-narrowing -Wno-unused-variable -Wno-uninitialized -Wno-type-limits")
 
     if(APPLE)
         string(APPEND CMAKE_CXX_FLAGS " -fvisibility-inlines-hidden -fvisibility=hidden -Wno-unknown-warning-option -Wno-tautological-overlap-compare")
@@ -131,6 +131,15 @@ if(OPENSSL_VERSION VERSION_EQUAL 1.1.0 OR
     (OPENSSL_VERSION VERSION_GREATER 1.1.0 AND OPENSSL_VERSION VERSION_LESS 1.2.0))
     add_definitions(-DUSE_SSL_110)
 endif()
+
+find_library(MINIUPNPC_STATIC
+    NAMES libminiupnpc.a
+    PATHS /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib
+)
+if(NOT MINIUPNPC_STATIC)
+    message(FATAL_ERROR "Static libminiupnpc.a not found. Please install libminiupnpc-dev")
+endif()
+message(STATUS "Using static miniupnpc library: ${MINIUPNPC_STATIC}")
 
 # use _1 instead of boost::placeholders::_1
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)

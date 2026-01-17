@@ -64,8 +64,13 @@ else
         exit 1
     fi 
 
-    echo "sudo make install"
-    sudo make install
+    if [[ "${os,,}" == *cygwin* ]]; then
+        echo "make install"
+        make install
+    else
+        echo "sudo make install"
+        sudo make install
+    fi
 fi
 
 cd "$origin_path" || exit 1

@@ -7,6 +7,62 @@
 * This is why HashAhead will be the platform that truly bridges the gap between crypto asset enthusiasts and the rest of the world, as the technology it uses was created specifically to cope with the challenges that the blockchain has faced so far.
 * HashAhead uses “proof of stake” as its verification method, which makes its energy consumption far less than verification methods of any other blockchain. The energy it consumes is even less than the traditional fiat transactions. With this verification method, HashAhead achieved 99.5% less energy consumption, while it is as secure as any other chain. 
 
+## Installation (Ubuntu16.04/18.04/20.04/22.04/24.04)
+```
+sudo apt install -y g++ libboost-all-dev openssl libreadline-dev pkg-config libncurses5-dev autoconf libminiupnpc-dev
+
+# ubuntu16.04
+sudo apt install -y libssl-dev
+
+# ubuntu18.04~24.04
+sudo apt install -y libssl1.0-dev
+
+# Compile cmake
+sudo apt autoremove cmake
+wget https://github.com/Kitware/CMake/releases/download/v3.22.3/cmake-3.22.3.tar.gz
+tar -zxvf cmake-3.22.3.tar.gz
+cd cmake-3.22.3
+./bootstrap 
+make
+sudo make install
+sudo ln -s /usr/local/bin/cmake /usr/bin
+cmake --version
+cd ..
+
+# Installation gcc10
+sudo apt install build-essential
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt install gcc-10 g++-10
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
+sudo update-alternatives --config gcc
+
+# Compile libsodium (version >= 1.0.18)
+wget https://github.com/jedisct1/libsodium/releases/download/1.0.18-RELEASE/libsodium-1.0.18.tar.gz --no-check-certificate
+tar -zxvf libsodium-1.0.18.tar.gz
+cd libsodium-1.0.18
+./configure
+make -j8 && make check
+sudo make install
+cd ..
+
+# Compile protobuf
+wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.3/protobuf-cpp-3.11.3.tar.gz
+tar -xzvf protobuf-cpp-3.11.3.tar.gz
+cd protobuf-3.11.3
+./configure --prefix=/usr
+make -j8
+sudo make install
+cd ..
+
+```
+## Download code and compile
+```
+git clone https://github.com/Block-Way/HashAhead.git
+cd hashahead
+./INSTALL.sh
+```
+
 ## Running hashahead
 Going through all the possible command line flags is out of scope here (please consult our CLI Wiki page), but we've enumerated a few common parameter combos to get you up to speed quickly on how you can run your own hashahead instance.
 
