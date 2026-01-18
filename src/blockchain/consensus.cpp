@@ -27,7 +27,7 @@ CDelegateContext::CDelegateContext(const crypto::CKey& keyDelegateIn, const CDes
     destDelegate.SetTemplateId(templDelegate->GetTemplateId());
 }
 
-bool CDelegateContext::BuildEnrollTx(CTransaction& tx, const int nBlockHeight, const int64 nTime, const uint256& hashFork, const CChainId nChainId, const vector<unsigned char>& vchData)
+bool CDelegateContext::BuildEnrollTx(CTransaction& tx, const int nBlockHeight, const int64 nTime, const uint256& hashFork, const CChainId nChainId, const bool fNeedSetBlspubkey, const vector<unsigned char>& vchData)
 {
     tx.SetNull();
 
@@ -38,6 +38,23 @@ bool CDelegateContext::BuildEnrollTx(CTransaction& tx, const int nBlockHeight, c
     tx.SetToAddress(destDelegate);
 
     tx.AddTxData(CTransaction::DF_CERTTXDATA, vchData);
+
+    if (fNeedSetBlspubkey)
+    {
+        CCryptoBlsKey blsKey;
+        if (!keyDelegate.GetBlsKey(blsKey))
+        {
+            StdLog("CDelegateContext", "Build Enroll Tx: Get bls key fail");
+            return false;
+        }
+
+        CBufStream ss;
+        ss << blsKey.pubkey;
+        bytes btKeyData;
+        ss.GetData(btKeyData);
+
+        tx.AddTxData(CTransaction::DF_BLSPUBKEY, btKeyData);
+    }
 
     bytes btSigData;
     if (!keyDelegate.Sign(tx.GetSignatureHash(), btSigData))
@@ -228,8 +245,15 @@ void CConsensus::PrimaryUpdate(const CBlockChainUpdate& update, CDelegateRoutine
                     const uint256& nVoteAmount = nt->second;
                     StdTrace("CConsensus", "Primary Update: Vote amount: %s, destDelegate: %s", CoinToTokenBigFloat(nVoteAmount).c_str(), destDelegate.ToString().c_str());
 
+                    bool fNeedSetBlspubkey = false;
+                    uint384 blsPubkey;
+                    if (!pBlockChain->RetrieveBlsPubkeyContext(pCoreProtocol->GetGenesisBlockHash(), hash, destDelegate, blsPubkey))
+                    {
+                        fNeedSetBlspubkey = true;
+                    }
+
                     CTransaction tx;
-                    if (ctxDelegate.BuildEnrollTx(tx, nBlockHeight, GetNetTime(), pCoreProtocol->GetGenesisBlockHash(), pCoreProtocol->GetGenesisChainId(), it->second))
+                    if (ctxDelegate.BuildEnrollTx(tx, nBlockHeight, GetNetTime(), pCoreProtocol->GetGenesisBlockHash(), pCoreProtocol->GetGenesisChainId(), fNeedSetBlspubkey, it->second))
                     {
                         StdTrace("CConsensus", "Primary Update: Build enroll tx success, vote token: %s, destDelegate: %s, block: [%d] %s",
                                  CoinToTokenBigFloat(nVoteAmount).c_str(), (*it).first.ToString().c_str(),
@@ -297,7 +321,7 @@ void CConsensus::GetAgreement(int nTargetHeight, uint256& nAgreement, size_t& nW
     {
         boost::unique_lock<boost::mutex> lock(mutex);
         uint256 hashBlock;
-        if (!pBlockChain->GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), nTargetHeight - CONSENSUS_DISTRIBUTE_INTERVAL - 1, 0, hashBlock))
+        if (!pBlockChain->GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), 0, nTargetHeight - CONSENSUS_DISTRIBUTE_INTERVAL - 1, 0, hashBlock))
         {
             Error("GetAgreement Get block hash by height slot error, distribution height: %d", nTargetHeight - CONSENSUS_DISTRIBUTE_INTERVAL - 1);
             return;
@@ -342,7 +366,7 @@ bool CConsensus::GetNextConsensus(CAgreementBlock& consParam)
     CBlockStatus status;
     if (!pBlockChain->GetLastBlockStatus(pCoreProtocol->GetGenesisBlockHash(), status))
     {
-        Error("GetNextConsensus CBlockChain::GetLastBlock fail");
+        Error("Get next consensus: Get last block fail");
         return false;
     }
     consParam.hashPrev = status.hashBlock;
@@ -372,30 +396,30 @@ bool CConsensus::GetNextConsensus(CAgreementBlock& consParam)
         if (!GetInnerAgreement(status.nBlockHeight + 1, consParam.agreement.nAgreement, consParam.agreement.nWeight,
                                consParam.agreement.vBallot, consParam.fCompleted))
         {
-            Error("GetNextConsensus GetInnerAgreement fail");
+            Error("Get next consensus: Get inner agreement fail");
             return false;
         }
         cacheAgreementBlock = consParam;
     }
     else
     {
-        if (cacheAgreementBlock.agreement.IsProofOfWork() && !cacheAgreementBlock.fCompleted)
+        if (cacheAgreementBlock.agreement.IsProofOfPoa() && !cacheAgreementBlock.fCompleted)
         {
             if (!GetInnerAgreement(status.nBlockHeight + 1, cacheAgreementBlock.agreement.nAgreement, cacheAgreementBlock.agreement.nWeight,
                                    cacheAgreementBlock.agreement.vBallot, cacheAgreementBlock.fCompleted))
             {
-                Error("GetNextConsensus GetInnerAgreement fail");
+                Error("Get next consensus Get inner agreement fail");
                 return false;
             }
-            if (!cacheAgreementBlock.agreement.IsProofOfWork())
+            if (!cacheAgreementBlock.agreement.IsProofOfPoa())
             {
-                StdDebug("CConsensus", "GetNextConsensus: consensus change pos, target height: %d", cacheAgreementBlock.nPrevHeight + 1);
+                StdDebug("CConsensus", "Get next consensus: consensus change pos, target height: %d", cacheAgreementBlock.nPrevHeight + 1);
             }
         }
         consParam = cacheAgreementBlock;
         consParam.nWaitTime = nNextBlockTime - GetNetTime();
     }
-    if (!cacheAgreementBlock.agreement.IsProofOfWork())
+    if (!cacheAgreementBlock.agreement.IsProofOfPoa())
     {
         nNextBlockTime = pCoreProtocol->GetNextBlockTimestamp(status.nBlockTime);
         consParam.nWaitTime = nNextBlockTime - GetNetTime();
@@ -420,16 +444,16 @@ bool CConsensus::LoadConsensusData(int& nStartHeight, CDelegateRoutine& routine)
     for (int i = nStartHeight; i <= nLashBlockHeight; i++)
     {
         uint256 hashBlock;
-        if (!pBlockChain->GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), i, 0, hashBlock))
+        if (!pBlockChain->GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), 0, i, 0, hashBlock))
         {
-            StdError("CConsensus", "LoadConsensusData: Get block hash by height slot fail, height: %d", i);
+            StdError("CConsensus", "Load consensus data: Get block hash by height slot fail, height: %d", i);
             return false;
         }
 
         CDelegateEnrolled enrolled;
         if (!pBlockChain->GetBlockDelegateEnrolled(hashBlock, enrolled))
         {
-            StdError("CConsensus", "LoadConsensusData: GetBlockDelegateEnrolled fail, height: %d, block: %s", i, hashBlock.GetHex().c_str());
+            StdError("CConsensus", "Load consensus data: Get block delegate enrolled fail, height: %d, block: %s", i, hashBlock.GetHex().c_str());
             return false;
         }
 
@@ -459,9 +483,9 @@ bool CConsensus::GetInnerAgreement(int nTargetHeight, uint256& nAgreement, size_
     if (nTargetHeight >= CONSENSUS_INTERVAL)
     {
         uint256 hashBlock;
-        if (!pBlockChain->GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), nTargetHeight - CONSENSUS_DISTRIBUTE_INTERVAL - 1, 0, hashBlock))
+        if (!pBlockChain->GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), 0, nTargetHeight - CONSENSUS_DISTRIBUTE_INTERVAL - 1, 0, hashBlock))
         {
-            Error("GetAgreement: Get block hash by height slot error, distribution height: %d", nTargetHeight - CONSENSUS_DISTRIBUTE_INTERVAL - 1);
+            Error("Get agreement: Get block hash by height slot error, distribution height: %d", nTargetHeight - CONSENSUS_DISTRIBUTE_INTERVAL - 1);
             return false;
         }
 
@@ -475,13 +499,13 @@ bool CConsensus::GetInnerAgreement(int nTargetHeight, uint256& nAgreement, size_
             CDelegateEnrolled enrolled;
             if (!pBlockChain->GetBlockDelegateEnrolled(hashBlock, enrolled))
             {
-                Error("GetAgreement CBlockChain::GetBlockDelegateEnrolled error, hash: %s", hashBlock.ToString().c_str());
+                Error("Get agreement: Get block delegate enrolled error, hash: %s", hashBlock.ToString().c_str());
                 return false;
             }
             uint256 nMoneySupply = pBlockChain->GetBlockMoneySupply(hashBlock);
             if (nMoneySupply == 0)
             {
-                Error("GetAgreement GetBlockMoneySupply fail, hash: %s", hashBlock.ToString().c_str());
+                Error("Get agreement: Get block money supply fail, hash: %s", hashBlock.ToString().c_str());
                 return false;
             }
             pCoreProtocol->GetDelegatedBallot(nTargetHeight, nAgreement, nWeight, mapBallot, enrolled.vecAmount, nMoneySupply, vBallot);
