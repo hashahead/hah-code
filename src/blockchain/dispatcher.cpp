@@ -29,11 +29,17 @@ CDispatcher::CDispatcher()
     pService = nullptr;
     pBlockMaker = nullptr;
     pNetChannel = nullptr;
+    pDelegatedChannel = nullptr;
     pBlockChannel = nullptr;
     pCertTxChannel = nullptr;
     pUserTxChannel = nullptr;
-    pDelegatedChannel = nullptr;
+    pBlockVoteChannel = nullptr;
+    pBlockCrossProveChannel = nullptr;
     pDataStat = nullptr;
+    pBlockFilter = nullptr;
+
+    fSyncForkHeight = false;
+    nPrimaryMinHeight = 0;
 }
 
 CDispatcher::~CDispatcher()
@@ -90,27 +96,39 @@ bool CDispatcher::HandleInitialize()
         return false;
     }
 
+    if (!GetObject("delegatedchannel", pDelegatedChannel))
+    {
+        Error("Failed to request delegatedchanne");
+        return false;
+    }
+
     if (!GetObject("blockchannel", pBlockChannel))
     {
-        Error("Failed to request peer net blockchannel\n");
+        Error("Failed to request peer net blockchannel");
         return false;
     }
 
     if (!GetObject("certtxchannel", pCertTxChannel))
     {
-        Error("Failed to request peer net certtxchannel\n");
+        Error("Failed to request peer net certtxchannel");
         return false;
     }
 
     if (!GetObject("usertxchannel", pUserTxChannel))
     {
-        Error("Failed to request peer net usertxchannel\n");
+        Error("Failed to request peer net usertxchannel");
         return false;
     }
 
-    if (!GetObject("delegatedchannel", pDelegatedChannel))
+    if (!GetObject("blockvotechannel", pBlockVoteChannel))
     {
-        Error("Failed to request delegatedchanne");
+        Error("Failed to request peer net blockvotechannel");
+        return false;
+    }
+
+    if (!GetObject("blockcrossprovechannel", pBlockCrossProveChannel))
+    {
+        Error("Failed to request peer net blockcrossprovechannel");
         return false;
     }
 
@@ -119,6 +137,14 @@ bool CDispatcher::HandleInitialize()
         Error("Failed to request datastat");
         return false;
     }
+
+    if (!GetObject("blockfilter", pBlockFilter))
+    {
+        Error("Failed to request blockfilter");
+        return false;
+    }
+
+    fSyncForkHeight = NetworkConfig()->fSyncForkHeight;
     return true;
 }
 
@@ -132,11 +158,14 @@ void CDispatcher::HandleDeinitialize()
     pService = nullptr;
     pBlockMaker = nullptr;
     pNetChannel = nullptr;
+    pDelegatedChannel = nullptr;
     pBlockChannel = nullptr;
     pCertTxChannel = nullptr;
     pUserTxChannel = nullptr;
-    pDelegatedChannel = nullptr;
+    pBlockVoteChannel = nullptr;
+    pBlockCrossProveChannel = nullptr;
     pDataStat = nullptr;
+    pBlockFilter = nullptr;
 }
 
 bool CDispatcher::HandleInvoke()
@@ -147,6 +176,7 @@ bool CDispatcher::HandleInvoke()
         Error("Failed to get last block");
         return false;
     }
+    nPrimaryMinHeight = status.nBlockHeight;
 
     vector<uint256> vActive;
     if (!pForkManager->GetActiveFork(vActive))
@@ -174,28 +204,66 @@ void CDispatcher::HandleHalt()
 {
 }
 
-Errno CDispatcher::AddNewBlock(const CBlock& block, uint64 nNonce)
+Errno CDispatcher::AddNewBlock(const CBlock& block, const uint64 nNonce, const bool fCheckSyncHeight)
 {
+    const uint256 hashBlock = block.GetHash();
+
     Errno err = OK;
     if (!pBlockChain->Exists(block.hashPrev))
     {
-        StdError("Dispatcher", "Add New Block: prev block not exist, block: %s, prev: %s", block.GetHash().GetHex().c_str(), block.hashPrev.GetHex().c_str());
+        StdError("Dispatcher", "Add New Block: prev block not exist, block: %s, prev: %s", hashBlock.GetHex().c_str(), block.hashPrev.GetHex().c_str());
         return ERR_MISSING_PREV;
     }
 
+    if (fSyncForkHeight && fCheckSyncHeight && !block.IsOrigin())
+    {
+        if (block.IsSubsidiary() || block.IsExtended() || block.IsVacant())
+        {
+            CProofOfPiggyback proof;
+            if (!block.GetPiggybackProof(proof) || proof.hashRefBlock == 0)
+            {
+                StdLog("Dispatcher", "Add New Block: SubFork load proof fail, block: %s", hashBlock.GetBhString().c_str());
+                return ERR_BLOCK_INVALID_FORK;
+            }
+            if (!pBlockChain->Exists(proof.hashRefBlock))
+            {
+                StdLog("Dispatcher", "Add New Block: Sub fork ref block not exist, ref block: %s, block: %s",
+                       proof.hashRefBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+                if (nPrimaryMinHeight < CBlock::GetBlockHeightByHash(proof.hashRefBlock))
+                {
+                    nPrimaryMinHeight = CBlock::GetBlockHeightByHash(proof.hashRefBlock);
+                }
+                return ERR_SYNC_HEIGHT;
+            }
+        }
+
+        const uint32 nAddHeight = 32;
+        const uint32 nMinHeight = pBlockChain->GetAllForkMinLastBlockHeight();
+        if (nPrimaryMinHeight == 0 || nMinHeight > nPrimaryMinHeight)
+        {
+            nPrimaryMinHeight = nMinHeight;
+        }
+        if (block.GetBlockHeight() > (block.IsPrimary() ? nPrimaryMinHeight : nMinHeight) + nAddHeight)
+        {
+            StdLog("Dispatcher", "Add New Block: Block height sync height, block: %s, prev: %s", hashBlock.GetBhString().c_str(), block.hashPrev.GetBhString().c_str());
+            return ERR_SYNC_HEIGHT;
+        }
+    }
+
+    uint256 hashFork;
     CBlockChainUpdate updateBlockChain;
     if (!block.IsOrigin())
     {
-        err = pBlockChain->AddNewBlock(block, updateBlockChain);
+        err = pBlockChain->AddNewBlock(hashBlock, block, hashFork, updateBlockChain);
         if (err == OK)
         {
             if (!nNonce)
             {
-                pDataStat->AddBlockMakerStatData(updateBlockChain.hashFork, block.IsProofOfWork(), block.vtx.size());
+                pDataStat->AddBlockMakerStatData(hashFork, block.IsProofOfPoa(), block.vtx.size());
             }
             else
             {
-                pDataStat->AddP2pSynRecvStatData(updateBlockChain.hashFork, 1, block.vtx.size());
+                pDataStat->AddP2pSynRecvStatData(hashFork, 1, block.vtx.size());
             }
         }
     }
@@ -206,20 +274,41 @@ Errno CDispatcher::AddNewBlock(const CBlock& block, uint64 nNonce)
 
     if (err != OK || updateBlockChain.IsNull())
     {
+        // if (err == OK)
+        // {
+        //     if (!block.IsOrigin() && !block.IsVacant())
+        //     {
+        //         StdDebug("TEST", "Add New Block: Add vote block, block: %s", hashBlock.GetHex().c_str());
+        //         pBlockVoteChannel->UpdateNewBlock(hashFork, hashBlock, block, nNonce);
+        //     }
+        // }
         return err;
     }
 
     if (!pTxPool->SynchronizeBlockChain(updateBlockChain))
     {
-        StdError("Dispatcher", "Add New Block: TxPool Synchronize block chain fail, block: %s", block.GetHash().GetHex().c_str());
+        StdError("Dispatcher", "Add New Block: TxPool Synchronize block chain fail, block: %s", hashBlock.GetHex().c_str());
         return ERR_SYS_DATABASE_ERROR;
     }
 
+    for (auto& receipt : updateBlockChain.vBlockTxReceipts)
+    {
+        pBlockFilter->AddTxReceipt(hashFork, hashBlock, receipt);
+    }
+    pBlockFilter->AddNewBlockInfo(hashFork, hashBlock, block);
+
     if (!block.IsOrigin())
     {
-        pBlockChannel->BroadcastBlock(nNonce, updateBlockChain.hashFork, block.GetHash(), block.hashPrev, block);
+        pBlockChannel->BroadcastBlock(nNonce, updateBlockChain.hashFork, hashBlock, block.hashPrev, block);
         //pNetChannel->BroadcastBlockInv(updateBlockChain.hashFork, block.GetHash());
         pDataStat->AddP2pSynSendStatData(updateBlockChain.hashFork, 1, block.vtx.size());
+
+        if (!block.IsVacant())
+        {
+            NotifyBlockVoteChnNewBlock(hashBlock, nNonce);
+
+            pBlockCrossProveChannel->BroadcastBlockProve(updateBlockChain.hashFork, hashBlock, nNonce, updateBlockChain.mapBlockProve);
+        }
     }
 
     if (!block.IsVacant())
