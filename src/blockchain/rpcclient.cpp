@@ -392,7 +392,11 @@ void CRPCClient::ConsoleHandleLine(const string& strLine)
 
     if (!vCommand.empty())
     {
-        add_history(strLine.c_str());
+        if (strPrevLine.empty() || strPrevLine != strLine)
+        {
+            strPrevLine = strLine;
+            add_history(strLine.c_str());
+        }
 
         if (!CallConsoleCommand(vCommand))
         {

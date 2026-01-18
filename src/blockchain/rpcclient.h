@@ -50,6 +50,7 @@ protected:
     uint64 nLastNonce;
     hnbase::CIOCompletion ioComplt;
     std::atomic<bool> isConsoleRunning;
+    std::string strPrevLine;
 };
 
 } // namespace hashahead
