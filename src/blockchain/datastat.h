@@ -31,8 +31,8 @@ public:
     bool CumulativeStatData(uint32 nBeginTime, uint32 nGetCount, std::vector<CStatItemBlockMaker>& vOut);
 
 protected:
-    uint64 nStatPOWBlockCount;
-    uint64 nStatDPOSBlockCount;
+    uint64 nStatPoaBlockCount;
+    uint64 nStatPosBlockCount;
     uint64 nStatTxCount;
     std::vector<CStatItemBlockMaker> vStatTable;
 };

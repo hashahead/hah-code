@@ -16,7 +16,7 @@ namespace hashahead
 // CStatBlockMakerFork
 
 CStatBlockMakerFork::CStatBlockMakerFork()
-  : nStatPOWBlockCount(0), nStatDPOSBlockCount(0), nStatTxCount(0)
+  : nStatPoaBlockCount(0), nStatPosBlockCount(0), nStatTxCount(0)
 {
     vStatTable.resize(STAT_MAX_ITEM_COUNT);
     for (uint32 i = 0; i < STAT_MAX_ITEM_COUNT; i++)
@@ -34,11 +34,11 @@ void CStatBlockMakerFork::AddStatData(bool fPOW, uint64 nTxCountIn)
 {
     if (fPOW)
     {
-        nStatPOWBlockCount++;
+        nStatPoaBlockCount++;
     }
     else
     {
-        nStatDPOSBlockCount++;
+        nStatPosBlockCount++;
     }
     nStatTxCount += nTxCountIn;
 }
@@ -49,13 +49,13 @@ void CStatBlockMakerFork::TimerStatData(uint32 nTimeValue)
     {
         CStatItemBlockMaker& data = vStatTable[nTimeValue];
 
-        data.nPOWBlockCount = nStatPOWBlockCount;
-        data.nDPOSBlockCount = nStatDPOSBlockCount;
-        data.nBlockTPS = (nStatPOWBlockCount + nStatDPOSBlockCount) * 100 / 60;
+        data.nPoaBlockCount = nStatPoaBlockCount;
+        data.nPosBlockCount = nStatPosBlockCount;
+        data.nBlockTPS = (nStatPoaBlockCount + nStatPosBlockCount) * 100 / 60;
         data.nTxTPS = nStatTxCount * 100 / 60;
     }
-    nStatPOWBlockCount = 0;
-    nStatDPOSBlockCount = 0;
+    nStatPoaBlockCount = 0;
+    nStatPosBlockCount = 0;
     nStatTxCount = 0;
 }
 
@@ -87,8 +87,8 @@ bool CStatBlockMakerFork::CumulativeStatData(uint32 nBeginTime, uint32 nGetCount
         CStatItemBlockMaker& get = vStatTable[nGetPos];
         nGetPos = (nGetPos + 1) % STAT_MAX_ITEM_COUNT;
 
-        out.nPOWBlockCount += get.nPOWBlockCount;
-        out.nDPOSBlockCount += get.nDPOSBlockCount;
+        out.nPoaBlockCount += get.nPoaBlockCount;
+        out.nPosBlockCount += get.nPosBlockCount;
         out.nBlockTPS += get.nBlockTPS;
         out.nTxTPS += get.nTxTPS;
     }
