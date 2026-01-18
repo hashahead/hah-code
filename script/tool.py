@@ -12,7 +12,7 @@ type_f = type
 # copyright on .h file
 copyright = \
     '''\
-// Copyright (c) 2021-2023 The HashAhead developers
+// Copyright (c) 2021-2025 The HashAhead developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 '''
