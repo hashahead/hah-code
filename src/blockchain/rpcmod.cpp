@@ -3415,8 +3415,8 @@ CRPCResultPtr CRPCMod::RPCMakeOrigin(const CReqContext& ctxReq, CRPCParamPtr par
     }
     uint64 nHalvecycle = spParam->nHalvecycle;
 
-    if (spParam->strName.empty() || spParam->strName.size() > 128
-        || spParam->strSymbol.empty() || spParam->strSymbol.size() > 16)
+    if (spParam->strName.empty() || spParam->strName.size() > MAX_FORK_NAME_SIZE
+        || spParam->strSymbol.empty() || spParam->strSymbol.size() > MAX_COIN_SYMBOL_SIZE)
     {
         throw CRPCException(RPC_INVALID_PARAMETER, "Invalid name or symbol");
     }
@@ -3453,11 +3453,6 @@ CRPCResultPtr CRPCMod::RPCMakeOrigin(const CReqContext& ctxReq, CRPCParamPtr par
         throw CRPCException(RPC_INVALID_PARAMETER, "Failed to query main chain reference block");
     }
 
-    if (!pService->VerifyForkNameAndChainId(hashParent, (CChainId)(spParam->nChainid), spParam->strName))
-    {
-        throw CRPCException(RPC_VERIFY_ALREADY_IN_CHAIN, "Fork name or chainid is existed");
-    }
-
     if (nForkType == CProfile::PROFILE_FORK_TYPE_CLONEMAP)
     {
         CBlockStatus statusGen;
@@ -3473,6 +3468,13 @@ CRPCResultPtr CRPCMod::RPCMakeOrigin(const CReqContext& ctxReq, CRPCParamPtr par
         nAmount = 0;
         nMintReward = 0;
         nHalvecycle = 0;
+    }
+    else
+    {
+        if (!fCreateUserForkEnable)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Disable create user fork");
+        }
     }
 
     CProfile profile;
@@ -3492,6 +3494,9 @@ CRPCResultPtr CRPCMod::RPCMakeOrigin(const CReqContext& ctxReq, CRPCParamPtr par
     block.nVersion = 1;
     block.nType = CBlock::BLOCK_ORIGIN;
     block.SetBlockTime(nTimeRef);
+    block.nNumber = 0;
+    block.nHeight = CBlock::GetBlockHeightByHash(hashPrev) + 1;
+    block.nSlot = 0;
     block.hashPrev = hashPrev;
 
     block.AddForkProfile(profile);
@@ -3509,13 +3514,65 @@ CRPCResultPtr CRPCMod::RPCMakeOrigin(const CReqContext& ctxReq, CRPCParamPtr par
     tx.SetToAddressData(CAddressContext(CPubkeyAddressContext()));
 
     block.AddMintCoinProof(tx.GetAmount());
+    block.UpdateMerkleRoot();
 
-    block.hashMerkleRoot = block.CalcMerkleTreeRoot();
+    uint256 hashBlock = block.GetHash();
+    if (!pService->VerifyForkFlag(hashBlock, (CChainId)(spParam->nChainid), spParam->strSymbol, spParam->strName))
+    {
+        throw CRPCException(RPC_VERIFY_ALREADY_IN_CHAIN, "Fork name or chainid is existed");
+    }
 
-    int nVersion;
-    bool fLocked, fPublic;
-    int64 nAutoLockTime;
-    if (!pService->GetKeyStatus(destOwner, nVersion, fLocked, nAutoLockTime, fPublic))
+    // int nVersion;
+    // bool fLocked, fPublic;
+    // int64 nAutoLockTime;
+    // if (!pService->GetKeyStatus(destOwner, nVersion, fLocked, nAutoLockTime, fPublic))
+    // {
+    //     throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown key");
+    // }
+    // if (fPublic)
+    // {
+    //     throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Can't sign origin block by public key");
+    // }
+    // if (fLocked)
+    // {
+    //     throw CRPCException(RPC_WALLET_UNLOCK_NEEDED, "Key is locked");
+    // }
+
+    // if (!pService->SignSignature(destOwner, hashBlock, block.vchSig))
+    // {
+    //     throw CRPCException(RPC_WALLET_ERROR, "Failed to sign message");
+    // }
+
+    CBufStream ss;
+    ss << block;
+
+    auto spResult = MakeCMakeOriginResultPtr();
+    spResult->strHash = hashBlock.GetHex();
+    spResult->strHex = ToHexString((const unsigned char*)ss.GetData(), ss.GetSize());
+
+    return spResult;
+}
+
+CRPCResultPtr CRPCMod::RPCMakeFork(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CMakeForkParam>(param);
+
+    const uint256 hashGenesisFork = pCoreProtocol->GetGenesisBlockHash();
+
+    CDestination destOwner;
+    uint8 nForkType = CProfile::PROFILE_FORK_TYPE_USER;
+    uint256 hashPrev;
+    CChainId nChainId = 0;
+    uint256 nAmount = COIN * (10 * 10000 * 10000);
+    uint256 nMintReward = COIN * 100;
+    string strName = "";
+    string strSymbol = "";
+    uint64 nHalvecycle = 0;
+    uint64 nForkNonce = 0;
+    uint256 nTxAmount = 0;
+
+    CBlockStatus lastStatus;
+    if (!pService->GetLastBlockStatus(hashGenesisFork, lastStatus))
     {
         throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown key");
     }
