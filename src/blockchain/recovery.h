@@ -16,14 +16,38 @@ public:
     CRecovery();
     ~CRecovery();
 
+    bool IsExit() const;
+    bool AddRecoveryBlock(const CBlockEx& block);
+
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;
     bool HandleInvoke() override;
+    void HandleHalt() override;
+    bool IsRecoverying() override;
+
+    bool GetForkLastHeight(std::map<uint32, uint32>& mapForkLastHeight);
+
+    void RecoveryThreadFunc();
+    void RecoveryWork();
 
 protected:
     IDispatcher* pDispatcher;
+    IBlockChain* pBlockChain;
+    ICoreProtocol* pCoreProtocol;
+
+    bool fRecoveryWork;
+    std::string strRecoveryDir;
+
+    hnbase::CThread thrRecovery;
+    std::atomic<bool> fExit;
+
+    uint32 nPrimaryChainId;
+    uint32 nPrimaryMinHeight;
+
+    std::map<uint32, std::queue<CBlockEx>> mapForkBlockQueue; // key: fork chain id
 };
 
 } // namespace hashahead
+
 #endif // HASHAHEAD_RECOVERY_H

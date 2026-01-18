@@ -254,9 +254,9 @@ public:
     void BroadcastTxInv(const uint256& hashFork) override;
     void SubscribeFork(const uint256& hashFork, const uint64& nNonce) override;
     void UnsubscribeFork(const uint256& hashFork) override;
-    bool SubmitCachePowBlock(const CConsensusParam& consParam) override;
-    bool IsLocalCachePowBlock(int nHeight, bool& fIsDpos) override;
-    bool AddCacheLocalPowBlock(const CBlock& block) override;
+    bool SubmitCachePoaBlock(const CConsensusParam& consParam) override;
+    bool IsLocalCachePoaBlock(int nHeight, bool& fIsPos) override;
+    bool AddCacheLocalPoaBlock(const CBlock& block) override;
 
 protected:
     enum
@@ -324,7 +324,7 @@ protected:
     const string GetPeerAddressInfo(uint64 nNonce);
     bool CheckPrevBlock(const uint256& hash, CSchedule& sched, uint256& hashFirst, uint256& hashPrev);
     void InnerBroadcastBlockInv(const uint256& hashFork, const uint256& hashBlock);
-    void InnerSubmitCachePowBlock();
+    void InnerSubmitCachePoaBlock();
     void GetNextRefBlock(const uint256& hashRefBlock, std::vector<std::pair<uint256, uint256>>& vNext);
 
     const CBasicConfig* Config()

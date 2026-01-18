@@ -18,6 +18,7 @@ typedef enum
     ERR_NOT_FOUND,
     ERR_ALREADY_HAVE,
     ERR_MISSING_PREV,
+    ERR_SYNC_HEIGHT,
     /* system */
     ERR_SYS_DATABASE_ERROR,
     ERR_SYS_OUT_OF_DISK_SPACE,

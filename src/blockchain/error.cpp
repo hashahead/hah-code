@@ -20,6 +20,8 @@ static const char* _ErrorString[] = {
     "already have",
     //ERR_MISSING_PREV,
     "missing previous",
+    //ERR_SYNC_HEIGHT
+    "sync height",
     /* system */
     //ERR_SYS_DATABASE_ERROR,
     "database error",
