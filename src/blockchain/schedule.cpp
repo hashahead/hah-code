@@ -222,7 +222,7 @@ bool CSchedule::ReceiveBlock(uint64 nPeerNonce, const uint256& hash, const CBloc
             state.nClearObjTime = GetTime() + MAX_OBJ_WAIT_TIME;
             setSchedPeer.insert(state.setKnownPeer.begin(), state.setKnownPeer.end());
             mapPeer[nPeerNonce].Completed((*it).first);
-            if (block.IsPrimary() && block.IsProofOfWork())
+            if (block.IsPrimary() && block.IsProofOfPoa())
             {
                 mapHeightBlock[block.GetBlockHeight()].push_back(make_pair(hash, CACHE_POW_BLOCK_TYPE_REMOTE));
             }
@@ -573,7 +573,7 @@ bool CSchedule::SetDelayedClear(const network::CInv& inv, int64 nDelayedTime)
     return false;
 }
 
-void CSchedule::GetSubmitCachePowBlock(const CConsensusParam& consParam, std::vector<std::pair<uint256, int>>& vPowBlockHash)
+void CSchedule::GetSubmitCachePoaBlock(const CConsensusParam& consParam, std::vector<std::pair<uint256, int>>& vPoaBlockHash)
 {
     for (auto it = mapHeightBlock.begin(); it != mapHeightBlock.end(); ++it)
     {
@@ -581,16 +581,16 @@ void CSchedule::GetSubmitCachePowBlock(const CConsensusParam& consParam, std::ve
         {
             for (auto& chash : it->second)
             {
-                vPowBlockHash.push_back(chash);
+                vPoaBlockHash.push_back(chash);
             }
         }
         else if (it->first == consParam.nPrevHeight + 1)
         {
-            if (consParam.ret && (consParam.fPow || (consParam.nWaitTime < 0 && std::abs(consParam.nWaitTime) > MAX_SUBMIT_POW_TIMEOUT)))
+            if (consParam.ret && (consParam.fPoa || (consParam.nWaitTime < 0 && std::abs(consParam.nWaitTime) > MAX_SUBMIT_POW_TIMEOUT)))
             {
                 for (auto& chash : it->second)
                 {
-                    vPowBlockHash.push_back(chash);
+                    vPoaBlockHash.push_back(chash);
                 }
             }
         }
@@ -600,7 +600,7 @@ void CSchedule::GetSubmitCachePowBlock(const CConsensusParam& consParam, std::ve
             {
                 for (auto& chash : it->second)
                 {
-                    vPowBlockHash.push_back(chash);
+                    vPoaBlockHash.push_back(chash);
                 }
             }
         }

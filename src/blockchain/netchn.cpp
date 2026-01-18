@@ -1658,28 +1658,32 @@ void CNetChannel::AddNewBlock(const uint256& hashFork, const uint256& hash, CSch
                 }
             }
 
-            if ((fCheckPow || hash != hashBlock) && pBlock->IsPrimary() && pBlock->IsProofOfWork())
+            if ((fCheckPow || hash != hashBlock) && pBlock->IsPrimary() && pBlock->IsProofOfPoa())
             {
                 bool fAddBlock = false;
-                bool fVerifyPowBlock = false;
-                if (!sched.GetPowBlockState(hashBlock, fVerifyPowBlock))
+                bool fVerifyPoaBlock = false;
+                if (!sched.GetPoaBlockState(hashBlock, fVerifyPoaBlock))
                 {
                     StdLog("NetChannel", "Add new block: Get poa block state fail, peer: %s, height: %d, block: %s",
                            GetPeerAddressInfo(nNonceSender).c_str(), CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetHex().c_str());
                     setMisbehavePeer.insert(nNonceSender);
                     return;
                 }
-                if (!fVerifyPowBlock)
+                if (!fVerifyPoaBlock)
                 {
                     bool fLongChain = false;
-                    if (pBlockChain->VerifyPowBlock(*pBlock, fLongChain) != OK)
+                    Errno err = pBlockChain->VerifyPoaBlock(*pBlock, fLongChain);
+                    if (err != OK)
                     {
                         StdLog("NetChannel", "Add new block: Verify poa block fail, peer: %s, height: %d, block: %s",
                                GetPeerAddressInfo(nNonceSender).c_str(), CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetHex().c_str());
-                        setMisbehavePeer.insert(nNonceSender);
+                        if (err != ERR_ALREADY_HAVE)
+                        {
+                            setMisbehavePeer.insert(nNonceSender);
+                        }
                         return;
                     }
-                    sched.SetPowBlockVerifyState(hashBlock, true);
+                    sched.SetPoaBlockVerifyState(hashBlock, true);
 
                     if (fLongChain)
                     {
@@ -1692,7 +1696,7 @@ void CNetChannel::AddNewBlock(const uint256& hashFork, const uint256& hash, CSch
                         }
 
                         uint256 hashFirstBlock;
-                        if (sched.GetFirstCachePowBlock(pBlock->GetBlockHeight(), hashFirstBlock)
+                        if (sched.GetFirstCachePoaBlock(pBlock->GetBlockHeight(), hashFirstBlock)
                             && hashFirstBlock == hashBlock)
                         {
                             InnerBroadcastBlockInv(hashFork, hashBlock);
@@ -1732,11 +1736,11 @@ void CNetChannel::AddNewBlock(const uint256& hashFork, const uint256& hash, CSch
                 }
             }
 
-            Errno err = pDispatcher->AddNewBlock(*pBlock, nNonceSender);
+            Errno err = pDispatcher->AddNewBlock(*pBlock, nNonceSender, true);
             if (err == OK)
             {
                 StdDebug("NetChannel", "Add new block: Add block success, peer: %s, height: %d, block: %s",
-                         GetPeerAddressInfo(nNonceSender).c_str(), CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetHex().c_str());
+                         GetPeerAddressInfo(nNonceSender).c_str(), CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetBhString().c_str());
 
                 if (pBlock->IsPrimary())
                 {
@@ -1795,16 +1799,25 @@ void CNetChannel::AddNewBlock(const uint256& hashFork, const uint256& hash, CSch
             else if (err == ERR_ALREADY_HAVE /*&& pBlock->IsVacant()*/)
             {
                 StdLog("NetChannel", "Add new block: Block already have, peer: %s, height: %d, block: %s",
-                       GetPeerAddressInfo(nNonceSender).c_str(), CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetHex().c_str());
+                       GetPeerAddressInfo(nNonceSender).c_str(), CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetBhString().c_str());
                 set<uint64> setKnownPeer;
                 sched.GetNextBlock(hashBlock, vBlockHash);
+                sched.RemoveInv(network::CInv(network::CInv::MSG_BLOCK, hashBlock), setKnownPeer);
+                setSchedPeer.insert(setKnownPeer.begin(), setKnownPeer.end());
+            }
+            else if (err == ERR_SYNC_HEIGHT)
+            {
+                StdLog("NetChannel", "Add new block: Block sync height, peer: %s, height: %d, block: %s",
+                       GetPeerAddressInfo(nNonceSender).c_str(), CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetBhString().c_str());
+                set<uint64> setKnownPeer;
+                // sched.GetNextBlock(hashBlock, vBlockHash);
                 sched.RemoveInv(network::CInv(network::CInv::MSG_BLOCK, hashBlock), setKnownPeer);
                 setSchedPeer.insert(setKnownPeer.begin(), setKnownPeer.end());
             }
             else
             {
                 StdLog("NetChannel", "Add new block: Add new block fail, peer: %s, block: %s, err: [%d] %s",
-                       GetPeerAddressInfo(nNonceSender).c_str(), hashBlock.GetHex().c_str(), err, ErrorString(err));
+                       GetPeerAddressInfo(nNonceSender).c_str(), hashBlock.GetBhString().c_str(), err, ErrorString(err));
                 //sched.InvalidateBlock(hashBlock, setMisbehavePeer);
                 set<uint64> setKnownPeer;
                 sched.RemoveInv(network::CInv(network::CInv::MSG_BLOCK, hashBlock), setKnownPeer);
@@ -1814,7 +1827,7 @@ void CNetChannel::AddNewBlock(const uint256& hashFork, const uint256& hash, CSch
         else
         {
             StdLog("NetChannel", "Add new block: Sched get block fail, peer: %s, block: %s",
-                   GetPeerAddressInfo(nNonceSender).c_str(), hashBlock.GetHex().c_str());
+                   GetPeerAddressInfo(nNonceSender).c_str(), hashBlock.GetBhString().c_str());
         }
     }
 }

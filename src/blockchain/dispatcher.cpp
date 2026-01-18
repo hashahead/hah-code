@@ -344,7 +344,14 @@ Errno CDispatcher::AddNewTx(const uint256& hashFork, const CTransaction& tx, uin
         return ERR_BLOCK_INVALID_FORK;
     }
 
-    Errno err = pCoreProtocol->ValidateTransaction(hashFork, hashMainChainLastBlock, tx);
+    CBlockStatus statusFork;
+    if (!pBlockChain->GetLastBlockStatus(hashFork, statusFork))
+    {
+        StdError("Dispatcher", "Add New Tx: Get fork status fail, fork: %s", hashFork.ToString().c_str());
+        return ERR_BLOCK_INVALID_FORK;
+    }
+
+    Errno err = pCoreProtocol->ValidateTransaction(hashFork, hashMainChainLastBlock, statusFork.nBlockHeight, tx);
     if (err != OK)
     {
         StdError("Dispatcher", "Add New Tx: Validate transaction fail, txid: %s", tx.GetHash().GetHex().c_str());
@@ -375,7 +382,7 @@ Errno CDispatcher::AddNewTx(const uint256& hashFork, const CTransaction& tx, uin
         pDataStat->AddP2pSynTxSynStatData(hashFork, 1, false);
     }
 
-    pBlockChain->AddPendingTx(hashFork, tx.GetHash());
+    pBlockFilter->AddPendingTx(hashFork, tx.GetHash());
     return OK;
 }
 
@@ -398,9 +405,9 @@ void CDispatcher::SetConsensus(const CAgreementBlock& agreeBlock)
     consParam.nPrevNumber = agreeBlock.nPrevNumber;
     consParam.nPrevMintType = agreeBlock.nPrevMintType;
     consParam.nWaitTime = agreeBlock.nWaitTime;
-    consParam.fPow = agreeBlock.agreement.IsProofOfWork();
+    consParam.fPoa = agreeBlock.agreement.IsProofOfPoa();
     consParam.ret = agreeBlock.ret;
-    pNetChannel->SubmitCachePowBlock(consParam);
+    pNetChannel->SubmitCachePoaBlock(consParam);
 }
 
 void CDispatcher::CheckAllSubForkLastBlock()

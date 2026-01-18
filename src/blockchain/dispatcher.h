@@ -16,7 +16,7 @@ class CDispatcher : public IDispatcher
 public:
     CDispatcher();
     ~CDispatcher();
-    Errno AddNewBlock(const CBlock& block, uint64 nNonce = 0) override;
+    Errno AddNewBlock(const CBlock& block, const uint64 nNonce = 0, const bool fCheckSyncHeight = false) override;
     Errno AddNewTx(const uint256& hashFork, const CTransaction& tx, uint64 nNonce = 0) override;
     bool AddNewDistribute(const uint256& hashAnchor, const CDestination& dest,
                           const std::vector<unsigned char>& vchDistribute) override;
@@ -24,6 +24,7 @@ public:
                        const std::vector<unsigned char>& vchPublish) override;
     void SetConsensus(const CAgreementBlock& agreeBlock) override;
     void CheckAllSubForkLastBlock() override;
+    void NotifyBlockVoteChnNewBlock(const uint256& hashBlock, const uint64 nNonce = 0) override;
 
 protected:
     bool HandleInitialize() override;
