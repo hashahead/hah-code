@@ -7,6 +7,8 @@
 
 #include <map>
 
+#include "block.h"
+#include "dbstruct.h"
 #include "destination.h"
 #include "hnbase.h"
 #include "transaction.h"
@@ -64,6 +66,39 @@ public:
 
 public:
     std::map<uint32, CFunctionAddressContext>& mapFunctionAddress;
+};
+
+class CListAddressCreateCodeTrieDBWalker : public CTrieDBWalker
+{
+public:
+    CListAddressCreateCodeTrieDBWalker(std::map<uint256, CContractCreateCodeContext>& mapWasmCreateCodeIn)
+      : mapContractCreateCode(mapWasmCreateCodeIn) {}
+
+    bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override;
+
+public:
+    std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode;
+};
+
+class CCacheAddressData
+{
+public:
+    CCacheAddressData() {}
+
+public:
+    bool AddBlockAddress(const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapAddress);
+    bool AddBlockContractAddress(const uint256& hashBlock, const std::map<CDestination, CContractAddressContext>& mapContractAddress);
+    bool AddBlockTokenContractAddress(const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress);
+
+    bool GetBlockAddress(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress);
+    bool GetBlockContractAddress(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
+    bool GetBlockTokenContractAddress(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress);
+
+protected:
+    hnbase::CRWAccess rwAccess;
+    std::map<uint256, std::map<CDestination, CAddressContext>, CustomBlockHashCompare> mapBlockAddress;
+    std::map<uint256, std::map<CDestination, CContractAddressContext>, CustomBlockHashCompare> mapBlockContractAddress;
+    std::map<uint256, std::map<CDestination, CTokenContractAddressContext>, CustomBlockHashCompare> mapBlockTokenContractAddress;
 };
 
 class CForkAddressDB

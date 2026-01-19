@@ -8,6 +8,13 @@
 
 #include "leveldbeng.h"
 
+#include "template/delegate.h"
+#include "template/fork.h"
+#include "template/pledge.h"
+#include "template/poa.h"
+#include "template/template.h"
+#include "template/vote.h"
+
 using namespace std;
 using namespace hnbase;
 
@@ -16,14 +23,62 @@ namespace hashahead
 namespace storage
 {
 
-const uint8 DB_ADDRESS_KEY_TYPE_ADDRESS = 0x10;
-const uint8 DB_ADDRESS_KEY_TYPE_TIMEVAULT = 0x20;
-const uint8 DB_ADDRESS_KEY_TYPE_TRIEROOT = 0x30;
-const uint8 DB_ADDRESS_KEY_TYPE_PREVROOT = 0x40;
-const uint8 DB_ADDRESS_KEY_TYPE_ADDRESSCOUNT = 0x50;
-const uint8 DB_ADDRESS_KEY_TYPE_FUNCTION_ADDRESS = 0x60;
+const uint8 DB_ADDRESS_KEY_TYPE_TRIEROOT = 0x11;
+const uint8 DB_ADDRESS_KEY_TYPE_PREVROOT = 0x12;
+const uint8 DB_ADDRESS_KEY_TYPE_CONTRACT_ADDRESS_TRIEROOT = 0x13;
+const uint8 DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS = 0x14;
+const uint8 DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE = 0x15;
+
+const uint8 DB_ADDRESS_KEY_TYPE_ADDRESS = 0x21;
+const uint8 DB_ADDRESS_KEY_TYPE_TIMEVAULT = 0x22;
+const uint8 DB_ADDRESS_KEY_TYPE_ADDRESSCOUNT = 0x23;
+const uint8 DB_ADDRESS_KEY_TYPE_FUNCTION_ADDRESS = 0x24;
+const uint8 DB_ADDRESS_KEY_TYPE_BLSPUBKEY = 0x25;
+const uint8 DB_ADDRESS_KEY_TYPE_OWNER_LINK_ADDRESS = 0x26;
+const uint8 DB_ADDRESS_KEY_TYPE_DELEGATE_LINK_ADDRESS = 0x27;
+const uint8 DB_ADDRESS_KEY_TYPE_TOKEN_CONTRACT_ADDRESS = 0x28;
+
+const uint8 DB_ADDRESS_KEY_TYPE_SOURCE_CODE = 0x31;
+const uint8 DB_ADDRESS_KEY_TYPE_CONTRACT_CREATE_CODE = 0x32;
 
 #define DB_ADDRESS_KEY_ID_PREVROOT string("prevroot")
+#define DB_ADDRESS_KEY_ID_TOKEN_PREVROOT string("tokenprevroot")
+
+#define MAX_CACHE_ADDRESS_BLOCK_COUNT 256
+
+//////////////////////////////
+// CListAddressTrieDBWalker
+
+bool CListAddressTrieDBWalker::Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver)
+{
+    if (btKey.size() == 0 || btValue.size() == 0)
+    {
+        StdError("CListAddressTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+        return false;
+    }
+
+    try
+    {
+        hnbase::CBufStream ssKey(btKey);
+        uint8 nKeyType;
+        ssKey >> nKeyType;
+        if (nKeyType == DB_ADDRESS_KEY_TYPE_ADDRESS)
+        {
+            CDestination dest;
+            CAddressContext ctxAddress;
+            hnbase::CBufStream ssValue(btValue);
+            ssKey >> dest;
+            ssValue >> ctxAddress;
+            mapAddress.insert(std::make_pair(dest, ctxAddress));
+        }
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 
 //////////////////////////////
 // CListContractAddressTrieDBWalker
