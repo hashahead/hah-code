@@ -86,6 +86,18 @@ bool CService::HandleInitialize()
         return false;
     }
 
+    if (!GetObject("blockfilter", pBlockFilter))
+    {
+        Error("Failed to request blockfilter");
+        return false;
+    }
+
+    if (!GetObject("chainsnapshot", pChainSnapshot))
+    {
+        Error("Failed to request chainsnapshot");
+        return false;
+    }
+
     return true;
 }
 
@@ -99,6 +111,8 @@ void CService::HandleDeinitialize()
     pNetwork = nullptr;
     pForkManager = nullptr;
     pNetChannel = nullptr;
+    pBlockFilter = nullptr;
+    pChainSnapshot = nullptr;
 }
 
 bool CService::HandleInvoke()
@@ -165,25 +179,13 @@ bool CService::GetForkRpcPort(const uint256& hashFork, uint16& nRpcPort)
     {
         return false;
     }
-    CForkContext ctxFork;
-    if (!pBlockChain->GetForkContext(hashFork, ctxFork))
-    {
-        return false;
-    }
     if (hashFork == pCoreProtocol->GetGenesisBlockHash())
     {
         nRpcPort = pRpcSrv->nRPCPort;
         return true;
     }
-    for (auto& vd : pRpcSrv->vecChainIdRpcPort)
-    {
-        if (vd.first == ctxFork.nChainId)
-        {
-            nRpcPort = vd.second;
-            return true;
-        }
-    }
-    return false;
+    nRpcPort = pRpcSrv->GetRpcPort(CBlock::GetBlockChainIdByHash(hashFork));
+    return (nRpcPort != 0);
 }
 
 int CService::GetForkCount()
