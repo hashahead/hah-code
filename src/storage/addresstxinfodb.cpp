@@ -69,27 +69,48 @@ bool CListAddressTxInfoTrieDBWalker::Walk(const bytes& btKey, const bytes& btVal
     return true;
 }
 
-//////////////////////////////
-// CForkAddressTxInfoDB
-
-CForkAddressTxInfoDB::CForkAddressTxInfoDB(const bool fCacheIn)
+bool CForkAddressTxInfoDB::ListAddressTxInfo(const CDestination& address, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, vector<CDestTxInfo>& vAddressTxInfo)
 {
-    fCache = fCacheIn;
-}
+    CReadLock rlock(rwAccess);
 
-CForkAddressTxInfoDB::~CForkAddressTxInfoDB()
-{
-    dbTrie.Deinitialize();
-}
-
-bool CForkAddressTxInfoDB::Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData)
-{
-    if (!dbTrie.Initialize(pathData))
+    uint64 nGetBeginTxIndex = nBeginTxIndex;
+    uint64 nGetTxCountInner = nGetTxCount;
+    if (nGetTxCount == 0 || nGetTxCount > MAX_FETCH_ADDRESS_TX_COUNT)
     {
-        StdLog("CForkAddressTxInfoDB", "Initialize: Initialize fail, fork: %s", hashForkIn.GetHex().c_str());
+        nGetTxCountInner = MAX_FETCH_ADDRESS_TX_COUNT;
+    }
+    if (fReverse)
+    {
+        uint64 nTxCount = 0;
+        if (!ReadAddressTxCount(address, nTxCount))
+        {
+            return false;
+        }
+        if (nGetBeginTxIndex >= nTxCount)
+        {
+            return true;
+        }
+        if (nGetBeginTxIndex + nGetTxCountInner > nTxCount)
+        {
+            nGetTxCountInner = nTxCount - nGetBeginTxIndex;
+            nGetBeginTxIndex = 0;
+        }
+        else
+        {
+            nGetBeginTxIndex = nTxCount - (nGetBeginTxIndex + nGetTxCountInner);
+        }
+    }
+
+    if (!WalkThroughAddressTxInfo(address, nGetBeginTxIndex, nGetTxCountInner, vAddressTxInfo))
+    {
+        StdLog("CForkAddressTxInfoDB", "List address tx info: Walk through fail, address: %s", address.ToString().c_str());
         return false;
     }
-    hashFork = hashForkIn;
+
+    if (fReverse)
+    {
+        reverse(vAddressTxInfo.begin(), vAddressTxInfo.end());
+    }
     return true;
 }
 

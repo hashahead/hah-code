@@ -18,6 +18,18 @@ namespace hashahead
 namespace storage
 {
 
+class CListAddressTrieDBWalker : public CTrieDBWalker
+{
+public:
+    CListAddressTrieDBWalker(std::map<CDestination, CAddressContext>& mapAddressn)
+      : mapAddress(mapAddressn) {}
+
+    bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override;
+
+public:
+    std::map<CDestination, CAddressContext>& mapAddress;
+};
+
 class CListContractAddressTrieDBWalker : public CTrieDBWalker
 {
 public:
@@ -28,6 +40,18 @@ public:
 
 public:
     std::map<CDestination, CContractAddressContext>& mapContractAddress;
+};
+
+class CListTokenContractAddressTrieDBWalker : public CTrieDBWalker
+{
+public:
+    CListTokenContractAddressTrieDBWalker(std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddressIn)
+      : mapTokenContractAddress(mapTokenContractAddressIn) {}
+
+    bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override;
+
+public:
+    std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress;
 };
 
 class CListFunctionAddressTrieDBWalker : public CTrieDBWalker

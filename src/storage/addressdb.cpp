@@ -50,14 +50,48 @@ bool CListContractAddressTrieDBWalker::Walk(const bytes& btKey, const bytes& btV
             ssValue >> ctxAddress;
             if (ctxAddress.IsContract())
             {
-                CContractAddressContext ctxtContract;
-                if (!ctxAddress.GetContractAddressContext(ctxtContract))
+                CContractAddressContext ctxContract;
+                if (!ctxAddress.GetContractAddressContext(ctxContract))
                 {
                     StdError("CListContractAddressTrieDBWalker", "GetContractAddressContext fail");
                     return false;
                 }
-                mapContractAddress.insert(std::make_pair(dest, ctxtContract));
+                mapContractAddress.insert(std::make_pair(dest, ctxContract));
             }
+        }
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+//////////////////////////////
+// CListTokenContractAddressTrieDBWalker
+
+bool CListTokenContractAddressTrieDBWalker::Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver)
+{
+    if (btKey.size() == 0 || btValue.size() == 0)
+    {
+        StdError("CListTokenContractAddressTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+        return false;
+    }
+
+    try
+    {
+        hnbase::CBufStream ssKey(btKey);
+        uint8 nKeyType;
+        ssKey >> nKeyType;
+        if (nKeyType == DB_ADDRESS_KEY_TYPE_TOKEN_CONTRACT_ADDRESS)
+        {
+            CDestination dest;
+            CTokenContractAddressContext ctxTokenContractAddress;
+            hnbase::CBufStream ssValue(btValue);
+            ssKey >> dest;
+            ssValue >> ctxTokenContractAddress;
+            mapTokenContractAddress.insert(std::make_pair(dest, ctxTokenContractAddress));
         }
     }
     catch (std::exception& e)
