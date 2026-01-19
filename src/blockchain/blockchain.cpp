@@ -77,7 +77,7 @@ bool CBlockChain::HandleInvoke()
     nMaxBlockRewardTxCount = GetBlockInvestRewardTxMaxCount();
     StdLog("BlockChain", "HandleInvoke: Max block reward tx count: %d", nMaxBlockRewardTxCount);
 
-    if (!cntrBlock.Initialize(Config()->pathData, blockGenesis.GetHash(), Config()->fFullDb, Config()->fRewardCheck))
+    if (!cntrBlock.BsInitialize(Config()->pathData, blockGenesis.GetHash(), Config()->fFullDb, Config()->fTraceDb, Config()->fCacheTrace, Config()->fRewardCheck, false, StorageConfig()->fPrune))
     {
         StdError("BlockChain", "Failed to initialize container");
         return false;
@@ -88,6 +88,14 @@ bool CBlockChain::HandleInvoke()
         if (!InsertGenesisBlock(blockGenesis))
         {
             StdError("BlockChain", "Failed to create genesis block");
+            return false;
+        }
+    }
+    else
+    {
+        if (!StorageConfig()->strSnapshotRecoveryDir.empty())
+        {
+            StdError("BlockChain", "The blockchain state data already exists, and cannot be restored from the snapshot");
             return false;
         }
     }
@@ -117,7 +125,7 @@ bool CBlockChain::HandleInvoke()
 
 void CBlockChain::HandleHalt()
 {
-    cntrBlock.Deinitialize();
+    cntrBlock.BsDeinitialize();
     cacheEnrolled.Clear();
     cacheAgreement.Clear();
     cachePiggyback.Clear();
@@ -127,20 +135,25 @@ void CBlockChain::GetForkStatus(map<uint256, CForkStatus>& mapForkStatus)
 {
     mapForkStatus.clear();
 
-    multimap<int, CBlockIndex*> mapForkIndex;
+    multimap<int, BlockIndexPtr> mapForkIndex;
     cntrBlock.ListForkIndex(mapForkIndex);
 
     for (auto it = mapForkIndex.begin(); it != mapForkIndex.end(); ++it)
     {
-        CBlockIndex* pIndex = it->second;
-        int nForkHeight = it->first;
-        uint256 hashFork = pIndex->GetOriginHash();
-        uint256 hashParent = pIndex->GetParentHash();
+        const int nForkHeight = it->first;
+        const BlockIndexPtr pIndex = it->second;
+        const uint256 hashFork = pIndex->GetOriginHash();
+        uint256 hashParentFork;
+        BlockIndexPtr pParentFork = cntrBlock.GetParentBlockIndex(pIndex);
+        if (pParentFork)
+        {
+            hashParentFork = pParentFork->GetBlockHash();
+        }
 
-        if (hashParent != 0)
+        if (hashParentFork != 0)
         {
             bool fHave = false;
-            multimap<int, uint256>& mapSubline = mapForkStatus[hashParent].mapSubline;
+            multimap<int, uint256>& mapSubline = mapForkStatus[hashParentFork].mapSubline;
             auto mt = mapSubline.lower_bound(nForkHeight);
             while (mt != mapSubline.upper_bound(nForkHeight))
             {
@@ -160,12 +173,12 @@ void CBlockChain::GetForkStatus(map<uint256, CForkStatus>& mapForkStatus)
         auto mi = mapForkStatus.find(hashFork);
         if (mi == mapForkStatus.end())
         {
-            mi = mapForkStatus.insert(make_pair(hashFork, CForkStatus(hashFork, hashParent, nForkHeight))).first;
+            mi = mapForkStatus.insert(make_pair(hashFork, CForkStatus(hashFork, hashParentFork, nForkHeight))).first;
         }
         else
         {
             mi->second.hashOrigin = hashFork;
-            mi->second.hashParent = hashParent;
+            mi->second.hashParent = hashParentFork;
             mi->second.nOriginHeight = nForkHeight;
         }
         CForkStatus& status = mi->second;

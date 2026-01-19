@@ -131,7 +131,25 @@ void CCoreProtocol::CreateGenesisBlock(const bool fMainnet, const CChainId nChai
 
     block.nVersion = 1;
     block.nType = CBlock::BLOCK_GENESIS;
-    block.SetBlockTime(1691539200);
+    if (fMainnet)
+    {
+        if (TESTMAINNET_FLAG)
+        {
+            // block.SetBlockTime(1709337600);
+            block.SetBlockTime(1708905600);
+        }
+        else
+        {
+            block.SetBlockTime(1691539200);
+        }
+    }
+    else
+    {
+        block.SetBlockTime(1709337600);
+    }
+    block.nNumber = 0;
+    block.nHeight = 0;
+    block.nSlot = 0;
     block.hashPrev = 0;
 
     CTransaction& tx = block.txMint;
