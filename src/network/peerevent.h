@@ -329,6 +329,58 @@ public:
     CBlock block;
 };
 
+class CUpdateBlockVote
+{
+    friend class hnbase::CStream;
+
+public:
+    CUpdateBlockVote()
+      : nBlockTime(0), nBlockHeight(0) {}
+    CUpdateBlockVote(const uint256& b, const uint256& r, const int64 t, const uint32 h)
+      : hashBlock(b), hashRefBlock(r), nBlockTime(t), nBlockHeight(h) {}
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashBlock, opt);
+        s.Serialize(hashRefBlock, opt);
+        s.Serialize(nBlockTime, opt);
+        s.Serialize(nBlockHeight, opt);
+    }
+
+public:
+    uint256 hashBlock;
+    uint256 hashRefBlock; // reference primary block
+    int64 nBlockTime;
+    uint32 nBlockHeight;
+};
+
+class CBlockCommitVoteResult
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockCommitVoteResult() {}
+    CBlockCommitVoteResult(const uint256& b, const bytes& m, const bytes& a)
+      : hashBlock(b), btBitmap(m), btAggSig(a) {}
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashBlock, opt);
+        s.Serialize(btBitmap, opt);
+        s.Serialize(btAggSig, opt);
+    }
+
+public:
+    uint256 hashBlock;
+    bytes btBitmap;
+    bytes btAggSig;
+};
+
+////////////////////////////////////////////////////////
 class CBbPeerEventListener;
 
 #define TYPE_PEEREVENT(type, body) \
@@ -356,6 +408,10 @@ typedef TYPE_PEERDATAEVENT(EVENT_PEER_MSGRSP, CMsgRsp) CEventPeerMsgRsp;
 typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_SUBSCRIBE, std::vector<uint256>) CEventPeerBlockSubscribe;
 typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_UNSUBSCRIBE, std::vector<uint256>) CEventPeerBlockUnsubscribe;
 typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_BKS, CPeerBlockData) CEventPeerBlockBks;
+typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_NEXT_PREVBLOCK, uint256) CEventPeerBlockNextPrevBlock;
+typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_PREV_BLOCKS, std::vector<uint256>) CEventPeerBlockPrevBlocks;
+typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_GET_BLOCK_REQ, uint256) CEventPeerBlockGetBlockReq;
+typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_GET_BLOCK_RSP, bytes) CEventPeerBlockGetBlockRsp;
 
 typedef TYPE_PEERDATAEVENT(EVENT_PEER_CERTTX_SUBSCRIBE, std::vector<uint256>) CEventPeerCerttxSubscribe;
 typedef TYPE_PEERDATAEVENT(EVENT_PEER_CERTTX_UNSUBSCRIBE, std::vector<uint256>) CEventPeerCerttxUnsubscribe;
@@ -365,6 +421,13 @@ typedef TYPE_PEERDATAEVENT(EVENT_PEER_USERTX_SUBSCRIBE, std::vector<uint256>) CE
 typedef TYPE_PEERDATAEVENT(EVENT_PEER_USERTX_UNSUBSCRIBE, std::vector<uint256>) CEventPeerUsertxUnsubscribe;
 typedef TYPE_PEERDATAEVENT(EVENT_PEER_USERTX_TXS, bytes) CEventPeerUsertxTxs;
 
+typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCKVOTE_PROTO_DATA, bytes) CEventPeerBlockVoteProtoData;
+
+typedef TYPE_PEERDATAEVENT(EVENT_PEER_BLOCK_CROSS_PROVE_DATA, bytes) CEventPeerBlockCrossProveData;
+
+typedef TYPE_PEERDATAEVENT(EVENT_PEER_SNAPSHOT_DOWN_DATA, bytes) CEventPeerSnapshotDownData;
+
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCK_SYNC_TIMER, uint32) CEventLocalBlockSyncTimer;
 typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCK_SUBSCRIBE_FORK, std::vector<uint256>) CEventLocalBlockSubscribeFork;
 typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCK_BROADCAST_BKS, CBroadBlockData) CEventLocalBlockBroadcastBks;
 typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_CERTTX_BROADCAST_TXS, std::vector<CTransaction>) CEventLocalCerttxBroadcastTxs;

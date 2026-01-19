@@ -108,10 +108,13 @@ void CBbPeerNet::HandleDeinitialize()
 {
     setDNSeed.clear();
     pNetChannel = nullptr;
+    pDelegatedChannel = nullptr;
     pBlockChannel = nullptr;
     pCertTxChannel = nullptr;
     pUserTxChannel = nullptr;
-    pDelegatedChannel = nullptr;
+    pBlockVoteChannel = nullptr;
+    pBlockCrossProveChannel = nullptr;
+    pSnapshotDownChannel = nullptr;
 }
 
 bool CBbPeerNet::HandleEvent(CEventPeerSubscribe& eventSubscribe)
@@ -207,6 +210,34 @@ bool CBbPeerNet::HandleEvent(CEventPeerBlockBks& eventBks)
     CBufStream ssPayload;
     ssPayload << eventBks;
     return SendChannelMessage(PROTO_CHN_BLOCK, eventBks.nNonce, PROTO_CMD_BLOCK_BKS, ssPayload);
+}
+
+bool CBbPeerNet::HandleEvent(CEventPeerBlockNextPrevBlock& eventData)
+{
+    CBufStream ssPayload;
+    ssPayload << eventData;
+    return SendChannelMessage(PROTO_CHN_BLOCK, eventData.nNonce, PROTO_CMD_BLOCK_NEXT_PREVBLOCK, ssPayload);
+}
+
+bool CBbPeerNet::HandleEvent(CEventPeerBlockPrevBlocks& eventData)
+{
+    CBufStream ssPayload;
+    ssPayload << eventData;
+    return SendChannelMessage(PROTO_CHN_BLOCK, eventData.nNonce, PROTO_CMD_BLOCK_PREV_BLOCKS, ssPayload);
+}
+
+bool CBbPeerNet::HandleEvent(CEventPeerBlockGetBlockReq& eventData)
+{
+    CBufStream ssPayload;
+    ssPayload << eventData;
+    return SendChannelMessage(PROTO_CHN_BLOCK, eventData.nNonce, PROTO_CMD_BLOCK_GET_BLOCK_REQ, ssPayload);
+}
+
+bool CBbPeerNet::HandleEvent(CEventPeerBlockGetBlockRsp& eventData)
+{
+    CBufStream ssPayload;
+    ssPayload << eventData;
+    return SendChannelMessage(PROTO_CHN_BLOCK, eventData.nNonce, PROTO_CMD_BLOCK_GET_BLOCK_RSP, ssPayload);
 }
 
 //-----------------------------------------------------------------------
