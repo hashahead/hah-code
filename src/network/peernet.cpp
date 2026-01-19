@@ -38,10 +38,13 @@ CBbPeerNet::CBbPeerNet()
     nService = 0;
     fEnclosed = false;
     pNetChannel = nullptr;
+    pDelegatedChannel = nullptr;
     pBlockChannel = nullptr;
     pCertTxChannel = nullptr;
     pUserTxChannel = nullptr;
-    pDelegatedChannel = nullptr;
+    pBlockVoteChannel = nullptr;
+    pBlockCrossProveChannel = nullptr;
+    pSnapshotDownChannel = nullptr;
     nSeqCreate = (GetTimeMillis() << 32) | (GetTime() & 0xFFFFFFFF);
 }
 
@@ -53,31 +56,49 @@ bool CBbPeerNet::HandleInitialize()
 {
     if (!GetObject("netchannel", pNetChannel))
     {
-        Error("Failed to request peer net netchannel\n");
-        return false;
-    }
-
-    if (!GetObject("blockchannel", pBlockChannel))
-    {
-        Error("Failed to request peer net blockchannel\n");
-        return false;
-    }
-
-    if (!GetObject("certtxchannel", pCertTxChannel))
-    {
-        Error("Failed to request peer net certtxchannel\n");
-        return false;
-    }
-
-    if (!GetObject("usertxchannel", pUserTxChannel))
-    {
-        Error("Failed to request peer net usertxchannel\n");
+        Error("Failed to request peer net netchannel");
         return false;
     }
 
     if (!GetObject("delegatedchannel", pDelegatedChannel))
     {
-        Error("Failed to request delegated delegatedchannel\n");
+        Error("Failed to request delegated delegatedchannel");
+        return false;
+    }
+
+    if (!GetObject("blockchannel", pBlockChannel))
+    {
+        Error("Failed to request peer net blockchannel");
+        return false;
+    }
+
+    if (!GetObject("certtxchannel", pCertTxChannel))
+    {
+        Error("Failed to request peer net certtxchannel");
+        return false;
+    }
+
+    if (!GetObject("usertxchannel", pUserTxChannel))
+    {
+        Error("Failed to request peer net usertxchannel");
+        return false;
+    }
+
+    if (!GetObject("blockvotechannel", pBlockVoteChannel))
+    {
+        Error("Failed to request peer net blockvotechannel");
+        return false;
+    }
+
+    if (!GetObject("blockcrossprovechannel", pBlockCrossProveChannel))
+    {
+        Error("Failed to request peer net blockcrossprovechannel");
+        return false;
+    }
+
+    if (!GetObject("snapshotdownchannel", pSnapshotDownChannel))
+    {
+        Error("Failed to request peer net snapshotdownchannel");
         return false;
     }
     return true;
