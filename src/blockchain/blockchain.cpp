@@ -474,27 +474,26 @@ bool CBlockChain::RetrieveForkLast(const uint256& hashFork, uint256& hashLastBlo
 
 bool CBlockChain::GetForkStorageMaxHeight(const uint256& hashFork, uint32& nMaxHeight)
 {
-    return cntrBlock.GetForkStorageMaxHeight(hashFork, nMaxHeight);
+    return cntrBlock.GetForkMaxHeight(hashFork, nMaxHeight);
 }
 
-Errno CBlockChain::AddNewBlock(const CBlock& block, CBlockChainUpdate& update)
+Errno CBlockChain::AddNewBlock(const uint256& hashBlock, const CBlock& block, uint256& hashFork, CBlockChainUpdate& update)
 {
-    uint256 hashBlock = block.GetHash();
     Errno err = OK;
 
     if (cntrBlock.Exists(hashBlock))
     {
-        StdLog("BlockChain", "Add new block: Already exists, block: %s", hashBlock.ToString().c_str());
+        StdLog("BlockChain", "Add new block: Already exists, block: %s", hashBlock.GetBhString().c_str());
         return ERR_ALREADY_HAVE;
     }
 
-    CBlockIndex* pIndexPrev;
-    if (!cntrBlock.RetrieveIndex(block.hashPrev, &pIndexPrev))
+    BlockIndexPtr pIndexPrev = cntrBlock.RetrieveIndex(block.hashPrev);
+    if (!pIndexPrev)
     {
         StdLog("BlockChain", "Add new block: Retrieve prev index fail, prev block: %s", block.hashPrev.ToString().c_str());
         return ERR_SYS_STORAGE_ERROR;
     }
-    uint256 hashFork = pIndexPrev->GetOriginHash();
+    hashFork = pIndexPrev->GetOriginHash();
 
     err = pCoreProtocol->ValidateBlock(hashFork, pIndexPrev->GetRefBlock(), block);
     if (err != OK)
@@ -506,8 +505,8 @@ Errno CBlockChain::AddNewBlock(const CBlock& block, CBlockChainUpdate& update)
     uint256 nReward;
     CDelegateAgreement agreement;
     uint256 nEnrollTrust;
-    CBlockIndex* pIndexRef = nullptr;
-    err = VerifyBlock(hashBlock, block, pIndexPrev, nReward, agreement, nEnrollTrust, &pIndexRef);
+    BlockIndexPtr pIndexRef;
+    err = VerifyBlock(hashFork, hashBlock, block, pIndexPrev, nReward, agreement, nEnrollTrust, pIndexRef);
     if (err != OK)
     {
         StdLog("BlockChain", "Add new block: Verify block fail, err: %s, block: %s", ErrorString(err), hashBlock.ToString().c_str());
@@ -536,19 +535,11 @@ Errno CBlockChain::AddNewBlock(const CBlock& block, CBlockChainUpdate& update)
     }
 
     uint256 nChainTrust;
-    if (!pCoreProtocol->GetBlockTrust(block, nChainTrust, pIndexPrev, agreement, pIndexRef, nEnrollTrust))
+    if (!GetBlockTrust(block, nChainTrust, pIndexPrev, agreement, pIndexRef, nEnrollTrust))
     {
         StdLog("BlockChain", "Add new block: Get block trust fail, block: %s", hashBlock.GetHex().c_str());
         return ERR_BLOCK_TRANSACTIONS_INVALID;
     }
-
-    CBlockEx blockex(block, nChainTrust);
-    if (!cntrBlock.StorageNewBlock(hashFork, hashBlock, blockex, update))
-    {
-        StdLog("BlockChain", "Add new block: Storage block fail, block: %s", hashBlock.ToString().c_str());
-        return ERR_SYS_STORAGE_ERROR;
-    }
-    StdLog("BlockChain", "Add new block: Add block success, block: %s", hashBlock.ToString().c_str());
 
     return OK;
 }
