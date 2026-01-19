@@ -6,6 +6,7 @@
 #define COMMON_BLOCK_H
 
 #include <stream/stream.h>
+#include <structure/merkletree.h>
 #include <vector>
 
 #include "crc24q.h"
@@ -19,6 +20,8 @@
 namespace hashahead
 {
 
+class CBlockProve;
+
 class CBlock
 {
     friend class hnbase::CStream;
@@ -28,11 +31,13 @@ public:
     uint8 nType;
     uint64 nTimeStamp;
     uint64 nNumber;
+    uint32 nHeight;
     uint16 nSlot;
     uint256 hashPrev;
-    uint256 hashMerkleRoot; // Merkle: bloom hash, mint tx hash, vtx hash list
+    uint256 hashMerkleRoot;
     uint256 hashStateRoot;
     uint256 hashReceiptsRoot;
+    uint256 hashCrosschainMerkleRoot;
     uint256 nGasLimit;
     uint256 nGasUsed;
     std::map<uint8, bytes> mapProof;
@@ -41,6 +46,7 @@ public:
 
     bytes btBloomData;
     std::vector<CTransaction> vtx;
+    std::map<CChainId, CBlockProve> mapProve; // key: peer chainid
 
     enum
     {
@@ -57,9 +63,10 @@ public:
         BP_FORK_PROFILE = 0x01,
         BP_DELEGATE = 0x02,
         BP_PIGGYBACK = 0x03,
-        BP_HASH_WORK = 0x04,
+        BP_POA_PROOF = 0x04,
         BP_MINTCOIN = 0x05,
         BP_MINTREWARD = 0x06,
+        BP_BLOCK_VOTE_SIG = 0x07,
     };
 
 public:
@@ -76,7 +83,7 @@ public:
     bool IsSubsidiary() const;
     bool IsExtended() const;
     bool IsVacant() const;
-    bool IsProofOfWork() const;
+    bool IsProofOfPoa() const;
     bool IsProofEmpty() const;
     uint256 GetHash() const;
     std::size_t GetTxSerializedOffset() const;
@@ -86,13 +93,16 @@ public:
     uint64 GetBlockNumber() const;
     uint32 GetBlockSlot() const;
     uint32 GetBlockHeight() const;
+    uint256 GetRefBlock() const;
     uint64 GetBlockBeacon(int idx = 0) const;
     bool GetBlockMint(uint256& nMintCoin) const;
     uint256 GetBlockTotalReward() const;
     uint256 GetBlockMoneyDestroy() const;
     void SetBlockTime(const uint64 nTime);
-    uint256 CalcMerkleTreeRoot() const;
     void SetSignData(const bytes& btSigData);
+    void UpdateMerkleRoot();
+    bool VerifyBlockHeight() const;
+    bool VerifyBlockMerkleTreeRoot() const;
     bool VerifyBlockSignature(const CDestination& destBlockSign) const;
     bool VerifyBlockProof() const;
 
@@ -102,9 +112,10 @@ public:
     void AddForkProfile(const CProfile& profile);
     void AddDelegateProof(const CProofOfDelegate& proof);
     void AddPiggybackProof(const CProofOfPiggyback& proof);
-    void AddHashWorkProof(const CProofOfHashWork& proof);
+    void AddPoaProof(const CProofOfPoa& proof);
     void AddMintCoinProof(const uint256& nMintCoin);
     void AddMintRewardProof(const uint256& nMintReward);
+    void AddBlockVoteSig(const CBlockVoteSig& proof);
 
     bool GetForkProfile(CProfile& profile) const;
     bool GetDelegateProof(CProofOfDelegate& proof) const;

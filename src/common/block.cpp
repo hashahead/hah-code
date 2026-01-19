@@ -10,8 +10,6 @@
 using namespace std;
 using namespace hnbase;
 using namespace hashahead::crypto;
-//using namespace dev;
-//using namespace dev::eth;
 
 namespace hashahead
 {
@@ -25,11 +23,13 @@ void CBlock::SetNull()
     nType = 0;
     nTimeStamp = 0;
     nNumber = 0;
+    nHeight = 0;
     nSlot = 0;
     hashPrev = 0;
     hashMerkleRoot = 0;
     hashStateRoot = 0;
     hashReceiptsRoot = 0;
+    hashCrosschainMerkleRoot = 0;
     nGasLimit = 0;
     nGasUsed = 0;
     mapProof.clear();
@@ -38,6 +38,7 @@ void CBlock::SetNull()
 
     btBloomData.clear();
     vtx.clear();
+    mapProve.clear();
 }
 
 bool CBlock::IsNull() const
@@ -75,9 +76,9 @@ bool CBlock::IsVacant() const
     return (nType == BLOCK_VACANT);
 }
 
-bool CBlock::IsProofOfWork() const
+bool CBlock::IsProofOfPoa() const
 {
-    return (txMint.GetTxType() == CTransaction::TX_WORK);
+    return (txMint.GetTxType() == CTransaction::TX_POA);
 }
 
 bool CBlock::IsProofEmpty() const
@@ -87,15 +88,18 @@ bool CBlock::IsProofEmpty() const
 
 uint256 CBlock::GetHash() const
 {
-    hnbase::CBufStream ss;
-    ss << nVersion << nType << nTimeStamp << nNumber << nSlot << hashPrev << hashMerkleRoot << hashStateRoot << hashReceiptsRoot << nGasLimit << nGasUsed << mapProof << txMint;
-    return uint256(GetChainId(), GetBlockHeight(), nSlot, crypto::CryptoHash(ss.GetData(), ss.GetSize()));
+    // hnbase::CBufStream ss;
+    // ss << nVersion << nType << nTimeStamp << nNumber << nHeight << nSlot << hashPrev << hashMerkleRoot << hashStateRoot << hashReceiptsRoot << hashCrosschainMerkleRoot << nGasLimit << nGasUsed << mapProof << txMint;
+    // return uint256(GetChainId(), GetBlockHeight(), nSlot, crypto::CryptoHash(ss.GetData(), ss.GetSize()));
+
+    return uint256(GetChainId(), GetBlockHeight(), nSlot, CalcMerkleTreeRoot());
 }
 
 std::size_t CBlock::GetTxSerializedOffset() const
 {
     bytes btMerkleRoot;
     bytes btReceiptsRoot;
+    bytes btCrosschainMerkleRoot;
     bytes btGasLimit = nGasLimit.ToValidBigEndianData();
     bytes btGasUsed = nGasUsed.ToValidBigEndianData();
     if (!hashMerkleRoot.IsNull())
@@ -106,15 +110,19 @@ std::size_t CBlock::GetTxSerializedOffset() const
     {
         btReceiptsRoot = hashReceiptsRoot.GetBytes();
     }
+    if (!hashCrosschainMerkleRoot.IsNull())
+    {
+        btCrosschainMerkleRoot = hashCrosschainMerkleRoot.GetBytes();
+    }
     hnbase::CBufStream ss;
-    ss << nVersion << nType << CVarInt(nTimeStamp) << CVarInt(nNumber) << nSlot << hashPrev << btMerkleRoot << hashStateRoot << btReceiptsRoot << btBloomData << btGasLimit << btGasUsed << mapProof;
+    ss << nVersion << nType << CVarInt(nTimeStamp) << CVarInt(nNumber) << nHeight << nSlot << hashPrev << btMerkleRoot << hashStateRoot << btReceiptsRoot << btCrosschainMerkleRoot << btBloomData << btGasLimit << btGasUsed << mapProof;
     return ss.GetSize();
 }
 
 void CBlock::GetSerializedProofOfWorkData(std::vector<unsigned char>& vchProofOfWork) const
 {
     hnbase::CBufStream ss;
-    ss << nVersion << nType << nTimeStamp << nNumber << nSlot << hashPrev << mapProof;
+    ss << nVersion << nType << nTimeStamp << nNumber << nHeight << nSlot << hashPrev << mapProof;
     vchProofOfWork.assign(ss.GetData(), ss.GetData() + ss.GetSize());
 }
 
@@ -149,18 +157,33 @@ uint32 CBlock::GetBlockSlot() const
 
 uint32 CBlock::GetBlockHeight() const
 {
-    if (IsGenesis())
+    // if (IsGenesis())
+    // {
+    //     return 0;
+    // }
+    // else if (IsExtended())
+    // {
+    //     return hashPrev.GetB2();
+    // }
+    // else
+    // {
+    //     return hashPrev.GetB2() + 1;
+    // }
+    return nHeight;
+}
+
+uint256 CBlock::GetRefBlock() const
+{
+    uint256 hashRefBlock;
+    if (!IsPrimary() && !IsOrigin())
     {
-        return 0;
+        CProofOfPiggyback proof;
+        if (GetPiggybackProof(proof))
+        {
+            hashRefBlock = proof.hashRefBlock;
+        }
     }
-    else if (IsExtended())
-    {
-        return hashPrev.GetB2();
-    }
-    else
-    {
-        return hashPrev.GetB2() + 1;
-    }
+    return hashRefBlock;
 }
 
 uint64 CBlock::GetBlockBeacon(int idx) const
