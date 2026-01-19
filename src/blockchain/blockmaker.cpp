@@ -336,13 +336,14 @@ bool CBlockMaker::WaitUpdateEvent(const int64 nSeconds)
     return !fExit;
 }
 
-void CBlockMaker::PrepareBlock(CBlock& block, const uint256& hashPrev, const uint64 nPrevTime,
+bool CBlockMaker::PrepareBlock(CBlock& block, const uint256& hashPrev, const uint64 nPrevTime,
                                const uint32 nPrevHeight, const uint32 nPrevNumber, const CDelegateAgreement& agreement)
 {
     block.SetNull();
     block.nType = CBlock::BLOCK_PRIMARY;
     block.hashPrev = hashPrev;
     block.nNumber = nPrevNumber + 1;
+    block.nHeight = nPrevHeight + 1;
     block.nSlot = 0;
 
     CProofOfDelegate proof;
@@ -353,8 +354,30 @@ void CBlockMaker::PrepareBlock(CBlock& block, const uint256& hashPrev, const uin
     {
         pConsensus->GetProof(nPrevHeight + 1, proof.btDelegateData);
     }
-
     block.AddDelegateProof(proof);
+
+    if (!pBlockChain->VerifyPrimaryBlockConfirm(hashPrev))
+    {
+        StdDebug("CBlockMaker", "Prepare block: Primary prev block no confirm, prev block: %s", hashPrev.GetBhString().c_str());
+        pDispatcher->NotifyBlockVoteChnNewBlock(hashPrev);
+        return false;
+    }
+
+    bytes btDbBitmap;
+    bytes btDbAggSig;
+    bool fDbAtChain = false;
+    uint256 hashDbAtBlock;
+    if (pBlockChain->RetrieveBlockVoteResult(hashPrev, btDbBitmap, btDbAggSig, fDbAtChain, hashDbAtBlock) && !fDbAtChain)
+    {
+        block.AddBlockVoteSig(CBlockVoteSig(hashPrev, btDbBitmap, btDbAggSig));
+    }
+
+    std::map<CChainId, CBlockProve> mapCrosschainProve;
+    if (pBlockChain->GetCrosschainProveForPrevBlock(block.GetChainId(), block.hashPrev, mapCrosschainProve))
+    {
+        block.mapProve = mapCrosschainProve;
+    }
+    return true;
 }
 
 bool CBlockMaker::ArrangeBlockTx(CBlock& block, const uint256& hashFork, const CBlockMakerProfile& profile)
