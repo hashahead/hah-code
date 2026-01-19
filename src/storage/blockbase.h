@@ -50,13 +50,21 @@ public:
 class CContractHostDB : public CVmHostFaceDB
 {
 public:
-    CContractHostDB(CBlockState& blockStateIn, const CDestination& destContractIn, const CDestination& destCodeOwnerIn, const uint256& txidIn, const uint64 nTxNonceIn)
-      : blockState(blockStateIn), destContract(destContractIn), destCodeOwner(destCodeOwnerIn), txid(txidIn), nTxNonce(nTxNonceIn) {}
+    CContractHostDB(CBlockState& blockStateIn, const CDestination& destStorageContractIn, const CDestination& destCodeParentIn, const CDestination& destCodeLocalIn,
+                    const CDestination& destCodeOwnerIn, const uint256& txidIn, const uint64 nTxNonceIn)
+      : blockState(blockStateIn), destStorageContract(destStorageContractIn), destCodeParent(destCodeParentIn), destCodeLocal(destCodeLocalIn),
+        destCodeOwner(destCodeOwnerIn), txid(txidIn), nTxNonce(nTxNonceIn) {}
 
     virtual bool Get(const uint256& key, bytes& value) const;
+    virtual bool GetTransientValue(const CDestination& dest, const uint256& key, bytes& value) const;
+    virtual void SetTransientValue(const CDestination& dest, const uint256& key, const bytes& value);
     virtual uint256 GetTxid() const;
     virtual uint256 GetTxNonce() const;
-    virtual CDestination GetContractAddress() const;
+    virtual uint64 GetAddressLastTxNonce(const CDestination& addr);
+    virtual bool SetAddressLastTxNonce(const CDestination& addr, const uint64 nNonce);
+    virtual CDestination GetStorageContractAddress() const;
+    virtual CDestination GetCodeParentAddress() const;
+    virtual CDestination GetCodeLocalAddress() const;
     virtual CDestination GetCodeOwnerAddress() const;
     virtual bool GetBalance(const CDestination& addr, uint256& balance) const;
     virtual bool ContractTransfer(const CDestination& from, const CDestination& to, const uint256& amount, const uint64 nGasLimit, uint64& nGasLeft);

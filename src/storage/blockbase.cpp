@@ -142,6 +142,69 @@ uint256 CContractHostDB::GetBlockHash(const uint64 nBlockNumber)
     return hashBlock;
 }
 
+bool CContractHostDB::IsContractAddress(const CDestination& addr)
+{
+    return blockState.IsContractAddress(addr);
+}
+
+bool CContractHostDB::GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy)
+{
+    return blockState.GetContractRunCode(destContractIn, hashContractCreateCode, destCodeOwner, hashContractRunCode, btContractRunCode, fDestroy);
+}
+
+bool CContractHostDB::GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd)
+{
+    return blockState.GetContractCreateCode(destContractIn, txcd);
+}
+
+bool CContractHostDB::SaveContractRunCode(const bytes& btContractRunCode, const CTxContractData& txcd)
+{
+    return blockState.SaveContractRunCode(destStorageContract, btContractRunCode, txcd, txid);
+}
+
+bool CContractHostDB::ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const uint256& nAmount, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, int& nStatus, bytes& btResult)
+{
+    return blockState.ExecFunctionContract(destFromIn, destToIn, nAmount, btData, nGasLimit, nGasLeft, nStatus, btResult);
+}
+
+bool CContractHostDB::Selfdestruct(const CDestination& destBeneficiaryIn)
+{
+    return blockState.Selfdestruct(destStorageContract, destBeneficiaryIn);
+}
+
+CVmHostFaceDBPtr CContractHostDB::CloneHostDB(const CDestination& destStorageContractIn, const CDestination& destCodeParentIn, const CDestination& destCodeLocalIn, const CDestination& destCodeOwnerIn)
+{
+    return CVmHostFaceDBPtr(new CContractHostDB(blockState, destStorageContractIn, destCodeParentIn, destCodeLocalIn, destCodeOwnerIn, txid, nTxNonce));
+}
+
+void CContractHostDB::ModifyHostAddress(const CDestination& destCodeParentIn, const CDestination& destCodeLocalIn, const CDestination& destCodeOwnerIn)
+{
+    destCodeParent = destCodeParentIn;
+    destCodeLocal = destCodeLocalIn;
+    destCodeOwner = destCodeOwnerIn;
+}
+
+void CContractHostDB::SaveCodeOwnerGasUsed(const CDestination& destParentCodeContractIn, const CDestination& destCodeContractIn, const CDestination& destCodeOwnerIn, const uint64 nGasUsed)
+{
+    blockState.SaveCodeOwnerGasUsed(destParentCodeContractIn, destCodeContractIn, destCodeOwnerIn, nGasUsed);
+}
+
+void CContractHostDB::SaveRunResult(const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv,
+                                    const std::map<uint256, bytes>& mapTraceKv, const std::map<CDestination, std::map<uint256, bytes>>& mapOldAddressKeyValue)
+{
+    blockState.SaveRunResult(destStorageContract, vLogsIn, mapCacheKv, mapTraceKv, mapOldAddressKeyValue);
+}
+
+bool CContractHostDB::AddContractRunReceipt(const CTxContractReceipt& tcReceipt, const bool fFirstReceipt)
+{
+    return blockState.AddContractRunReceipt(tcReceipt, fFirstReceipt);
+}
+
+bool CContractHostDB::AddVmOperationTraceLog(const CVmOperationTraceLog& vmOpTraceLog)
+{
+    return blockState.AddVmOperationTraceLog(vmOpTraceLog);
+}
+
 //////////////////////////////
 // CBlockLogsFilter
 

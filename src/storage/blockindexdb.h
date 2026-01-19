@@ -22,10 +22,10 @@ namespace storage
 class CBlockDBWalker
 {
 public:
-    virtual bool Walk(CBlockOutline& outline) = 0;
+    virtual bool Walk(CBlockIndex& outline) = 0;
 };
 
-class CBlockIndexDB
+class CBlockIndexDB : public hnbase::CKVDB
 {
 public:
     CBlockIndexDB();
@@ -35,9 +35,9 @@ public:
     void Deinitialize();
     bool Clear();
 
-    bool AddNewBlockIndex(const CBlockOutline& outline);
+    bool AddNewBlockIndex(const CBlockIndex& outline);
     bool RemoveBlockIndex(const uint256& hashBlock);
-    bool RetrieveBlockIndex(const uint256& hashBlock, CBlockOutline& outline);
+    bool RetrieveBlockIndex(const uint256& hashBlock, CBlockIndex& outline);
     bool WalkThroughBlockIndex(CBlockDBWalker& walker);
 
     bool AddBlockNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint64 nBlockNumber, const uint256& hashBlock, uint256& hashNewRoot);

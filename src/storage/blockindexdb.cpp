@@ -8,6 +8,8 @@
 
 #include "leveldbeng.h"
 
+#include "dbstruct.h"
+
 using namespace std;
 using namespace hnbase;
 
@@ -16,15 +18,20 @@ namespace hashahead
 namespace storage
 {
 
-const string DB_BLOCKINDEX_KEY_ID_TRIEROOT("trieroot");
-const string DB_BLOCKINDEX_KEY_ID_PREVROOT("prevroot");
-
 const uint8 DB_BLOCKINDEX_ROOT_TYPE_BLOCK_INDEX = 0x10;
 const uint8 DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER = 0x20;
+const uint8 DB_BLOCKINDEX_ROOT_TYPE_BLOCK_VOTE_RESULT = 0x30;
 
 const uint8 DB_BLOCKINDEX_KEY_TYPE_BLOCK_INDEX = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_INDEX | 0x01;
+const uint8 DB_BLOCKINDEX_KEY_TYPE_BLOCK_HEIGHT = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_INDEX | 0x02;
+const uint8 DB_BLOCKINDEX_KEY_TYPE_BLOCK_MAX_HEIGHT = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_INDEX | 0x03;
 
 const uint8 DB_BLOCKINDEX_KEY_TYPE_BLOCK_NUMBER = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER | 0x01;
+const uint8 DB_BLOCKINDEX_KEY_TYPE_LAST_BLOCK_NUMBER = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER | 0x02;
+
+const uint8 DB_BLOCKINDEX_KEY_TYPE_BLOCK_VOTE_RESULT = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_VOTE_RESULT | 0x01;
+const uint8 DB_BLOCKINDEX_KEY_TYPE_LAST_BLOCK_VOTE = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_VOTE_RESULT | 0x02;
+const uint8 DB_BLOCKINDEX_KEY_TYPE_BLOCK_LOCAL_SIGN_FLAG = DB_BLOCKINDEX_ROOT_TYPE_BLOCK_VOTE_RESULT | 0x03;
 
 //////////////////////////////
 // CBlockIndexDB
@@ -35,13 +42,18 @@ CBlockIndexDB::CBlockIndexDB()
 
 CBlockIndexDB::~CBlockIndexDB()
 {
-    dbTrie.Deinitialize();
 }
 
 bool CBlockIndexDB::Initialize(const boost::filesystem::path& pathData)
 {
-    if (!dbTrie.Initialize(pathData / "blockindex"))
+    CLevelDBArguments args;
+    args.path = (pathData / "blockindex").string();
+    args.syncwrite = false;
+    CLevelDBEngine* engine = new CLevelDBEngine(args);
+    if (!Open(engine))
     {
+        StdLog("CBlockIndexDB", "Open db fail");
+        delete engine;
         return false;
     }
     return true;
