@@ -317,6 +317,19 @@ Errno CForkTxPool::AddTx(const uint256& txid, const CTransaction& tx)
         mapBlockAddress.insert(make_pair(tx.GetToAddress(), ctxAddressTo));
     }
 
+    // handle cancel or accelerate tx
+    bool fAdjustTx = false;
+    if (!HandleTransactionPriority(txid, tx, ctxAddressFrom, stateFrom, fAdjustTx))
+    {
+        StdLog("CForkTxPool", "Add Tx: Handle transaction priority fail, from: %s, txid: %s",
+               tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
+        return ERR_TRANSACTION_INVALID;
+    }
+    if (fAdjustTx)
+    {
+        return OK;
+    }
+
     Errno err;
     if ((err = pCoreProtocol->VerifyTransaction(txid, tx, hashFork, hashLastBlock, CBlock::GetBlockHeightByHash(hashLastBlock) + 1, stateFrom, mapBlockAddress)) != OK)
     {
