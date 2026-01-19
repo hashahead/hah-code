@@ -8,6 +8,8 @@
 
 #include "leveldbeng.h"
 
+#include "block.h"
+
 using namespace std;
 using namespace hnbase;
 
@@ -18,23 +20,45 @@ namespace storage
 
 #define MAX_FETCH_ADDRESS_TX_COUNT 1000
 
-const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS = 0x10;
-const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_LASTDEST = 0x20;
-const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_TRIEROOT = 0x30;
-const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_PREVROOT = 0x40;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO = 0x10;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_COUNT = 0x11;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_DATA = 0x12;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_RANGE = 0x13;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_LASTBLOCK = 0x14;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_PREVBLOCK = 0x15;
 
-#define DB_ADDRESS_TXINFO_KEY_ID_PREVROOT string("prevroot")
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO = 0x16;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_ADDRESS_TX_COUNT = 0x17;
+const uint8 DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_TOKEN_ADDRESS_TX_RANGE = 0x18;
+
+#define DB_ADDRESS_TXINFO_KEY_ID_LAST_BLOCK string("lastblock")
 
 //////////////////////////////
-// CListAddressTxInfoTrieDBWalker
+// CForkAddressTxInfoDB
 
-bool CListAddressTxInfoTrieDBWalker::Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver)
+CForkAddressTxInfoDB::CForkAddressTxInfoDB()
 {
-    if (btKey.size() == 0 || btValue.size() == 0)
+}
+
+CForkAddressTxInfoDB::~CForkAddressTxInfoDB()
+{
+}
+
+bool CForkAddressTxInfoDB::Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData)
+{
+    CLevelDBArguments args;
+    args.path = pathData.string();
+    args.syncwrite = false;
+    CLevelDBEngine* engine = new CLevelDBEngine(args);
+    if (!Open(engine))
     {
-        StdError("CListAddressTxInfoTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+        StdLog("CForkAddressTxInfoDB", "Open db fail");
+        delete engine;
         return false;
     }
+    hashFork = hashForkIn;
+    return true;
+}
 
     try
     {

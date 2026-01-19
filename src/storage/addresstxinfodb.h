@@ -7,44 +7,38 @@
 
 #include <map>
 
+#include "dbstruct.h"
 #include "destination.h"
 #include "hnbase.h"
 #include "transaction.h"
-#include "triedb.h"
 #include "uint256.h"
+
+#define CACHE_ROLLBACK_HEIGHT (1024)
 
 namespace hashahead
 {
 namespace storage
 {
 
-class CListAddressTxInfoTrieDBWalker : public CTrieDBWalker
+class CForkAddressTxInfoDB : public hnbase::CKVDB
 {
 public:
-    CListAddressTxInfoTrieDBWalker(const uint64 nGetTxCountIn, std::vector<CDestTxInfo>& vAddressTxInfoIn)
-      : nGetTxCount(nGetTxCountIn), vAddressTxInfo(vAddressTxInfoIn) {}
-
-    bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override;
-
-protected:
-    const uint64 nGetTxCount;
-    std::vector<CDestTxInfo>& vAddressTxInfo;
-};
-
-class CForkAddressTxInfoDB
-{
-public:
-    CForkAddressTxInfoDB(const bool fCacheIn = true);
+    CForkAddressTxInfoDB();
     ~CForkAddressTxInfoDB();
 
     bool Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData);
     void Deinitialize();
-    bool RemoveAll();
 
-    bool AddAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber, const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, uint256& hashNewRoot);
-    bool GetAddressTxCount(const uint256& hashBlock, const CDestination& dest, uint64& nTxCount);
-    bool RetrieveAddressTxInfo(const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo);
-    bool ListAddressTxInfo(const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo);
+    bool AddAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber,
+                          const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo,
+                          const std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord);
+    bool UpdateAddressTxInfoBlockLongChain(const std::vector<uint256>& vRemoveBlock, const std::vector<uint256>& vAddBlock);
+
+    bool GetAddressTxCount(const CDestination& address, uint64& nTxCount);
+    bool RetrieveAddressTxInfo(const CDestination& address, const uint64 nTxIndex, CDestTxInfo& ctxAddressTxInfo);
+    bool ListAddressTxInfo(const CDestination& address, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo);
+    bool ListTokenTx(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                     const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord);
 
     bool VerifyAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
