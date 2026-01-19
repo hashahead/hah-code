@@ -1090,45 +1090,69 @@ bool CBlockState::DoBlockState(uint256& hashReceiptRoot, uint256& nBlockGasUsed,
         }
     }
 
-    for (const auto& kv : mapContractKvState)
+bool CBlockBase::RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDestination, std::pair<uint256, double>>& mapDelegateRewardApy)
+{
+    //std::map<CDestination, std::pair<uint256, double>> mapDelegateRewardApy; // key: delegate address, value1: delegate total reward, value2: delegate apy
+    std::map<CDestination, uint256> mapDelegateLastReward;
+
+    const uint32 DELEGATE_REWARD_APY_DAY_COUNT = 7;
+    BlockIndexPtr pIndex = GetIndex(hashBlock);
+    for (size_t i = 0; pIndex && i < DAY_HEIGHT * DELEGATE_REWARD_APY_DAY_COUNT; i++)
     {
-        const CDestination& destContract = kv.first;
-        CDestState stateDestContract;
-        if (!GetDestState(destContract, stateDestContract))
+        if (pIndex->IsPrimary() && pIndex->IsProofOfStake())
         {
-            stateDestContract.SetNull();
-            stateDestContract.SetType(CDestination::PREFIX_PUBKEY); // WAIT_CHECK
+            mapDelegateLastReward[pIndex->destMint] += pIndex->GetBlockReward();
         }
-        uint256 hashRoot;
-        if (!dbBlockBase.AddBlockContractKvValue(hashFork, stateDestContract.GetStorageRoot(), hashRoot, kv.second))
-        {
-            StdLog("CBlockState", "Do block state: Add block contract state fail, destContract: %s", destContract.ToString().c_str());
-            return false;
-        }
-        stateDestContract.SetStorageRoot(hashRoot);
-        SetDestState(destContract, stateDestContract);
+        pIndex = GetPrevBlockIndex(pIndex);
     }
 
-    for (auto& kv : mapBlockAddressContext)
+    uint256 nVoteRewardRatio;
+    if (REWARD_DISTRIBUTION_RATIO_ENABLE)
     {
-        setBlockBloomData.insert(kv.first.GetBytes());
+        nVoteRewardRatio = REWARD_DISTRIBUTION_PER - REWARD_DISTRIBUTION_RATIO_PROJECT_PARTY - REWARD_DISTRIBUTION_RATIO_FOUNDATION;
     }
-    for (auto& kv : mapBlockContractTransfer)
+    for (auto& kv : mapDelegateLastReward)
     {
-        for (auto& vd : kv.second)
+        uint256 n = kv.second / DELEGATE_REWARD_APY_DAY_COUNT * 365;
+        if (REWARD_DISTRIBUTION_RATIO_ENABLE)
         {
-            if (!vd.destFrom.IsNull())
+            n = n * nVoteRewardRatio / REWARD_DISTRIBUTION_PER;
+        }
+        kv.second = n;
+    }
+
+    std::multimap<uint256, CDestination> mapVotes;
+    GetDelegateList(hashBlock, 0, 0, mapVotes);
+
+    const int64 nPrecision = 10000000000;
+    for (auto& kv : mapVotes)
+    {
+        const uint256& nDelegateVotes = kv.first;
+        const CDestination& destDelegateAddress = kv.second;
+
+        if (nDelegateVotes >= DELEGATE_PROOF_OF_STAKE_ENROLL_MINIMUM_AMOUNT)
+        {
+            uint8 nMintTemplateType = 0;
+            uint256 nDelegateTotalReward = 0;
+            if (!dbBlock.RetrieveMintReward(GetGenesisBlockHash(), hashBlock, destDelegateAddress, nMintTemplateType, nDelegateTotalReward))
             {
-                setBlockBloomData.insert(vd.destFrom.GetBytes());
+                nDelegateTotalReward = 0;
             }
-            if (!vd.destTo.IsNull())
+
+            double dApy = 0.0;
+            auto it = mapDelegateLastReward.find(destDelegateAddress);
+            if (it != mapDelegateLastReward.end())
             {
-                setBlockBloomData.insert(vd.destTo.GetBytes());
+                dApy = (double)((it->second * nPrecision / nDelegateVotes).Get64()) / nPrecision;
+            }
+
+            mapDelegateRewardApy[destDelegateAddress] = std::make_pair(nDelegateTotalReward, dApy);
+            if (mapDelegateRewardApy.size() >= MAX_DELEGATE_THRESH)
+            {
+                break;
             }
         }
     }
-
-    GetBlockBloomData(btBlockBloomDataOut);
     return true;
 }
 
