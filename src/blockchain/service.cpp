@@ -28,7 +28,7 @@ namespace hashahead
 // CService
 
 CService::CService()
-  : pCoreProtocol(nullptr), pBlockChain(nullptr), pTxPool(nullptr), pDispatcher(nullptr), pWallet(nullptr), pNetwork(nullptr), pForkManager(nullptr), pNetChannel(nullptr)
+  : pCoreProtocol(nullptr), pBlockChain(nullptr), pTxPool(nullptr), pDispatcher(nullptr), pWallet(nullptr), pNetwork(nullptr), pForkManager(nullptr), pNetChannel(nullptr), pBlockFilter(nullptr), pChainSnapshot(nullptr)
 {
 }
 
@@ -257,7 +257,12 @@ bool CService::GetForkContext(const uint256& hashFork, CForkContext& ctxtFork, c
     return pBlockChain->GetForkContext(hashFork, ctxtFork, hashMainChainRefBlock);
 }
 
-bool CService::VerifyForkNameAndChainId(const uint256& hashFork, const CChainId nChainIdIn, const std::string& strForkName, const uint256& hashBlock)
+bool CService::GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock)
+{
+    return pBlockChain->GetForkCtxStatus(hashFork, forkStatus, hashMainChainRefBlock);
+}
+
+bool CService::VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainIdIn, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashBlock)
 {
     return pBlockChain->VerifyForkNameAndChainId(hashFork, nChainIdIn, strForkName, hashBlock);
 }

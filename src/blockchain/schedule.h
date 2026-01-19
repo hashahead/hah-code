@@ -202,7 +202,7 @@ class CSchedule
     public:
         CInvState()
           : nAssigned(0), objReceived(CNil()), nRecvInvTime(0), nRecvObjTime(0), nClearObjTime(0),
-            nGetDataCount(0), fRepeatMintBlock(false), fVerifyPowBlock(false) {}
+            nGetDataCount(0), fRepeatMintBlock(false), fVerifyPoaBlock(false) {}
         bool IsReceived()
         {
             return (objReceived.type() != typeid(CNil));
@@ -217,7 +217,7 @@ class CSchedule
         int64 nClearObjTime;
         int nGetDataCount;
         bool fRepeatMintBlock;
-        bool fVerifyPowBlock;
+        bool fVerifyPoaBlock;
         uint256 hashRefBlock;
     };
 
@@ -277,17 +277,17 @@ public:
     void RemoveRefBlock(const uint256& hashForkBlock);
     void GetNextRefBlock(const uint256& hashRefBlock, std::vector<std::pair<uint256, uint256>>& vNext);
     bool SetDelayedClear(const network::CInv& inv, int64 nDelayedTime);
-    void GetSubmitCachePowBlock(const CConsensusParam& consParam, std::vector<std::pair<uint256, int>>& vPowBlockHash);
-    bool GetFirstCachePowBlock(int nHeight, uint256& hashFirstBlock);
-    bool AddCacheLocalPowBlock(const CBlock& block, bool& fFirst);
-    bool CheckCacheLocalPowBlock(int nHeight);
-    bool GetCacheLocalPowBlock(const uint256& hash, CBlock& block);
-    void RemoveCacheLocalPowBlock(const uint256& hash);
-    bool GetCachePowBlock(const uint256& hash, CBlock& block);
-    bool CheckCachePowBlockState(const uint256& hash);
+    void GetSubmitCachePoaBlock(const CConsensusParam& consParam, std::vector<std::pair<uint256, int>>& vPoaBlockHash);
+    bool GetFirstCachePoaBlock(int nHeight, uint256& hashFirstBlock);
+    bool AddCacheLocalPoaBlock(const CBlock& block, bool& fFirst);
+    bool CheckCacheLocalPoaBlock(int nHeight);
+    bool GetCacheLocalPoaBlock(const uint256& hash, CBlock& block);
+    void RemoveCacheLocalPoaBlock(const uint256& hash);
+    bool GetCachePoaBlock(const uint256& hash, CBlock& block);
+    bool CheckCachePoaBlockState(const uint256& hash);
     void RemoveHeightBlock(int nHeight, const uint256& hash);
-    bool GetPowBlockState(const uint256& hash, bool& fVerifyPowBlockOut);
-    void SetPowBlockVerifyState(const uint256& hash, bool fVerifyPowBlockIn);
+    bool GetPoaBlockState(const uint256& hash, bool& fVerifyPoaBlockOut);
+    void SetPoaBlockVerifyState(const uint256& hash, bool fVerifyPoaBlockIn);
 
 protected:
     void RemoveOrphan(const network::CInv& inv);
@@ -303,7 +303,7 @@ protected:
     std::map<CDestination, std::map<uint64, uint256>> mapRecvTxDest;
     std::map<uint256, std::map<uint256, uint256>> mapRefBlock;
     std::map<int, std::vector<std::pair<uint256, int>>> mapHeightBlock;
-    std::map<int, CBlock> mapKcPowBlock;
+    std::map<int, CBlock> mapKcPoaBlock;
 };
 
 } // namespace hashahead

@@ -607,7 +607,7 @@ void CSchedule::GetSubmitCachePoaBlock(const CConsensusParam& consParam, std::ve
     }
 }
 
-bool CSchedule::GetFirstCachePowBlock(int nHeight, uint256& hashFirstBlock)
+bool CSchedule::GetFirstCachePoaBlock(int nHeight, uint256& hashFirstBlock)
 {
     auto it = mapHeightBlock.find(nHeight);
     if (it != mapHeightBlock.end() && it->second.size() > 0)
@@ -618,25 +618,25 @@ bool CSchedule::GetFirstCachePowBlock(int nHeight, uint256& hashFirstBlock)
     return false;
 }
 
-bool CSchedule::AddCacheLocalPowBlock(const CBlock& block, bool& fFirst)
+bool CSchedule::AddCacheLocalPoaBlock(const CBlock& block, bool& fFirst)
 {
     int nHeight = block.GetBlockHeight();
 
-    auto mt = mapKcPowBlock.begin();
-    while (mt != mapKcPowBlock.end())
+    auto mt = mapKcPoaBlock.begin();
+    while (mt != mapKcPoaBlock.end())
     {
         if (mt->first > nHeight - 32)
         {
             break;
         }
         RemoveHeightBlock(mt->first, mt->second.GetHash());
-        mapKcPowBlock.erase(mt++);
+        mapKcPoaBlock.erase(mt++);
     }
 
-    auto it = mapKcPowBlock.find(nHeight);
-    if (it == mapKcPowBlock.end())
+    auto it = mapKcPoaBlock.find(nHeight);
+    if (it == mapKcPoaBlock.end())
     {
-        mapKcPowBlock.insert(make_pair(nHeight, block));
+        mapKcPoaBlock.insert(make_pair(nHeight, block));
         auto& vb = mapHeightBlock[nHeight];
         fFirst = (vb.size() == 0);
         vb.push_back(make_pair(block.GetHash(), CACHE_POW_BLOCK_TYPE_LOCAL));
@@ -645,19 +645,19 @@ bool CSchedule::AddCacheLocalPowBlock(const CBlock& block, bool& fFirst)
     return false;
 }
 
-bool CSchedule::CheckCacheLocalPowBlock(int nHeight)
+bool CSchedule::CheckCacheLocalPoaBlock(int nHeight)
 {
-    if (mapKcPowBlock.find(nHeight) != mapKcPowBlock.end())
+    if (mapKcPoaBlock.find(nHeight) != mapKcPoaBlock.end())
     {
         return true;
     }
     return false;
 }
 
-bool CSchedule::GetCacheLocalPowBlock(const uint256& hash, CBlock& block)
+bool CSchedule::GetCacheLocalPoaBlock(const uint256& hash, CBlock& block)
 {
-    auto it = mapKcPowBlock.find(CBlock::GetBlockHeightByHash(hash));
-    if (it != mapKcPowBlock.end() && it->second.GetHash() == hash)
+    auto it = mapKcPoaBlock.find(CBlock::GetBlockHeightByHash(hash));
+    if (it != mapKcPoaBlock.end() && it->second.GetHash() == hash)
     {
         block = it->second;
         return true;
@@ -665,13 +665,13 @@ bool CSchedule::GetCacheLocalPowBlock(const uint256& hash, CBlock& block)
     return false;
 }
 
-void CSchedule::RemoveCacheLocalPowBlock(const uint256& hash)
+void CSchedule::RemoveCacheLocalPoaBlock(const uint256& hash)
 {
-    auto it = mapKcPowBlock.find(CBlock::GetBlockHeightByHash(hash));
-    if (it != mapKcPowBlock.end() && it->second.GetHash() == hash)
+    auto it = mapKcPoaBlock.find(CBlock::GetBlockHeightByHash(hash));
+    if (it != mapKcPoaBlock.end() && it->second.GetHash() == hash)
     {
         RemoveHeightBlock(it->first, it->second.GetHash());
-        mapKcPowBlock.erase(it);
+        mapKcPoaBlock.erase(it);
     }
 }
 
