@@ -33,29 +33,26 @@ public:
 class CCacheFork
 {
 public:
-    CCacheFork() {}
     CCacheFork(const std::map<uint256, CForkContext>& mapForkCtxtIn)
     {
-        hashRef = 0;
         AddForkCtxt(mapForkCtxtIn);
-    }
-    CCacheFork(const uint256& hashRefIn)
-      : hashRef(hashRefIn)
-    {
     }
     void AddForkCtxt(const std::map<uint256, CForkContext>& mapForkCtxtIn);
     bool ExistForkContext(const uint256& hashFork) const;
     uint256 GetForkHashByName(const std::string& strName) const;
     uint256 GetForkHashByChainId(const CChainId nChainId) const;
 
+    static uint256 CalcForkContextHash(const std::map<uint256, CForkContext>& mapForkCtxtIn);
+
 public:
-    uint256 hashRef;
     std::map<uint256, CForkContext> mapForkContext;
     std::map<std::string, uint256> mapForkName;
     std::map<CChainId, uint256> mapChainId;
     std::multimap<uint256, uint256> mapForkParent;
     std::multimap<uint256, uint256> mapForkJoint;
 };
+typedef std::shared_ptr<CCacheFork> SHP_CACHE_FORK_DATA;
+#define MAKE_SHARED_CACHE_FORK_DATA std::make_shared<CCacheFork>
 
 class CForkDB
 {

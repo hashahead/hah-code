@@ -351,7 +351,7 @@ bool CForkDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBl
         AddPrevRoot(hashPrevRoot, hashBlock, mapKv);
     }
 
-    if (!dbTrie.AddNewTrie(CBlock::GetBlockHeightByHash(hashBlock), hashPrevRoot, {}, mapKv, hashNewRoot))
+    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
     {
         StdLog("CForkDB", "Add fork context: Add new trie fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -397,7 +397,7 @@ bool CForkDB::ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, cons
         hashLastBlock = hashBlock;
     }
 
-    const CCacheFork* ptr = GetCacheForkContext(hashBlock);
+    const SHP_CACHE_FORK_DATA ptr = GetCacheForkContext(hashLastBlock);
     if (ptr)
     {
         mapForkCtxt = ptr->mapForkContext;
@@ -429,7 +429,7 @@ bool CForkDB::RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt, c
         hashLastBlock = hashMainChainRefBlock;
     }
 
-    const CCacheFork* ptr = GetCacheForkContext(hashMainChainRefBlock);
+    const SHP_CACHE_FORK_DATA ptr = GetCacheForkContext(hashLastBlock);
     if (ptr)
     {
         auto mt = ptr->mapForkContext.find(hashFork);
@@ -438,6 +438,7 @@ bool CForkDB::RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt, c
             ctxt = mt->second;
             return true;
         }
+        return false;
     }
 
     uint256 hashRoot;
@@ -465,6 +466,42 @@ bool CForkDB::RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt, c
         return false;
     }
     return true;
+}
+
+bool CForkDB::GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashLastBlock;
+    if (hashMainChainRefBlock == 0)
+    {
+        if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+        {
+            hashLastBlock = 0;
+        }
+    }
+    else
+    {
+        hashLastBlock = hashMainChainRefBlock;
+    }
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(hashLastBlock, hashRoot))
+    {
+        return false;
+    }
+
+    if (!GetForkCtxStatusInner(hashRoot, hashFork, forkStatus))
+    {
+        forkStatus = CForkCtxStatus(CForkCtxStatus::FORK_STATUS_RUNNING);
+    }
+    return true;
+}
+
+bool CForkDB::GetTraceDbFlag()
+{
+    CReadLock rlock(rwAccess);
+    return ReadTraceDbFlag();
 }
 
 bool CForkDB::UpdateForkLast(const uint256& hashFork, const uint256& hashLastBlock)
