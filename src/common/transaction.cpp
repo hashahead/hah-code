@@ -46,7 +46,7 @@ bool CTransaction::IsNull() const
 
 bool CTransaction::IsMintTx() const
 {
-    return (nType == TX_GENESIS || nType == TX_STAKE || nType == TX_WORK);
+    return (nType == TX_GENESIS || nType == TX_STAKE || nType == TX_POA);
 }
 
 bool CTransaction::IsRewardTx() const
@@ -72,6 +72,11 @@ bool CTransaction::IsUserTx() const
 bool CTransaction::IsInternalTx() const
 {
     return (nType == TX_INTERNAL);
+}
+
+bool CTransaction::IsExtdataTx() const
+{
+    return (nType == TX_EXTDATA);
 }
 
 std::string CTransaction::GetTypeString() const
@@ -448,7 +453,7 @@ std::string CTransaction::GetTypeStringStatic(uint16 nTxType)
         return std::string("certification");
     else if (nTxType == TX_STAKE)
         return std::string("stake");
-    else if (nTxType == TX_WORK)
+    else if (nTxType == TX_POA)
         return std::string("poa");
     else if (nTxType == TX_VOTE_REWARD)
         return std::string("vote-reward");

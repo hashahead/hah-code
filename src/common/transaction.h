@@ -58,9 +58,10 @@ public:
         TX_TOKEN = 0x02,       // Normal Tx
         TX_CERT = 0x03,        // Enroll Tx
         TX_STAKE = 0x04,       // PoS mint Tx
-        TX_WORK = 0x05,        // PoA mint Tx
+        TX_POA = 0x05,         // PoA mint Tx
         TX_VOTE_REWARD = 0x06, // Vote reward Tx
         TX_INTERNAL = 0x07,    // Internal Tx
+        TX_EXTDATA = 0x08,     // Extdata Tx
 
         TX_ETH_CREATE_CONTRACT = 0x11, // Eth create contract tx
         TX_ETH_MESSAGE_CALL = 0x12,    // Eth message call tx
@@ -78,6 +79,10 @@ public:
         DF_FORKDATA = 0x14,
         DF_CERTTXDATA = 0x15,
         DF_ACTIVATECODE = 0x16,
+        DF_BLSPUBKEY = 0x17,
+        DF_EXTDATA = 0x18,
+
+        DF_VOTEREWARDLIST = 0x19,
     };
 
 public:
@@ -95,6 +100,7 @@ public:
     bool IsEthTx() const;
     bool IsUserTx() const;
     bool IsInternalTx() const;
+    bool IsExtdataTx() const;
     std::string GetTypeString() const;
     uint256 GetTxFee() const;
     uint256 GetHash() const;
