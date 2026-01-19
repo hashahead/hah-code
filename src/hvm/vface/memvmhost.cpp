@@ -20,6 +20,15 @@ bool CMemVmHost::Get(const uint256& key, bytes& value) const
     return true;
 }
 
+bool CMemVmHost::GetTransientValue(const CDestination& dest, const uint256& key, bytes& value) const
+{
+    return true;
+}
+
+void CMemVmHost::SetTransientValue(const CDestination& dest, const uint256& key, const bytes& value)
+{
+}
+
 uint256 CMemVmHost::GetTxid() const
 {
     return uint256(1);
@@ -30,9 +39,29 @@ uint256 CMemVmHost::GetTxNonce() const
     return uint256(1);
 }
 
-CDestination CMemVmHost::GetContractAddress() const
+uint64 CMemVmHost::GetAddressLastTxNonce(const CDestination& addr)
 {
-    return destContract;
+    return 0;
+}
+
+bool CMemVmHost::SetAddressLastTxNonce(const CDestination& addr, const uint64 nNonce)
+{
+    return true;
+}
+
+CDestination CMemVmHost::GetStorageContractAddress() const
+{
+    return destStorageContract;
+}
+
+CDestination CMemVmHost::GetCodeParentAddress() const
+{
+    return destCodeParent;
+}
+
+CDestination CMemVmHost::GetCodeLocalAddress() const
+{
+    return destCodeLocal;
 }
 
 CDestination CMemVmHost::GetCodeOwnerAddress() const
@@ -76,25 +105,43 @@ bool CMemVmHost::GetContractCreateCode(const CDestination& destContractIn, CTxCo
     return false;
 }
 
-CVmHostFaceDBPtr CMemVmHost::CloneHostDB(const CDestination& destContractIn)
+CVmHostFaceDBPtr CMemVmHost::CloneHostDB(const CDestination& destStorageContractIn, const CDestination& destCodeParentIn, const CDestination& destCodeLocalIn, const CDestination& destCodeOwnerIn)
 {
-    return CVmHostFaceDBPtr(new CMemVmHost(destContractIn, destCodeOwner));
+    return CVmHostFaceDBPtr(new CMemVmHost(destStorageContractIn, destCodeParentIn, destCodeLocalIn, destCodeOwnerIn));
 }
 
-void CMemVmHost::SaveGasUsed(const CDestination& destCodeOwnerIn, const uint64 nGasUsed)
+void CMemVmHost::ModifyHostAddress(const CDestination& destCodeParentIn, const CDestination& destCodeLocalIn, const CDestination& destCodeOwnerIn)
+{
+    destCodeParent = destCodeParentIn;
+    destCodeLocal = destCodeLocalIn;
+    destCodeOwner = destCodeOwnerIn;
+}
+
+void CMemVmHost::SaveCodeOwnerGasUsed(const CDestination& destParentCodeContractIn, const CDestination& destCodeContractIn, const CDestination& destCodeOwnerIn, const uint64 nGasUsed)
 {
 }
 
-void CMemVmHost::SaveRunResult(const CDestination& destContractIn, const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv)
+void CMemVmHost::SaveRunResult(const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv,
+                               const std::map<uint256, bytes>& mapTraceKv, const std::map<CDestination, std::map<uint256, bytes>>& mapOldAddressKeyValue)
 {
 }
 
-bool CMemVmHost::SaveContractRunCode(const CDestination& destContractIn, const bytes& btContractRunCode, const CTxContractData& txcd)
+bool CMemVmHost::AddContractRunReceipt(const CTxContractReceipt& tcReceipt, const bool fFirstReceipt)
 {
     return true;
 }
 
-bool CMemVmHost::ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, bytes& btResult)
+bool CMemVmHost::AddVmOperationTraceLog(const CVmOperationTraceLog& vmOpTraceLog)
+{
+    return true;
+}
+
+bool CMemVmHost::SaveContractRunCode(const bytes& btContractRunCode, const CTxContractData& txcd)
+{
+    return true;
+}
+
+bool CMemVmHost::ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const uint256& nAmount, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, int& nStatus, bytes& btResult)
 {
     return true;
 }
