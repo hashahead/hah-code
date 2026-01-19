@@ -98,29 +98,59 @@ bool CForkContractDB::RemoveAll()
     return true;
 }
 
-bool CForkContractDB::AddBlockContractKvValue(const uint256& hashPrevRoot, uint256& hashBlockRoot, const std::map<uint256, bytes>& mapContractState)
+bool CForkContractDB::AddBlockContractKvValue(const uint32 nBlockHeight, const uint64 nBlockNumber, const CDestination& destContract, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashBlockRoot)
 {
     bytesmap mapKv;
     for (const auto& kv : mapContractState)
     {
-        hnbase::CBufStream ssKey;
+        hnbase::CBufStream ssKey, ssValue;
         bytes btKey, btValue;
 
         ssKey << DB_CONTRACT_KEY_TYPE_CONTRACTKV << kv.first;
         ssKey.GetData(btKey);
 
-        hnbase::CBufStream ssValue;
+        ssValue << kv.second;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashBlockRoot))
+    {
+        StdLog("CForkContractDB", "Add block contract kv value: Add new trie failed, height: %d, prev root: %s, contract address: %s",
+               nBlockHeight, hashPrevRoot.ToString().c_str(), destContract.ToString().c_str());
+        return false;
+    }
+    if (fPruneData && hashBlockRoot != hashPrevRoot)
+    {
+        if (!WriteAddressRoot(destContract, hashPrevRoot, hashBlockRoot, nBlockHeight, nBlockNumber))
+        {
+            StdLog("CForkContractDB", "Add block contract kv value: Write address root failed, height: %d, prev root: %s, contract address: %s",
+                   nBlockHeight, hashPrevRoot.ToString().c_str(), destContract.ToString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CForkContractDB::CreateCacheContractKvTrie(const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot)
+{
+    bytesmap mapKv;
+    for (const auto& kv : mapContractState)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_CONTRACT_KEY_TYPE_CONTRACTKV << kv.first;
+        ssKey.GetData(btKey);
+
         ssValue << kv.second;
         ssValue.GetData(btValue);
 
         mapKv.insert(make_pair(btKey, btValue));
     }
 
-    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashBlockRoot))
-    {
-        return false;
-    }
-    return true;
+    std::map<uint256, CTrieValue> mapCacheNode;
+    return dbTrie.CreateCacheTrie(hashPrevRoot, mapKv, hashNewRoot, mapCacheNode);
 }
 
 bool CForkContractDB::RetrieveContractKvValue(const uint256& hashContractRoot, const uint256& key, bytes& value)
