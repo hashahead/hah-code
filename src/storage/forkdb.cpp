@@ -8,6 +8,8 @@
 
 #include "leveldbeng.h"
 
+#include "dbstruct.h"
+
 using namespace std;
 using namespace hnbase;
 
@@ -17,13 +19,29 @@ namespace storage
 {
 
 const uint8 DB_FORK_KEY_TYPE_CONTEXT = 0x10;
+const uint8 DB_FORK_KEY_TYPE_STATUS = 0x11;
 const uint8 DB_FORK_KEY_TYPE_ACTIVE = 0x20;
 const uint8 DB_FORK_KEY_TYPE_FORKNAME = 0x30;
 const uint8 DB_FORK_KEY_TYPE_CHAINID = 0x40;
 const uint8 DB_FORK_KEY_TYPE_TRIEROOT = 0x50;
 const uint8 DB_FORK_KEY_TYPE_PREVROOT = 0x60;
 
+const uint8 DB_FORK_KEY_TYPE_SINGLE_VALUE = 0x70;
+
+const uint8 DB_FORK_KEY_TYPE_COIN_SYMBOL = 0x81;
+const uint8 DB_FORK_KEY_TYPE_DEX_COINPAIR = 0x82;
+const uint8 DB_FORK_KEY_TYPE_DEX_SYMBOLPAIR = 0x83;
+
+const uint8 DB_FORK_KEY_TYPE_TV_WHITELIST_ADDRESS = 0x91;
+
+const uint8 DB_FORK_KEY_TYPE_TRACEDB_FLAG = 0xA1;
+const uint8 DB_FORK_KEY_TYPE_PRUNE_FLAG = 0xA2;
+
 #define DB_FORK_KEY_ID_PREVROOT string("prevroot")
+#define DB_FORK_KEY_ID_TRACEDB_FLAG string("tracedbflag")
+
+const uint16 DB_FORK_KEY_VALUE_MAX_DEX_COINPAIR = 0x0001;
+const uint32 DB_FORK_KEY_VALUE_PRUNE_FLAG = 0x69854A58;
 
 //////////////////////////////
 // CListForkTrieDBWalker
@@ -98,6 +116,13 @@ uint256 CCacheFork::GetForkHashByChainId(const CChainId nChainId) const
     return 0;
 }
 
+uint256 CCacheFork::CalcForkContextHash(const std::map<uint256, CForkContext>& mapForkCtxtIn)
+{
+    CBufStream ss;
+    ss << mapForkCtxtIn;
+    return crypto::CryptoHash(ss.GetData(), ss.GetSize());
+}
+
 //////////////////////////////
 // CForkDB
 
@@ -116,7 +141,8 @@ void CForkDB::Deinitialize()
 {
     CWriteLock wlock(rwAccess);
     dbTrie.Deinitialize();
-    mapCacheFork.clear();
+    mapCacheForkContext.clear();
+    mapCacheForkBlockPtr.clear();
     mapCacheLast.clear();
     mapCacheRoot.clear();
 }
@@ -125,29 +151,38 @@ void CForkDB::Clear()
 {
     CWriteLock wlock(rwAccess);
     dbTrie.Clear();
-    mapCacheFork.clear();
+    mapCacheForkContext.clear();
+    mapCacheForkBlockPtr.clear();
     mapCacheLast.clear();
     mapCacheRoot.clear();
 }
 
-bool CForkDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxt, uint256& hashNewRoot)
+bool CForkDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxt, const std::map<std::string, CCoinContext>& mapSymbolCoin,
+                             const std::set<CDestination>& setTimeVaultWhitelist, const std::set<uint256>& setStopFork, const bool fTraceDb, uint256& hashNewRoot)
 {
     CWriteLock wlock(rwAccess);
 
     uint256 hashPrevRoot;
-    if (!ReadTrieRoot(hashPrevBlock, hashPrevRoot))
+    if (hashPrevBlock != 0)
     {
-        StdLog("CForkDB", "Add fork context: Read trie root fail, pre block: %s", hashPrevBlock.GetHex().c_str());
-        return false;
+        if (!ReadTrieRoot(hashPrevBlock, hashPrevRoot))
+        {
+            StdLog("CForkDB", "Add fork context: Read trie root fail, pre block: %s", hashPrevBlock.GetHex().c_str());
+            return false;
+        }
     }
 
-    const CCacheFork* pCacheFork = LoadCacheForkContext(hashPrevBlock);
+    const SHP_CACHE_FORK_DATA pCacheFork = LoadCacheForkContext(hashPrevBlock);
 
     std::map<uint256, CForkContext> mapNewForkCtxt;
+    std::map<std::string, CCoinContext> mapNewSymbolCoin;
+
     bytesmap mapKv;
     for (const auto& kv : mapForkCtxt)
     {
         const CChainId nChainId = kv.second.nChainId;
+        const std::string& strSymbol = kv.second.strSymbol;
+
         if (pCacheFork)
         {
             if (pCacheFork->ExistForkContext(kv.first))
@@ -167,6 +202,29 @@ bool CForkDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBl
             }
         }
 
+        bool fSomeSymbol = false;
+        CCoinContext ctxCoin;
+        if (GetCoinContextByForkSymbol(hashPrevRoot, strSymbol, ctxCoin))
+        {
+            fSomeSymbol = true;
+        }
+        else
+        {
+            for (auto& nkv : mapNewSymbolCoin)
+            {
+                if (strSymbol == nkv.first)
+                {
+                    fSomeSymbol = true;
+                    break;
+                }
+            }
+        }
+        if (fSomeSymbol)
+        {
+            StdLog("CForkDB", "Add fork context: Fork symbol existed, symbol: %s", strSymbol.c_str());
+            continue;
+        }
+
         {
             hnbase::CBufStream ssKey, ssValue;
             bytes btKey, btValue;
@@ -175,6 +233,19 @@ bool CForkDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBl
             ssKey.GetData(btKey);
 
             ssValue << kv.second;
+            ssValue.GetData(btValue);
+
+            mapKv.insert(make_pair(btKey, btValue));
+        }
+
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_FORK_KEY_TYPE_STATUS << kv.first;
+            ssKey.GetData(btKey);
+
+            ssValue << CForkCtxStatus(CForkCtxStatus::FORK_STATUS_RUNNING);
             ssValue.GetData(btValue);
 
             mapKv.insert(make_pair(btKey, btValue));
@@ -206,11 +277,81 @@ bool CForkDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBl
             mapKv.insert(make_pair(btKey, btValue));
         }
 
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_FORK_KEY_TYPE_COIN_SYMBOL << strSymbol;
+            ssKey.GetData(btKey);
+
+            CCoinContext ctxCoin(kv.first, CCoinContext::CT_COIN_TYPE_FORK, {});
+            ssValue << ctxCoin;
+            ssValue.GetData(btValue);
+
+            mapKv.insert(make_pair(btKey, btValue));
+
+            mapNewSymbolCoin.insert(std::make_pair(strSymbol, ctxCoin));
+        }
+
         mapNewForkCtxt.insert(kv);
     }
-    AddPrevRoot(hashPrevRoot, hashBlock, mapKv);
+    for (auto& kv : mapSymbolCoin)
+    {
+        const std::string& strSymbol = kv.first;
+        const CCoinContext& ctxCoin = kv.second;
 
-    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
+        bool fSomeSymbol = false;
+        CCoinContext ctxCoinTemp;
+        if (GetCoinContextByForkSymbol(hashPrevRoot, strSymbol, ctxCoinTemp))
+        {
+            fSomeSymbol = true;
+        }
+        else
+        {
+            for (auto& nkv : mapNewSymbolCoin)
+            {
+                if (strSymbol == nkv.first)
+                {
+                    fSomeSymbol = true;
+                    break;
+                }
+            }
+        }
+        if (fSomeSymbol)
+        {
+            StdLog("CForkDB", "Add fork context: Symbol existed, symbol: %s", strSymbol.c_str());
+            continue;
+        }
+        if (ctxCoin.nCoinType == CCoinContext::CT_COIN_TYPE_FORK)
+        {
+            StdLog("CForkDB", "Add fork context: Coin type cannot main coin, symbol: %s", strSymbol.c_str());
+            continue;
+        }
+
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_FORK_KEY_TYPE_COIN_SYMBOL << strSymbol;
+        ssKey.GetData(btKey);
+
+        ssValue << ctxCoin;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+
+        mapNewSymbolCoin.insert(std::make_pair(strSymbol, ctxCoin));
+    }
+
+    AddForkDexCoinPair(hashPrevBlock, hashPrevRoot, mapNewSymbolCoin, mapKv);
+    AddTimeVaultWhitelist(setTimeVaultWhitelist, mapKv);
+    AddStopForkInner(hashPrevRoot, setStopFork, CBlock::GetBlockHeightByHash(hashBlock), mapKv);
+
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddPrevRoot(hashPrevRoot, hashBlock, mapKv);
+    }
+
+    if (!dbTrie.AddNewTrie(CBlock::GetBlockHeightByHash(hashBlock), hashPrevRoot, {}, mapKv, hashNewRoot))
     {
         StdLog("CForkDB", "Add fork context: Add new trie fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -226,6 +367,15 @@ bool CForkDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBl
     {
         StdLog("CForkDB", "Add fork context: Add cache fail, block: %s", hashBlock.GetHex().c_str());
         return false;
+    }
+
+    if (fTraceDb && hashBlock == hashGenesisBlock)
+    {
+        if (!WriteTraceDbFlag())
+        {
+            StdLog("CForkDB", "Add fork context: Write tracedb flag fail, block: %s", hashBlock.GetHex().c_str());
+            return false;
+        }
     }
     return true;
 }
