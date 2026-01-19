@@ -19,9 +19,9 @@ namespace hashahead
 namespace storage
 {
 
-const string DB_VOTE_KEY_ID_TRIEROOT("trieroot");
 const string DB_VOTE_KEY_ID_PREVROOT("prevroot");
-const string DB_VOTE_KEY_ID_DELEGATEENROLL("delegateenroll");
+
+const uint8 DB_VOTE_KEY_ID_TRIEROOT = 0x01;
 
 const uint8 DB_VOTE_ROOT_TYPE_USER_VOTE = 0x10;
 const uint8 DB_VOTE_ROOT_TYPE_VOTE_REWARD = 0x20;
@@ -31,8 +31,10 @@ const uint8 DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL = 0x40;
 const uint8 DB_VOTE_KEY_TYPE_USER_VOTE_ADDRESS = DB_VOTE_ROOT_TYPE_USER_VOTE | 0x01;
 const uint8 DB_VOTE_KEY_TYPE_USER_VOTE_HEIGHT_ADDRESS = DB_VOTE_ROOT_TYPE_USER_VOTE | 0x02;
 const uint8 DB_VOTE_KEY_TYPE_USER_VOTE_FINAL_HEIGHT_ADDRESS = DB_VOTE_ROOT_TYPE_USER_VOTE | 0x03;
+const uint8 DB_VOTE_KEY_TYPE_USER_VOTE_PLEDGE_VOTE = DB_VOTE_ROOT_TYPE_USER_VOTE | 0x04;
 
 const uint8 DB_VOTE_KEY_TYPE_VOTE_REWARD_ADDRESS = DB_VOTE_ROOT_TYPE_VOTE_REWARD | 0x01;
+const uint8 DB_VOTE_KEY_TYPE_MINT_REWARD_ADDRESS = DB_VOTE_ROOT_TYPE_VOTE_REWARD | 0x02;
 
 const uint8 DB_VOTE_KEY_TYPE_DELEGATE_VOTE_ADDRESS = DB_VOTE_ROOT_TYPE_DELEGATE_VOTE | 0x01;
 
@@ -250,12 +252,13 @@ bool CListDelegateVoteTrieDBWalker::Walk(const bytes& btKey, const bytes& btValu
 //////////////////////////////
 // CVoteDB
 
-bool CVoteDB::Initialize(const boost::filesystem::path& pathData)
+bool CVoteDB::Initialize(const boost::filesystem::path& pathData, const bool fPruneIn)
 {
     if (!dbTrie.Initialize(pathData / "vote"))
     {
         return false;
     }
+    fPrune = fPruneIn;
     return true;
 }
 

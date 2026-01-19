@@ -187,7 +187,7 @@ public:
     bool WriteExtKv(hnbase::CBufStream& ssKey, hnbase::CBufStream& ssValue);
     bool ReadExtKv(hnbase::CBufStream& ssKey, hnbase::CBufStream& ssValue);
     bool RemoveExtKv(hnbase::CBufStream& ssKey);
-    bool WalkThroughExtKv(hnbase::CBufStream& ssKeyBegin, hnbase::CBufStream& ssKeyPrefix, WalkerFunc walkerFunc);
+    bool WalkThroughExtKv(hnbase::CBufStream& ssKeyBegin, hnbase::CBufStream& ssKeyPrefix, hnbase::WalkerFunc walkerFunc);
 
 protected:
     bool CreateTrieNodeList(const uint256& hashPrevRoot, const bytesmap& mapKvList, uint256& hashNewRoot, std::map<uint256, CTrieValue>& mapCacheNode);

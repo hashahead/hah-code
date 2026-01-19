@@ -8,6 +8,7 @@
 #include <map>
 
 #include "block.h"
+#include "dbstruct.h"
 #include "destination.h"
 #include "hnbase.h"
 #include "timeseries.h"
@@ -115,7 +116,7 @@ class CVoteDB
 public:
     CVoteDB()
       : cacheDelegate(MAX_DELEGATE_ENROLL_CACHE_COUNT) {}
-    bool Initialize(const boost::filesystem::path& pathData);
+    bool Initialize(const boost::filesystem::path& pathData, const bool fPruneIn = false);
     void Deinitialize();
     void Clear();
 

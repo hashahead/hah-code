@@ -358,38 +358,38 @@ void CTxIndexDB::Clear()
     }
 }
 
-bool CTxIndexDB::AddBlockTxIndexReceipt(const uint256& hashFork, const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::map<uint256, CTransactionReceipt>& mapBlockTxReceipts)
+bool CTxIndexDB::AddBlockTxIndexReceipt(const uint256& hashFork, const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::vector<CTransactionReceipt>& vTxReceipts)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapTxIndexDB.find(hashFork);
     if (it != mapTxIndexDB.end())
     {
-        return it->second->AddBlockTxIndexReceipt(hashBlock, mapBlockTxIndex, mapBlockTxReceipts);
+        return it->second->AddBlockTxIndexReceipt(hashBlock, mapBlockTxIndex, vTxReceipts);
     }
     return false;
 }
 
-bool CTxIndexDB::UpdateBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx)
+bool CTxIndexDB::UpdateTxIndexBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapTxIndexDB.find(hashFork);
     if (it != mapTxIndexDB.end())
     {
-        return it->second->UpdateBlockLongChain(vRemoveTx, mapNewTx);
+        return it->second->UpdateTxIndexBlockLongChain(vRemoveTx, mapNewTx);
     }
     return false;
 }
 
-bool CTxIndexDB::RetrieveTxIndex(const uint256& hashFork, const uint256& txid, CTxIndex& txIndex)
+bool CTxIndexDB::RetrieveTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashTxAtBlock, CTxIndex& txIndex)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapTxIndexDB.find(hashFork);
     if (it != mapTxIndexDB.end())
     {
-        return it->second->RetrieveTxIndex(txid, txIndex);
+        return it->second->RetrieveTxIndex(txid, hashTxAtBlock, txIndex);
     }
     return false;
 }
