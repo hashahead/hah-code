@@ -226,13 +226,13 @@ int CBlockChain::GetBlockCount(const uint256& hashFork)
 
 bool CBlockChain::GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashBlock, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashBlock);
+    if (!pIndex)
     {
         StdLog("CBlockChain", "Get Block Location: Retrieve index fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
-    nChainId = pIndex->nChainId;
+    nChainId = pIndex->GetBlockChainId();
     hashFork = pIndex->GetOriginHash();
     nHeight = pIndex->GetBlockHeight();
     return true;
@@ -240,17 +240,18 @@ bool CBlockChain::GetBlockLocation(const uint256& hashBlock, CChainId& nChainId,
 
 bool CBlockChain::GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight, uint256& hashNext)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashBlock, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashBlock);
+    if (!pIndex)
     {
         return false;
     }
-    nChainId = pIndex->nChainId;
+    nChainId = pIndex->GetBlockChainId();
     hashFork = pIndex->GetOriginHash();
     nHeight = pIndex->GetBlockHeight();
-    if (pIndex->pNext != nullptr)
+    auto pNextIndex = cntrBlock.GetNextBlockIndex(pIndex);
+    if (pNextIndex)
     {
-        hashNext = pIndex->pNext->GetBlockHash();
+        hashNext = pNextIndex->GetBlockHash();
     }
     else
     {
