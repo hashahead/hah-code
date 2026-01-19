@@ -44,7 +44,7 @@ void CProfile::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
     bytes btAmount = nAmount.ToValidBigEndianData();
     bytes btMintReward = nMintReward.ToValidBigEndianData();
     bytes btMinTxFee = nMinTxFee.ToValidBigEndianData();
-    s << nVersion << nType << strName << strSymbol << CVarInt((uint64)nChainId) << btAmount << btMintReward << btMinTxFee << CVarInt((uint64)nHalveCycle) << destOwner << hashParent << CVarInt((uint64)nJointHeight);
+    s << nVersion << nType << strName << strSymbol << CVarInt((uint64)nChainId) << btAmount << btMintReward << btMinTxFee << CVarInt((uint64)nHalveCycle) << destOwner << hashParent << CVarInt((uint64)nJointHeight) << nAttachExtdataType;
 }
 
 void CProfile::Serialize(hnbase::CStream& s, hnbase::LoadType&)
@@ -55,7 +55,7 @@ void CProfile::Serialize(hnbase::CStream& s, hnbase::LoadType&)
     CVarInt varChainId;
     CVarInt varHalveCycle;
     CVarInt varJointHeight;
-    s >> nVersion >> nType >> strName >> strSymbol >> varChainId >> btAmount >> btMintReward >> btMinTxFee >> varHalveCycle >> destOwner >> hashParent >> varJointHeight;
+    s >> nVersion >> nType >> strName >> strSymbol >> varChainId >> btAmount >> btMintReward >> btMinTxFee >> varHalveCycle >> destOwner >> hashParent >> varJointHeight >> nAttachExtdataType;
     nChainId = (CChainId)(varChainId.nValue);
     nHalveCycle = (uint32)(varHalveCycle.nValue);
     nJointHeight = (int)(varJointHeight.nValue);
@@ -71,7 +71,7 @@ void CProfile::Serialize(hnbase::CStream& s, std::size_t& serSize) const
     bytes btMintReward = nMintReward.ToValidBigEndianData();
     bytes btMinTxFee = nMinTxFee.ToValidBigEndianData();
     hnbase::CBufStream ss;
-    ss << nVersion << nType << strName << strSymbol << CVarInt((uint64)nChainId) << btAmount << btMintReward << btMinTxFee << CVarInt((uint64)nHalveCycle) << destOwner << hashParent << CVarInt((uint64)nJointHeight);
+    ss << nVersion << nType << strName << strSymbol << CVarInt((uint64)nChainId) << btAmount << btMintReward << btMinTxFee << CVarInt((uint64)nHalveCycle) << destOwner << hashParent << CVarInt((uint64)nJointHeight) << nAttachExtdataType;
     serSize = ss.GetSize();
 }
 

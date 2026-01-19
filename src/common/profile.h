@@ -31,6 +31,7 @@ public:
     CDestination destOwner;
     uint256 hashParent;
     int nJointHeight;
+    uint8 nAttachExtdataType;
 
 public:
     enum
@@ -41,8 +42,17 @@ public:
         PROFILE_FORK_TYPE_CLONEMAP = 2,
         PROFILE_FORK_TYPE_USER = 3,
 
-        PROFILE_FORK_TYPE_MAX = 4,
+        PROFILE_FORK_TYPE_MAX
     };
+    enum
+    {
+        PROFILE_ATTACH_EXTD_TYPE_COMMON = 0,
+
+        PROFILE_ATTACH_EXTD_TYPE_BTCBRC20 = 1,
+
+        PROFILE_ATTACH_EXTD_TYPE_MAX
+    };
+
     CProfile()
     {
         SetNull();
@@ -61,6 +71,7 @@ public:
         strName.clear();
         strSymbol.clear();
         nChainId = 0;
+        nAttachExtdataType = PROFILE_ATTACH_EXTD_TYPE_COMMON;
     }
     bool IsNull() const
     {
@@ -78,6 +89,11 @@ public:
     {
         return (nType == PROFILE_FORK_TYPE_USER);
     }
+    bool IsAttachExtdataBtcbrc20() const
+    {
+        return (nAttachExtdataType == PROFILE_ATTACH_EXTD_TYPE_BTCBRC20);
+    }
+
     bool Save(std::vector<unsigned char>& vchProfile) const;
     bool Load(const std::vector<unsigned char>& vchProfile);
 
@@ -92,6 +108,14 @@ public:
     static bool VerifySubforkType(const uint8 nTypeIn)
     {
         if (nTypeIn <= PROFILE_FORK_TYPE_MAIN || nTypeIn >= PROFILE_FORK_TYPE_MAX)
+        {
+            return false;
+        }
+        return true;
+    }
+    static bool VerifyAttachExtdataType(const uint8 nAeTypeIn)
+    {
+        if (nAeTypeIn >= PROFILE_ATTACH_EXTD_TYPE_MAX)
         {
             return false;
         }
