@@ -23,8 +23,10 @@
 #include "param.h"
 #include "rpc/auto_protocol.h"
 #include "template/fork.h"
-#include "template/proof.h"
+#include "template/pledge.h"
+#include "template/poa.h"
 #include "template/template.h"
+#include "template/vote.h"
 #include "util.h"
 #include "version.h"
 
@@ -39,13 +41,62 @@ namespace hashahead
 {
 
 #define UNLOCKKEY_RELEASE_DEFAULT_TIME 60
+#define MAX_FILTER_BLOCK_HEIGHT 5000
 
 const char* GetGitVersion();
 
 ///////////////////////////////
 // static function
 
-static CBlockData BlockToJSON(const uint256& hashBlock, const CBlock& block, const CChainId nChainId, const uint256& hashFork, const uint32 nHeight, const uint256& nBlockReward)
+static CBlockHeader BlockHeaderToJSON(const uint256& hashBlock, const CBlock& block, const CChainId nChainId, const uint256& hashFork, const uint32 nHeight, const uint256& nBlockReward, const bool fConfirmBlock)
+{
+    CBlockHeader data;
+    data.strHash = hashBlock.GetHex();
+    data.strPrev = block.hashPrev.GetHex();
+    data.nChainid = nChainId;
+    data.strFork = hashFork.GetHex();
+    data.nVersion = block.nVersion;
+    data.strType = GetBlockTypeStr(block.nType, block.txMint.GetTxType());
+    data.nTime = block.GetBlockTime();
+    data.nNumber = block.GetBlockNumber();
+    data.nHeight = nHeight;
+    data.nSlot = block.GetBlockSlot();
+    data.strReward = CoinToTokenBigFloat(nBlockReward);
+    data.strStateroot = block.hashStateRoot.GetHex();
+    if (!block.hashReceiptsRoot.IsNull())
+    {
+        data.strReceiptsroot = block.hashReceiptsRoot.GetHex();
+    }
+    else
+    {
+        data.strReceiptsroot = "0x";
+    }
+    if (!block.btBloomData.empty())
+    {
+        data.strBloom = ToHexString(block.btBloomData);
+    }
+    else
+    {
+        data.strBloom = "0x";
+    }
+    data.fConfirm = fConfirmBlock;
+
+    CBlockVoteSig proofVote;
+    if (block.GetBlockVoteSig(proofVote) && !proofVote.IsNull())
+    {
+        data.strPrevconfirmblock = proofVote.hashBlockVote.ToString();
+    }
+    else
+    {
+        data.strPrevconfirmblock = "0x";
+    }
+
+    data.strTxmint = block.txMint.GetHash().GetHex();
+    data.nTxcount = block.vtx.size();
+    return data;
+}
+
+static CBlockData BlockToJSON(const uint256& hashBlock, const CBlock& block, const CChainId nChainId, const uint256& hashFork, const uint32 nHeight, const uint256& nBlockReward, const bool fConfirmBlock, const bool fTxList)
 {
     CBlockData data;
     data.strHash = hashBlock.GetHex();
@@ -76,10 +127,27 @@ static CBlockData BlockToJSON(const uint256& hashBlock, const CBlock& block, con
     {
         data.strBloom = "0x";
     }
-    data.strTxmint = block.txMint.GetHash().GetHex();
-    for (const CTransaction& tx : block.vtx)
+    data.fConfirm = fConfirmBlock;
+
+    CBlockVoteSig proofVote;
+    if (block.GetBlockVoteSig(proofVote) && !proofVote.IsNull())
     {
-        data.vecTx.push_back(tx.GetHash().GetHex());
+        data.strPrevconfirmblock = proofVote.hashBlockVote.ToString();
+    }
+    else
+    {
+        data.strPrevconfirmblock = "0x";
+    }
+
+    data.strTxmint = block.txMint.GetHash().GetHex();
+    data.nTxcount = block.vtx.size();
+
+    if (fTxList)
+    {
+        for (const CTransaction& tx : block.vtx)
+        {
+            data.vecTx.push_back(tx.GetHash().GetHex());
+        }
     }
     return data;
 }
