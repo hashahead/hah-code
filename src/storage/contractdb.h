@@ -20,29 +20,18 @@ namespace hashahead
 namespace storage
 {
 
-class CListCreateCodeTrieDBWalker : public CTrieDBWalker
-{
-public:
-    CListCreateCodeTrieDBWalker(std::map<uint256, CContractCreateCodeContext>& mapWasmCreateCodeIn)
-      : mapContractCreateCode(mapWasmCreateCodeIn) {}
-
-    bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override;
-
-public:
-    std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode;
-};
-
 class CForkContractDB
 {
 public:
     CForkContractDB(const uint256& hashForkIn);
     ~CForkContractDB();
 
-    bool Initialize(const boost::filesystem::path& pathData);
+    bool Initialize(const boost::filesystem::path& pathData, const bool fPrune);
     void Deinitialize();
     bool RemoveAll();
 
-    bool AddBlockContractKvValue(const uint256& hashPrevRoot, uint256& hashContractRoot, const std::map<uint256, bytes>& mapContractState);
+    bool AddBlockContractKvValue(const uint32 nBlockHeight, const uint64 nBlockNumber, const CDestination& destContract, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashContractRoot);
+    bool CreateCacheContractKvTrie(const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot);
     bool RetrieveContractKvValue(const uint256& hashContractRoot, const uint256& key, bytes& value);
 
     bool AddCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock,

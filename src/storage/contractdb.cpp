@@ -18,59 +18,16 @@ namespace hashahead
 namespace storage
 {
 
-const string DB_CONTRACT_KEY_ID_TRIEROOT("trieroot");
-const string DB_CONTRACT_KEY_ID_PREVROOT("prevroot");
-
-const uint8 DB_CONTRACT_ROOT_TYPE_CONTRACTKV = 0x10;
-const uint8 DB_CONTRACT_ROOT_TYPE_CODE = 0x20;
-
-const uint8 DB_CONTRACT_KEY_TYPE_CONTRACTKV = DB_CONTRACT_ROOT_TYPE_CONTRACTKV | 0x01;
-
-const uint8 DB_CONTRACT_KEY_TYPE_SOURCE_CODE = DB_CONTRACT_ROOT_TYPE_CODE | 0x01;
-const uint8 DB_CONTRACT_KEY_TYPE_CONTRACT_CREATE_CODE = DB_CONTRACT_ROOT_TYPE_CODE | 0x02;
-const uint8 DB_CONTRACT_KEY_TYPE_CONTRACT_RUN_CODE = DB_CONTRACT_ROOT_TYPE_CODE | 0x03;
-const uint8 DB_CONTRACT_KEY_TYPE_CONTRACT_TEMPLATE_DATA = DB_CONTRACT_ROOT_TYPE_CODE | 0x04;
-
-//////////////////////////////
-// CListCreateCodeTrieDBWalker
-
-bool CListCreateCodeTrieDBWalker::Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver)
-{
-    if (btKey.size() == 0 || btValue.size() == 0)
-    {
-        StdError("CListCreateCodeTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
-        return false;
-    }
-
-    try
-    {
-        hnbase::CBufStream ssKey(btKey);
-        uint8 nKeyType;
-        ssKey >> nKeyType;
-        if (nKeyType == DB_CONTRACT_KEY_TYPE_CONTRACT_CREATE_CODE)
-        {
-            uint256 hashCreateCode;
-            CContractCreateCodeContext ctxtCreateCode;
-            hnbase::CBufStream ssValue(btValue);
-            ssKey >> hashCreateCode;
-            ssValue >> ctxtCreateCode;
-            mapContractCreateCode.insert(std::make_pair(hashCreateCode, ctxtCreateCode));
-        }
-    }
-    catch (std::exception& e)
-    {
-        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
-        return false;
-    }
-    return true;
-}
+const uint8 DB_CONTRACT_KEY_TYPE_CONTRACTKV = 0x11;
+const uint8 DB_CONTRACT_KEY_TYPE_ADDRESS_ROOT = 0x12;
 
 //////////////////////////////
 // CForkContractDB
 
 CForkContractDB::CForkContractDB(const uint256& hashForkIn)
-  : hashFork(hashForkIn)
+  : hashFork(hashForkIn), nChainId(CBlock::GetBlockChainIdByHash(hashForkIn))
 {
+    fPruneData = false;
 }
 
 CForkContractDB::~CForkContractDB()
@@ -78,12 +35,13 @@ CForkContractDB::~CForkContractDB()
     dbTrie.Deinitialize();
 }
 
-bool CForkContractDB::Initialize(const boost::filesystem::path& pathData)
+bool CForkContractDB::Initialize(const boost::filesystem::path& pathData, const bool fPrune)
 {
     if (!dbTrie.Initialize(pathData))
     {
         return false;
     }
+    fPruneData = fPrune;
     return true;
 }
 
