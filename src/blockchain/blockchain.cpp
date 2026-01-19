@@ -5,13 +5,14 @@
 #include "blockchain.h"
 
 #include "bloomfilter/bloomfilter.h"
+#include "consblockvote.h"
 #include "delegatecomm.h"
 #include "delegateverify.h"
 #include "hevm/evmexec.h"
 #include "param.h"
 #include "template/delegate.h"
 #include "template/fork.h"
-#include "template/proof.h"
+#include "template/poa.h"
 #include "template/vote.h"
 
 using namespace std;
@@ -203,6 +204,11 @@ bool CBlockChain::GetForkContext(const uint256& hashFork, CForkContext& ctxt, co
     return cntrBlock.RetrieveForkContext(hashFork, ctxt, hashMainChainRefBlock);
 }
 
+bool CBlockChain::GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.GetForkCtxStatus(hashFork, forkStatus, hashMainChainRefBlock);
+}
+
 bool CBlockChain::GetForkAncestry(const uint256& hashFork, vector<pair<uint256, uint256>> vAncestry)
 {
     return cntrBlock.RetrieveAncestry(hashFork, vAncestry);
@@ -210,17 +216,12 @@ bool CBlockChain::GetForkAncestry(const uint256& hashFork, vector<pair<uint256, 
 
 int CBlockChain::GetBlockCount(const uint256& hashFork)
 {
-    int nCount = 0;
-    CBlockIndex* pIndex = nullptr;
-    if (cntrBlock.RetrieveFork(hashFork, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveFork(hashFork);
+    if (pIndex)
     {
-        while (pIndex != nullptr)
-        {
-            pIndex = pIndex->pPrev;
-            ++nCount;
-        }
+        return pIndex->GetBlockNumber() + 1;
     }
-    return nCount;
+    return 0;
 }
 
 bool CBlockChain::GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight)
