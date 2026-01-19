@@ -82,10 +82,18 @@ bool CNetwork::HandleInitialize()
     }
     config.nMaxOutBounds = NetworkConfig()->nMaxOutBounds;
     config.nPortDefault = (NetworkConfig()->fTestNet ? DEFAULT_TESTNET_P2PPORT : DEFAULT_P2PPORT);
-    for (const string& conn : NetworkConfig()->vConnectTo)
+    if (!NetworkConfig()->strSnapDownAddress.empty())
     {
-        config.vecNode.push_back(CNetHost(conn, config.nPortDefault, "connect",
+        config.vecNode.push_back(CNetHost(NetworkConfig()->strSnapDownAddress, config.nPortDefault, "snapdown",
                                           boost::any(uint64(network::NODE_NETWORK))));
+    }
+    if (config.vecNode.empty())
+    {
+        for (const string& conn : NetworkConfig()->vConnectTo)
+        {
+            config.vecNode.push_back(CNetHost(conn, config.nPortDefault, "connect",
+                                              boost::any(uint64(network::NODE_NETWORK))));
+        }
     }
     if (config.vecNode.empty())
     {
