@@ -5,15 +5,18 @@
 #include "core.h"
 
 #include "bloomfilter/bloomfilter.h"
+#include "contractdb.h"
 #include "crypto.h"
 #include "destination.h"
 #include "param.h"
+#include "statedb.h"
+#include "structure/merkletree.h"
 #include "template/activatecode.h"
 #include "template/delegate.h"
 #include "template/fork.h"
 #include "template/mint.h"
 #include "template/pledge.h"
-#include "template/proof.h"
+#include "template/poa.h"
 #include "template/vote.h"
 #include "wallet.h"
 
@@ -178,7 +181,14 @@ void CCoreProtocol::CreateGenesisBlock(const bool fMainnet, const CChainId nChai
     profile.nChainId = nChainIdIn;
     profile.destOwner = destOwner;
     profile.nAmount = tx.GetAmount();
-    profile.nMintReward = BBCP_REWARD_INIT;
+    if (fMainnet && !TESTMAINNET_FLAG && SET_OLD_BBCP_REWARD_INIT)
+    {
+        profile.nMintReward = BBCP_REWARD_INIT_OLD;
+    }
+    else
+    {
+        profile.nMintReward = BBCP_REWARD_INIT;
+    }
     if (TESTNET_FLAG)
     {
         profile.nMinTxFee = MIN_GAS_PRICE * TX_BASE_GAS;
@@ -193,7 +203,7 @@ void CCoreProtocol::CreateGenesisBlock(const bool fMainnet, const CChainId nChai
     block.AddMintCoinProof(tx.GetAmount());
 
     block.hashStateRoot = CreateGenesisStateRoot(block.nType, block.GetBlockTime(), destOwner, tx.GetAmount());
-    block.hashMerkleRoot = block.CalcMerkleTreeRoot();
+    block.UpdateMerkleRoot();
 }
 
 void CCoreProtocol::GetGenesisBlock(CBlock& block)

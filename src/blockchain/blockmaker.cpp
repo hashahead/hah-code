@@ -138,6 +138,12 @@ bool CBlockMaker::HandleInitialize()
         return false;
     }
 
+    if (!GetObject("recovery", pRecovery))
+    {
+        StdError("blockmaker", "Failed to request recovery");
+        return false;
+    }
+
     for (auto& kv : MintConfig()->mapMint)
     {
         const uint256& keyMint = kv.first;

@@ -439,8 +439,6 @@ void CDispatcher::NotifyBlockVoteChnNewBlock(const uint256& hashBlock, const uin
 void CDispatcher::UpdatePrimaryBlock(const CBlock& block, const CBlockChainUpdate& updateBlockChain, const uint64 nNonce)
 {
     CDelegateRoutine routineDelegate;
-    pConsensus->PrimaryUpdate(updateBlockChain, routineDelegate);
-
     pDelegatedChannel->PrimaryUpdate(updateBlockChain.nLastBlockHeight - updateBlockChain.vBlockAddNew.size(),
                                      routineDelegate.vEnrolledWeight, routineDelegate.vDistributeData,
                                      routineDelegate.mapPublishData, routineDelegate.hashDistributeOfPublish);
@@ -499,8 +497,9 @@ void CDispatcher::ActivateFork(const uint256& hashFork, const uint64& nNonce)
 
         CTransaction txFork;
         uint256 hashAtFork;
+        uint256 hashTxAtBlock;
         CTxIndex txIndex;
-        if (!pBlockChain->GetTransactionAndIndex(pCoreProtocol->GetGenesisBlockHash(), ctxt.txidEmbedded, txFork, hashAtFork, txIndex))
+        if (!pBlockChain->GetTransactionAndIndex(pCoreProtocol->GetGenesisBlockHash(), ctxt.txidEmbedded, txFork, hashAtFork, hashTxAtBlock, txIndex))
         {
             Warn("Failed to find tx fork %s", hashFork.GetHex().c_str());
             return;
@@ -516,6 +515,8 @@ void CDispatcher::ActivateFork(const uint256& hashFork, const uint64& nNonce)
     pNetChannel->SubscribeFork(hashFork, nNonce);
     pBlockChannel->SubscribeFork(hashFork, nNonce);
     pUserTxChannel->SubscribeFork(hashFork, nNonce);
+    pBlockVoteChannel->SubscribeFork(hashFork, nNonce);
+    pBlockCrossProveChannel->SubscribeFork(hashFork, nNonce);
     StdLog("Dispatcher", "Activated fork %s ...", hashFork.GetHex().c_str());
 }
 

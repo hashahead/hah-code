@@ -8,9 +8,10 @@
 #include <cstdio>
 
 #include "bloomfilter/bloomfilter.h"
+#include "dbstruct.h"
 #include "delegatecomm.h"
 #include "hevm/evmexec.h"
-#include "hwvm/wasmrun.h"
+#include "structure/merkletree.h"
 #include "template/delegate.h"
 #include "template/fork.h"
 #include "template/pledge.h"
@@ -19,12 +20,11 @@
 #include "util.h"
 
 using namespace std;
-using namespace boost::filesystem;
 using namespace hnbase;
 using namespace hashahead::hvm;
 
-#define BLOCKFILE_PREFIX "block"
-#define LOGFILE_NAME "storage.log"
+namespace fs = boost::filesystem;
+
 namespace hashahead
 {
 namespace storage
@@ -38,9 +38,9 @@ class CBlockWalker : public CBlockDBWalker
 public:
     CBlockWalker(CBlockBase* pBaseIn)
       : pBase(pBaseIn) {}
-    bool Walk(CBlockOutline& outline) override
+    bool Walk(CBlockIndex& outline) override
     {
-        return pBase->LoadIndex(outline);
+        return !!(pBase->LoadBlockIndex(outline));
     }
 
 public:
@@ -48,54 +48,98 @@ public:
 };
 
 //////////////////////////////
-// CForkHeightIndex
+// CContractHostDB
 
-void CForkHeightIndex::AddHeightIndex(const uint32 nHeight, const uint256& hashBlock, const uint64 nBlockTimeStamp, const CDestination& destMint, const uint256& hashRefBlock)
+bool CContractHostDB::Get(const uint256& key, bytes& value) const
 {
-    mapHeightIndex[nHeight][hashBlock] = CBlockHeightIndex(nBlockTimeStamp, destMint, hashRefBlock);
+    return blockState.GetDestKvData(destStorageContract, key, value);
 }
 
-void CForkHeightIndex::RemoveHeightIndex(const uint32 nHeight, const uint256& hashBlock)
+bool CContractHostDB::GetTransientValue(const CDestination& dest, const uint256& key, bytes& value) const
 {
-    auto it = mapHeightIndex.find(nHeight);
-    if (it != mapHeightIndex.end())
-    {
-        it->second.erase(hashBlock);
-    }
+    return blockState.GetTransientValue(dest, key, value);
 }
 
-void CForkHeightIndex::UpdateBlockRef(const uint32 nHeight, const uint256& hashBlock, const uint256& hashRefBlock)
+void CContractHostDB::SetTransientValue(const CDestination& dest, const uint256& key, const bytes& value)
 {
-    auto it = mapHeightIndex.find(nHeight);
-    if (it != mapHeightIndex.end())
-    {
-        auto mt = it->second.find(hashBlock);
-        if (mt != it->second.end())
-        {
-            mt->second.hashRefBlock = hashRefBlock;
-        }
-    }
+    blockState.SetTransientValue(dest, key, value);
 }
 
-map<uint256, CBlockHeightIndex>* CForkHeightIndex::GetBlockMintList(const uint32 nHeight)
+uint256 CContractHostDB::GetTxid() const
 {
-    auto it = mapHeightIndex.find(nHeight);
-    if (it != mapHeightIndex.end())
-    {
-        return &(it->second);
-    }
-    return nullptr;
+    return txid;
 }
 
-bool CForkHeightIndex::GetMaxHeight(uint32& nMaxHeight)
+uint256 CContractHostDB::GetTxNonce() const
 {
-    auto it = mapHeightIndex.rbegin();
-    if (it != mapHeightIndex.rend())
+    return nTxNonce;
+}
+
+uint64 CContractHostDB::GetAddressLastTxNonce(const CDestination& addr)
+{
+    return blockState.GetAddressLastTxNonce(addr);
+}
+
+bool CContractHostDB::SetAddressLastTxNonce(const CDestination& addr, const uint64 nNonce)
+{
+    return blockState.SetAddressLastTxNonce(addr, nNonce);
+}
+
+CDestination CContractHostDB::GetStorageContractAddress() const
+{
+    return destStorageContract;
+}
+
+CDestination CContractHostDB::GetCodeParentAddress() const
+{
+    return destCodeParent;
+}
+
+CDestination CContractHostDB::GetCodeLocalAddress() const
+{
+    return destCodeLocal;
+}
+
+CDestination CContractHostDB::GetCodeOwnerAddress() const
+{
+    return destCodeOwner;
+}
+
+bool CContractHostDB::GetBalance(const CDestination& addr, uint256& balance) const
+{
+    if (!blockState.GetDestBalance(addr, balance))
     {
-        nMaxHeight = it->first;
-        return true;
+        StdLog("CContractHostDB", "Get Balance: Get dest state fail, dest: %s", addr.ToString().c_str());
+        return false;
     }
-    return false;
+    return true;
+}
+
+bool CContractHostDB::ContractTransfer(const CDestination& from, const CDestination& to, const uint256& amount, const uint64 nGasLimit, uint64& nGasLeft)
+{
+    CAddressContext ctxToAddress;
+    if (!blockState.GetAddressContext(to, ctxToAddress))
+    {
+        StdLog("CContractHostDB", "Contract transfer: Get to address context fail, to: %s", to.ToString().c_str());
+        ctxToAddress = CAddressContext(CPubkeyAddressContext());
+    }
+    if (!blockState.ContractTransfer(from, to, amount, nGasLimit, nGasLeft, ctxToAddress, CContractTransfer::CT_CONTRACT))
+    {
+        StdLog("CContractHostDB", "Contract transfer: Contract transfer fail, from: %s, to: %s", from.ToString().c_str(), to.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
+uint256 CContractHostDB::GetBlockHash(const uint64 nBlockNumber)
+{
+    uint256 hashBlock;
+    if (!blockState.GetBlockHashByNumber(nBlockNumber, hashBlock))
+    {
+        StdLog("CContractHostDB", "GetBlockHash: Get block hash fail, number: %lu", nBlockNumber);
+        return uint256();
+    }
+    return hashBlock;
 }
 
 //////////////////////////////
