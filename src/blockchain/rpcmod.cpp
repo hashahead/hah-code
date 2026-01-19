@@ -219,18 +219,18 @@ static CEthBlock EthBlockToJSON(const CBlock& block, const bool fTxDetail)
     data.strNumber = ToHexString(block.GetBlockNumber());
     data.strHash = hashBlock.GetHex();
     data.strParenthash = block.hashPrev.GetHex();
-    //data.strNonce = ToHexString(block.GetBlockNumber()); // __optional__ CRPCString strNonce;
     std::string strNonceTemp = hashBlock.ToString();
     data.strNonce = std::string("0x") + strNonceTemp.substr(strNonceTemp.size() - 16);
-    data.strSha3Uncles = ""; // __optional__ CRPCString strSha3Uncles;
-    if (!block.btBloomData.empty())
-    {
-        data.strLogsbloom = ToHexString(block.btBloomData);
-    }
-    else
-    {
-        data.strLogsbloom = "";
-    }
+    data.strSha3Uncles = "0x0000000000000000000000000000000000000000000000000000000000000000"; // __optional__ CRPCString strSha3Uncles;
+    // if (!block.btBloomData.empty())
+    // {
+    //     data.strLogsbloom = ToHexString(block.btBloomData);
+    // }
+    // else
+    // {
+    //     data.strLogsbloom = "0x00";
+    // }
+    data.strLogsbloom = "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     data.strTransactionsroot = block.hashMerkleRoot.GetHex();
     data.strStateroot = block.hashStateRoot.GetHex();
     if (!block.hashReceiptsRoot.IsNull())
@@ -239,12 +239,13 @@ static CEthBlock EthBlockToJSON(const CBlock& block, const bool fTxDetail)
     }
     else
     {
-        data.strReceiptsroot = "";
+        data.strReceiptsroot = "0x0000000000000000000000000000000000000000000000000000000000000000";
     }
     data.strMiner = block.txMint.GetToAddress().ToString();
+    data.strMixhash = "0x0000000000000000000000000000000000000000000000000000000000000000";
     data.strDifficulty = "0x0";      // __optional__ CRPCString strDifficulty;
     data.strTotaldifficulty = "0x0"; // __optional__ CRPCString strTotaldifficulty;
-    data.strExtradata = "";          // __optional__ CRPCString strExtradata;
+    data.strExtradata = "0x";        // __optional__ CRPCString strExtradata;
     data.strSize = ToHexString(nBlockSize);
     data.strGaslimit = block.nGasLimit.GetValueHex();
     data.strGasused = block.nGasUsed.GetValueHex();
@@ -256,19 +257,23 @@ static CEthBlock EthBlockToJSON(const CBlock& block, const bool fTxDetail)
         for (size_t i = 0; i < block.vtx.size(); ++i)
         {
             const CTransaction& tx = block.vtx[i];
-            data.vecTransactiondetails.push_back(EthTxToJSON(tx.GetHash(), tx, hashBlock, block.GetBlockNumber(), i + 1));
+            if (!tx.IsCertTx())
+            {
+                data.vecTransactiondetails.push_back(EthTxToJSON(tx.GetHash(), tx, hashBlock, block.GetBlockNumber(), i + 1));
+            }
         }
     }
     else
     {
-        data.vecTransactionids.push_back(block.txMint.GetHash().GetHex());
+        data.vecTransactions.push_back(block.txMint.GetHash().GetHex());
         for (const CTransaction& tx : block.vtx)
         {
-            data.vecTransactionids.push_back(tx.GetHash().GetHex());
+            if (!tx.IsCertTx())
+            {
+                data.vecTransactions.push_back(tx.GetHash().GetHex());
+            }
         }
     }
-
-    //data.vecUncles.push_back("0x");
 
     return data;
 }
