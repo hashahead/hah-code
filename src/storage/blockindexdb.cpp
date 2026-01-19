@@ -78,18 +78,17 @@ bool CBlockIndexDB::RemoveBlockIndex(const uint256& hashBlock)
 {
     CBufStream ssKey;
     ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_INDEX << hashBlock;
-    return dbTrie.RemoveExtKv(ssKey);
+    return Erase(ssKey);
 }
 
-bool CBlockIndexDB::RetrieveBlockIndex(const uint256& hashBlock, CBlockOutline& outline)
+bool CBlockIndexDB::RetrieveBlockIndex(const uint256& hashBlock, CBlockIndex& outline)
 {
     CBufStream ssKey, ssValue;
     ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_INDEX << hashBlock;
-    if (!dbTrie.ReadExtKv(ssKey, ssValue))
+    if (!Read(ssKey, ssValue))
     {
         return false;
     }
-
     try
     {
         ssValue >> outline;
@@ -107,7 +106,7 @@ bool CBlockIndexDB::WalkThroughBlockIndex(CBlockDBWalker& walker)
     auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
         try
         {
-            CBlockOutline outline;
+            CBlockIndex outline;
             ssValue >> outline;
             return walker.Walk(outline);
         }
@@ -122,7 +121,7 @@ bool CBlockIndexDB::WalkThroughBlockIndex(CBlockDBWalker& walker)
     ssKeyBegin << DB_BLOCKINDEX_KEY_TYPE_BLOCK_INDEX;
     ssKeyPrefix << DB_BLOCKINDEX_KEY_TYPE_BLOCK_INDEX;
 
-    return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
+    return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
 }
 
 //-----------------------------------------------------

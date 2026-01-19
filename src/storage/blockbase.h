@@ -399,10 +399,8 @@ public:
     bool Exists(const uint256& hash) const;
     bool ExistsTx(const uint256& hashFork, const uint256& txid);
     bool Initiate(const uint256& hashGenesis, const CBlock& blockGenesis, const uint256& nChainTrust);
-    bool StorageNewBlock(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, CBlockChainUpdate& update);
-    bool SaveBlock(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, CBlockIndex** ppIndexNew, CBlockRoot& blockRoot, const bool fRepair);
-    bool CheckForkLongChain(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const CBlockIndex* pIndexNew);
-    bool Retrieve(const CBlockIndex* pIndex, CBlock& block);
+    bool CheckForkLongChain(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const BlockIndexPtr pIndexNew);
+    bool Retrieve(const BlockIndexPtr pIndex, CBlock& block);
     bool Retrieve(const uint256& hash, CBlockEx& block);
     bool Retrieve(const CBlockIndex* pIndex, CBlockEx& block);
     bool RetrieveIndex(const uint256& hashBlock, CBlockIndex** ppIndex);
@@ -489,7 +487,6 @@ public:
     bool GetBlockContractCreateCodeData(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CTxContractData& txcdCode);
     bool RetrieveForkContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode);
     bool RetrieveLinkGenesisContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode, bool& fLinkGenesisFork);
-    bool RetrieveContractRunCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractRunCode, CContractRunCodeContext& ctxtCode);
     bool GetForkContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCodeContext& ctxtContractCode);
     bool ListContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& txid, std::map<uint256, CContractCodeContext>& mapCreateCode);
     bool VerifyContractAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract);
