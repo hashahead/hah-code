@@ -28,10 +28,36 @@ public:
     CBlockStatus()
       : nBlockTime(0), nBlockHeight(-1), nBlockSlot(0), nBlockNumber(0), nTotalTxCount(0), nRewardTxCount(0), nUserTxCount(0), nBlockType(0), nMintType(-1) {}
 
+    bool IsGenesis() const
+    {
+        return (nBlockType == CBlock::BLOCK_GENESIS);
+    }
+    bool IsOrigin() const
+    {
+        return (nBlockType == CBlock::BLOCK_GENESIS || nBlockType == CBlock::BLOCK_ORIGIN);
+    }
+    bool IsPrimary() const
+    {
+        return ((nBlockType >> 4) == 0);
+    }
+    bool IsSubsidiary() const
+    {
+        return (nBlockType == CBlock::BLOCK_SUBSIDIARY);
+    }
+    bool IsExtended() const
+    {
+        return (nBlockType == CBlock::BLOCK_EXTENDED);
+    }
+    bool IsVacant() const
+    {
+        return (nBlockType == CBlock::BLOCK_VACANT);
+    }
+
 public:
     uint256 hashFork;
     uint256 hashPrevBlock;
     uint256 hashBlock;
+    uint256 hashRefBlock;
     uint64 nBlockTime;
     int nBlockHeight;
     uint16 nBlockSlot;

@@ -542,11 +542,15 @@ bool CForkTxPool::SynchronizeBlockChain(const CBlockChainUpdate& update)
     return true;
 }
 
-void CForkTxPool::ListTx(vector<pair<uint256, size_t>>& vTxPool)
+void CForkTxPool::ListTx(vector<pair<uint256, size_t>>& vTxPool, const bool fContainCertTx)
 {
     CPooledTxLinkSetBySequenceNumber& idxTx = setTxLinkIndex.get<1>();
     for (const auto& kv : idxTx)
     {
+        if (!fContainCertTx && kv.ptx->IsCertTx())
+        {
+            continue;
+        }
         vTxPool.push_back(make_pair(kv.txid, kv.ptx->nSerializeSize));
     }
 }
@@ -560,17 +564,28 @@ void CForkTxPool::ListTx(vector<uint256>& vTxPool)
     }
 }
 
-bool CForkTxPool::ListTx(const CDestination& dest, vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount)
+bool CForkTxPool::ListTx(const CDestination& dest, vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount, const bool fContainCertTx)
 {
     uint64 nTxSeq = 0;
     CPooledTxLinkSetBySequenceNumber& idxTx = setTxLinkIndex.get<1>();
     for (const auto& kv : idxTx)
     {
-        if (nTxSeq >= nGetOffset && kv.ptx)
+        if (kv.ptx == nullptr)
+        {
+            continue;
+        }
+        const CTransaction& tx = *static_cast<CTransaction*>(kv.ptx.get());
+        if (!fContainCertTx && tx.IsCertTx())
+        {
+            continue;
+        }
+        if (!dest.IsNull() && dest != tx.GetFromAddress())
+        {
+            continue;
+        }
+        if (nTxSeq >= nGetOffset)
         {
             CTxInfo txInfo;
-            const CTransaction& tx = *static_cast<CTransaction*>(kv.ptx.get());
-
             txInfo.txid = kv.txid;
             txInfo.hashFork = hashFork;
             txInfo.nTxType = tx.GetTxType();
@@ -582,10 +597,12 @@ bool CForkTxPool::ListTx(const CDestination& dest, vector<CTxInfo>& vTxPool, con
             txInfo.nAmount = tx.GetAmount();
             txInfo.nGasPrice = tx.GetGasPrice();
             txInfo.nGas = tx.GetGasLimit();
+            txInfo.btData = tx.GetTxExtData();
+            txInfo.btSignData = tx.GetSignData();
             txInfo.nSize = kv.ptx->nSerializeSize;
 
             vTxPool.push_back(txInfo);
-            if (vTxPool.size() >= nGetCount)
+            if (nGetCount != 0 && vTxPool.size() >= nGetCount)
             {
                 break;
             }
