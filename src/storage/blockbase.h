@@ -73,11 +73,13 @@ public:
 
     virtual bool GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy);
     virtual bool GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd);
-    virtual CVmHostFaceDBPtr CloneHostDB(const CDestination& destContractIn);
-    virtual void SaveGasUsed(const CDestination& destCodeOwnerIn, const uint64 nGasUsed);
-    virtual void SaveRunResult(const CDestination& destContractIn, const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv);
-    virtual bool SaveContractRunCode(const CDestination& destContractIn, const bytes& btContractRunCode, const CTxContractData& txcd);
-    virtual bool ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, bytes& btResult);
+    virtual CVmHostFaceDBPtr CloneHostDB(const CDestination& destStorageContractIn, const CDestination& destCodeParentIn, const CDestination& destCodeLocalIn, const CDestination& destCodeOwnerIn);
+    virtual void ModifyHostAddress(const CDestination& destCodeParentIn, const CDestination& destCodeLocalIn, const CDestination& destCodeOwnerIn);
+    virtual void SaveCodeOwnerGasUsed(const CDestination& destParentCodeContractIn, const CDestination& destCodeContractIn, const CDestination& destCodeOwnerIn, const uint64 nGasUsed);
+    virtual void SaveRunResult(const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv,
+                               const std::map<uint256, bytes>& mapTraceKv, const std::map<CDestination, std::map<uint256, bytes>>& mapOldAddressKeyValue);
+    virtual bool SaveContractRunCode(const bytes& btContractRunCode, const CTxContractData& txcd);
+    virtual bool ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const uint256& nAmount, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, int& nStatus, bytes& btResult);
     virtual bool Selfdestruct(const CDestination& destBeneficiaryIn);
 
 protected:

@@ -206,28 +206,71 @@ bool CContractHostDB::AddVmOperationTraceLog(const CVmOperationTraceLog& vmOpTra
 }
 
 //////////////////////////////
-// CBlockLogsFilter
+// CCacheBlockReceipt
 
-bool CBlockLogsFilter::isTimeout()
+void CCacheBlockReceipt::AddBlockReceiptCache(const uint256& hashBlock, const std::vector<CTransactionReceipt>& vBlockReceipt)
 {
-    if (GetTime() - nPrevGetChangesTime >= FILTER_DEFAULT_TIMEOUT)
+    CWriteLock wlock(rwBrcAccess);
+
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+    auto it = mapBlockReceiptCache.find(nChainId);
+    if (it == mapBlockReceiptCache.end())
     {
-        return true;
+        it = mapBlockReceiptCache.insert(std::make_pair(nChainId, std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>())).first;
     }
-    return false;
+    auto& mapReceipts = it->second;
+    while (mapReceipts.size() >= MAX_CACHE_BLOCK_RECEIPT_COUNT)
+    {
+        mapReceipts.erase(mapReceipts.begin());
+    }
+    mapReceipts[hashBlock] = vBlockReceipt;
 }
 
-bool CBlockLogsFilter::AddTxReceipt(const uint256& hashForkIn, const uint64 nBlockNumber, const uint256& hashBlock, const uint256& txid, const CTransactionReceipt& receipt)
+bool CCacheBlockReceipt::GetBlockReceiptCache(const uint256& hashBlock, std::vector<CTransactionReceipt>& vBlockReceipt)
 {
-    if (hashForkIn != hashFork)
+    CReadLock rlock(rwBrcAccess);
+
+    auto it = mapBlockReceiptCache.find(CBlock::GetBlockChainIdByHash(hashBlock));
+    if (it == mapBlockReceiptCache.end())
     {
-        return true;
+        return false;
     }
-    if (logFilter.hashFromBlock != 0 && CBlock::GetBlockHeightByHash(hashBlock) < CBlock::GetBlockHeightByHash(logFilter.hashFromBlock))
+    auto mt = it->second.find(hashBlock);
+    if (mt == it->second.end())
     {
-        return true;
+        return false;
     }
-    if (logFilter.hashToBlock != 0 && CBlock::GetBlockHeightByHash(hashBlock) > CBlock::GetBlockHeightByHash(logFilter.hashToBlock))
+    vBlockReceipt = mt->second;
+    return true;
+}
+
+//////////////////////////////
+// CBlockBase
+
+CBlockBase::CBlockBase()
+  : fCfgFullDb(false), fCfgTraceDb(false), fCfgCacheTrace(false), fCfgRewardCheck(false), fCfgPrune(false)
+{
+}
+
+CBlockBase::~CBlockBase()
+{
+    dbBlock.BdDeinitialize();
+    tsBlock.Deinitialize();
+}
+
+bool CBlockBase::BsInitialize(const fs::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn,
+                              const bool fCacheTrace, const bool fRewardCheckIn, const bool fRenewDB, const bool fPruneDb)
+{
+    hashGenesisBlock = hashGenesisBlockIn;
+    fCfgFullDb = fFullDbIn;
+    fCfgTraceDb = fTraceDbIn;
+    fCfgCacheTrace = fCacheTrace;
+    fCfgRewardCheck = fRewardCheckIn;
+    fCfgPrune = fPruneDb;
+
+    StdLog("BlockBase", "Initializing... (Path : %s)", pathDataLocation.string().c_str());
+
+    if (!dbBlock.BdInitialize(pathDataLocation, hashGenesisBlockIn, fFullDbIn, fTraceDbIn, fCacheTrace, fPruneDb))
     {
         return true;
     }
