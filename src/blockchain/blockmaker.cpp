@@ -8,7 +8,7 @@
 
 #include "template/delegate.h"
 #include "template/mint.h"
-#include "template/proof.h"
+#include "template/poa.h"
 #include "util.h"
 
 using namespace std;
@@ -19,7 +19,7 @@ using namespace hnbase;
 #define WAIT_NEWBLOCK_TIME (BLOCK_TARGET_SPACING + 5)
 #define WAIT_LAST_EXTENDED_TIME 0 //(BLOCK_TARGET_SPACING - 10)
 #define FORK_LAST_BLOCK_COUNT 30
-#define FORK_WAIT_BLOCK_COUNT 60
+#define FORK_WAIT_BLOCK_COUNT 6
 #define FORK_WAIT_BLOCK_SECT 100000
 
 namespace hashahead
@@ -53,7 +53,7 @@ bool CBlockMakerProfile::BuildTemplate()
     }
     else if (nAlgo < CM_MAX)
     {
-        templMint = CTemplateMint::CreateTemplatePtr(new CTemplateProof(CDestination(keyMint.GetPubKey()), destOwner));
+        templMint = CTemplateMint::CreateTemplatePtr(new CTemplatePoa(CDestination(keyMint.GetPubKey()), destOwner));
     }
     return (templMint != nullptr);
 }
@@ -63,7 +63,7 @@ bool CBlockMakerProfile::BuildTemplate()
 
 CBlockMaker::CBlockMaker()
   : thrMaker("blockmaker", boost::bind(&CBlockMaker::BlockMakerThreadFunc, this)),
-    thrPow("powmaker", boost::bind(&CBlockMaker::PowThreadFunc, this))
+    thrPoa("poamaker", boost::bind(&CBlockMaker::PoaThreadFunc, this))
 {
     pCoreProtocol = nullptr;
     pBlockChain = nullptr;
@@ -72,6 +72,7 @@ CBlockMaker::CBlockMaker()
     pDispatcher = nullptr;
     pConsensus = nullptr;
     pService = nullptr;
+    pRecovery = nullptr;
     mapHashAlgo[CM_CRYPTONIGHT] = new CHashAlgo_Cryptonight(INITIAL_HASH_RATE);
 }
 
@@ -149,10 +150,10 @@ bool CBlockMaker::HandleInitialize()
         }
         if (mapWorkProfile.empty())
         {
-            CBlockMakerProfile profilePow(CM_CRYPTONIGHT, destOwner, keyMint, 0);
-            if (profilePow.IsValid())
+            CBlockMakerProfile profilePoa(CM_CRYPTONIGHT, destOwner, keyMint, 0);
+            if (profilePoa.IsValid())
             {
-                mapWorkProfile.insert(make_pair(CM_CRYPTONIGHT, profilePow));
+                mapWorkProfile.insert(make_pair(CM_CRYPTONIGHT, profilePoa));
             }
         }
     }

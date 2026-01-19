@@ -424,6 +424,17 @@ void CDispatcher::CheckAllSubForkLastBlock()
     }
 }
 
+void CDispatcher::NotifyBlockVoteChnNewBlock(const uint256& hashBlock, const uint64 nNonce)
+{
+    CBlockStatus status;
+    if (!pBlockChain->GetBlockStatus(hashBlock, status))
+    {
+        StdLog("Dispatcher", "Notify block vote chn new block: Get block status fail, block: %s", hashBlock.GetBhString().c_str());
+        return;
+    }
+    pBlockVoteChannel->UpdateNewBlock(status.hashFork, hashBlock, status.hashRefBlock, status.nBlockTime, nNonce);
+}
+
 ////////////////////////////////
 void CDispatcher::UpdatePrimaryBlock(const CBlock& block, const CBlockChainUpdate& updateBlockChain, const uint64 nNonce)
 {
@@ -440,28 +451,22 @@ void CDispatcher::UpdatePrimaryBlock(const CBlock& block, const CBlockChainUpdat
         Errno err = AddNewTx(pCoreProtocol->GetGenesisBlockHash(), tx, 0);
         if (err == OK)
         {
-            StdLog("Dispatcher", "Send DelegateTx success, txid: %s.",
-                   tx.GetHash().GetHex().c_str());
+            StdDebug("Dispatcher", "Send DelegateTx success, txid: %s.", tx.GetHash().GetHex().c_str());
         }
         else
         {
-            StdLog("Dispatcher", "Send DelegateTx fail, err: [%d] %s, txid: %s.",
-                   err, ErrorString(err), tx.GetHash().GetHex().c_str());
+            StdLog("Dispatcher", "Send DelegateTx fail, err: [%d] %s, txid: %s.", err, ErrorString(err), tx.GetHash().GetHex().c_str());
         }
     }
 
     CEventBlockMakerUpdate* pBlockMakerUpdate = new CEventBlockMakerUpdate(0);
     if (pBlockMakerUpdate != nullptr)
     {
-        pBlockMakerUpdate->data.hashParent = updateBlockChain.hashParent;
-        pBlockMakerUpdate->data.nOriginHeight = updateBlockChain.nOriginHeight;
         pBlockMakerUpdate->data.hashPrevBlock = updateBlockChain.hashPrevBlock;
         pBlockMakerUpdate->data.hashBlock = updateBlockChain.hashLastBlock;
         pBlockMakerUpdate->data.nBlockTime = updateBlockChain.nLastBlockTime;
         pBlockMakerUpdate->data.nBlockHeight = updateBlockChain.nLastBlockHeight;
         pBlockMakerUpdate->data.nBlockNumber = updateBlockChain.nLastBlockNumber;
-        // pBlockMakerUpdate->data.nAgreement = proof.nAgreement;
-        // pBlockMakerUpdate->data.nWeight = proof.nWeight;
         pBlockMakerUpdate->data.nMintType = block.txMint.GetTxType();
         pBlockMaker->PostEvent(pBlockMakerUpdate);
     }

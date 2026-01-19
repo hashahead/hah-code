@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 The HashAhead developers
+// Copyright (c) 2021-2025 The HashAhead developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -67,11 +67,22 @@ void CBlockChannel::HandleDeinitialize()
 
 bool CBlockChannel::HandleInvoke()
 {
+    nBlockSyncTimerId = SetTimer(BLOCK_SYNC_TIMER_TIME, boost::bind(&CBlockChannel::BlockSyncTimerFunc, this, _1));
+    if (nBlockSyncTimerId == 0)
+    {
+        StdLog("CBlockChannel", "Handle Invoke: Set timer fail");
+        return false;
+    }
     return network::IBlockChannel::HandleInvoke();
 }
 
 void CBlockChannel::HandleHalt()
 {
+    if (nBlockSyncTimerId != 0)
+    {
+        CancelTimer(nBlockSyncTimerId);
+        nBlockSyncTimerId = 0;
+    }
     network::IBlockChannel::HandleHalt();
 }
 
@@ -79,7 +90,7 @@ bool CBlockChannel::HandleEvent(network::CEventPeerActive& eventActive)
 {
     const uint64 nNonce = eventActive.nNonce;
     mapChnPeer[nNonce] = CBlockChnPeer(eventActive.data.nService, eventActive.data);
-    StdLog("CBlockChannel", "CEvent Peer Active: peer: %s", GetPeerAddressInfo(nNonce).c_str());
+    StdLog("CBlockChannel", "CEvent peer active: peer: %s", GetPeerAddressInfo(nNonce).c_str());
 
     if (!mapChnFork.empty())
     {
@@ -89,7 +100,7 @@ bool CBlockChannel::HandleEvent(network::CEventPeerActive& eventActive)
             eventSubscribe.data.push_back(kv.first);
         }
         pPeerNet->DispatchEvent(&eventSubscribe);
-        StdLog("CBlockChannel", "CEvent Peer Active: Send fork subscribe, peer: %s", GetPeerAddressInfo(nNonce).c_str());
+        StdLog("CBlockChannel", "CEvent peer active: Send fork subscribe, peer: %s", GetPeerAddressInfo(nNonce).c_str());
     }
     return true;
 }
@@ -97,7 +108,7 @@ bool CBlockChannel::HandleEvent(network::CEventPeerActive& eventActive)
 bool CBlockChannel::HandleEvent(network::CEventPeerDeactive& eventDeactive)
 {
     uint64 nNonce = eventDeactive.nNonce;
-    StdLog("CBlockChannel", "CEvent Peer Deactive: peer: %s", GetPeerAddressInfo(nNonce).c_str());
+    StdLog("CBlockChannel", "CEvent peer deactive: peer: %s", GetPeerAddressInfo(nNonce).c_str());
 
     auto it = mapChnPeer.find(nNonce);
     if (it != mapChnPeer.end())
@@ -114,10 +125,10 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockSubscribe& eventSubscrib
 
     if (hashFork != pCoreProtocol->GetGenesisBlockHash())
     {
-        StdLog("CBlockChannel", "CEvent Peer Block Subscribe: Fork error, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetHex().c_str());
+        StdLog("CBlockChannel", "CEvent peer block subscribe: Fork error, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetBhString().c_str());
         return false;
     }
-    StdLog("CBlockChannel", "CEvent Peer Block Subscribe: Recv fork subscribe, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetHex().c_str());
+    StdLog("CBlockChannel", "CEvent peer block subscribe: Recv fork subscribe, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetBhString().c_str());
 
     auto it = mapChnPeer.find(nNonce);
     if (it != mapChnPeer.end())
@@ -137,10 +148,10 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockUnsubscribe& eventUnsubs
 
     if (hashFork != pCoreProtocol->GetGenesisBlockHash())
     {
-        StdLog("CBlockChannel", "CEvent Peer Block Unsubscribe: Fork error, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetHex().c_str());
+        StdLog("CBlockChannel", "CEvent peer block unsubscribe: Fork error, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetBhString().c_str());
         return false;
     }
-    StdLog("CBlockChannel", "CEvent Peer Block Unsubscribe: Recv fork unsubscribe, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetHex().c_str());
+    StdLog("CBlockChannel", "CEvent peer block unsubscribe: Recv fork unsubscribe, peer: %s, fork: %s", GetPeerAddressInfo(nNonce).c_str(), hashFork.GetBhString().c_str());
 
     auto it = mapChnPeer.find(nNonce);
     if (it != mapChnPeer.end())
