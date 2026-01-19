@@ -35,6 +35,7 @@ public:
     uint32 nHalveCycle;
     int nJointHeight;
     CDestination destOwner;
+    uint8 nAttachExtdataType;
 
 public:
     CForkContext()
@@ -58,6 +59,7 @@ public:
         nHalveCycle = profile.nHalveCycle;
         destOwner = profile.destOwner;
         nJointHeight = profile.nJointHeight;
+        nAttachExtdataType = profile.nAttachExtdataType;
     }
     virtual ~CForkContext() = default;
     virtual void SetNull()
@@ -77,6 +79,7 @@ public:
         strName.clear();
         strSymbol.clear();
         destOwner.SetNull();
+        nAttachExtdataType = 0;
     }
     bool IsNull() const
     {
@@ -94,6 +97,10 @@ public:
     {
         return (nType == CProfile::PROFILE_FORK_TYPE_USER);
     }
+    bool IsAttachExtdataBtcbrc20() const
+    {
+        return (nAttachExtdataType == CProfile::PROFILE_ATTACH_EXTD_TYPE_BTCBRC20);
+    }
     const CProfile GetProfile() const
     {
         CProfile profile;
@@ -109,6 +116,7 @@ public:
         profile.nHalveCycle = nHalveCycle;
         profile.destOwner = destOwner;
         profile.nJointHeight = nJointHeight;
+        profile.nAttachExtdataType = nAttachExtdataType;
         return profile;
     }
 
@@ -128,7 +136,8 @@ public:
                 && a.nMinTxFee == b.nMinTxFee
                 && a.nHalveCycle == b.nHalveCycle
                 && a.nJointHeight == b.nJointHeight
-                && a.destOwner == b.destOwner);
+                && a.destOwner == b.destOwner
+                && a.nAttachExtdataType == b.nAttachExtdataType);
     }
     friend bool operator!=(const CForkContext& a, const CForkContext& b)
     {
@@ -154,6 +163,67 @@ protected:
         s.Serialize(nHalveCycle, opt);
         s.Serialize(nJointHeight, opt);
         s.Serialize(destOwner, opt);
+        s.Serialize(nAttachExtdataType, opt);
+    }
+};
+
+class CForkCtxStatus
+{
+    friend class hnbase::CStream;
+
+public:
+    CForkCtxStatus(const uint8 nStatusIn = 0, const uint32 nStopHeightIn = 0)
+      : nStatus(nStatusIn), nStopHeight(nStopHeightIn) {}
+
+    void SetStopped(const uint32 nStopHeightIn)
+    {
+        nStatus = FORK_STATUS_STOPPED;
+        nStopHeight = nStopHeightIn;
+    }
+    bool IsRunning() const
+    {
+        return (nStatus == FORK_STATUS_RUNNING);
+    }
+    bool IsStopped() const
+    {
+        return (nStatus == FORK_STATUS_STOPPED);
+    }
+    uint32 GetStopHeight() const
+    {
+        return nStopHeight;
+    }
+
+    std::string GetForkStatusString() const
+    {
+        switch (nStatus)
+        {
+        case FORK_STATUS_INIT:
+            return "init";
+        case FORK_STATUS_RUNNING:
+            return "running";
+        case FORK_STATUS_STOPPED:
+            return "stopped";
+        }
+        return "error";
+    }
+
+public:
+    enum
+    {
+        FORK_STATUS_INIT = 0,
+        FORK_STATUS_RUNNING = 1,
+        FORK_STATUS_STOPPED = 2,
+    };
+
+    uint8 nStatus;
+    uint32 nStopHeight;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(nStatus, opt);
+        s.Serialize(nStopHeight, opt);
     }
 };
 
