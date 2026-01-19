@@ -42,6 +42,11 @@ CDestination::CDestination(const uint8* pData, std::size_t nSize)
 {
 }
 
+CDestination::CDestination(const bytes& btData)
+  : uint160(btData.data(), btData.size())
+{
+}
+
 CDestination::CDestination(const std::string& str)
 {
     ParseString(str);
@@ -72,6 +77,16 @@ uint256 CDestination::ToHash() const
     uint256 n;
     memcpy(n.begin() + 12, begin(), size());
     return n;
+}
+
+bytes CDestination::GetCompressData() const
+{
+    return ToValidBigEndianData();
+}
+
+void CDestination::SetCompressData(const bytes& btCompressData)
+{
+    FromValidBigEndianData(btCompressData);
 }
 
 CDestination& CDestination::SetPubKey(const CPubKey& pubkey)
