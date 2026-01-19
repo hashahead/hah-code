@@ -70,7 +70,18 @@ enum RPCErrorCode
     RPC_WALLET_ALREADY_UNLOCKED = -409,     //!< Wallet is already unlocked
     RPC_WALLET_INVALID_LABEL_NAME = -410,   //!< Invalid label name
     RPC_WALLET_INVALID_PASSPHRASE = -411,   //!< Invalid passphrase
-    RPC_WALLET_REMOVE_KEY_ERROR = -412      //!< Error remove key
+    RPC_WALLET_REMOVE_KEY_ERROR = -412,     //!< Error remove key
+
+    //! eth errors
+    RPC_ETH_ERROR_EXECUTION_REVERTED = 3, //!< execution reverted
+
+    RPC_ETH_ERROR_NOT_FOUND_BLOCK = -32000,        //!< Header not found or could not find block
+    RPC_ETH_ERROR_TRACE_REQUESTS_LIMITED = -32009, //!< Trace requests limited to x/sec
+    RPC_ETH_ERROR_GAS_NOT_ENOUGH = -32010,         //!< Transaction cost exceeds current gas limit or gas not enough
+    RPC_ETH_ERROR_NETWORK_ERROR = -32011,          //!< Network error
+    RPC_ETH_ERROR_VM_EXECUTION_ERROR = -32015,     //!< VM execution error
+    RPC_ETH_ERROR_CONTOM_TRACE_BLOCKED = -32612,   //!< Custom traces are blocked
+    RPC_ETH_ERROR_NOT_FOUND_TRACE = -32613,        //!< Custom trace not found in allowed custom traces
 };
 
 /**
