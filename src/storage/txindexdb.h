@@ -7,6 +7,7 @@
 
 #include <boost/thread/thread.hpp>
 
+#include "dbstruct.h"
 #include "hnbase.h"
 #include "transaction.h"
 
@@ -24,11 +25,13 @@ public:
     bool Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData);
     void Deinitialize();
 
-    bool AddBlockTxIndexReceipt(const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::map<uint256, CTransactionReceipt>& mapBlockTxReceipts);
-    bool UpdateBlockLongChain(const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx);
-    bool RetrieveTxIndex(const uint256& txid, CTxIndex& txIndex);
+    bool AddBlockTxIndexReceipt(const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::vector<CTransactionReceipt>& vTxReceipts);
+    bool UpdateTxIndexBlockLongChain(const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx);
+    bool RetrieveTxIndex(const uint256& txid, uint256& hashTxAtBlock, CTxIndex& txIndex);
     bool RetrieveTxReceipt(const uint256& txid, CTransactionReceipt& txReceipt);
     bool VerifyTxIndex(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+    bool WalkThroughSnapshotTxIndex(const uint256& hashLastBlock, WalkerTxIndexKvFunc fnWalker);
+    bool WriteTxIndexKvData(const bytes& btKey, const bytes& btValue);
 
 protected:
     uint256 hashFork;
@@ -48,11 +51,13 @@ public:
     bool AddNewFork(const uint256& hashFork);
     void Clear();
 
-    bool AddBlockTxIndexReceipt(const uint256& hashFork, const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::map<uint256, CTransactionReceipt>& mapBlockTxReceipts);
-    bool UpdateBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx);
-    bool RetrieveTxIndex(const uint256& hashFork, const uint256& txid, CTxIndex& txIndex);
+    bool AddBlockTxIndexReceipt(const uint256& hashFork, const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::vector<CTransactionReceipt>& vTxReceipts);
+    bool UpdateTxIndexBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx);
+    bool RetrieveTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashTxAtBlock, CTxIndex& txIndex);
     bool RetrieveTxReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceipt& txReceipt);
     bool VerifyTxIndex(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, bool fVerifyAllNode = true);
+    bool WalkThroughSnapshotTxIndex(const uint256& hashFork, const uint256& hashLastBlock, WalkerTxIndexKvFunc fnWalker);
+    bool WriteTxIndexKvData(const uint256& hashFork, const bytes& btKey, const bytes& btValue);
 
 protected:
     boost::filesystem::path pathTxIndex;

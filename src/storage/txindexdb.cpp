@@ -8,6 +8,8 @@
 
 #include "leveldbeng.h"
 
+#include "block.h"
+
 using namespace std;
 using namespace hnbase;
 
@@ -52,7 +54,7 @@ void CForkTxIndexDB::Deinitialize()
     Close();
 }
 
-bool CForkTxIndexDB::AddBlockTxIndexReceipt(const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::map<uint256, CTransactionReceipt>& mapBlockTxReceipts)
+bool CForkTxIndexDB::AddBlockTxIndexReceipt(const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::vector<CTransactionReceipt>& vTxReceipts)
 {
     CWriteLock wlock(rwAccess);
     if (!TxnBegin())
@@ -62,12 +64,8 @@ bool CForkTxIndexDB::AddBlockTxIndexReceipt(const uint256& hashBlock, const std:
 
     for (const auto& kv : mapBlockTxIndex)
     {
-        hnbase::CBufStream ss;
-        ss << hashBlock << kv.first;
-        uint256 hash = crypto::CryptoKeccakHash(ss.GetData(), ss.GetSize());
-
         hnbase::CBufStream ssKey, ssValue;
-        ssKey << DB_TXINDEX_KEY_NAME_TXINDEX << hash;
+        ssKey << DB_TXINDEX_KEY_NAME_TXINDEX << hashBlock << kv.first;
         ssValue << kv.second;
 
         if (!Write(ssKey, ssValue))
@@ -77,15 +75,11 @@ bool CForkTxIndexDB::AddBlockTxIndexReceipt(const uint256& hashBlock, const std:
         }
     }
 
-    for (const auto& kv : mapBlockTxReceipts)
+    for (const auto& receipt : vTxReceipts)
     {
-        hnbase::CBufStream ss;
-        ss << hashBlock << kv.first;
-        uint256 hash = crypto::CryptoKeccakHash(ss.GetData(), ss.GetSize());
-
         hnbase::CBufStream ssKey, ssValue;
-        ssKey << DB_TXINDEX_KEY_NAME_TXRECEIPT << hash;
-        ssValue << kv.second;
+        ssKey << DB_TXINDEX_KEY_NAME_TXRECEIPT << hashBlock << receipt.txid;
+        ssValue << receipt;
 
         if (!Write(ssKey, ssValue))
         {
@@ -102,7 +96,7 @@ bool CForkTxIndexDB::AddBlockTxIndexReceipt(const uint256& hashBlock, const std:
     return true;
 }
 
-bool CForkTxIndexDB::UpdateBlockLongChain(const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx)
+bool CForkTxIndexDB::UpdateTxIndexBlockLongChain(const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx)
 {
     CWriteLock wlock(rwAccess);
     if (!TxnBegin())
@@ -141,9 +135,10 @@ bool CForkTxIndexDB::UpdateBlockLongChain(const std::vector<uint256>& vRemoveTx,
     return true;
 }
 
-bool CForkTxIndexDB::RetrieveTxIndex(const uint256& txid, CTxIndex& txIndex)
+bool CForkTxIndexDB::RetrieveTxIndex(const uint256& txid, uint256& hashTxAtBlock, CTxIndex& txIndex)
 {
     CReadLock rlock(rwAccess);
+
     uint256 hashBlock;
     try
     {
@@ -163,18 +158,15 @@ bool CForkTxIndexDB::RetrieveTxIndex(const uint256& txid, CTxIndex& txIndex)
 
     try
     {
-        hnbase::CBufStream ss;
-        ss << hashBlock << txid;
-        uint256 hash = crypto::CryptoKeccakHash(ss.GetData(), ss.GetSize());
-
         hnbase::CBufStream ssKey, ssValue;
-        ssKey << DB_TXINDEX_KEY_NAME_TXINDEX << hash;
+        ssKey << DB_TXINDEX_KEY_NAME_TXINDEX << hashBlock << txid;
         if (!Read(ssKey, ssValue))
         {
             StdLog("CForkTxIndexDB", "Retrieve Tx Index: Read tx id fail, txid: %s, block: %s", txid.ToString().c_str(), hashBlock.ToString().c_str());
             return false;
         }
         ssValue >> txIndex;
+        hashTxAtBlock = hashBlock;
     }
     catch (std::exception& e)
     {
@@ -206,12 +198,8 @@ bool CForkTxIndexDB::RetrieveTxReceipt(const uint256& txid, CTransactionReceipt&
 
     try
     {
-        hnbase::CBufStream ss;
-        ss << hashBlock << txid;
-        uint256 hash = crypto::CryptoKeccakHash(ss.GetData(), ss.GetSize());
-
         hnbase::CBufStream ssKey, ssValue;
-        ssKey << DB_TXINDEX_KEY_NAME_TXRECEIPT << hash;
+        ssKey << DB_TXINDEX_KEY_NAME_TXRECEIPT << hashBlock << txid;
         if (!Read(ssKey, ssValue))
         {
             return false;
@@ -229,6 +217,55 @@ bool CForkTxIndexDB::RetrieveTxReceipt(const uint256& txid, CTransactionReceipt&
 bool CForkTxIndexDB::VerifyTxIndex(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     return true;
+}
+
+bool CForkTxIndexDB::WalkThroughSnapshotTxIndex(const uint256& hashLastBlock, WalkerTxIndexKvFunc fnWalker)
+{
+    const uint32 nLastHeight = CBlock::GetBlockHeightByHash(hashLastBlock);
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            bytes btKey, btValue;
+            ssKey.GetData(btKey);
+            ssValue.GetData(btValue);
+
+            uint8 nKeyType;
+            ssKey >> nKeyType;
+            uint256 hashBlock;
+            if (nKeyType == DB_TXINDEX_KEY_NAME_TXINDEX || nKeyType == DB_TXINDEX_KEY_NAME_TXRECEIPT)
+            {
+                ssKey >> hashBlock;
+            }
+            else if (nKeyType == DB_TXINDEX_KEY_NAME_TXPOS)
+            {
+                ssValue >> hashBlock;
+            }
+            if (hashBlock != 0)
+            {
+                const uint32 nHeight = CBlock::GetBlockHeightByHash(hashBlock);
+                if (nHeight > nLastHeight || (nHeight == nLastHeight && hashBlock != hashLastBlock))
+                {
+                    return true;
+                }
+                return fnWalker(btKey, btValue);
+            }
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    return WalkThrough(funcWalker);
+}
+
+bool CForkTxIndexDB::WriteTxIndexKvData(const bytes& btKey, const bytes& btValue)
+{
+    CBufStream ssKey(btKey);
+    CBufStream ssValue(btValue);
+    return Write(ssKey, ssValue);
 }
 
 //////////////////////////////

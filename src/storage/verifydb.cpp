@@ -19,23 +19,23 @@ namespace storage
 
 bool CVerifyDB::Initialize(const boost::filesystem::path& pathData)
 {
-    if (!tsVerify.Initialize(pathData / "fdb", "verify"))
-    {
-        StdLog("CVerifyDB", "Initialize: Initialize fail");
-        return false;
-    }
-    if (!LoadVerifyDB())
-    {
-        StdLog("CVerifyDB", "Initialize: Load verify DB fail");
-        return false;
-    }
+    // if (!tsVerify.Initialize(pathData / "fdb", "verify"))
+    // {
+    //     StdLog("CVerifyDB", "Initialize: Initialize fail");
+    //     return false;
+    // }
+    // if (!LoadVerifyDB())
+    // {
+    //     StdLog("CVerifyDB", "Initialize: Load verify DB fail");
+    //     return false;
+    // }
     return true;
 }
 
 void CVerifyDB::Deinitialize()
 {
-    tsVerify.Deinitialize();
-    Clear();
+    // tsVerify.Deinitialize();
+    // Clear();
 }
 
 void CVerifyDB::Clear()
@@ -45,7 +45,7 @@ void CVerifyDB::Clear()
     vVerifyIndex.clear();
 }
 
-bool CVerifyDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
+bool CVerifyDB::AddBlockVerify(const CBlockIndex& outline, const uint32 nRootCrc)
 {
     boost::unique_lock<boost::shared_mutex> wlock(rwAccess);
 

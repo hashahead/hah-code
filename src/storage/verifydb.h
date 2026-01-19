@@ -22,7 +22,7 @@ public:
     void Deinitialize();
     void Clear();
 
-    bool AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc);
+    bool AddBlockVerify(const CBlockIndex& outline, const uint32 nRootCrc);
     bool RetrieveBlockVerify(const uint256& hashBlock, CBlockVerify& verifyBlock);
     std::size_t GetBlockVerifyCount();
     bool GetBlockVerify(const std::size_t pos, CBlockVerify& verifyBlock);
