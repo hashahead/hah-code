@@ -44,7 +44,6 @@ public:
     bool IsEmptyAddressTx() const;
     CDestState& GetAddressState();
     void SetAddressState(const CDestState& state);
-    void AddMissTx(const uint256& txid, const CTransaction& tx);
     void RemoveMissTx(const uint256& txid);
     bool FetchNextMissTx(uint256& txid, CTransaction& tx);
 

@@ -52,33 +52,6 @@ void CAddressTxState::SetAddressState(const CDestState& state)
     }
 }
 
-void CAddressTxState::AddMissTx(const uint256& txid, const CTransaction& tx)
-{
-    if (tx.GetNonce() <= stateAddress.GetTxNonce())
-    {
-        return;
-    }
-    if (mapMissTx.size() >= MAX_CACHE_MISSING_PREV_TX_COUNT)
-    {
-        if (mapMissNonce.size() > 0)
-        {
-            mapMissTx.erase(mapMissNonce.begin()->second);
-            mapMissNonce.erase(mapMissNonce.begin());
-        }
-    }
-    if (mapMissTx.count(txid) == 0)
-    {
-        auto it = mapMissNonce.find(tx.GetNonce());
-        if (it != mapMissNonce.end())
-        {
-            mapMissTx.erase(it->second);
-            mapMissNonce.erase(it);
-        }
-        mapMissTx.insert(std::make_pair(txid, tx));
-        mapMissNonce.insert(std::make_pair(tx.GetNonce(), txid));
-    }
-}
-
 void CAddressTxState::RemoveMissTx(const uint256& txid)
 {
     auto it = mapMissTx.find(txid);
@@ -317,54 +290,6 @@ Errno CForkTxPool::AddTx(const uint256& txid, const CTransaction& tx)
         mapBlockAddress.insert(make_pair(tx.GetToAddress(), ctxAddressTo));
     }
 
-    // handle cancel or accelerate tx
-    bool fAdjustTx = false;
-    if (!HandleTransactionPriority(txid, tx, ctxAddressFrom, stateFrom, fAdjustTx))
-    {
-        StdLog("CForkTxPool", "Add Tx: Handle transaction priority fail, from: %s, txid: %s",
-               tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-        return ERR_TRANSACTION_INVALID;
-    }
-    if (fAdjustTx)
-    {
-        return OK;
-    }
-
-    Errno err;
-    if ((err = pCoreProtocol->VerifyTransaction(txid, tx, hashFork, hashLastBlock, CBlock::GetBlockHeightByHash(hashLastBlock) + 1, stateFrom, mapBlockAddress)) != OK)
-    {
-        StdLog("CForkTxPool", "Add Tx: Verify transaction fail, from: %s, txid: %s", tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-        if (err == ERR_MISSING_PREV)
-        {
-            auto it = mapAddressTxState.find(tx.GetFromAddress());
-            if (it == mapAddressTxState.end())
-            {
-                SetDestState(tx.GetFromAddress(), stateFrom);
-                mapAddressTxState[tx.GetFromAddress()].ctxAddress = ctxAddressFrom;
-                it = mapAddressTxState.find(tx.GetFromAddress());
-            }
-            if (it != mapAddressTxState.end())
-            {
-                it->second.AddMissTx(txid, tx);
-            }
-        }
-        return err;
-    }
-
-    if (hashFork == pCoreProtocol->GetGenesisBlockHash() && tx.GetTxType() == CTransaction::TX_CERT)
-    {
-        if (!VerifyRepeatCertTx(tx))
-        {
-            StdLog("CForkTxPool", "Add Tx: Verify cert tx fail, delegate address: %s, txid: %s", tx.GetToAddress().ToString().c_str(), txid.GetHex().c_str());
-            return ERR_ALREADY_HAVE;
-        }
-        // if (!pBlockChain->VerifyDelegateMinVote(hashLastBlock, tx.GetNonce(), tx.GetToAddress()))
-        // {
-        //     StdLog("CForkTxPool", "Add Tx: Not enough votes, delegate address: %s, txid: %s", tx.GetToAddress().ToString().c_str(), txid.GetHex().c_str());
-        //     return ERR_ALREADY_HAVE;
-        // }
-    }
-
     if (!AddPooledTx(txid, tx, nTxSequenceNumber++))
     {
         StdLog("CForkTxPool", "Add Tx: Add pooled tx fail, txid: %s", txid.GetHex().c_str());
@@ -506,18 +431,6 @@ bool CForkTxPool::FetchArrangeBlockTx(const uint256& hashPrev, const int64 nBloc
                     break;
                 }
 
-                if (tx.GetNonce() + CONSENSUS_ENROLL_INTERVAL < CBlock::GetBlockHeightByHash(hashPrev) || tx.GetNonce() > CBlock::GetBlockHeightByHash(hashPrev))
-                {
-                    continue;
-                }
-                if (!pBlockChain->VerifyDelegateMinVote(hashPrev, tx.GetNonce(), tx.GetToAddress()))
-                {
-                    continue;
-                }
-                if (!pBlockChain->VerifyDelegateEnroll(hashPrev, tx.GetNonce(), tx.GetToAddress()))
-                {
-                    continue;
-                }
                 if (setDelegateEnroll.find(make_pair(tx.GetToAddress(), (int)(tx.GetNonce()))) != setDelegateEnroll.end())
                 {
                     continue;
@@ -525,7 +438,7 @@ bool CForkTxPool::FetchArrangeBlockTx(const uint256& hashPrev, const int64 nBloc
                 setDelegateEnroll.insert(make_pair(tx.GetToAddress(), (int)(tx.GetNonce())));
 
                 vtx.push_back(tx);
-                nTotalSize += mt->ptx->nSerializeSize;
+                nTotalSize += (mt->ptx->nSerializeSize + 1);
                 nTotalTxFee += mt->ptx->GetTxFee();
             }
         }
@@ -557,7 +470,7 @@ bool CForkTxPool::FetchArrangeBlockTx(const uint256& hashPrev, const int64 nBloc
             break;
         }
         vtx.push_back(tx);
-        nTotalSize += kv.ptx->nSerializeSize;
+        nTotalSize += (kv.ptx->nSerializeSize + 1);
         nTotalTxFee += kv.ptx->GetTxFee();
     }
     return true;
@@ -582,21 +495,6 @@ bool CForkTxPool::SynchronizeBlockChain(const CBlockChainUpdate& update)
                 if (!tx.GetFromAddress().IsNull())
                 {
                     setAddAddress.insert(tx.GetFromAddress());
-                }
-            }
-        }
-    }
-
-    for (const CBlockEx& block : boost::adaptors::reverse(update.vBlockRemove))
-    {
-        for (const auto& tx : block.vtx)
-        {
-            if (tx.GetTxType() != CTransaction::TX_VOTE_REWARD && tx.GetTxType() != CTransaction::TX_CERT)
-            {
-                if (!AddTx(tx.GetHash(), tx))
-                {
-                    StdLog("CForkTxPool", "Synchronize Block Chain: Add tx fail, remove block: %s, txid: %s",
-                           block.GetHash().GetHex().c_str(), tx.GetHash().GetHex().c_str());
                 }
             }
         }
