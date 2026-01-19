@@ -247,6 +247,12 @@ static CWalletTxData TxInfoToJSON(const CDestination& destLocal, const CDestTxIn
     return data;
 }
 
+// "type": "0x0",
+// "chainId": "0x38c",
+// "v": "0x73b",
+// "r": "0x2aa1b0b294d0008aeb7841f31b036e4eb97bdd646e12d521167ef99654cea89c",
+// "s": "0x7b3411ae658e9e0d38863e2131dde1b88fc394b33d9229d083bff4ed57eb556b"
+
 static CEthTransaction EthTxToJSON(const uint256& txid, const CTransaction& tx, const uint256& blockHash, const uint64 nBlockNumber, const uint64 nTxIndex)
 {
     CEthTransaction txData;
@@ -260,8 +266,41 @@ static CEthTransaction EthTxToJSON(const uint256& txid, const CTransaction& tx, 
     txData.strTo = tx.GetToAddress().ToString();
     txData.strValue = tx.GetAmount().GetValueHex();
     txData.strGasprice = tx.GetGasPrice().GetValueHex();
+    txData.strMaxfeepergas = txData.strGasprice;
+    txData.strMaxpriorityfeepergas = "0x0";
     txData.strGas = tx.GetGasLimit().GetValueHex();
-    txData.strInput = ToHexString(tx.GetTxExtData());
+    if (tx.GetTxExtData().empty())
+    {
+        txData.strInput = "0x";
+    }
+    else
+    {
+        txData.strInput = ToHexString(tx.GetTxExtData());
+    }
+    txData.strType = "0x0";
+    txData.strChainid = ToHexString(tx.GetChainId());
+    txData.strV = "0x0";
+    txData.strR = "0x0";
+    txData.strS = "0x0";
+
+    if (tx.GetTxType() == CTransaction::TX_ETH_CREATE_CONTRACT)
+    {
+        txData.strType = "0x1";
+    }
+    else if (tx.GetTxType() == CTransaction::TX_ETH_MESSAGE_CALL)
+    {
+        txData.strType = "0x2";
+    }
+
+    uint256 r;
+    uint256 s;
+    uint8 v;
+    if (crypto::GetEthSignRsv(tx.GetSignData(), r, s, v))
+    {
+        txData.strR = r.ToString();
+        txData.strS = s.ToString();
+        txData.strV = ToHexString((uint32)v);
+    }
 
     return txData;
 }
@@ -344,6 +383,509 @@ static CEthBlock EthBlockToJSON(const CBlock& block, const bool fTxDetail)
     }
 
     return data;
+}
+
+static CEthTraceData EthTxToTraceJSON(const uint256& txid, const CTransaction& tx, const uint256& hashBlock, const uint64 nBlockNumber, const uint32 nTxIndex)
+{
+    CEthTraceData traceData;
+
+    traceData.action.strCalltype = "call";
+    traceData.action.strFrom = tx.GetFromAddress().ToString();
+    traceData.action.strTo = tx.GetToAddress().ToString();
+    traceData.action.strValue = tx.GetAmount().GetValueHex();
+    traceData.action.strGas = tx.GetGasLimit().GetValueHex();
+    traceData.action.strInput = ToHexString(tx.GetTxExtData());
+    // traceData.action.strAddress = "";
+    // traceData.action.strRefundaddress = "";
+
+    traceData.strBlockhash = hashBlock.ToString();
+    traceData.nBlocknumber = nBlockNumber;
+
+    traceData.result.strGasused = "";
+    traceData.result.strOutput = "";
+    // traceData.result.strAddress = "";
+    // traceData.result.strCode = "";
+
+    traceData.nSubtraces = 0;
+    // __required__ CRPCVector<uint64> vecTraceaddress = RPCValid;
+    traceData.strTransactionhash = txid.ToString();
+    traceData.nTransactionposition = nTxIndex;
+    traceData.strType = "call";
+
+    return traceData;
+}
+
+static string EthContractKvToJSON(const std::vector<std::pair<uint256, bytes>>& vContractKv, const uint256& keyNext)
+{
+    std::stringstream ss;
+
+    ss << "{\"storage\":{";
+    bool flag = true;
+    for (const auto& vd : vContractKv)
+    {
+        const uint256& k = vd.first;
+        const bytes& v = vd.second;
+        const uint256 hashKey = crypto::CryptoKeccakHash(k.begin(), k.size());
+        if (flag)
+        {
+            flag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        ss << "\"" << hashKey.ToString() << "\":{";
+        ss << "\"key\":\"" << k.ToString() << "\",";
+        ss << "\"value\":\"" << ToHexString(v) << "\"}";
+    }
+    ss << "},";
+    if (keyNext != 0)
+    {
+        ss << "\"nextKey\":\"" << keyNext.ToString() << "\"";
+    }
+    else
+    {
+        ss << "\"nextKey\":null";
+    }
+    ss << "}";
+
+    return ss.str();
+}
+
+static string EthVmTraceLogToJSON(const uint64 nUsedGas, const int nStatus, const bytes& btResult, const VmOperationTraceLogs& vmTraceLogs)
+{
+    std::stringstream ss;
+
+    ss << "{";
+    ss << "\"gas\":" << nUsedGas;
+    ss << ",\"failed\":" << (nStatus != 0 ? "true" : "false");
+    if (!btResult.empty())
+    {
+        ss << ",\"returnValue\":\"" << ToHexString(btResult) << "\"";
+    }
+    ss << ",\"structLogs\":[";
+    bool flagLogs = true;
+    for (const CVmOperationTraceLog& vmLog : vmTraceLogs)
+    {
+        if (flagLogs)
+        {
+            flagLogs = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        ss << "{\"pc\":" << vmLog.nPc;
+        ss << ",\"op\":\"" << vmLog.strInstr << "\"";
+        ss << ",\"gas\":" << vmLog.nGas;
+        ss << ",\"gasCost\":" << vmLog.nGasCost;
+        ss << ",\"depth\":" << vmLog.nDepth;
+        ss << ",\"stack\":[";
+
+        bool flagStack = true;
+        for (const auto& v : vmLog.vStack)
+        {
+            if (flagStack)
+            {
+                flagStack = false;
+            }
+            else
+            {
+                ss << ",";
+            }
+            std::string str = ToHexString(v.ToValidBigEndianData());
+            if (str.empty())
+            {
+                str = "0x0";
+            }
+            ss << "\"" << str << "\"";
+        }
+        ss << "]}";
+    }
+    ss << "]}";
+
+    return ss.str();
+}
+
+static string EthTxReceiptToJSON(const uint256& txid, const CTransactionReceiptEx& receipt)
+{
+    std::stringstream ss;
+
+    ss << "{";
+    ss << "\"transactionHash\":\"" << txid.GetHex() << "\"";
+    ss << ",\"transactionIndex\":\"" << ToHexString(receipt.nTxIndex) << "\"";
+    ss << ",\"blockHash\":\"" << receipt.hashBlock.GetHex() << "\"";
+    ss << ",\"blockNumber\":\"" << ToHexString(receipt.nBlockNumber) << "\"";
+    ss << ",\"from\":\"" << receipt.from.ToString() << "\"";
+    if (receipt.to.IsNull())
+    {
+        ss << ",\"to\":null";
+    }
+    else
+    {
+        ss << ",\"to\":\"" << receipt.to.ToString() << "\"";
+    }
+    ss << ",\"cumulativeGasUsed\":\"" << receipt.nBlockGasUsed.GetValueHex() << "\"";
+    ss << ",\"gasUsed\":\"" << receipt.nTxGasUsed.GetValueHex() << "\"";
+    ss << ",\"effectiveGasPrice\":\"" << receipt.nEffectiveGasPrice.GetValueHex() << "\"";
+    if (receipt.destContract.IsNull())
+    {
+        ss << ",\"contractAddress\":null";
+    }
+    else
+    {
+        ss << ",\"contractAddress\":\"" << receipt.destContract.ToString() << "\"";
+    }
+
+    bool fVlogsFirstFlag = true;
+    ss << ",\"logs\":[";
+    for (std::size_t i = 0; i < receipt.vLogs.size(); i++)
+    {
+        auto& txLogs = receipt.vLogs[i];
+        if (!txLogs.address.IsNull()
+            || !txLogs.data.empty()
+            || !txLogs.topics.empty())
+        {
+            bytes btIdData;
+            btIdData.assign(txid.begin(), txid.end());
+            btIdData.insert(btIdData.end(), (char*)&i, (char*)&i + sizeof(i));
+            bytes btIdKey = CryptoKeccakSign(btIdData.data(), btIdData.size());
+            string strId = string("log_") + ToHexString(btIdKey).substr(2);
+
+            if (fVlogsFirstFlag)
+            {
+                fVlogsFirstFlag = false;
+            }
+            else
+            {
+                ss << ",";
+            }
+            ss << "{";
+            ss << "\"address\":\"" << txLogs.address.ToString() << "\"";
+            ss << ",\"topics\":[";
+            bool fLogFirstFlag = true;
+            for (auto& d : txLogs.topics)
+            {
+                if (fLogFirstFlag)
+                {
+                    fLogFirstFlag = false;
+                }
+                else
+                {
+                    ss << ",";
+                }
+                ss << "\"" << d.ToString() << "\"";
+            }
+            ss << "]";
+            if (txLogs.data.empty())
+            {
+                ss << ",\"data\":\"0x\"";
+            }
+            else
+            {
+                ss << ",\"data\":\"" << ToHexString(txLogs.data) << "\"";
+            }
+            ss << ",\"blockHash\":\"" << receipt.hashBlock.GetHex() << "\"";
+            ss << ",\"blockNumber\":\"" << ToHexString(receipt.nBlockNumber) << "\"";
+            ss << ",\"transactionHash\":\"" << txid.GetHex() << "\"";
+            ss << ",\"transactionIndex\":\"" << ToHexString(receipt.nTxIndex) << "\"";
+            ss << ",\"logIndex\":\"" << ToHexString(i) << "\"";
+            ss << ",\"type\":\"mined\"";
+            ss << ",\"removed\":false";
+            ss << ",\"id\":\"" << strId << "\"";
+            ss << "}";
+        }
+    }
+    ss << "]";
+    ss << ",\"logsBloom\":\"" << receipt.nLogsBloom.ToString() << "\"";
+    if (!receipt.hashStatusRoot.IsNull())
+    {
+        ss << ",\"root\":\"" << receipt.hashStatusRoot.GetHex() << "\"";
+    }
+    ss << ",\"status\":\"" << (receipt.nContractStatus == 0 ? "0x1" : "0x0") << "\"";
+    ss << ",\"type\":\"0x0\"";
+    ss << "}";
+
+    return ss.str();
+}
+
+static string EthTxReceiptListToJSON(const vector<pair<uint256, CTransactionReceiptEx>>& vReceipt)
+{
+    std::stringstream ss;
+    ss << "[";
+    bool fFirstFlag = true;
+    for (const auto& vd : vReceipt)
+    {
+        if (fFirstFlag)
+        {
+            fFirstFlag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        ss << EthTxReceiptToJSON(vd.first, vd.second);
+    }
+    ss << "]";
+    return ss.str();
+}
+
+static string EthPeedingTxToJSON(const CChainId nChainId, const map<CDestination, vector<CTxInfo>>& mapTxPool)
+{
+    std::stringstream ss;
+
+    ss << "{";
+    ss << "\"pending\":{";
+    bool fFirstAddressFlag = true;
+    for (const auto& kv : mapTxPool)
+    {
+        const CDestination& destFrom = kv.first;
+        const vector<CTxInfo>& vTx = kv.second;
+
+        if (fFirstAddressFlag)
+        {
+            fFirstAddressFlag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        ss << "\"" << destFrom.ToString() << "\":{";
+        bool fFirstTxFlag = true;
+        for (size_t i = 0; i < vTx.size(); i++)
+        {
+            auto& tx = vTx[i];
+
+            string strType = "0x0";
+            if (tx.nTxType == CTransaction::TX_ETH_CREATE_CONTRACT)
+            {
+                strType = "0x1";
+            }
+            else if (tx.nTxType == CTransaction::TX_ETH_MESSAGE_CALL)
+            {
+                strType = "0x2";
+            }
+            string strInput;
+            if (tx.btData.empty())
+            {
+                strInput = "0x";
+            }
+            else
+            {
+                strInput = ToHexString(tx.btData);
+            }
+
+            string strR = "0x0";
+            string strS = "0x0";
+            string strV = "0x0";
+            uint256 r;
+            uint256 s;
+            uint8 v;
+            if (crypto::GetEthSignRsv(tx.btSignData, r, s, v))
+            {
+                strR = r.ToString();
+                strS = s.ToString();
+                strV = ToHexString((uint32)v);
+            }
+
+            if (fFirstTxFlag)
+            {
+                fFirstTxFlag = false;
+            }
+            else
+            {
+                ss << ",";
+            }
+            ss << "\"" << std::to_string(tx.nTxNonce) << "\":{";
+            ss << "\"blockHash\":null";
+            ss << ",\"blockNumber\":null";
+            ss << ",\"hash\":\"" << tx.txid.ToString() << "\"";
+            ss << ",\"nonce\":\"" << ToHexString(tx.nTxNonce) << "\"";
+            ss << ",\"from\":\"" << tx.destFrom.ToString() << "\"";
+            ss << ",\"to\":\"" << tx.destTo.ToString() << "\"";
+            ss << ",\"value\":\"" << tx.nAmount.GetValueHex() << "\"";
+            ss << ",\"gas\":\"" << tx.nGas.GetValueHex() << "\"";
+            ss << ",\"gasPrice\":\"" << tx.nGasPrice.GetValueHex() << "\"";
+            ss << ",\"maxFeePerGas\":\"" << tx.nGasPrice.GetValueHex() << "\"";
+            ss << ",\"maxPriorityFeePerGas\":\"0x0\"";
+            ss << ",\"input\":\"" << strInput << "\"";
+            ss << ",\"transactionIndex\":null";
+            ss << ",\"type\":\"" << strType << "\"";
+            ss << ",\"accesslist\":[]";
+            ss << ",\"chainId\":\"" << ToHexString(nChainId) << "\"";
+            ss << ",\"v\":\"" << strV << "\"";
+            ss << ",\"r\":\"" << strR << "\"";
+            ss << ",\"s\":\"" << strS << "\"";
+            ss << "}";
+        }
+        ss << "}";
+    }
+    ss << "}";
+    ss << ",\"queued\":{}";
+    ss << "}";
+
+    return ss.str();
+}
+
+static string EthTxpoolInspectToJSON(const map<CDestination, vector<CTxInfo>>& mapTxPool)
+{
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"pending\":{";
+    bool fFirstAddressFlag = true;
+    for (const auto& kv : mapTxPool)
+    {
+        const CDestination& destFrom = kv.first;
+        const vector<CTxInfo>& vTx = kv.second;
+
+        if (fFirstAddressFlag)
+        {
+            fFirstAddressFlag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        ss << "\"" << destFrom.ToString() << "\":{";
+        bool fFirstTxFlag = true;
+        for (size_t i = 0; i < vTx.size(); i++)
+        {
+            auto& tx = vTx[i];
+
+            if (fFirstTxFlag)
+            {
+                fFirstTxFlag = false;
+            }
+            else
+            {
+                ss << ",";
+            }
+            //"10": "0xB4a81261b16b92af0B9F7C4a83f1E885132D81e4: 0 wei + 46507 gas × 147400000000 wei",
+            ss << "\"" << std::to_string(tx.nTxNonce) << "\": \"" << tx.destTo.ToString() << ": " << tx.nAmount.GetMuint256().str() << " wei + " << tx.nGas.GetMuint256().str() << " gas x " << tx.nGasPrice.GetMuint256().str() << " wei\"";
+        }
+        ss << "}";
+    }
+    ss << "}";
+    ss << ",\"queued\":{}";
+    ss << "}";
+    return ss.str();
+}
+
+static string EthTxpoolCountToJSON(const uint64 nPendingTxCount, const uint64 nQueuedTxCount)
+{
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"pending\":\"" << ToHexString(nPendingTxCount) << "\"";
+    ss << ",\"queued\":\"" << ToHexString(nQueuedTxCount) << "\"";
+    ss << "}";
+    return ss.str();
+}
+
+static string EthFeeHistoryToJSON(const uint64 nStartBlockNumber, const uint32 nBlockCount, const uint64 nRewardPercentilesCount,
+                                  const std::vector<uint256>& vBlockRewardList, const std::vector<double>& vBlockGasUsedRatio, const uint256& nBaseGasFee)
+{
+    // {
+    // 	"oldestBlock": "0x1392d63",
+    // 	"reward": [
+    // 		["0x14e259f6", "0x59682f00"],
+    // 		["0x3004e7e5", "0x1d959ce45"],
+    // 		["0x68e7780", "0x59682f00"],
+    // 		["0x2982ec7", "0x59682f00"]
+    // 	],
+    // 	"baseFeePerGas": ["0x426101ac", "0x41cbe914", "0x40525f07", "0x3c504abc", "0x4125ed97"],
+    // 	"gasUsedRatio": [0.46490413333333336, 0.41034403333333336, 0.2507455, 0.8206250666666667],
+    // 	"baseFeePerBlobGas": ["0x1", "0x1", "0x1", "0x1", "0x1"],
+    // 	"blobGasUsedRatio": [1, 0.16666666666666666, 0.16666666666666666, 0]
+    // }
+
+    auto doubleToString = [](double value, int precision) -> std::string {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(precision) << value;
+        std::string str = oss.str();
+        if (str[str.size() - 1] != '0')
+        {
+            return str;
+        }
+        int64 nEndIndex = -1;
+        for (int64 i = str.size() - 1; i >= 0; i--)
+        {
+            if (str[i] != '0')
+            {
+                nEndIndex = i + 1;
+                if (str[i] == '.')
+                {
+                    nEndIndex++;
+                }
+                break;
+            }
+        }
+        if (nEndIndex == -1)
+        {
+            return "0.0";
+        }
+        return str.substr(0, nEndIndex);
+    };
+
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"oldestBlock\":\"" << ToHexString(nStartBlockNumber) << "\"";
+    ss << ",\"reward\":[";
+    for (uint64 i = 0; i < nBlockCount && i < vBlockRewardList.size(); i++)
+    {
+        if (i > 0)
+        {
+            ss << ",";
+        }
+        ss << "[";
+        for (uint64 j = 0; j < nRewardPercentilesCount; j++)
+        {
+            if (j > 0)
+            {
+                ss << ",";
+            }
+            ss << "\"" << nBaseGasFee.GetValueHex() << "\"";
+        }
+        ss << "]";
+    }
+    ss << "],\"baseFeePerGas\":[";
+    for (uint64 i = 0; i <= nBlockCount; i++)
+    {
+        if (i > 0)
+        {
+            ss << ",";
+        }
+        ss << "\"" << nBaseGasFee.GetValueHex() << "\"";
+    }
+    ss << "],\"gasUsedRatio\":[";
+    for (uint64 i = 0; i < nBlockCount && i < vBlockGasUsedRatio.size(); i++)
+    {
+        if (i > 0)
+        {
+            ss << ",";
+        }
+        ss << "\"" << doubleToString(vBlockGasUsedRatio[i], 12) << "\"";
+    }
+    ss << "],\"baseFeePerBlobGas\":[";
+    for (uint64 i = 0; i <= nBlockCount; i++)
+    {
+        if (i > 0)
+        {
+            ss << ",";
+        }
+        ss << "\"0x1\"";
+    }
+    ss << "],\"blobGasUsedRatio\":[";
+    for (uint64 i = 0; i < nBlockCount; i++)
+    {
+        if (i > 0)
+        {
+            ss << ",";
+        }
+        ss << "\"0.0\"";
+    }
+    ss << "]";
+    ss << "}";
+    return ss.str();
 }
 
 ///////////////////////////////
