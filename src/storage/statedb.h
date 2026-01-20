@@ -35,9 +35,9 @@ public:
 class CForkStateDB
 {
 public:
-    CForkStateDB(const bool fCacheIn = true);
+    CForkStateDB(const uint256& hashForkIn);
     ~CForkStateDB();
-    bool Initialize(const boost::filesystem::path& pathData);
+    bool Initialize(const boost::filesystem::path& pathData, const bool fPruneIn);
     void Deinitialize();
     bool RemoveAll();
     bool AddBlockState(const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot);

@@ -17,7 +17,7 @@ namespace storage
 class CPurger
 {
 public:
-    bool ResetDB(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn) const;
+    bool ResetDB(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn, const bool fCacheTraceIn) const;
     bool RemoveBlockFile(const boost::filesystem::path& pathDataLocation) const;
     bool operator()(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn) const
     {

@@ -60,23 +60,24 @@ bool CListStateTrieDBWalker::Walk(const bytes& btKey, const bytes& btValue, cons
 //////////////////////////////
 // CForkStateDB
 
-CForkStateDB::CForkStateDB(const bool fCacheIn)
+CForkStateDB::CForkStateDB(const uint256& hashForkIn)
 {
-    fCache = fCacheIn;
+    hashFork = hashForkIn;
+    fPrune = false;
 }
 
 CForkStateDB::~CForkStateDB()
 {
-    mapCacheState.clear();
     dbTrie.Deinitialize();
 }
 
-bool CForkStateDB::Initialize(const boost::filesystem::path& pathData)
+bool CForkStateDB::Initialize(const boost::filesystem::path& pathData, const bool fPruneIn)
 {
     if (!dbTrie.Initialize(pathData))
     {
         return false;
     }
+    fPrune = fPruneIn;
     return true;
 }
 

@@ -21,14 +21,14 @@ namespace storage
 //////////////////////////////
 // CPurger
 
-bool CPurger::ResetDB(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn) const
+bool CPurger::ResetDB(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn, const bool fCacheTraceIn) const
 {
     {
         CBlockDB dbBlock;
-        if (dbBlock.Initialize(pathDataLocation, hashGenesisBlockIn, fFullDbIn))
+        if (dbBlock.BdInitialize(pathDataLocation, hashGenesisBlockIn, fFullDbIn, fTraceDbIn, fCacheTraceIn, false))
         {
             dbBlock.RemoveAll();
-            dbBlock.Deinitialize();
+            dbBlock.BdDeinitialize();
         }
     }
 
