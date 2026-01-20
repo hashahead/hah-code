@@ -22,11 +22,29 @@ namespace hashahead
 namespace hvm
 {
 
+void onExOperation(const uint64_t steps,
+                   const uint64_t pc,
+                   const uint8_t instr,
+                   const uint64_t newMemSize,
+                   const uint64_t gasCost,
+                   const uint64_t gas,
+                   const evmc_bytes32 stack[],
+                   const size_t stack_count,
+                   const evmc_bytes32 mem[],
+                   const size_t mem_count,
+                   void* pUser)
+{
+    if (pUser)
+    {
+        ((CEvmHost*)pUser)->onHostOperation(steps, pc, instr, newMemSize, gasCost, gas, stack, stack_count, mem, mem_count);
+    }
+}
+
 //////////////////////////////////
 // CEvmHost
 
-CEvmHost::CEvmHost(const evmc_tx_context& _tx_context, CVmHostFaceDB& dbHostIn, SHP_HOST_CACHE_KV pCacheKvIn)
-  : tx_context(_tx_context), dbHost(dbHostIn)
+CEvmHost::CEvmHost(const evmc_tx_context& _tx_context, CVmHostFaceDB& dbHostIn, SHP_HOST_CACHE_KV pCacheKvIn, const bool fTraceVmLogIn, const bool fFhxHeightBranch001In, const bool fFhxHeightBranch002In)
+  : tx_context(_tx_context), dbHost(dbHostIn), fTraceVmLog(fTraceVmLogIn), fFhxHeightBranch001(fFhxHeightBranch001In), fFhxHeightBranch002(fFhxHeightBranch002In)
 {
     if (pCacheKvIn)
     {
@@ -75,11 +93,11 @@ evmc::bytes32 CEvmHost::get_storage(const evmc::address& addr, const evmc::bytes
     bytes cacheValue;
     if (pCacheKv->GetValue(dest, hash, cacheValue))
     {
-        StdDebug("CEvmHost", "get_storage: Get cache success, addr: %s, key: %s, hash: %s, value: %s",
-                 ToHexString(addr.bytes, sizeof(addr.bytes)).c_str(),
-                 ToHexString(key.bytes, sizeof(key.bytes)).c_str(),
-                 hash.GetHex().c_str(),
-                 ToHexString(cacheValue).c_str());
+        // StdDebug("CEvmHost", "get_storage: Get cache success, addr: %s, key: %s, hash: %s, value: %s",
+        //          ToHexString(addr.bytes, sizeof(addr.bytes)).c_str(),
+        //          ToHexString(key.bytes, sizeof(key.bytes)).c_str(),
+        //          hash.GetHex().c_str(),
+        //          ToHexString(cacheValue).c_str());
         evmc::bytes32 value;
         memcpy(value.bytes, cacheValue.data(), min(cacheValue.size(), sizeof(value.bytes)));
         return value;
@@ -98,11 +116,11 @@ evmc::bytes32 CEvmHost::get_storage(const evmc::address& addr, const evmc::bytes
     if (vValue.size() == sizeof(value.bytes))
     {
         memcpy(value.bytes, vValue.data(), sizeof(value.bytes));
-        StdDebug("CEvmHost", "get_storage: Get success, addr: %s, key: %s, hash: %s, value: %s",
-                 ToHexString(addr.bytes, sizeof(addr.bytes)).c_str(),
-                 ToHexString(key.bytes, sizeof(key.bytes)).c_str(),
-                 hash.GetHex().c_str(),
-                 ToHexString(value.bytes, sizeof(value.bytes)).c_str());
+        // StdDebug("CEvmHost", "get_storage: Get success, addr: %s, key: %s, hash: %s, value: %s",
+        //          ToHexString(addr.bytes, sizeof(addr.bytes)).c_str(),
+        //          ToHexString(key.bytes, sizeof(key.bytes)).c_str(),
+        //          hash.GetHex().c_str(),
+        //          ToHexString(value.bytes, sizeof(value.bytes)).c_str());
         return value;
     }
     StdLog("CEvmHost", "get_storage: vValue size error, size: %ld, addr: %s",

@@ -15,14 +15,30 @@ namespace hashahead
 namespace hvm
 {
 
+void onExOperation(const uint64_t steps,
+                   const uint64_t pc,
+                   const uint8_t instr,
+                   const uint64_t newMemSize,
+                   const uint64_t gasCost,
+                   const uint64_t gas,
+                   const evmc_bytes32 stack[],
+                   const size_t stack_count,
+                   const evmc_bytes32 mem[],
+                   const size_t mem_count,
+                   void* pUser);
+
 class CHostCacheKv
 {
 public:
     CHostCacheKv() {}
 
-    void SetValue(const CDestination& dest, const uint256& key, const bytes& value)
+    void SetCacheValue(const CDestination& dest, const uint256& key, const bytes& value)
     {
         cacheKv[dest][key] = value;
+    }
+    void SetTraceValue(const CDestination& dest, const uint256& key, const bytes& value)
+    {
+        traceKv[dest][key] = value;
     }
     bool GetValue(const CDestination& dest, const uint256& key, bytes& value) const
     {
@@ -49,9 +65,21 @@ public:
         }
         return false;
     }
+    bool GetDestTraceKv(const CDestination& dest, std::map<uint256, bytes>& out)
+    {
+        auto it = traceKv.find(dest);
+        if (it != traceKv.end())
+        {
+            out = it->second;
+            traceKv.erase(it);
+            return true;
+        }
+        return false;
+    }
 
 protected:
     std::map<CDestination, std::map<uint256, bytes>> cacheKv;
+    std::map<CDestination, std::map<uint256, bytes>> traceKv;
 };
 using SHP_HOST_CACHE_KV = shared_ptr<CHostCacheKv>;
 
