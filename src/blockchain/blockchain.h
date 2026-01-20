@@ -23,14 +23,16 @@ public:
     void GetForkStatus(std::map<uint256, CForkStatus>& mapForkStatus) override;
     bool GetForkProfile(const uint256& hashFork, CProfile& profile, const uint256& hashMainChainRefBlock = uint256()) override;
     bool GetForkContext(const uint256& hashFork, CForkContext& ctxt, const uint256& hashMainChainRefBlock = uint256()) override;
+    bool GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock = uint256()) override;
     bool GetForkAncestry(const uint256& hashFork, std::vector<std::pair<uint256, uint256>> vAncestry) override;
     int GetBlockCount(const uint256& hashFork) override;
     bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight) override;
     bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight, uint256& hashNext) override;
-    bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) override;
-    bool GetBlockHashList(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) override;
+    bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) override;
+    bool GetBlockHashListByHeight(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) override;
     bool GetBlockNumberHash(const uint256& hashFork, const uint64 nNumber, uint256& hashBlock) override;
     bool GetBlockStatus(const uint256& hashBlock, CBlockStatus& status) override;
+    bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) override;
     bool GetLastBlockOfHeight(const uint256& hashFork, const int nHeight, uint256& hashBlock, uint64& nTime) override;
     bool GetBlockHashOfRefBlock(const uint256& hashRefBlock, const int nHeight, uint256& hashBlock) override;
     bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) override;
