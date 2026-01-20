@@ -60,32 +60,116 @@ bool CForkAddressTxInfoDB::Initialize(const uint256& hashForkIn, const boost::fi
     return true;
 }
 
-    try
+void CForkAddressTxInfoDB::Deinitialize()
+{
+    Close();
+}
+
+bool CForkAddressTxInfoDB::AddAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber,
+                                            const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo,
+                                            const std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord)
+{
+    CWriteLock wlock(rwAccess);
+
+    if (!TxnBegin())
     {
-        hnbase::CBufStream ssKey(btKey);
-        uint8 nKeyType;
-        ssKey >> nKeyType;
-        if (nKeyType == DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS)
+        StdLog("CForkAddressTxInfoDB", "Add address tx info: Txn begin fail, block: %s", hashBlock.ToString().c_str());
+        return false;
+    }
+
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_DATA << hashBlock;
+        ssValue << mapAddressTxInfo << mapTokenRecord;
+        if (!Write(ssKey, ssValue))
         {
-            CDestination dest;
-            uint64 nTxIndex;
-            ssKey >> dest >> nTxIndex;
-
-            nTxIndex = BSwap64(nTxIndex);
-
-            CDestTxInfo ctxtAddressTxInfo;
-            hnbase::CBufStream ssValue(btValue);
-            ssValue >> ctxtAddressTxInfo;
-            ctxtAddressTxInfo.nTxIndex = nTxIndex;
-
-            vAddressTxInfo.push_back(ctxtAddressTxInfo);
-            if (nGetTxCount > 0 && vAddressTxInfo.size() >= nGetTxCount)
-            {
-                fWalkOver = true;
-            }
+            StdLog("CForkAddressTxInfoDB", "Add address tx info: Write tx info fail, block: %s", hashBlock.ToString().c_str());
+            TxnAbort();
+            return false;
         }
     }
-    catch (std::exception& e)
+
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_PREVBLOCK << hashBlock;
+        ssValue << hashPrevBlock << nBlockNumber;
+        if (!Write(ssKey, ssValue))
+        {
+            StdLog("CForkAddressTxInfoDB", "Add address tx info: Write block prev fail, block: %s", hashBlock.ToString().c_str());
+            TxnAbort();
+            return false;
+        }
+    }
+
+    if (!TxnCommit())
+    {
+        StdLog("CForkAddressTxInfoDB", "Add address tx info: Txn commit fail, block: %s", hashBlock.ToString().c_str());
+        TxnAbort();
+        return false;
+    }
+
+    if (setCacheBlockHash.empty())
+    {
+        WalkThroughAllBlockHash(setCacheBlockHash);
+    }
+    setCacheBlockHash.insert(hashBlock);
+    return true;
+}
+
+bool CForkAddressTxInfoDB::UpdateAddressTxInfoBlockLongChain(const vector<uint256>& vRemoveBlock, const vector<uint256>& vAddBlock)
+{
+    CWriteLock wlock(rwAccess);
+
+    if (!TxnBegin())
+    {
+        StdLog("CForkAddressTxInfoDB", "Update address tx info block longchain: Txn begin fail");
+        return false;
+    }
+
+    for (auto& hashBlock : vRemoveBlock)
+    {
+        RemoveLongChainlock(hashBlock);
+    }
+    for (auto& hashBlock : vAddBlock)
+    {
+        if (!AddLongChainBlock(hashBlock))
+        {
+            StdLog("CForkAddressTxInfoDB", "Update address tx info block longchain: Add longchain fail");
+            TxnAbort();
+            return false;
+        }
+    }
+    ClearOldBlockData();
+
+    if (!TxnCommit())
+    {
+        StdLog("CForkAddressTxInfoDB", "Update address tx info block longchain: Txn commit fail");
+        TxnAbort();
+        return false;
+    }
+    return true;
+}
+
+bool CForkAddressTxInfoDB::GetAddressTxCount(const CDestination& address, uint64& nTxCount)
+{
+    CReadLock rlock(rwAccess);
+    return ReadAddressTxCount(address, nTxCount);
+}
+
+bool CForkAddressTxInfoDB::RetrieveAddressTxInfo(const CDestination& address, const uint64 nTxIndex, CDestTxInfo& ctxAddressTxInfo)
+{
+    CReadLock rlock(rwAccess);
+    try
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO << address << BSwap64(nTxIndex);
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
+        ssValue >> ctxAddressTxInfo;
+    }
+    catch (exception& e)
     {
         hnbase::StdError(__PRETTY_FUNCTION__, e.what());
         return false;
