@@ -540,6 +540,40 @@ bool CForkDB::RetrieveForkLast(const uint256& hashFork, uint256& hashLastBlock)
     return GetForkLast(hashFork, hashLastBlock);
 }
 
+bool CForkDB::GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashLastBlock;
+    if (hashMainChainRefBlock == 0)
+    {
+        if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+        {
+            hashLastBlock = 0;
+        }
+    }
+    else
+    {
+        hashLastBlock = hashMainChainRefBlock;
+    }
+
+    uint256 hashRoot;
+    if (hashLastBlock != 0)
+    {
+        if (!ReadTrieRoot(hashLastBlock, hashRoot))
+        {
+            return false;
+        }
+    }
+
+    if (!GetCoinContextByForkSymbol(hashRoot, strForkSymbol, ctxCoin))
+    {
+        StdLog("CForkDB", "Get forkid by fork symbol: Get coin context fail, symbol: %s", strForkSymbol.c_str());
+        return false;
+    }
+    return true;
+}
+
 bool CForkDB::GetForkHashByForkName(const std::string& strForkName, uint256& hashFork, const uint256& hashMainChainRefBlock)
 {
     CReadLock rlock(rwAccess);
