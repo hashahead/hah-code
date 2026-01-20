@@ -2429,10 +2429,33 @@ CRPCResultPtr CRPCMod::RPCListDelegate(const CReqContext& ctxReq, CRPCParamPtr p
     }
 
     std::multimap<uint256, CDestination> mapVotes;
-    if (!pService->ListDelegate(hashRefBlock, 0, spParam->nCount, mapVotes))
+    if (!pService->ListDelegate(hashRefBlock, 0, 0, mapVotes))
     {
         throw CRPCException(RPC_INTERNAL_ERROR, "Query fail");
     }
+
+    std::map<CDestination, std::pair<uint32, uint64>> mapDelegateEnrollStatus; // key: delegate address, value1: last enroll height, value2: last enroll time
+    pService->RetrieveDelegateEnrollStatus(hashRefBlock, mapDelegateEnrollStatus);
+
+    std::map<CDestination, std::pair<uint256, double>> mapDelegateRewardApy; // key: delegate address, value1: delegate total reward, value2: delegate apy
+    pService->RetrieveDelegateRewardApy(hashRefBlock, mapDelegateRewardApy);
+
+    uint256 nTotalVoteAmount;
+    size_t nValidDelegateCount = 0;
+    for (auto& kv : mapVotes)
+    {
+        if (fValidDelegate && kv.first < DELEGATE_PROOF_OF_STAKE_ENROLL_MINIMUM_AMOUNT)
+        {
+            continue;
+        }
+        nTotalVoteAmount += kv.first;
+        if (fValidDelegate && ++nValidDelegateCount >= MAX_DELEGATE_THRESH)
+        {
+            break;
+        }
+    }
+
+    const int64 nPrecision = 10000000000;
 
     auto spResult = MakeCListDelegateResultPtr();
     for (const auto& d : boost::adaptors::reverse(mapVotes))

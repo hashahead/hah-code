@@ -73,6 +73,22 @@
             "desc": "Launch server full db"
         },
         {
+            "name": "fTraceDb",
+            "type": "bool",
+            "opt": "tracedb",
+            "default": false,
+            "format": "-tracedb",
+            "desc": "Launch server trace db"
+        },
+        {
+            "name": "fCacheTrace",
+            "type": "bool",
+            "opt": "cachetrace",
+            "default": true,
+            "format": "-cachetrace",
+            "desc": "Cache trace data"
+        },
+        {
             "name": "nChainId",
             "type": "int",
             "opt": "chainid",
@@ -103,6 +119,14 @@
             "default": false,
             "format": "-rewardcheck",
             "desc": "Check reward tx (default is false)"
+        },
+        {
+            "name": "fFastPoa",
+            "type": "bool",
+            "opt": "fastpoa",
+            "default": false,
+            "format": "-fastpoa",
+            "desc": "Fast create poa block (default is false)"
         }
     ],
     "CForkConfigOption": [
@@ -155,6 +179,15 @@
             "default": 0,
             "format": "-rpcport=port",
             "desc": "Listen for JSON-RPC connections on <port> (default: 8812 or testnet: 8814))"
+        },
+        {
+            "access": "protected",
+            "name": "nWsPortInt",
+            "type": "int",
+            "opt": "wsport",
+            "default": 0,
+            "format": "-wsport=port",
+            "desc": "Listen for websocket connections on <port> (default: 8817 or testnet: 8818))"
         },
         {
             "name": "fRPCListen",
@@ -297,7 +330,7 @@
             "name": "vChainIdRpcPort",
             "type": "vector<string>",
             "opt": "chainidrpcport",
-            "format": "-chainidrpcport=<chainid:rpcport>",
+            "format": "-chainidrpcport=<chainid:rpcport:wsport>",
             "desc": "Chain id of rpc port"
         }
     ],
@@ -325,6 +358,54 @@
             "default": "",
             "format": "-recoverydir=<path>",
             "desc": "Set block data directory to recovery from it. It will clear all <-datadir> database except wallet address, so <-recoverydir> must be not equal <-datadir/block>"
+        },
+        {
+            "name": "fPrune",
+            "type": "bool",
+            "opt": "prune",
+            "default": false,
+            "format": "-prune",
+            "desc": "Prune state data"
+        },
+        {
+            "name": "nPruneRetentionDays",
+            "type": "int",
+            "opt": "pruneretentiondays",
+            "default": "2",
+            "format": "-pruneretentiondays=<n>",
+            "desc": "Prune retention days, range: 7~180"
+        },
+        {
+            "name": "fChainSnapshot",
+            "type": "bool",
+            "opt": "chainsnapshot",
+            "default": "false",
+            "format": "-chainsnapshot",
+            "desc": "Enable blockchain snapshot, default(false)"
+        },
+        {
+            "name": "nSnapshotCycleDays",
+            "type": "int",
+            "opt": "snapshotcycledays",
+            "default": "30",
+            "format": "-snapshotcycledays=<n>",
+            "desc": "Snapshot cycle days, range: 1~720"
+        },
+        {
+            "name": "nMaxSnapshots",
+            "type": "int",
+            "opt": "maxsnapshots",
+            "default": "1",
+            "format": "-maxsnapshots=<n>",
+            "desc": "Snapshot retention count, range: 1~16"
+        },
+        {
+            "name": "strSnapshotRecoveryDir",
+            "type": "string",
+            "opt": "snapshotrecoverydir",
+            "default": "",
+            "format": "-snapshotrecoverydir=<path>",
+            "desc": "Restore files from the snapshot recovery directory to restore blockchain state data"
         }
     ],
     "CNetworkConfigOption": [
