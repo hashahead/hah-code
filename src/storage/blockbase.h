@@ -81,11 +81,15 @@ public:
     virtual bool SaveContractRunCode(const bytes& btContractRunCode, const CTxContractData& txcd);
     virtual bool ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const uint256& nAmount, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, int& nStatus, bytes& btResult);
     virtual bool Selfdestruct(const CDestination& destBeneficiaryIn);
+    virtual bool AddContractRunReceipt(const CTxContractReceipt& tcReceipt, const bool fFirstReceipt = false);
+    virtual bool AddVmOperationTraceLog(const CVmOperationTraceLog& vmOpTraceLog);
 
 protected:
     CBlockState& blockState;
-    CDestination destContract;
-    CDestination destCodeOwner;
+    CDestination destStorageContract; // storage contract address
+    CDestination destCodeParent;      // code parent contract address
+    CDestination destCodeLocal;       // code local contract address
+    CDestination destCodeOwner;       // code owner address
     uint256 txid;
     uint64 nTxNonce;
 };

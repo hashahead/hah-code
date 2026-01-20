@@ -272,50 +272,99 @@ bool CBlockBase::BsInitialize(const fs::path& pathDataLocation, const uint256& h
 
     if (!dbBlock.BdInitialize(pathDataLocation, hashGenesisBlockIn, fFullDbIn, fTraceDbIn, fCacheTrace, fPruneDb))
     {
-        return true;
+        StdError("BlockBase", "Failed to initialize block db");
+        return false;
     }
 
-    MatchLogsVec vLogs;
-    logFilter.matchesLogs(receipt, vLogs);
-    if (!vLogs.empty())
+    if (!dbBlock.SetPruneFlag(fPruneDb))
     {
-        CReceiptLogs r(vLogs);
-        r.txid = txid;
-        r.nTxIndex = receipt.nTxIndex;
-        r.nBlockNumber = nBlockNumber;
-        r.hashBlock = hashBlock;
-        vReceiptLogs.push_back(r);
-
-        nLogsCount += r.matchLogs.size();
-        if (nLogsCount > MAX_FILTER_CACHE_COUNT * 2)
+        if (fPruneDb)
         {
-            return false;
+            StdError("BlockBase", "Database has not been set to prune status. Please set prune to FALSE");
         }
+        else
+        {
+            StdError("BlockBase", "Database is already in prune state. Please set prune to TRUE");
+        }
+        return false;
     }
+
+    if (!tsBlock.Initialize(pathDataLocation / "block", BLOCKFILE_PREFIX))
+    {
+        dbBlock.BdDeinitialize();
+        StdError("BlockBase", "Failed to initialize block tsfile");
+        return false;
+    }
+
+    if (fRenewDB)
+    {
+        Clear();
+    }
+    else if (!LoadDB())
+    {
+        dbBlock.BdDeinitialize();
+        tsBlock.Deinitialize();
+        {
+            CWriteLock wlock(rwAccess);
+
+            ClearCache();
+        }
+        StdError("BlockBase", "Failed to load block db");
+        return false;
+    }
+
+    setRunSysFlag(hashGenesisBlock);
+
+    StdLog("BlockBase", "Initialized");
     return true;
 }
 
-void CBlockLogsFilter::GetTxReceiptLogs(const bool fAll, ReceiptLogsVec& receiptLogs)
+void CBlockBase::BsDeinitialize()
 {
-    if (fAll)
+    dbBlock.BdDeinitialize();
+    tsBlock.Deinitialize();
     {
-        for (auto& r : vHisReceiptLogs)
-        {
-            receiptLogs.push_back(r);
-        }
-        for (auto& r : vReceiptLogs)
-        {
-            receiptLogs.push_back(r);
-        }
+        CWriteLock wlock(rwAccess);
+
+        ClearCache();
     }
-    else
-    {
-        for (auto& r : vReceiptLogs)
-        {
-            receiptLogs.push_back(r);
-            vHisReceiptLogs.push_back(r);
-            nHisLogsCount += r.matchLogs.size();
-        }
+    StdLog("BlockBase", "Deinitialized");
+}
+
+const uint256& CBlockBase::GetGenesisBlockHash() const
+{
+    return hashGenesisBlock;
+}
+
+bool CBlockBase::Exists(const uint256& hash)
+{
+    CReadLock rlock(rwAccess);
+
+    return (!!GetIndex(hash));
+}
+
+bool CBlockBase::ExistsTx(const uint256& hashFork, const uint256& txid)
+{
+    uint256 hashAtFork;
+    uint256 hashTxAtBlock;
+    CTxIndex txIndex;
+    return GetTxIndex(hashFork, txid, hashAtFork, hashTxAtBlock, txIndex);
+}
+
+bool CBlockBase::IsEmpty()
+{
+    CReadLock rlock(rwAccess);
+
+    return !GetIndex(hashGenesisBlock);
+}
+
+void CBlockBase::Clear()
+{
+    CWriteLock wlock(rwAccess);
+
+    dbBlock.RemoveAll();
+    ClearCache();
+}
 
         vReceiptLogs.clear();
         nLogsCount = 0;
