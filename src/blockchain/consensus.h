@@ -36,7 +36,6 @@ class CConsensus : public IConsensus
 public:
     CConsensus();
     ~CConsensus();
-    void PrimaryUpdate(const CBlockChainUpdate& update, CDelegateRoutine& routine) override;
     bool AddNewDistribute(const uint256& hashDistributeAnchor, const CDestination& destFrom, const std::vector<unsigned char>& vchDistribute) override;
     bool AddNewPublish(const uint256& hashDistributeAnchor, const CDestination& destFrom, const std::vector<unsigned char>& vchPublish) override;
     void GetAgreement(int nTargetHeight, uint256& nAgreement, std::size_t& nWeight, std::vector<CDestination>& vBallot) override;

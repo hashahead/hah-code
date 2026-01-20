@@ -208,6 +208,17 @@ void CCoreProtocol::CreateGenesisBlock(const bool fMainnet, const CChainId nChai
 
 void CCoreProtocol::GetGenesisBlock(CBlock& block)
 {
+    if (TESTMAINNET_FLAG)
+    {
+        // "privkey" : "0x3833f2e2681130850a10f2d1331430ef9e284b813a92ed094ff09533e8a89be4",
+        // "pubkey" : "0x419877cf6a153bc4f26262cd8534a777c63cb998b60fb169036b19d3973c3878ba8fbf5918965a3f098555d34630457015875aaa6848bcfaab62b9d2304e1e7f",
+        // "address" : "0xa7581ec78f00f8e30da9dd5ead10c2abbf125dcb"
+        CreateGenesisBlock(true, GetGenesisChainId(), "0xa7581ec78f00f8e30da9dd5ead10c2abbf125dcb", block);
+    }
+    else
+    {
+        CreateGenesisBlock(true, GetGenesisChainId(), "0x6080e4a1775b482fd9ee04e59aa697848d583fef", block);
+    }
 }
 
 Errno CCoreProtocol::ValidateTransaction(const uint256& hashTxAtFork, const uint256& hashMainChainRefBlock, const CTransaction& tx)

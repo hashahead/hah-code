@@ -21,7 +21,7 @@ public:
     static uint256 CreateGenesisStateRoot(const uint16 nBlockType, const uint64 nBlockTimeStamp, const CDestination& destOwner, const uint256& nAmount);
     static void CreateGenesisBlock(const bool fMainnet, const CChainId nChainIdIn, const string& strOwnerAddress, CBlock& block);
     virtual void GetGenesisBlock(CBlock& block) override;
-    virtual Errno ValidateTransaction(const uint256& hashTxAtFork, const uint256& hashMainChainRefBlock, const CTransaction& tx) override;
+    virtual Errno ValidateTransaction(const uint256& hashTxAtFork, const uint256& hashMainChainRefBlock, const uint32 nRefHeight, const CTransaction& tx) override;
     virtual Errno ValidateBlock(const uint256& hashFork, const uint256& hashMainChainRefBlock, const CBlock& block) override;
     virtual Errno ValidateOrigin(const CBlock& block, const CProfile& parentProfile, CProfile& forkProfile) override;
 
