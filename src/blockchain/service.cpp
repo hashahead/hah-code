@@ -264,7 +264,98 @@ bool CService::GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkSta
 
 bool CService::VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainIdIn, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashBlock)
 {
-    return pBlockChain->VerifyForkNameAndChainId(hashFork, nChainIdIn, strForkName, hashBlock);
+    return pBlockChain->VerifyForkFlag(hashNewFork, nChainIdIn, strForkSymbol, strForkName, hashBlock);
+}
+
+bool CService::GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock)
+{
+    return pBlockChain->GetForkCoinCtxByForkSymbol(strForkSymbol, ctxCoin, hashMainChainRefBlock);
+}
+
+bool CService::GetForkHashByChainId(const CChainId nChainIdIn, uint256& hashFork)
+{
+    uint256 hashLastBlock;
+    if (!pBlockChain->RetrieveForkLast(pCoreProtocol->GetGenesisBlockHash(), hashLastBlock))
+    {
+        return false;
+    }
+    return pBlockChain->GetForkHashByChainId(nChainIdIn, hashFork, hashLastBlock);
+}
+
+bool CService::GetCoinContext(const std::string& strCoinSymbol, CCoinContext& ctxCoin, const uint256& hashLastBlock)
+{
+    uint256 hashMainChainRefBlock;
+    if (hashLastBlock != 0)
+    {
+        if (CBlock::GetBlockChainIdByHash(hashLastBlock) != CBlock::GetBlockChainIdByHash(pCoreProtocol->GetGenesisBlockHash()))
+        {
+            CBlockStatus status;
+            if (!pBlockChain->GetBlockStatus(hashLastBlock, status))
+            {
+                StdLog("CService", "Get balance: Get coin context fail, last block: %s", hashLastBlock.GetBhString().c_str());
+                return false;
+            }
+            hashMainChainRefBlock = status.hashRefBlock;
+        }
+        else
+        {
+            hashMainChainRefBlock = hashLastBlock;
+        }
+    }
+    return pBlockChain->GetForkCoinCtxByForkSymbol(strCoinSymbol, ctxCoin, hashMainChainRefBlock);
+}
+
+bool CService::ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashLastBlock)
+{
+    uint256 hashMainChainRefBlock;
+    if (hashLastBlock != 0)
+    {
+        if (CBlock::GetBlockChainIdByHash(hashLastBlock) != CBlock::GetBlockChainIdByHash(pCoreProtocol->GetGenesisBlockHash()))
+        {
+            CBlockStatus status;
+            if (!pBlockChain->GetBlockStatus(hashLastBlock, status))
+            {
+                StdLog("CService", "Get balance: List coin context fail, last block: %s", hashLastBlock.GetBhString().c_str());
+                return false;
+            }
+            hashMainChainRefBlock = status.hashRefBlock;
+        }
+        else
+        {
+            hashMainChainRefBlock = hashLastBlock;
+        }
+    }
+    return pBlockChain->ListCoinContext(mapSymbolCoin, hashMainChainRefBlock);
+}
+
+bool CService::GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return pBlockChain->GetDexCoinPairBySymbolPair(strSymbol1, strSymbol2, nCoinPair, hashMainChainRefBlock);
+}
+
+bool CService::GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& strSymbol1, std::string& strSymbol2, const uint256& hashMainChainRefBlock)
+{
+    return pBlockChain->GetSymbolPairByDexCoinPair(nCoinPair, strSymbol1, strSymbol2, hashMainChainRefBlock);
+}
+
+bool CService::ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return pBlockChain->ListDexCoinPair(nCoinPair, strCoinSymbol, mapDexCoinPair, hashMainChainRefBlock);
+}
+
+bool CService::IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock)
+{
+    return pBlockChain->IsTimeVaultWhitelistAddressExist(address, hashMainChainRefBlock);
+}
+
+bool CService::ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock)
+{
+    return pBlockChain->ListTimeVaultWhitelist(setTimeVaultWhitelist, hashMainChainRefBlock);
+}
+
+bool CService::GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock)
+{
+    return pBlockChain->GetPrimaryForkOwnerAddress(destForkOwner, hashRefBlock);
 }
 
 bool CService::GetForkGenealogy(const uint256& hashFork, vector<pair<uint256, int>>& vAncestry, vector<pair<int, uint256>>& vSubline)
