@@ -63,6 +63,7 @@ Address createContractAddress(const Address& _sender, const bytes& _code, const 
 bool FetchContractCreateCode(const bytes& btSrcCreateCode, const bytes& btRunCode, bytes& dstCreateCode);
 
 std::string GetStatusInfo(const int64 status_code);
+std::string GetRevertInfo(const evmc::result& result);
 
 } // namespace hvm
 } // namespace hashahead

@@ -122,5 +122,14 @@ std::string GetStatusInfo(const int64 status_code)
     return strRet;
 }
 
+std::string GetRevertInfo(const evmc::result& result)
+{
+    if (result.output_data && result.output_size > 0)
+    {
+        return ParserEthErrorResult(bytes(result.output_data, result.output_data + result.output_size));
+    }
+    return "";
+}
+
 } // namespace hvm
 } // namespace hashahead

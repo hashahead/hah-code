@@ -88,15 +88,17 @@ class CEvmHost : public evmc::Host
 private:
     evmc_tx_context tx_context;
     CVmHostFaceDB& dbHost;
+    bool fTraceVmLog = false;
 
 public:
+    uint32 nDepth = 0;
     SHP_HOST_CACHE_KV pCacheKv;
 
-    // evmc::address logAddr;
-    // std::vector<evmc::bytes32> vLogTopics;
-    // std::vector<uint8_t> vLogData;
-
     std::vector<CTransactionLogs> vLogs;
+    std::map<CDestination, std::map<uint256, bytes>> mapOldKeyValue; // key1: address, key2: key, value: old value
+
+    bool fFhxHeightBranch001 = false;
+    bool fFhxHeightBranch002 = false;
 
 public:
     static CDestination AddressToDestination(const evmc::address& addr);
@@ -104,8 +106,14 @@ public:
 
     bool GetCacheKv(std::map<uint256, bytes>& out)
     {
-        return pCacheKv->GetDestCacheKv(dbHost.GetContractAddress(), out);
+        return pCacheKv->GetDestCacheKv(dbHost.GetStorageContractAddress(), out);
     }
+    bool GetTraceKv(std::map<uint256, bytes>& out)
+    {
+        return pCacheKv->GetDestTraceKv(dbHost.GetStorageContractAddress(), out);
+    }
+    void AddContractFirstReceipt(const CDestination& from, const CDestination& to, const CDestination& destContractIn, const uint64 nTxGasLimit,
+                                 const uint256& nTxAmount, const bytes& btInput, const bool fCreateContract, const evmc::result& result);
 
 public:
     CEvmHost(const evmc_tx_context& _tx_context, CVmHostFaceDB& dbHostIn, SHP_HOST_CACHE_KV pCacheKvIn = nullptr);

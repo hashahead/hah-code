@@ -136,6 +136,7 @@ evmc_storage_status CEvmHost::set_storage(const evmc::address& addr,
     ss.Write((char*)&(addr.bytes[0]), sizeof(addr.bytes));
     ss.Write((char*)&(key.bytes[0]), sizeof(key.bytes));
     uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
+    bytes btValue(&(value.bytes[0]), &(value.bytes[0]) + sizeof(value.bytes));
 
     evmc_storage_status status = EVMC_STORAGE_UNCHANGED;
     string strModifyName;
@@ -144,8 +145,7 @@ evmc_storage_status CEvmHost::set_storage(const evmc::address& addr,
     bytes cacheValue;
     if (!pCacheKv->GetValue(dest, hash, cacheValue))
     {
-        bytes originalValue;
-        if (!dbHost.Get(hash, originalValue))
+        if (!dbHost.Get(hash, cacheValue))
         {
             status = EVMC_STORAGE_ADDED;
             strModifyName = "ADDED";
@@ -153,7 +153,7 @@ evmc_storage_status CEvmHost::set_storage(const evmc::address& addr,
         else
         {
             evmc::bytes32 zeroValue = {};
-            if (originalValue.size() == sizeof(zeroValue.bytes) && memcmp(originalValue.data(), &(zeroValue.bytes[0]), sizeof(zeroValue.bytes)) == 0)
+            if (cacheValue.size() == sizeof(zeroValue.bytes) && memcmp(cacheValue.data(), &(zeroValue.bytes[0]), sizeof(zeroValue.bytes)) == 0)
             {
                 status = EVMC_STORAGE_ADDED;
                 strModifyName = "ADDED";
@@ -168,56 +168,61 @@ evmc_storage_status CEvmHost::set_storage(const evmc::address& addr,
                 status = EVMC_STORAGE_MODIFIED;
                 strModifyName = "MODIFIED";
             }
-            // if (originalValue.size() == sizeof(value.bytes) && memcmp(originalValue.data(), &(value.bytes[0]), sizeof(value.bytes)) == 0)
-            // {
-            //     status = EVMC_STORAGE_UNCHANGED;
-            //     strModifyName = "UNCHANGED-DBSAME";
-            // }
-            // else
-            // {
-            //     status = EVMC_STORAGE_MODIFIED;
-            //     strModifyName = "MODIFIED";
-            // }
         }
     }
     else
     {
         status = EVMC_STORAGE_MODIFIED;
         strModifyName = "MODIFIED";
-        // if (cacheValue.size() == sizeof(value.bytes)
-        //     && memcmp(cacheValue.data(), &(value.bytes[0]), sizeof(value.bytes)) == 0)
-        // {
-        //     status = EVMC_STORAGE_UNCHANGED;
-        //     strModifyName = "UNCHANGED-CACHESAME";
-        // }
-        // else
-        // {
-        //     evmc::bytes32 tempValue = {};
-        //     if (cacheValue.size() == sizeof(tempValue.bytes)
-        //         && memcmp(cacheValue.data(), &(tempValue.bytes[0]), sizeof(tempValue.bytes)) == 0)
-        //     {
-        //         status = EVMC_STORAGE_DELETED;
-        //         strModifyName = "MODIFIED_DELETED";
-        //     }
-        //     else
-        //     {
-        //         status = EVMC_STORAGE_MODIFIED_AGAIN;
-        //         strModifyName = "MODIFIED_AGAIN";
-        //     }
-        // }
     }
     if (status != EVMC_STORAGE_UNCHANGED)
     {
-        pCacheKv->SetValue(dest, hash, bytes(&(value.bytes[0]), &(value.bytes[0]) + sizeof(value.bytes)));
+        uint256 hashKey((unsigned char*)&(key.bytes[0]), sizeof(key.bytes));
+        auto it = mapOldKeyValue.find(dest);
+        if (it == mapOldKeyValue.end() || it->second.find(hashKey) == it->second.end())
+        {
+            if (cacheValue.empty())
+            {
+                cacheValue.resize(32);
+            }
+            mapOldKeyValue[dest][hashKey] = cacheValue;
+        }
+        pCacheKv->SetCacheValue(dest, hash, btValue);
+        pCacheKv->SetTraceValue(dest, hashKey, btValue);
     }
 
-    StdDebug("CEvmHost", "set_storage: addr: %s, key: %s, hash: %s, value: %s, modify: %s",
-             ToHexString(addr.bytes, sizeof(addr.bytes)).c_str(),
-             ToHexString(key.bytes, sizeof(key.bytes)).c_str(),
-             hash.GetHex().c_str(),
-             ToHexString(value.bytes, sizeof(value.bytes)).c_str(), strModifyName.c_str());
+    // StdDebug("CEvmHost", "set_storage: addr: %s, key: %s, hash: %s, value: %s, modify: %s",
+    //          ToHexString(addr.bytes, sizeof(addr.bytes)).c_str(),
+    //          ToHexString(key.bytes, sizeof(key.bytes)).c_str(),
+    //          hash.GetHex().c_str(),
+    //          ToHexString(value.bytes, sizeof(value.bytes)).c_str(), strModifyName.c_str());
 
     return status;
+}
+
+evmc::bytes32 CEvmHost::get_transient_storage(const evmc::address& addr, const evmc::bytes32& key) const noexcept
+{
+    CDestination dest = AddressToDestination(addr);
+    uint256 hashKey((unsigned char*)&(key.bytes[0]), sizeof(key.bytes));
+    bytes tempValue;
+    if (dbHost.GetTransientValue(dest, hashKey, tempValue))
+    {
+        evmc::bytes32 value;
+        memcpy(value.bytes, tempValue.data(), min(tempValue.size(), sizeof(value.bytes)));
+        return value;
+    }
+    return {};
+}
+
+evmc_storage_status CEvmHost::set_transient_storage(const evmc::address& addr,
+                                                    const evmc::bytes32& key,
+                                                    const evmc::bytes32& value) noexcept
+{
+    CDestination dest = AddressToDestination(addr);
+    uint256 hashKey((unsigned char*)&(key.bytes[0]), sizeof(key.bytes));
+    bytes btValue(&(value.bytes[0]), &(value.bytes[0]) + sizeof(value.bytes));
+    dbHost.SetTransientValue(dest, hashKey, btValue);
+    return EVMC_STORAGE_MODIFIED;
 }
 
 evmc::uint256be CEvmHost::get_balance(const evmc::address& addr) const noexcept
