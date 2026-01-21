@@ -13,7 +13,7 @@
 #include "delegate.h"
 #include "fork.h"
 #include "pledge.h"
-#include "proof.h"
+#include "poa.h"
 #include "rpc/auto_protocol.h"
 #include "template.h"
 #include "templateid.h"
@@ -46,7 +46,7 @@ using CTypeInfoSet = boost::multi_index_container<
 
 static const CTypeInfoSet setTypeInfo = {
     { TEMPLATE_FORK, new CTemplateFork, "fork" },
-    { TEMPLATE_PROOF, new CTemplateProof, "mint" },
+    { TEMPLATE_POA, new CTemplatePoa, "poa" },
     { TEMPLATE_DELEGATE, new CTemplateDelegate, "delegate" },
     { TEMPLATE_VOTE, new CTemplateVote, "vote" },
     { TEMPLATE_PLEDGE, new CTemplatePledge, "pledge" },
