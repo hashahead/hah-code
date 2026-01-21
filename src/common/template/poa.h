@@ -1,0 +1,36 @@
+// Copyright (c) 2021-2025 The HashAhead developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#ifndef COMMON_TEMPLATE_PROOF_H
+#define COMMON_TEMPLATE_PROOF_H
+
+#include "destination.h"
+#include "mint.h"
+
+namespace hashahead
+{
+
+class CTemplatePoa : virtual public CTemplateMint
+{
+public:
+    CTemplatePoa(const CDestination& destMintIn = CDestination(), const CDestination& destSpendIn = CDestination());
+    virtual CTemplatePoa* clone() const;
+    virtual void GetTemplateData(rpc::CTemplateResponse& obj) const;
+
+protected:
+    virtual bool ValidateParam() const;
+    virtual bool SetTemplateData(const std::vector<uint8>& vchDataIn);
+    virtual bool SetTemplateData(const rpc::CTemplateRequest& obj);
+    virtual void BuildTemplateData();
+    virtual bool GetSignDestination(const CTransaction& tx, CDestination& destSign) const;
+    virtual bool GetBlockSignDestination(CDestination& destSign) const;
+
+public:
+    CDestination destMint;
+    CDestination destSpend;
+};
+
+} // namespace hashahead
+
+#endif // COMMON_TEMPLATE_PROOF_H
