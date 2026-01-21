@@ -367,75 +367,68 @@ bool CBlockChain::GetLastBlockStatus(const uint256& hashFork, CBlockStatus& stat
 
 bool CBlockChain::GetLastBlockOfHeight(const uint256& hashFork, const int nHeight, uint256& hashBlock, uint64& nTime)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveFork(hashFork, &pIndex) || pIndex->GetBlockHeight() < nHeight)
+    // BlockIndexPtr pIndex;
+    // if (!cntrBlock.RetrieveFork(hashFork, &pIndex) || pIndex->GetBlockHeight() < nHeight)
+    // {
+    //     return false;
+    // }
+    // while (pIndex && pIndex->GetBlockHeight() > nHeight)
+    // {
+    //     pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
+    // }
+    // if (!pIndex || pIndex->GetBlockHeight() != nHeight)
+    // {
+    //     return false;
+    // }
+
+    // hashBlock = pIndex->GetBlockHash();
+    // nTime = pIndex->GetBlockTime();
+
+    // return true;
+
+    vector<uint256> vBlockHash;
+    if (!cntrBlock.GetBlockHashListByHeight(hashFork, nHeight, vBlockHash))
     {
+        StdLog("CBlockChain", "Get last block of height: Get block hash list fail, fork: %s, height: %d", hashFork.ToString().c_str(), nHeight);
         return false;
     }
-    while (pIndex != nullptr && pIndex->GetBlockHeight() > nHeight)
+    std::reverse(vBlockHash.begin(), vBlockHash.end());
+    for (auto& hash : vBlockHash)
     {
-        pIndex = pIndex->pPrev;
+        BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hash);
+        if (pIndex)
+        {
+            hashBlock = pIndex->GetBlockHash();
+            nTime = pIndex->GetBlockTime();
+            return true;
+        }
     }
-    if (pIndex == nullptr || pIndex->GetBlockHeight() != nHeight)
-    {
-        return false;
-    }
-
-    hashBlock = pIndex->GetBlockHash();
-    nTime = pIndex->GetBlockTime();
-
-    return true;
+    return false;
 }
 
-bool CBlockChain::GetBlockHashOfRefBlock(const uint256& hashRefBlock, const int nHeight, uint256& hashBlock)
+bool CBlockChain::GetPrimaryBlockHashOfRefBlock(const uint256& hashRefBlock, const int nHeight, uint256& hashBlock)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashRefBlock, &pIndex) || pIndex->GetBlockHeight() < nHeight)
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashRefBlock);
+    if (!pIndex || !pIndex->IsPrimary() || pIndex->GetBlockHeight() < nHeight)
     {
         return false;
     }
-    while (pIndex != nullptr && pIndex->GetBlockHeight() > nHeight)
-    {
-        pIndex = pIndex->pPrev;
-    }
-    if (pIndex == nullptr || pIndex->GetBlockHeight() != nHeight)
-    {
-        return false;
-    }
-    hashBlock = pIndex->GetBlockHash();
-    return true;
-}
-
-bool CBlockChain::GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status)
-{
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveFork(hashFork, &pIndex))
-    {
-        return false;
-    }
-    status.hashFork = pIndex->GetOriginHash();
-    status.hashPrevBlock = pIndex->GetPrevHash();
-    status.hashBlock = pIndex->GetBlockHash();
-    status.nBlockHeight = pIndex->GetBlockHeight();
-    status.nBlockSlot = pIndex->GetBlockSlot();
-    status.nBlockNumber = pIndex->GetBlockNumber();
-    status.nTotalTxCount = pIndex->GetTxCount();
-    status.nRewardTxCount = pIndex->GetRewardTxCount();
-    status.nUserTxCount = pIndex->GetUserTxCount();
-    status.nBlockTime = pIndex->GetBlockTime();
-    status.nMoneySupply = pIndex->GetMoneySupply();
-    status.nMoneyDestroy = pIndex->GetMoneyDestroy();
-    status.nBlockType = pIndex->nType;
-    status.nMintType = pIndex->nMintType;
-    status.hashStateRoot = pIndex->GetStateRoot();
-    status.destMint = pIndex->destMint;
-    return true;
+    // while (pIndex && pIndex->GetBlockHeight() > nHeight)
+    // {
+    //     pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
+    // }
+    // if (!pIndex || pIndex->GetBlockHeight() != nHeight)
+    // {
+    //     return false;
+    // }
+    // hashBlock = pIndex->GetBlockHash();
+    return cntrBlock.GetBlockHashByHeightSlot(pIndex->GetOriginHash(), pIndex->GetBlockHash(), nHeight, 0, hashBlock);
 }
 
 bool CBlockChain::GetLastBlockTime(const uint256& hashFork, int nDepth, vector<uint64>& vTime)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveFork(hashFork, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveFork(hashFork);
+    if (!pIndex)
     {
         return false;
     }
@@ -445,14 +438,14 @@ bool CBlockChain::GetLastBlockTime(const uint256& hashFork, int nDepth, vector<u
     {
         vTime.reserve(nDepth);
     }
-    while (nDepth > 0 && pIndex != nullptr)
+    while (nDepth > 0 && pIndex)
     {
         vTime.push_back(pIndex->GetBlockTime());
         if (!pIndex->IsExtended())
         {
             nDepth--;
         }
-        pIndex = pIndex->pPrev;
+        pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
     }
     return true;
 }
