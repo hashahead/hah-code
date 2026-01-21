@@ -56,6 +56,16 @@ json_spirit::Value CRPCResp::ToJSON() const
 
 std::string CRPCResp::Serialize(bool indent) const
 {
+    if (spResult && spResult->IsJsonResult())
+    {
+        std::stringstream ss;
+        ss << "{";
+        ss << "\"id\":" << json_spirit::write_string<json_spirit::Value>(valID, false, RPC_DOUBLE_PRECISION);
+        ss << ",\"jsonrpc\":\"2.0\"";
+        ss << ",\"result\":" << spResult->GetJsonResult();
+        ss << "}";
+        return ss.str();
+    }
     return json_spirit::write_string<json_spirit::Value>(ToJSON(), indent, RPC_DOUBLE_PRECISION);
 }
 
@@ -199,13 +209,36 @@ CRPCRespVec DeserializeCRPCResp(const CRPCReqMap& req, const std::string& str)
 
 std::string SerializeCRPCResp(const CRPCRespVec& resp, bool indent)
 {
-    json_spirit::Array arr;
+    std::stringstream ss;
+    ss << "[";
+    bool f = true;
     for (auto& r : resp)
     {
-        arr.push_back(r->ToJSON());
+        if (f)
+        {
+            f = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        ss << r->Serialize();
     }
+    ss << "]";
+    return ss.str();
 
-    return json_spirit::write_string<json_spirit::Value>(arr, indent, RPC_DOUBLE_PRECISION);
+    // json_spirit::Array arr;
+    // for (auto& r : resp)
+    // {
+    //     arr.push_back(r->ToJSON());
+    // }
+
+    // return json_spirit::write_string<json_spirit::Value>(arr, indent, RPC_DOUBLE_PRECISION);
+}
+
+std::string SerializeValueString(const json_spirit::Value& v, bool indent)
+{
+    return json_spirit::write_string<json_spirit::Value>(v, indent, RPC_DOUBLE_PRECISION);
 }
 
 } // namespace rpc

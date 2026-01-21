@@ -434,6 +434,15 @@ typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_CERTTX_BROADCAST_TXS, std::vector<CTransa
 typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_USERTX_SUBSCRIBE_FORK, std::vector<uint256>) CEventLocalUsertxSubscribeFork;
 typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_USERTX_BROADCAST_TXS, std::vector<CTransaction>) CEventLocalUsertxBroadcastTxs;
 
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCKVOTE_TIMER, uint32) CEventLocalBlockvoteTimer;
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCKVOTE_SUBSCRIBE_FORK, std::vector<uint256>) CEventLocalBlockvoteSubscribeFork;
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCKVOTE_UPDATE_BLOCK, std::vector<CUpdateBlockVote>) CEventLocalBlockvoteUpdateBlock;
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCKVOTE_COMMIT_VOTE_RESULT, CBlockCommitVoteResult) CEventLocalBlockvoteCommitVoteResult;
+
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCKCROSSPROVE_TIMER, uint32) CEventLocalBlockcrossproveTimer;
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCKCROSSPROVE_SUBSCRIBE_FORK, std::vector<uint256>) CEventLocalBlockcrossproveSubscribeFork;
+typedef TYPE_PEERDATAEVENT(EVENT_LOCAL_BLOCKCROSSPROVE_BROADCAST_PROVE, CBlockBroadcastProve) CEventLocalBlockcrossproveBroadcastProve;
+
 typedef TYPE_PEERDELEGATEDEVENT(EVENT_PEER_BULLETIN, CEventPeerDelegatedBulletin) CEventPeerBulletin;
 typedef TYPE_PEERDELEGATEDEVENT(EVENT_PEER_GETDELEGATED, CEventPeerDelegatedGetData) CEventPeerGetDelegated;
 typedef TYPE_PEERDELEGATEDEVENT(EVENT_PEER_DISTRIBUTE, CEventPeerDelegatedData) CEventPeerDistribute;
@@ -459,6 +468,10 @@ public:
     DECLARE_EVENTHANDLER(CEventPeerBlockSubscribe);
     DECLARE_EVENTHANDLER(CEventPeerBlockUnsubscribe);
     DECLARE_EVENTHANDLER(CEventPeerBlockBks);
+    DECLARE_EVENTHANDLER(CEventPeerBlockNextPrevBlock);
+    DECLARE_EVENTHANDLER(CEventPeerBlockPrevBlocks);
+    DECLARE_EVENTHANDLER(CEventPeerBlockGetBlockReq);
+    DECLARE_EVENTHANDLER(CEventPeerBlockGetBlockRsp);
 
     DECLARE_EVENTHANDLER(CEventPeerCerttxSubscribe);
     DECLARE_EVENTHANDLER(CEventPeerCerttxUnsubscribe);
@@ -468,11 +481,27 @@ public:
     DECLARE_EVENTHANDLER(CEventPeerUsertxUnsubscribe);
     DECLARE_EVENTHANDLER(CEventPeerUsertxTxs);
 
+    DECLARE_EVENTHANDLER(CEventPeerBlockVoteProtoData);
+
+    DECLARE_EVENTHANDLER(CEventPeerBlockCrossProveData);
+
+    DECLARE_EVENTHANDLER(CEventPeerSnapshotDownData);
+
+    DECLARE_EVENTHANDLER(CEventLocalBlockSyncTimer);
     DECLARE_EVENTHANDLER(CEventLocalBlockSubscribeFork);
     DECLARE_EVENTHANDLER(CEventLocalBlockBroadcastBks);
     DECLARE_EVENTHANDLER(CEventLocalCerttxBroadcastTxs);
     DECLARE_EVENTHANDLER(CEventLocalUsertxSubscribeFork);
     DECLARE_EVENTHANDLER(CEventLocalUsertxBroadcastTxs);
+
+    DECLARE_EVENTHANDLER(CEventLocalBlockvoteTimer);
+    DECLARE_EVENTHANDLER(CEventLocalBlockvoteSubscribeFork);
+    DECLARE_EVENTHANDLER(CEventLocalBlockvoteUpdateBlock);
+    DECLARE_EVENTHANDLER(CEventLocalBlockvoteCommitVoteResult);
+
+    DECLARE_EVENTHANDLER(CEventLocalBlockcrossproveTimer);
+    DECLARE_EVENTHANDLER(CEventLocalBlockcrossproveSubscribeFork);
+    DECLARE_EVENTHANDLER(CEventLocalBlockcrossproveBroadcastProve);
 
     DECLARE_EVENTHANDLER(CEventPeerBulletin);
     DECLARE_EVENTHANDLER(CEventPeerGetDelegated);
