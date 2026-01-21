@@ -33,18 +33,11 @@ public:
     bool AddBlockContractKvValue(const uint32 nBlockHeight, const uint64 nBlockNumber, const CDestination& destContract, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashContractRoot);
     bool CreateCacheContractKvTrie(const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot);
     bool RetrieveContractKvValue(const uint256& hashContractRoot, const uint256& key, bytes& value);
+    bool ClearContractKvRootUnavailableNode(const uint32 nRemoveLastHeight, bool& fExit);
 
-    bool AddCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock,
-                        const std::map<uint256, CContractSourceCodeContext>& mapSourceCode,
-                        const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
-                        const std::map<uint256, CContractRunCodeContext>& mapContractRunCode,
-                        const std::map<uint256, CTemplateContext>& mapTemplateData,
-                        uint256& hashCodeRoot);
-    bool RetrieveSourceCodeContext(const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode);
-    bool RetrieveContractCreateCodeContext(const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode);
-    bool RetrieveContractRunCodeContext(const uint256& hashBlock, const uint256& hashContractRunCode, CContractRunCodeContext& ctxtCode);
-    bool ListContractCreateCodeContext(const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode);
-    bool VerifyCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+    bool GetContractAddressRoot(const CDestination& destContract, const uint256& hashRoot, uint256& hashPrevRoot, uint32& nBlockHeight, uint64& nBlockNumber);
+    bool CreateCacheContractKvRoot(const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot);
+    bool AddContractKvTrie(const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot);
 
 protected:
     bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot);
