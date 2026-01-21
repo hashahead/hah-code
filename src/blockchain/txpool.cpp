@@ -612,13 +612,13 @@ bool CForkTxPool::ListTx(const CDestination& dest, vector<CTxInfo>& vTxPool, con
     return true;
 }
 
-void CForkTxPool::GetDestBalance(const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
+bool CForkTxPool::GetDestBalance(const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
                                  uint256& nUnconfirmedIn, uint256& nUnconfirmedOut, CAddressContext& ctxAddress, const uint256& hashBlock)
 {
     CDestState state;
     if (!GetDestState(dest, state, hashBlock))
     {
-        state.SetNull();
+        return false;
     }
     nDestType = state.GetDestType();
     nTemplateType = state.GetTemplateType();
@@ -656,6 +656,7 @@ void CForkTxPool::GetDestBalance(const CDestination& dest, uint8& nDestType, uin
     {
         ctxAddress = CAddressContext(CPubkeyAddressContext());
     }
+    return true;
 }
 
 ////////////////////////////////////
@@ -701,32 +702,6 @@ int64 CForkTxPool::GetMinTxSequenceNumber()
         return it->nSequenceNumber;
     }
     return nTxSequenceNumber;
-}
-
-bool CForkTxPool::VerifyRepeatCertTx(const CTransaction& tx)
-{
-    if (tx.GetNonce() + CONSENSUS_ENROLL_INTERVAL < CBlock::GetBlockHeightByHash(hashLastBlock)
-        || tx.GetNonce() > CBlock::GetBlockHeightByHash(hashLastBlock) + 2)
-    {
-        StdLog("CForkTxPool", "Verify Repeat Cert Tx: Enroll height error, Enroll height %lu, last height: %d, delegate address: %s, txid: %s",
-               tx.GetNonce(), CBlock::GetBlockHeightByHash(hashLastBlock), tx.GetToAddress().ToString().c_str(), tx.GetHash().GetHex().c_str());
-        return false;
-    }
-    auto it = mapAddressTxState.find(tx.GetToAddress());
-    if (it != mapAddressTxState.end())
-    {
-        for (auto& kv : it->second.mapDestTx)
-        {
-            const CPooledTxPtr& ptx = kv.second;
-            if (ptx->GetTxType() == CTransaction::TX_CERT && ptx->GetNonce() == tx.GetNonce())
-            {
-                StdLog("CForkTxPool", "Verify Repeat Cert Tx: Repeat enroll error, Enroll height %lu, delegate address: %s, txid: %s",
-                       tx.GetNonce(), tx.GetToAddress().ToString().c_str(), tx.GetHash().GetHex().c_str());
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 void CForkTxPool::RemoveObsoletedCertTx()
