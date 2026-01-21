@@ -222,29 +222,68 @@ bool CForkAddressTxInfoDB::ListAddressTxInfo(const CDestination& address, const 
     return true;
 }
 
-void CForkAddressTxInfoDB::Deinitialize()
+bool CForkAddressTxInfoDB::ListTokenTx(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                                       const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord)
 {
-    dbTrie.Deinitialize();
-}
+    CReadLock rlock(rwAccess);
 
-bool CForkAddressTxInfoDB::RemoveAll()
-{
-    dbTrie.RemoveAll();
-    return true;
-}
-
-bool CForkAddressTxInfoDB::AddAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber, const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, uint256& hashNewRoot)
-{
-    uint256 hashPrevRoot;
-    if (hashBlock != hashFork)
+    if (destContractAddress.IsNull() || nPageSize == 0)
     {
-        if (!ReadTrieRoot(hashPrevBlock, hashPrevRoot))
+        return false;
+    }
+
+    CDestination destGetAddress;
+    if (destUserAddress.IsNull())
+    {
+        destGetAddress = destContractAddress;
+    }
+    else
+    {
+        destGetAddress = destUserAddress;
+    }
+
+    if (!ReadTokenTxCount(destContractAddress, destGetAddress, nTotalRecordCount) || nTotalRecordCount == 0)
+    {
+        nTotalRecordCount = 0;
+        nPageCount = 0;
+        return true;
+    }
+    nPageCount = nTotalRecordCount / nPageSize;
+    if (nTotalRecordCount % nPageSize != 0)
+    {
+        nPageCount++;
+    }
+
+    uint64 nBeginTxIndex = nPageNumber * nPageSize;
+    uint64 nGetTxCountInner = nPageSize;
+    if (nBeginTxIndex >= nTotalRecordCount)
+    {
+        return true;
+    }
+    if (fReverse)
+    {
+        if (nBeginTxIndex + nGetTxCountInner > nTotalRecordCount)
         {
-            StdLog("CForkAddressTxInfoDB", "Add address tx info: Read trie root fail, hashPrevBlock: %s, hashBlock: %s",
-                   hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
-            return false;
+            nGetTxCountInner = nTotalRecordCount - nBeginTxIndex;
+            nBeginTxIndex = 0;
+        }
+        else
+        {
+            nBeginTxIndex = nTotalRecordCount - (nBeginTxIndex + nGetTxCountInner);
         }
     }
+
+    if (!WalkThroughTokenTxInfo(destContractAddress, destUserAddress, nBeginTxIndex, nGetTxCountInner, vTokenTxRecord))
+    {
+        StdLog("CForkAddressTxInfoDB", "List token tx info: Walk through fail, contract address: %s, address: %s", destContractAddress.ToString().c_str(), destUserAddress.ToString().c_str());
+        return false;
+    }
+    if (fReverse)
+    {
+        reverse(vTokenTxRecord.begin(), vTokenTxRecord.end());
+    }
+    return true;
+}
 
     bytesmap mapKv;
     for (const auto& kv : mapAddressTxInfo)
