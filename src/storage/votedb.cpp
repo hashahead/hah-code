@@ -277,13 +277,13 @@ void CVoteDB::Clear()
 }
 
 bool CVoteDB::AddBlockVote(const uint256& hashPrev, const uint256& hashBlock, const std::map<CDestination, CVoteContext>& mapBlockVote,
-                           const std::map<CDestination, std::pair<uint32, uint32>>& mapAddPledgeFinalHeight, const std::map<CDestination, uint32>& mapRemovePledgeFinalHeight, uint256& hashVoteRoot)
+                           const std::map<CDestination, std::pair<uint32, uint32>>& mapAddPledgeFinalHeight, const std::map<CDestination, uint32>& mapRemovePledgeFinalHeight,
+                           const std::map<CDestination, CPledgeVoteContext>& mapPledgeVote, uint256& hashVoteRoot)
 {
     uint256 hashPrevRoot;
     if (hashPrev != 0)
     {
-        uint64 nVoteCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashPrev, hashPrevRoot, nVoteCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashPrev, hashPrevRoot))
         {
             StdLog("CVoteDB", "Add Block Vote: Read trie root fail, prev: %s", hashPrev.GetHex().c_str());
             return false;
@@ -358,7 +358,27 @@ bool CVoteDB::AddBlockVote(const uint256& hashPrev, const uint256& hashBlock, co
 
         mapKv.insert(make_pair(btKey, btValue));
     }
-    AddPrevRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashPrevRoot, hashBlock, mapKv);
+    // key: pledge address, value: pledge vote context
+    for (const auto& kv : mapPledgeVote)
+    {
+        const CDestination& destPledgeVote = kv.first;
+        const CPledgeVoteContext& ctxPledgeVote = kv.second;
+
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_VOTE_KEY_TYPE_USER_VOTE_PLEDGE_VOTE << destPledgeVote;
+        ssKey.GetData(btKey);
+
+        ssValue << ctxPledgeVote;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddPrevRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashPrevRoot, hashBlock, mapKv);
+    }
 
     if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashVoteRoot))
     {
@@ -367,7 +387,7 @@ bool CVoteDB::AddBlockVote(const uint256& hashPrev, const uint256& hashBlock, co
         return false;
     }
 
-    if (!WriteTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashVoteRoot, mapKv.size() - 1))
+    if (!WriteTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashVoteRoot))
     {
         StdLog("CVoteDB", "Add Block Vote: Write block root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -383,8 +403,7 @@ bool CVoteDB::RetrieveAllDelegateVote(const uint256& hashBlock, std::map<CDestin
     }
 
     uint256 hashTrieRoot;
-    uint64 nVoteCount = 0;
-    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashTrieRoot, nVoteCount))
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashTrieRoot))
     {
         StdLog("CVoteDB", "Retrieve All Delegate Vote: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -412,8 +431,7 @@ bool CVoteDB::RetrieveDestVoteContext(const uint256& hashBlock, const CDestinati
     }
 
     uint256 hashTrieRoot;
-    uint64 nVoteCount = 0;
-    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashTrieRoot, nVoteCount))
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashTrieRoot))
     {
         StdLog("CVoteDB", "Retrieve Dest Vote Context: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -425,13 +443,50 @@ bool CVoteDB::RetrieveDestVoteContext(const uint256& hashBlock, const CDestinati
     ssKey.GetData(btKey);
     if (!dbTrie.Retrieve(hashTrieRoot, btKey, btValue))
     {
-        StdLog("CVoteDB", "Retrieve Dest Vote Context: Retrieve kv trie, root: %s, block: %s", hashTrieRoot.GetHex().c_str(), hashBlock.GetHex().c_str());
+        StdLog("CVoteDB", "Retrieve Dest Vote Context: Retrieve kv trie, vote address: %s, root: %s, block: %s", destVote.ToString().c_str(), hashTrieRoot.GetHex().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
     try
     {
         hnbase::CBufStream ssValue(btValue);
         ssValue >> ctxtVote;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CVoteDB::RetrieveDestPledgeVoteContext(const uint256& hashBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote)
+{
+    if (hashBlock == 0)
+    {
+        return true;
+    }
+
+    uint256 hashTrieRoot;
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashTrieRoot))
+    {
+        StdLog("CVoteDB", "Retrieve Dest Pledge Vote Context: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_VOTE_KEY_TYPE_USER_VOTE_PLEDGE_VOTE << destVote;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashTrieRoot, btKey, btValue))
+    {
+        StdLog("CVoteDB", "Retrieve Dest Pledge Vote Context: Retrieve kv trie, vote address: %s, root: %s, block: %s", destVote.ToString().c_str(), hashTrieRoot.GetHex().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> ctxPledgeVote;
     }
     catch (std::exception& e)
     {

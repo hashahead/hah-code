@@ -121,9 +121,11 @@ public:
     void Clear();
 
     bool AddBlockVote(const uint256& hashPrev, const uint256& hashBlock, const std::map<CDestination, CVoteContext>& mapBlockVote,
-                      const std::map<CDestination, std::pair<uint32, uint32>>& mapAddPledgeFinalHeight, const std::map<CDestination, uint32>& mapRemovePledgeFinalHeight, uint256& hashVoteRoot);
+                      const std::map<CDestination, std::pair<uint32, uint32>>& mapAddPledgeFinalHeight, const std::map<CDestination, uint32>& mapRemovePledgeFinalHeight,
+                      const std::map<CDestination, CPledgeVoteContext>& mapPledgeVote, uint256& hashVoteRoot);
     bool RetrieveAllDelegateVote(const uint256& hashBlock, std::map<CDestination, std::map<CDestination, CVoteContext>>& mapDelegateVote);
     bool RetrieveDestVoteContext(const uint256& hashBlock, const CDestination& destVote, CVoteContext& ctxtVote);
+    bool RetrieveDestPledgeVoteContext(const uint256& hashBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote);
     bool ListPledgeFinalHeight(const uint256& hashBlock, const uint32 nFinalHeight, std::map<CDestination, std::pair<uint32, uint32>>& mapPledgeFinalHeight);
     bool VerifyVote(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
     bool WalkThroughDayVote(const uint256& hashBeginBlock, const uint256& hashTailBlock, CDayVoteWalker& walker);
@@ -132,6 +134,7 @@ public:
                         const std::map<int, std::map<CDestination, CDiskPos>>& mapEnrollTx, uint256& hashDelegateRoot);
     bool AddDelegateVote(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, uint256>& mapDelegateVote, uint256& hashNewRoot);
     bool AddDelegateEnroll(const uint256& hashBlock, const std::map<int, std::map<CDestination, CDiskPos>>& mapEnrollTx);
+    bool RemoveDelegateEnroll(const uint256& hashBlock);
     bool RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount);
     bool RetrieveDelegatedVote(const uint256& hashBlock, std::map<CDestination, uint256>& mapDelegateVote);
     bool RetrieveDelegatedEnroll(const uint256& hashBlock, std::map<int, std::map<CDestination, CDiskPos>>& mapEnrollTxPos);
