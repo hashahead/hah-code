@@ -225,18 +225,19 @@ protected:
 class CTxInfo
 {
 public:
-    CTxInfo() {}
+    CTxInfo()
+      : nTxType(0), nTimeStamp(0), nTxNonce(0), nBlockHeight(0), nTxSeq(0), nSize(0) {}
     CTxInfo(const uint256& txidIn, const uint256& hashForkIn, const int nTxTypeIn, const uint64 nTimeStampIn, const uint64 nTxNonceIn,
             const int nBlockHeightIn, const uint64 nTxSeqIn, const CDestination& destFromIn, const CDestination& destToIn,
-            const uint256& nAoumtIn, const uint256& nGasPriceIn, const uint256& nGasIn, const uint64 nSizeIn)
+            const uint256& nAoumtIn, const uint256& nGasPriceIn, const uint256& nGasIn, const bytes& btDataIn, const bytes& btSignDataIn, const uint64 nSizeIn)
       : txid(txidIn), hashFork(hashForkIn), nTxType(nTxTypeIn), nTimeStamp(nTimeStampIn), nTxNonce(nTxNonceIn),
         nBlockHeight(nBlockHeightIn), nTxSeq(nTxSeqIn), destFrom(destFromIn), destTo(destToIn),
-        nAmount(nAoumtIn), nGasPrice(nGasPriceIn), nGas(nGasIn), nSize(nSizeIn) {}
+        nAmount(nAoumtIn), nGasPrice(nGasPriceIn), nGas(nGasIn), btData(btDataIn), btSignData(btSignDataIn), nSize(nSizeIn) {}
 
     bool IsRewardTx() const
     {
         return (nTxType == CTransaction::TX_GENESIS || nTxType == CTransaction::TX_STAKE
-                || nTxType == CTransaction::TX_WORK || nTxType == CTransaction::TX_VOTE_REWARD);
+                || nTxType == CTransaction::TX_POA || nTxType == CTransaction::TX_VOTE_REWARD);
     }
 
 public:
@@ -252,6 +253,8 @@ public:
     uint256 nAmount;
     uint256 nGasPrice;
     uint256 nGas;
+    bytes btData;
+    bytes btSignData;
     uint64 nSize;
 };
 
