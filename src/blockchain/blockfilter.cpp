@@ -95,4 +95,78 @@ void CBlockFilter::RemoveFilter(const uint256& nFilterId)
     }
 }
 
+uint256 CBlockFilter::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logFilterIn, const std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapHisBlockReceiptsIn)
+{
+    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
+    uint256 nFilterId = createFilterId.CreateLogsFilterId(hashClient);
+    while (mapLogFilter.count(nFilterId) > 0)
+    {
+        nFilterId = createFilterId.CreateLogsFilterId(hashClient);
+    }
+    auto it = mapLogFilter.insert(make_pair(nFilterId, CBlockLogsFilter(hashFork, logFilterIn))).first;
+    if (it == mapLogFilter.end())
+    {
+        return 0;
+    }
+    CBlockLogsFilter& filter = it->second;
+    for (const auto& kv : mapHisBlockReceiptsIn)
+    {
+        const uint256& hashBlock = kv.first;
+        for (const auto& receipt : kv.second)
+        {
+            filter.AddTxReceipt(hashFork, hashBlock, receipt);
+        }
+    }
+    return nFilterId;
+}
+
+void CBlockFilter::AddTxReceipt(const uint256& hashFork, const uint256& hashBlock, const CTransactionReceipt& receipt)
+{
+    {
+        boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
+        for (auto it = mapLogFilter.begin(); it != mapLogFilter.end();)
+        {
+            if (it->second.isTimeout())
+            {
+                mapLogFilter.erase(it++);
+            }
+            else
+            {
+                if (!it->second.AddTxReceipt(hashFork, hashBlock, receipt))
+                {
+                    mapLogFilter.erase(it++);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        }
+    }
+
+    {
+        CEventWsServicePushLogs* pPushEvent = new CEventWsServicePushLogs(0);
+        if (pPushEvent != nullptr)
+        {
+            pPushEvent->data.hashFork = hashFork;
+            pPushEvent->data.hashBlock = hashBlock;
+            pPushEvent->data.receipt = receipt;
+
+            pWsService->PostEvent(pPushEvent);
+        }
+    }
+}
+
+bool CBlockFilter::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs)
+{
+    boost::shared_lock<boost::shared_mutex> lock(mutexFilter);
+    auto it = mapLogFilter.find(nFilterId);
+    if (it == mapLogFilter.end())
+    {
+        return false;
+    }
+    it->second.GetTxReceiptLogs(fAll, receiptLogs);
+    return true;
+}
+
 } // namespace hashahead

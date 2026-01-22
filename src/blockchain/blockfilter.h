@@ -42,6 +42,10 @@ public:
 
     void RemoveFilter(const uint256& nFilterId) override;
 
+    uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logFilterIn, const std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapHisBlockReceiptsIn) override;
+    void AddTxReceipt(const uint256& hashFork, const uint256& hashBlock, const CTransactionReceipt& receipt) override;
+    bool GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs) override;
+
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;
