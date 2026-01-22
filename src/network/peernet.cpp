@@ -285,6 +285,28 @@ bool CBbPeerNet::HandleEvent(CEventPeerUsertxTxs& eventTxs)
 }
 
 //-----------------------------------------------------------------------
+bool CBbPeerNet::HandleEvent(CEventPeerBlockVoteProtoData& eventBvp)
+{
+    CBufStream ssPayload;
+    ssPayload << eventBvp;
+    return SendChannelMessage(PROTO_CHN_BLOCK_VOTE, eventBvp.nNonce, PROTO_CMD_BLOCKVOTE_DATA, ssPayload);
+}
+
+bool CBbPeerNet::HandleEvent(CEventPeerBlockCrossProveData& eventBcp)
+{
+    CBufStream ssPayload;
+    ssPayload << eventBcp;
+    return SendChannelMessage(PROTO_CHN_BLOCK_CROSS_PROVE, eventBcp.nNonce, PROTO_CMD_BLOCK_CROSS_PROVE_DATA, ssPayload);
+}
+
+bool CBbPeerNet::HandleEvent(CEventPeerSnapshotDownData& event)
+{
+    CBufStream ssPayload;
+    ssPayload << event;
+    return SendChannelMessage(PROTO_CHN_SNAPSHOT_SYN, event.nNonce, PROTO_CMD_SNAPSHOT_DOWN_MSG, ssPayload);
+}
+
+//-----------------------------------------------------------------------
 bool CBbPeerNet::HandleEvent(CEventPeerBulletin& eventBulletin)
 {
     CBufStream ssPayload;
@@ -345,12 +367,17 @@ void CBbPeerNet::DestroyPeer(CPeer* pPeer)
         CEventPeerDeactive* pEventDeactive = new CEventPeerDeactive(pBbPeer->GetNonce());
         if (pEventDeactive != nullptr)
         {
+            StdLog("CBbPeerNet", "Destroy peer: Deactive, peer nonce: 0x%lx", pBbPeer->GetNonce());
+
             pEventDeactive->data = CAddress(pBbPeer->nService, pBbPeer->GetRemote());
 
             CEventPeerDeactive* pEventDeactiveDelegated = new CEventPeerDeactive(*pEventDeactive);
             CEventPeerDeactive* pEventDeactiveBlock = new CEventPeerDeactive(*pEventDeactive);
             CEventPeerDeactive* pEventDeactiveCertTx = new CEventPeerDeactive(*pEventDeactive);
             CEventPeerDeactive* pEventDeactiveUserTx = new CEventPeerDeactive(*pEventDeactive);
+            CEventPeerDeactive* pEventDeactiveBlockVote = new CEventPeerDeactive(*pEventDeactive);
+            CEventPeerDeactive* pEventDeactiveBlockCrossProve = new CEventPeerDeactive(*pEventDeactive);
+            CEventPeerDeactive* pEventDeactiveSnapshotDown = new CEventPeerDeactive(*pEventDeactive);
 
             pNetChannel->PostEvent(pEventDeactive);
             if (pEventDeactiveDelegated)
@@ -368,6 +395,18 @@ void CBbPeerNet::DestroyPeer(CPeer* pPeer)
             if (pEventDeactiveUserTx)
             {
                 pUserTxChannel->PostEvent(pEventDeactiveUserTx);
+            }
+            if (pEventDeactiveBlockVote)
+            {
+                pBlockVoteChannel->PostEvent(pEventDeactiveBlockVote);
+            }
+            if (pEventDeactiveBlockCrossProve)
+            {
+                pBlockCrossProveChannel->PostEvent(pEventDeactiveBlockCrossProve);
+            }
+            if (pEventDeactiveSnapshotDown)
+            {
+                pSnapshotDownChannel->PostEvent(pEventDeactiveSnapshotDown);
             }
         }
     }
