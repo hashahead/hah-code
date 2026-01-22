@@ -355,7 +355,7 @@ bool CForkContractDB::WalkThroughHeightRoot(std::map<CDestination, std::map<uint
 //////////////////////////////
 // CContractDB
 
-bool CContractDB::Initialize(const boost::filesystem::path& pathData)
+bool CContractDB::Initialize(const boost::filesystem::path& pathData, const bool fPruneStateIn)
 {
     pathContract = pathData / "contract";
 
@@ -368,6 +368,7 @@ bool CContractDB::Initialize(const boost::filesystem::path& pathData)
     {
         return false;
     }
+    fPruneState = fPruneStateIn;
     return true;
 }
 
@@ -398,7 +399,7 @@ bool CContractDB::LoadFork(const uint256& hashFork)
     {
         return false;
     }
-    if (!spWasm->Initialize(pathContract / hashFork.GetHex()))
+    if (!spWasm->Initialize(pathContract / hashFork.GetHex(), fPruneState))
     {
         return false;
     }
@@ -442,14 +443,26 @@ void CContractDB::Clear()
     }
 }
 
-bool CContractDB::AddBlockContractKvValue(const uint256& hashFork, const uint256& hashPrevRoot, uint256& hashContractRoot, const std::map<uint256, bytes>& mapContractState)
+bool CContractDB::AddBlockContractKvValue(const uint256& hashFork, const uint32 nBlockHeight, const uint64 nBlockNumber, const CDestination& destContract, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashContractRoot)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapContractDB.find(hashFork);
     if (it != mapContractDB.end())
     {
-        return it->second->AddBlockContractKvValue(hashPrevRoot, hashContractRoot, mapContractState);
+        return it->second->AddBlockContractKvValue(nBlockHeight, nBlockNumber, destContract, hashPrevRoot, mapContractState, hashContractRoot);
+    }
+    return false;
+}
+
+bool CContractDB::CreateCacheContractKvTrie(const uint256& hashFork, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapContractDB.find(hashFork);
+    if (it != mapContractDB.end())
+    {
+        return it->second->CreateCacheContractKvTrie(hashPrevRoot, mapContractState, hashNewRoot);
     }
     return false;
 }

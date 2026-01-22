@@ -40,14 +40,15 @@ public:
     bool AddContractKvTrie(const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot);
 
 protected:
-    bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot);
-    bool ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot);
-    void AddPrevRoot(const uint8 nRootType, const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
-    bool GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
+    bool WriteAddressRoot(const CDestination& destContract, const uint256& hashPrevRoot, const uint256& hashNewRoot, const uint32 nBlockHeight, const uint64 nBlockNumber);
+    bool RemoveAddressRoot(const CDestination& destContract, const uint256& hashRoot);
+    bool WalkThroughHeightRoot(std::map<CDestination, std::map<uint256, std::pair<uint32, uint64>>>& mapAddressRoot, std::map<uint256, std::set<uint256>>& mapRootNext);
 
 protected:
     const uint256 hashFork;
+    const CChainId nChainId;
     CTrieDB dbTrie;
+    bool fPruneData;
 };
 
 class CContractDB
