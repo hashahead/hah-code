@@ -101,18 +101,16 @@ protected:
     }
 };
 
-class CProofOfHashWork
+class CProofOfPoa
 {
     friend class hnbase::CStream;
 
 public:
-    CProofOfHashWork()
-      : nWeight(0), nAlgo(0), nBits(0), nNonce(0) {}
+    CProofOfPoa()
+      : nWeight(0), nNonce(0) {}
 
     unsigned char nWeight;
     uint256 nAgreement;
-    unsigned char nAlgo;
-    unsigned char nBits;
     CDestination destMint;
     uint64_t nNonce;
 
@@ -144,10 +142,57 @@ protected:
     {
         s.Serialize(nWeight, opt);
         s.Serialize(nAgreement, opt);
-        s.Serialize(nAlgo, opt);
-        s.Serialize(nBits, opt);
         s.Serialize(destMint, opt);
         s.Serialize(nNonce, opt);
+    }
+};
+
+class CBlockVoteSig
+{
+    friend class hnbase::CStream;
+
+public:
+    uint256 hashBlockVote;
+    bytes btBlockVoteBitmap;
+    bytes btBlockVoteAggSig;
+
+public:
+    CBlockVoteSig() {}
+    CBlockVoteSig(const uint256& hashBlockVoteIn, const bytes& btBlockVoteBitmapIn, const bytes& btBlockVoteAggSigIn)
+      : hashBlockVote(hashBlockVoteIn), btBlockVoteBitmap(btBlockVoteBitmapIn), btBlockVoteAggSig(btBlockVoteAggSigIn) {}
+
+    void Save(std::vector<unsigned char>& btProof) const
+    {
+        hnbase::CBufStream ss;
+        ss << *this;
+        ss.GetData(btProof);
+    }
+    bool Load(const std::vector<unsigned char>& btProof)
+    {
+        hnbase::CBufStream ss(btProof);
+        try
+        {
+            ss >> *this;
+        }
+        catch (const std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            return false;
+        }
+        return true;
+    }
+    bool IsNull() const
+    {
+        return (hashBlockVote.IsNull() || btBlockVoteBitmap.empty() || btBlockVoteAggSig.empty());
+    }
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashBlockVote, opt);
+        s.Serialize(btBlockVoteBitmap, opt);
+        s.Serialize(btBlockVoteAggSig, opt);
     }
 };
 
@@ -155,7 +200,7 @@ class CConsensusParam
 {
 public:
     CConsensusParam()
-      : nPrevTime(0), nPrevHeight(0), nPrevNumber(0), nPrevMintType(0), nWaitTime(0), fPow(false), ret(false) {}
+      : nPrevTime(0), nPrevHeight(0), nPrevNumber(0), nPrevMintType(0), nWaitTime(0), fPoa(false), ret(false) {}
 
     uint256 hashPrev;
     int64 nPrevTime;
@@ -163,7 +208,7 @@ public:
     uint32 nPrevNumber;
     uint16 nPrevMintType;
     int64 nWaitTime;
-    bool fPow;
+    bool fPoa;
     bool ret;
 };
 
