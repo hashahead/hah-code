@@ -326,14 +326,14 @@ int CService::GetBlockCount(const uint256& hashFork)
     return pBlockChain->GetBlockCount(hashFork);
 }
 
-bool CService::GetBlockHashByHeightSlot(const uint256& hashFork, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock)
+bool CService::GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock)
 {
-    return pBlockChain->GetBlockHashByHeightSlot(hashFork, nHeight, nSlot, hashBlock);
+    return pBlockChain->GetBlockHashByHeightSlot(hashFork, hashRefBlock, nHeight, nSlot, hashBlock);
 }
 
-bool CService::GetBlockHashList(const uint256& hashFork, const uint32 nHeight, vector<uint256>& vBlockHash)
+bool CService::GetBlockHashListByHeight(const uint256& hashFork, const uint32 nHeight, vector<uint256>& vBlockHash)
 {
-    return pBlockChain->GetBlockHashList(hashFork, nHeight, vBlockHash);
+    return pBlockChain->GetBlockHashListByHeight(hashFork, nHeight, vBlockHash);
 }
 
 bool CService::GetBlockNumberHash(const uint256& hashFork, const uint64 nNumber, uint256& hashBlock)
@@ -368,16 +368,21 @@ bool CService::GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status)
     return pBlockChain->GetLastBlockStatus(hashFork, status);
 }
 
-void CService::GetTxPool(const uint256& hashFork, vector<pair<uint256, size_t>>& vTxPool)
+bool CService::IsBlockConfirm(const uint256& hashBlock)
 {
-    vTxPool.clear();
-    pTxPool->ListTx(hashFork, vTxPool);
+    return pBlockChain->IsBlockConfirm(hashBlock);
 }
 
-void CService::ListTxPool(const uint256& hashFork, const CDestination& dest, vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount)
+void CService::GetTxPool(const uint256& hashFork, vector<pair<uint256, size_t>>& vTxPool, const bool fContainCertTx)
 {
     vTxPool.clear();
-    pTxPool->ListTx(hashFork, dest, vTxPool, nGetOffset, nGetCount);
+    pTxPool->ListTx(hashFork, vTxPool, fContainCertTx);
+}
+
+void CService::ListTxPool(const uint256& hashFork, const CDestination& dest, vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount, const bool fContainCertTx)
+{
+    vTxPool.clear();
+    pTxPool->ListTx(hashFork, dest, vTxPool, nGetOffset, nGetCount, fContainCertTx);
 }
 
 bool CService::GetTransactionAndPosition(const uint256& hashRefFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashAtBlock, uint64& nBlockNumber, uint16& nTxSeq)
@@ -391,15 +396,9 @@ bool CService::GetTransactionAndPosition(const uint256& hashRefFork, const uint2
     else
     {
         CTxIndex txIndex;
-        if (!pBlockChain->GetTransactionAndIndex(hashRefFork, txid, tx, hashAtFork, txIndex))
+        if (!pBlockChain->GetTransactionAndIndex(hashRefFork, txid, tx, hashAtFork, hashAtBlock, txIndex))
         {
             StdLog("CService", "Get Transaction: Get transaction and index fail, txid: %s", txid.GetHex().c_str());
-            return false;
-        }
-        if (!pBlockChain->GetBlockNumberHash(hashAtFork, txIndex.nBlockNumber, hashAtBlock))
-        {
-            StdLog("CService", "Get Transaction: Get block hash fail, fork: %s, number: %lu, txid: %s",
-                   hashAtFork.GetHex().c_str(), txIndex.nBlockNumber, txid.GetHex().c_str());
             return false;
         }
         nBlockNumber = txIndex.nBlockNumber;
@@ -408,7 +407,7 @@ bool CService::GetTransactionAndPosition(const uint256& hashRefFork, const uint2
     return true;
 }
 
-bool CService::GetTransactionByIndex(const uint256& hashBlock, const uint64 nTxIndex, CTransaction& tx, uint64& nBlockNumber)
+bool CService::GetEthTransactionByIndex(const uint256& hashBlock, const uint64 nTxIndex, CTransaction& tx, uint64& nBlockNumber)
 {
     CBlockEx block;
     CChainId nChainId;
@@ -420,22 +419,35 @@ bool CService::GetTransactionByIndex(const uint256& hashBlock, const uint64 nTxI
                hashBlock.GetHex().c_str());
         return false;
     }
-    if (nTxIndex == 0)
+    // if (nTxIndex == 0)
+    // {
+    //     tx = block.txMint;
+    // }
+    // else
+    // {
+    //     if (nTxIndex - 1 >= block.vtx.size())
+    //     {
+    //         StdLog("CService", "Get Transaction: nTxIndex error, nTxIndex: %ld, block: %s",
+    //                nTxIndex, hashBlock.GetHex().c_str());
+    //         return false;
+    //     }
+    //     tx = block.vtx[nTxIndex - 1];
+    // }
+    uint64 nIndex = nTxIndex;
+    for (uint64 i = 0; i < block.vtx.size(); i++)
     {
-        tx = block.txMint;
-    }
-    else
-    {
-        if (nTxIndex - 1 >= block.vtx.size())
+        if (!block.vtx[i].IsCertTx())
         {
-            StdLog("CService", "Get Transaction: nTxIndex error, nTxIndex: %ld, block: %s",
-                   nTxIndex, hashBlock.GetHex().c_str());
-            return false;
+            if (nIndex == 0)
+            {
+                tx = block.vtx[i];
+                nBlockNumber = block.GetBlockNumber();
+                return true;
+            }
+            nIndex--;
         }
-        tx = block.vtx[nTxIndex - 1];
     }
-    nBlockNumber = block.GetBlockNumber();
-    return true;
+    return false;
 }
 
 Errno CService::SendTransaction(const uint256& hashFork, CTransaction& tx)
