@@ -120,11 +120,14 @@ public:
     bool GetForkProfile(CProfile& profile) const;
     bool GetDelegateProof(CProofOfDelegate& proof) const;
     bool GetPiggybackProof(CProofOfPiggyback& proof) const;
-    bool GetHashWorkProof(CProofOfHashWork& proof) const;
+    bool GetPoaProof(CProofOfPoa& proof) const;
     bool GetMintCoinProof(uint256& nMintCoin) const;
     bool GetMintRewardProof(uint256& nMintReward) const;
+    bool GetBlockVoteSig(CBlockVoteSig& proof) const;
 
-    static uint32 GetBlockChainIdByHash(const uint256& hash);
+    bool GetMerkleProve(hnbase::SHP_MERKLE_PROVE_DATA ptrMerkleProvePrevBlock, hnbase::SHP_MERKLE_PROVE_DATA ptrMerkleProveRefBlock, hnbase::SHP_MERKLE_PROVE_DATA ptrCrossMerkleProve) const;
+
+    static CChainId GetBlockChainIdByHash(const uint256& hash);
     static uint32 GetBlockHeightByHash(const uint256& hash);
     static uint16 GetBlockSlotByHash(const uint256& hash);
 

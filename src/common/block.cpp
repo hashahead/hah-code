@@ -232,36 +232,37 @@ void CBlock::SetBlockTime(const uint64 nTime)
     nTimeStamp = nTime;
 }
 
-uint256 CBlock::CalcMerkleTreeRoot() const
-{
-    std::vector<uint256> vMerkleTree;
-    uint256 hashBloom;
-    if (!btBloomData.empty())
-    {
-        hashBloom = crypto::CryptoHash(btBloomData.data(), btBloomData.size());
-    }
-    vMerkleTree.push_back(hashBloom);
-    vMerkleTree.push_back(txMint.GetHash());
-    for (const CTransaction& tx : vtx)
-    {
-        vMerkleTree.push_back(tx.GetHash());
-    }
-    size_t j = 0;
-    for (size_t nSize = vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
-    {
-        for (size_t i = 0; i < nSize; i += 2)
-        {
-            size_t i2 = std::min(i + 1, nSize - 1);
-            vMerkleTree.push_back(crypto::CryptoHash(vMerkleTree[j + i], vMerkleTree[j + i2]));
-        }
-        j += nSize;
-    }
-    return (vMerkleTree.empty() ? uint64(0) : vMerkleTree.back());
-}
-
 void CBlock::SetSignData(const bytes& btSigData)
 {
     vchSig = btSigData;
+}
+
+void CBlock::UpdateMerkleRoot()
+{
+    hashMerkleRoot = CalcMerkleTreeRoot();
+}
+
+bool CBlock::VerifyBlockHeight() const
+{
+    uint32 nCalcHeight = 0;
+    if (IsGenesis())
+    {
+        nCalcHeight = 0;
+    }
+    else if (IsExtended())
+    {
+        nCalcHeight = hashPrev.GetB2();
+    }
+    else
+    {
+        nCalcHeight = hashPrev.GetB2() + 1;
+    }
+    return (nHeight == nCalcHeight);
+}
+
+bool CBlock::VerifyBlockMerkleTreeRoot() const
+{
+    return (hashMerkleRoot == CalcMerkleTreeRoot());
 }
 
 bool CBlock::VerifyBlockSignature(const CDestination& destBlockSign) const
@@ -330,13 +331,13 @@ bool CBlock::VerifyBlockProof() const
             nDataSize = btData.size();
             break;
         }
-        case BP_HASH_WORK:
+        case BP_POA_PROOF:
         {
-            if (nType != BLOCK_PRIMARY || txMint.GetTxType() != CTransaction::TX_WORK)
+            if (nType != BLOCK_PRIMARY || txMint.GetTxType() != CTransaction::TX_POA)
             {
                 return false;
             }
-            CProofOfHashWork proof;
+            CProofOfPoa proof;
             if (!proof.Load(kv.second))
             {
                 return false;
@@ -350,6 +351,18 @@ bool CBlock::VerifyBlockProof() const
         case BP_MINTREWARD:
         {
             nDataSize = uint256().size();
+            break;
+        }
+        case BP_BLOCK_VOTE_SIG:
+        {
+            CBlockVoteSig proof;
+            if (!proof.Load(kv.second))
+            {
+                return false;
+            }
+            bytes btData;
+            proof.Save(btData);
+            nDataSize = btData.size();
             break;
         }
         default:
@@ -402,11 +415,11 @@ void CBlock::AddPiggybackProof(const CProofOfPiggyback& proof)
     mapProof[BP_PIGGYBACK] = btPf;
 }
 
-void CBlock::AddHashWorkProof(const CProofOfHashWork& proof)
+void CBlock::AddPoaProof(const CProofOfPoa& proof)
 {
     bytes btPf;
     proof.Save(btPf);
-    mapProof[BP_HASH_WORK] = btPf;
+    mapProof[BP_POA_PROOF] = btPf;
 }
 
 void CBlock::AddMintCoinProof(const uint256& nMintCoin)
@@ -417,6 +430,13 @@ void CBlock::AddMintCoinProof(const uint256& nMintCoin)
 void CBlock::AddMintRewardProof(const uint256& nMintReward)
 {
     mapProof[BP_MINTREWARD] = nMintReward.GetBytes();
+}
+
+void CBlock::AddBlockVoteSig(const CBlockVoteSig& proof)
+{
+    bytes btPf;
+    proof.Save(btPf);
+    mapProof[BP_BLOCK_VOTE_SIG] = btPf;
 }
 
 //------------------------------------------------
@@ -450,9 +470,9 @@ bool CBlock::GetPiggybackProof(CProofOfPiggyback& proof) const
     return proof.Load(it->second);
 }
 
-bool CBlock::GetHashWorkProof(CProofOfHashWork& proof) const
+bool CBlock::GetPoaProof(CProofOfPoa& proof) const
 {
-    auto it = mapProof.find(BP_HASH_WORK);
+    auto it = mapProof.find(BP_POA_PROOF);
     if (it == mapProof.end())
     {
         return false;
@@ -480,8 +500,23 @@ bool CBlock::GetMintRewardProof(uint256& nMintReward) const
     return (nMintReward.SetBytes(it->second) == nMintReward.size());
 }
 
+bool CBlock::GetBlockVoteSig(CBlockVoteSig& proof) const
+{
+    auto it = mapProof.find(BP_BLOCK_VOTE_SIG);
+    if (it == mapProof.end())
+    {
+        return false;
+    }
+    return proof.Load(it->second);
+}
+
+bool CBlock::GetMerkleProve(SHP_MERKLE_PROVE_DATA ptrMerkleProvePrevBlock, SHP_MERKLE_PROVE_DATA ptrMerkleProveRefBlock, SHP_MERKLE_PROVE_DATA ptrCrossMerkleProve) const
+{
+    return (CalcMerkleTreeRootAndProve(ptrMerkleProvePrevBlock, ptrMerkleProveRefBlock, ptrCrossMerkleProve) != 0);
+}
+
 //-------------------------------------------------------
-uint32 CBlock::GetBlockChainIdByHash(const uint256& hash)
+CChainId CBlock::GetBlockChainIdByHash(const uint256& hash)
 {
     return hash.GetB1();
 }
