@@ -5,8 +5,9 @@
 #include "timeseries.h"
 
 using namespace std;
-using namespace boost::filesystem;
 using namespace hnbase;
+
+namespace fs = boost::filesystem;
 
 namespace hashahead
 {
@@ -25,14 +26,14 @@ CTimeSeriesBase::~CTimeSeriesBase()
 {
 }
 
-bool CTimeSeriesBase::Initialize(const path& pathLocationIn, const string& strPrefixIn)
+bool CTimeSeriesBase::Initialize(const fs::path& pathLocationIn, const string& strPrefixIn)
 {
-    if (!exists(pathLocationIn))
+    if (!fs::exists(pathLocationIn))
     {
-        create_directories(pathLocationIn);
+        fs::create_directories(pathLocationIn);
     }
 
-    if (!is_directory(pathLocationIn))
+    if (!fs::is_directory(pathLocationIn))
     {
         return false;
     }
@@ -43,8 +44,8 @@ bool CTimeSeriesBase::Initialize(const path& pathLocationIn, const string& strPr
 
     for (;;)
     {
-        path last = pathLocation / FileName(nLastFile + 1);
-        if (!exists(last))
+        fs::path last = pathLocation / FileName(nLastFile + 1);
+        if (!fs::exists(last))
         {
             break;
         }

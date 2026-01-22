@@ -32,7 +32,7 @@ enum TemplateType
 {
     TEMPLATE_MIN = 0,
     TEMPLATE_FORK = 1,
-    TEMPLATE_PROOF = 2,
+    TEMPLATE_POA = 2,
     TEMPLATE_DELEGATE = 3,
     TEMPLATE_VOTE = 4,
     TEMPLATE_PLEDGE = 5,

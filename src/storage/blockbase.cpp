@@ -366,29 +366,75 @@ void CBlockBase::Clear()
     ClearCache();
 }
 
-        vReceiptLogs.clear();
-        nLogsCount = 0;
-        nPrevGetChangesTime = GetTime();
-
-        while (vHisReceiptLogs.size() > 0 && nHisLogsCount > MAX_FILTER_CACHE_COUNT * 2)
-        {
-            auto it = vHisReceiptLogs.begin();
-            nHisLogsCount -= it->matchLogs.size();
-            vHisReceiptLogs.erase(it);
-        }
+bool CBlockBase::Initiate(const uint256& hashGenesis, const CBlock& blockGenesis, const uint256& nChainTrust)
+{
+    if (!IsEmpty())
+    {
+        StdError("BlockBase", "Add genesis block: Is not empty");
+        return false;
     }
+    return true;
 }
 
-//////////////////////////////
-// CBlockMakerFilter
-
-bool CBlockMakerFilter::isTimeout()
+bool CBlockBase::CheckForkLongChain(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const BlockIndexPtr pIndexNew)
 {
-    if (GetTime() - nPrevGetChangesTime >= FILTER_DEFAULT_TIMEOUT)
+    if (!pIndexNew->IsPrimary() && !pIndexNew->IsOrigin())
     {
-        return true;
+        CProofOfPiggyback proof;
+        if (!block.GetPiggybackProof(proof) || proof.hashRefBlock == 0)
+        {
+            StdLog("BlockBase", "Add long chain last: Load proof fail, block: %s", hashBlock.GetHex().c_str());
+            return false;
+        }
+
+        BlockIndexPtr pIndexRef = GetIndex(proof.hashRefBlock);
+        if (!pIndexRef || !pIndexRef->IsPrimary())
+        {
+            StdLog("BlockBase", "Add long chain last: Retrieve ref index fail, ref block: %s, block: %s",
+                   proof.hashRefBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+            return false;
+        }
+
+        if (!VerifyRefBlock(GetGenesisBlockHash(), proof.hashRefBlock))
+        {
+            StdLog("BlockBase", "Add long chain last: Ref block short chain, refblock: %s, new block: %s, fork: %s",
+                   proof.hashRefBlock.GetHex().c_str(), hashBlock.GetHex().c_str(), hashFork.GetHex().c_str());
+            return false;
+        }
     }
-    return false;
+    if (!VerifyBlockConfirmChain(pIndexNew))
+    {
+        StdLog("BlockBase", "Add long chain last: Verify block confirm chain fail, new block: %s, fork: %s",
+               hashBlock.GetHex().c_str(), hashFork.GetHex().c_str());
+        return false;
+    }
+
+    BlockIndexPtr pIndexFork = GetForkLastIndex(hashFork);
+    if (pIndexFork
+        && (pIndexFork->nChainTrust > pIndexNew->nChainTrust
+            || (pIndexFork->nChainTrust == pIndexNew->nChainTrust && !IsBlockIndexEquivalent(pIndexNew, pIndexFork))))
+    {
+        StdLog("BlockBase", "Add long chain last: Short chain, new block height: %d, block type: %s, block: %s, fork chain trust: %s, new block trust: %s, fork last block: %s, fork: %s",
+               pIndexNew->GetBlockHeight(), GetBlockTypeStr(block.nType, block.txMint.GetTxType()).c_str(), hashBlock.GetHex().c_str(),
+               pIndexFork->nChainTrust.GetValueHex().c_str(), pIndexNew->nChainTrust.GetValueHex().c_str(), pIndexFork->GetBlockHash().GetHex().c_str(), pIndexFork->GetOriginHash().GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CBlockBase::Retrieve(const BlockIndexPtr pIndex, CBlock& block)
+{
+    block.SetNull();
+
+    CBlockEx blockex;
+    if (!tsBlock.Read(blockex, pIndex->nFile, pIndex->nOffset, true, true))
+    {
+        StdTrace("BlockBase", "RetrieveFromIndex::Read %s block failed, File: %d, Offset: %d",
+                 pIndex->GetBlockHash().ToString().c_str(), pIndex->nFile, pIndex->nOffset);
+        return false;
+    }
+    block = static_cast<CBlock>(blockex);
+    return true;
 }
 
 bool CBlockMakerFilter::AddBlockHash(const uint256& hashForkIn, const uint256& hashBlock, const uint256& hashPrev)

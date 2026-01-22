@@ -83,33 +83,17 @@ bool CForkStateDB::Initialize(const boost::filesystem::path& pathData, const boo
 
 void CForkStateDB::Deinitialize()
 {
-    mapCacheState.clear();
     dbTrie.Deinitialize();
 }
 
 bool CForkStateDB::RemoveAll()
 {
-    mapCacheState.clear();
     dbTrie.RemoveAll();
     return true;
 }
 
-bool CForkStateDB::AddBlockState(const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot)
+bool CForkStateDB::AddBlockState(const uint32 nBlockHeight, const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot)
 {
-    if (hashBlockRoot != 0)
-    {
-        auto it = mapCacheTrie.find(hashBlockRoot);
-        if (it != mapCacheTrie.end())
-        {
-            if (!dbTrie.SaveCacheTrie(it->second))
-            {
-                return false;
-            }
-            mapCacheTrie.erase(it);
-            return true;
-        }
-    }
-
     bytesmap mapKv;
     for (const auto& kv : mapBlockState)
     {
@@ -129,6 +113,7 @@ bool CForkStateDB::AddBlockState(const uint256& hashPrevRoot, const CBlockRootSt
 
     if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashBlockRoot))
     {
+        StdLog("CForkStateDB", "Add block state: Add new trie failed, prev root: %s", hashPrevRoot.ToString().c_str());
         return false;
     }
     return true;
@@ -157,16 +142,6 @@ bool CForkStateDB::CreateCacheStateTrie(const uint256& hashPrevRoot, const CBloc
     if (!dbTrie.CreateCacheTrie(hashPrevRoot, mapKv, hashBlockRoot, mapCacheNode))
     {
         return false;
-    }
-
-    auto it = mapCacheTrie.find(hashBlockRoot);
-    if (it == mapCacheTrie.end())
-    {
-        mapCacheTrie.insert(make_pair(hashBlockRoot, mapCacheNode));
-    }
-    else
-    {
-        it->second = mapCacheNode;
     }
     return true;
 }

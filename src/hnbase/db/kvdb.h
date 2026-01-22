@@ -14,6 +14,8 @@
 namespace hnbase
 {
 
+typedef boost::function<bool(CBufStream&, CBufStream&)> WalkerFunc;
+
 class CKVDBEngine
 {
 public:
@@ -36,8 +38,6 @@ public:
 class CKVDB
 {
 public:
-    typedef boost::function<bool(CBufStream&, CBufStream&)> WalkerFunc;
-
     CKVDB()
       : dbEngine(nullptr) {}
     CKVDB(CKVDBEngine* engine)
@@ -350,50 +350,6 @@ protected:
         return false;
     }
 
-    template <typename K>
-    bool WalkThrough(WalkerFunc fnWalker, const K& keyBegin, bool fPrefix = false)
-    {
-        try
-        {
-            boost::recursive_mutex::scoped_lock lock(mtx);
-
-            if (dbEngine == nullptr)
-                return false;
-
-            CBufStream ssKeyBegin;
-            ssKeyBegin << keyBegin;
-
-            if (!dbEngine->MoveTo(ssKeyBegin))
-                return false;
-
-            for (;;)
-            {
-                CBufStream ssKey, ssValue;
-                if (!dbEngine->MoveNext(ssKey, ssValue))
-                    break;
-
-                if (fPrefix)
-                {
-                    if (ssKey.GetSize() < ssKeyBegin.GetSize())
-                        break;
-
-                    if (memcmp(ssKey.GetData(), ssKeyBegin.GetData(), ssKeyBegin.GetSize()) > 0)
-                        break;
-                }
-
-                if (!fnWalker(ssKey, ssValue))
-                    break;
-            }
-            return true;
-        }
-        catch (std::exception& e)
-        {
-            StdError(__PRETTY_FUNCTION__, e.what());
-        }
-
-        return false;
-    }
-
     bool WalkThroughOfPrefix(CBufStream& ssKeyBegin, CBufStream& ssKeyPrefix, WalkerFunc fnWalker)
     {
         try
@@ -412,6 +368,23 @@ protected:
                     return false;
                 }
             }
+            else
+            {
+                if (ssKeyPrefix.GetSize() > 0)
+                {
+                    if (!dbEngine->MoveTo(ssKeyPrefix))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!dbEngine->MoveFirst())
+                    {
+                        return false;
+                    }
+                }
+            }
 
             for (;;)
             {
@@ -423,7 +396,7 @@ protected:
 
                 if (ssKeyPrefix.GetSize() > 0
                     && (ssKey.GetSize() < ssKeyPrefix.GetSize()
-                        || memcmp(ssKey.GetData(), ssKeyPrefix.GetData(), ssKeyPrefix.GetSize()) > 0))
+                        || memcmp(ssKey.GetData(), ssKeyPrefix.GetData(), ssKeyPrefix.GetSize()) != 0))
                 {
                     break;
                 }

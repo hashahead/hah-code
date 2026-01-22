@@ -222,71 +222,173 @@ bool CForkAddressTxInfoDB::ListAddressTxInfo(const CDestination& address, const 
     return true;
 }
 
-void CForkAddressTxInfoDB::Deinitialize()
+bool CForkAddressTxInfoDB::ListTokenTx(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                                       const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord)
 {
-    dbTrie.Deinitialize();
-}
+    CReadLock rlock(rwAccess);
 
-bool CForkAddressTxInfoDB::RemoveAll()
-{
-    dbTrie.RemoveAll();
-    return true;
-}
-
-bool CForkAddressTxInfoDB::AddAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber, const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, uint256& hashNewRoot)
-{
-    uint256 hashPrevRoot;
-    if (hashBlock != hashFork)
+    if (destContractAddress.IsNull() || nPageSize == 0)
     {
-        if (!ReadTrieRoot(hashPrevBlock, hashPrevRoot))
-        {
-            StdLog("CForkAddressTxInfoDB", "Add address tx info: Read trie root fail, hashPrevBlock: %s, hashBlock: %s",
-                   hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
-            return false;
-        }
-    }
-
-    bytesmap mapKv;
-    for (const auto& kv : mapAddressTxInfo)
-    {
-        const CDestination& dest = kv.first;
-
-        uint64 nTxCount = 0;
-        if (!ReadAddressLast(hashPrevRoot, dest, nTxCount))
-        {
-            nTxCount = 0;
-        }
-
-        for (const CDestTxInfo& dti : kv.second)
-        {
-            hnbase::CBufStream ssKey, ssValue;
-            bytes btKey, btValue;
-
-            ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS << dest << BSwap64(nTxCount);
-            ssKey.GetData(btKey);
-
-            ssValue << dti;
-            ssValue.GetData(btValue);
-
-            mapKv.insert(make_pair(btKey, btValue));
-            nTxCount++;
-        }
-
-        WriteAddressLast(dest, nTxCount, mapKv);
-    }
-    AddPrevRoot(hashPrevRoot, hashBlock, mapKv);
-
-    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
-    {
-        StdLog("CForkAddressTxInfoDB", "Add address tx info: Add new trie fail, hashPrevBlock: %s, hashBlock: %s",
-               hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
 
-    if (!WriteTrieRoot(hashBlock, hashNewRoot))
+    CDestination destGetAddress;
+    if (destUserAddress.IsNull())
     {
-        StdLog("CForkAddressTxInfoDB", "Add address tx info: Write trie root fail, hashPrevBlock: %s, hashBlock: %s",
-               hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+        destGetAddress = destContractAddress;
+    }
+    else
+    {
+        destGetAddress = destUserAddress;
+    }
+
+    if (!ReadTokenTxCount(destContractAddress, destGetAddress, nTotalRecordCount) || nTotalRecordCount == 0)
+    {
+        nTotalRecordCount = 0;
+        nPageCount = 0;
+        return true;
+    }
+    nPageCount = nTotalRecordCount / nPageSize;
+    if (nTotalRecordCount % nPageSize != 0)
+    {
+        nPageCount++;
+    }
+
+    uint64 nBeginTxIndex = nPageNumber * nPageSize;
+    uint64 nGetTxCountInner = nPageSize;
+    if (nBeginTxIndex >= nTotalRecordCount)
+    {
+        return true;
+    }
+    if (fReverse)
+    {
+        if (nBeginTxIndex + nGetTxCountInner > nTotalRecordCount)
+        {
+            nGetTxCountInner = nTotalRecordCount - nBeginTxIndex;
+            nBeginTxIndex = 0;
+        }
+        else
+        {
+            nBeginTxIndex = nTotalRecordCount - (nBeginTxIndex + nGetTxCountInner);
+        }
+    }
+
+    if (!WalkThroughTokenTxInfo(destContractAddress, destUserAddress, nBeginTxIndex, nGetTxCountInner, vTokenTxRecord))
+    {
+        StdLog("CForkAddressTxInfoDB", "List token tx info: Walk through fail, contract address: %s, address: %s", destContractAddress.ToString().c_str(), destUserAddress.ToString().c_str());
+        return false;
+    }
+    if (fReverse)
+    {
+        reverse(vTokenTxRecord.begin(), vTokenTxRecord.end());
+    }
+    return true;
+}
+
+bool CForkAddressTxInfoDB::WalkThroughSnapshotAddressTxKv(const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker)
+{
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            bytes btKey, btValue;
+            ssKey.GetData(btKey);
+            ssValue.GetData(btValue);
+
+            uint8 nKeyType;
+            ssKey >> nKeyType;
+            if (nKeyType == DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO)
+            {
+                CDestination addressDb;
+                uint64 nIndexDb;
+                ssKey >> addressDb >> nIndexDb;
+                nIndexDb = BSwap64(nIndexDb);
+
+                CDestTxInfo txIndexDb;
+                ssValue >> txIndexDb;
+
+                if (txIndexDb.nBlockNumber <= nLastBlockNumber)
+                {
+                    return fnWalker(addressDb, nIndexDb, btKey, btValue);
+                }
+            }
+            return true;
+        }
+        catch (exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyBegin << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO;
+    ssKeyPrefix << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO;
+
+    return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
+bool CForkAddressTxInfoDB::WalkThroughSnapshotTokenTxKv(const uint64 nLastBlockNumber, WalkerTokenTxKvFunc fnWalker)
+{
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            bytes btKey, btValue;
+            ssKey.GetData(btKey);
+            ssValue.GetData(btValue);
+
+            uint8 nKeyType;
+            ssKey >> nKeyType;
+            if (nKeyType == DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO)
+            {
+                CDestination destContractDb, destUserAddressDb;
+                uint64 nIndexDb;
+                ssKey >> destContractDb >> destUserAddressDb >> nIndexDb;
+                nIndexDb = BSwap64(nIndexDb);
+
+                CTokenTransRecord tokenTransRecord;
+                ssValue >> tokenTransRecord;
+
+                if (tokenTransRecord.nBlockNumber <= nLastBlockNumber)
+                {
+                    return fnWalker(destContractDb, destUserAddressDb, nIndexDb, btKey, btValue);
+                }
+            }
+            return true;
+        }
+        catch (exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyBegin << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO;
+    ssKeyPrefix << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO;
+
+    return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
+bool CForkAddressTxInfoDB::WriteSnapshotAddressTxKvData(const bytes& btKey, const bytes& btValue)
+{
+    CBufStream ssKey(btKey);
+    CBufStream ssValue(btValue);
+    return Write(ssKey, ssValue);
+}
+
+bool CForkAddressTxInfoDB::WriteSnapshotAddressTxCount(const uint256& hashLastBlock, const std::map<CDestination, uint64>& mapAddressTxCount)
+{
+    for (const auto& kv : mapAddressTxCount)
+    {
+        if (!WriteAddressTxCount(kv.first, kv.second))
+        {
+            StdLog("CForkAddressTxInfoDB", "Write snapshot address tx count: Write address tx count failed, address: %s", kv.first.ToString().c_str());
+            return false;
+        }
+    }
+    if (!WriteLastBlock(hashLastBlock))
+    {
+        StdLog("CForkAddressTxInfoDB", "Write snapshot address tx count: Write last block failed, last block: %s", hashLastBlock.ToString().c_str());
         return false;
     }
     return true;

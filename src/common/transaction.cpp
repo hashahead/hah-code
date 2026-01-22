@@ -671,6 +671,302 @@ void CTransactionReceipt::GetBloomDataSet(std::set<bytes>& setBloomData) const
 }
 
 //////////////////////////////
+// CTxContractReceiptTrie
+
+bool CTxContractReceiptTrie::AddContractReceipt(const CTxContractReceipt& tcReceipt)
+{
+    if (tcReceipt.destParentCodeContract.IsNull())
+    {
+        tcr = tcReceipt;
+        return true;
+    }
+    if (tcReceipt.destParentCodeContract == tcr.destCodeContract)
+    {
+        vCall.push_back(CTxContractReceiptTrie());
+        uint16 nCallIndex = vCall.size() - 1;
+        auto& tcrTrie = vCall[nCallIndex];
+        tcrTrie.tcr = tcReceipt;
+        tcrTrie.tcr.vTraceAddress = tcr.vTraceAddress;
+        tcrTrie.tcr.vTraceAddress.push_back(nCallIndex);
+        return true;
+    }
+    for (CTxContractReceiptTrie& vd : vCall)
+    {
+        if (vd.AddContractReceipt(tcReceipt))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CTxContractReceiptTrie::AddContractReceiptList(const TxContractReceipts& vTcr)
+{
+    for (const auto& tcrTrie : vTcr)
+    {
+        if (!AddContractReceipt(tcrTrie))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void CTxContractReceiptTrie::TrieToJsonStream(const CTxContractReceiptTrie& tcrTrie, std::stringstream& ss)
+{
+    ss << "{";
+    ss << "\"type\":\"" << tcrTrie.tcr.GetCallTypeString() << "\"";
+    ss << ",\"from\":\"" << tcrTrie.tcr.destFrom.ToString() << "\"";
+    ss << ",\"to\":\"" << tcrTrie.tcr.destTo.ToString() << "\"";
+    if (tcrTrie.tcr.nValue == 0)
+    {
+        ss << ",\"value\":\"0x0\"";
+    }
+    else
+    {
+        ss << ",\"value\":\"" << ToHexString(tcrTrie.tcr.nValue.ToValidBigEndianData()) << "\"";
+    }
+    if (tcrTrie.tcr.nGasLimit == 0)
+    {
+        ss << ",\"gas\":\"0x0\"";
+    }
+    else
+    {
+        ss << ",\"gas\":\"" << ToHexString(uint256(tcrTrie.tcr.nGasLimit).ToValidBigEndianData()) << "\"";
+    }
+    if (tcrTrie.tcr.nGasLimit == 0)
+    {
+        ss << ",\"gasUsed\":\"0x0\"";
+    }
+    else
+    {
+        ss << ",\"gasUsed\":\"" << ToHexString(uint256(tcrTrie.tcr.nGasUsed).ToValidBigEndianData()) << "\"";
+    }
+    if (!tcrTrie.tcr.btInput.empty())
+    {
+        ss << ",\"input\":\"" << ToHexString(tcrTrie.tcr.btInput) << "\"";
+    }
+    if (!tcrTrie.tcr.btOutput.empty())
+    {
+        ss << ",\"output\":\"" << ToHexString(tcrTrie.tcr.btOutput) << "\"";
+    }
+    if (!tcrTrie.tcr.strError.empty())
+    {
+        ss << ",\"error\":\"" << tcrTrie.tcr.strError << "\"";
+        if (!tcrTrie.tcr.strRevertReason.empty())
+        {
+            ss << ",\"revertReason\":\"" << tcrTrie.tcr.strRevertReason << "\"";
+        }
+    }
+    if (!tcrTrie.vCall.empty())
+    {
+        ss << ",\"calls\":[";
+        bool flag = true;
+        for (const auto& tc : tcrTrie.vCall)
+        {
+            if (flag)
+            {
+                flag = false;
+            }
+            else
+            {
+                ss << ",";
+            }
+            TrieToJsonStream(tc, ss);
+        }
+        ss << "]";
+    }
+    ss << "}";
+}
+
+void CTxContractReceiptTrie::TxToJsonStream(const uint256& txid, const CTxContractReceiptTrie& tcrTrie, std::stringstream& ss)
+{
+    ss << "{";
+    ss << "\"txHash\":\"" << txid.ToString() << "\"";
+    ss << ",\"result\":";
+    TrieToJsonStream(tcrTrie, ss);
+    ss << "}";
+}
+
+void CTxContractReceiptTrie::TxListToJsonStream(const std::vector<std::pair<uint256, CTxContractReceiptTrie>>& vTxReceiptList, std::stringstream& ss)
+{
+    ss << "[";
+    bool flag = true;
+    for (const auto& vd : vTxReceiptList)
+    {
+        if (flag)
+        {
+            flag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        TxToJsonStream(vd.first, vd.second, ss);
+    }
+    ss << "]";
+}
+
+void CTxContractReceiptTrie::ReceiptToJsonStream(const CTxContractReceipt& tcReceipt, std::stringstream& ss)
+{
+    ss << "{";
+    ss << "\"type\":\"" << tcReceipt.GetCallTypeString() << "\"";
+    ss << ",\"from\":\"" << tcReceipt.destFrom.ToString() << "\"";
+    ss << ",\"to\":\"" << tcReceipt.destTo.ToString() << "\"";
+    if (tcReceipt.nValue == 0)
+    {
+        ss << ",\"value\":\"0x0\"";
+    }
+    else
+    {
+        ss << ",\"value\":\"" << ToHexString(tcReceipt.nValue.ToValidBigEndianData()) << "\"";
+    }
+    if (tcReceipt.nGasLimit == 0)
+    {
+        ss << ",\"gas\":\"0x0\"";
+    }
+    else
+    {
+        ss << ",\"gas\":\"" << ToHexString(uint256(tcReceipt.nGasLimit).ToValidBigEndianData()) << "\"";
+    }
+    if (tcReceipt.nGasLimit == 0)
+    {
+        ss << ",\"gasUsed\":\"0x0\"";
+    }
+    else
+    {
+        ss << ",\"gasUsed\":\"" << ToHexString(uint256(tcReceipt.nGasUsed).ToValidBigEndianData()) << "\"";
+    }
+    if (!tcReceipt.btInput.empty())
+    {
+        ss << ",\"input\":\"" << ToHexString(tcReceipt.btInput) << "\"";
+    }
+    if (!tcReceipt.btOutput.empty())
+    {
+        ss << ",\"output\":\"" << ToHexString(tcReceipt.btOutput) << "\"";
+    }
+    if (!tcReceipt.strError.empty())
+    {
+        ss << ",\"error\":\"" << tcReceipt.strError << "\"";
+        if (!tcReceipt.strRevertReason.empty())
+        {
+            ss << ",\"revertReason\":\"" << tcReceipt.strRevertReason << "\"";
+        }
+    }
+    ss << "}";
+}
+
+void CTxContractReceiptTrie::TxReceiptToJsonStream(const uint256& txid, const CTxContractReceipt& tcReceipt, std::stringstream& ss)
+{
+    ss << "{";
+    ss << "\"txHash\":\"" << txid.ToString() << "\"";
+    ss << ",\"result\":";
+    ReceiptToJsonStream(tcReceipt, ss);
+    ss << "}";
+}
+
+void CTxContractReceiptTrie::TxReceiptListToJsonStream(const std::vector<std::pair<uint256, CTxContractReceipt>>& vTxReceiptList, std::stringstream& ss)
+{
+    ss << "[";
+    bool flag = true;
+    for (const auto& vd : vTxReceiptList)
+    {
+        if (flag)
+        {
+            flag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        TxReceiptToJsonStream(vd.first, vd.second, ss);
+    }
+    ss << "]";
+}
+
+//////////////////////////////
+// CContractPrevState
+
+void CContractPrevState::TxPrevStateResultToJsonStream(const MapContractPrevState& mapContractPrevState, std::stringstream& ss)
+{
+    ss << "{";
+    bool firstFlag = true;
+    for (const auto& kv : mapContractPrevState)
+    {
+        if (firstFlag)
+        {
+            firstFlag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        ss << "\"" << kv.first.ToString() << "\":{";
+        if (kv.second.nBalance == 0)
+        {
+            ss << "\"balance\":\"0x0\"";
+        }
+        else
+        {
+            ss << "\"balance\":\"" << ToHexString(kv.second.nBalance.ToValidBigEndianData()) << "\"";
+        }
+        if (!kv.second.btCode.empty())
+        {
+            ss << ",\"code\":\"" << ToHexString(kv.second.btCode) << "\"";
+        }
+        ss << ",\"nonce\":" << kv.second.nNonce;
+        if (!kv.second.mapStorage.empty())
+        {
+            ss << ",\"storage\":{";
+            bool flag = true;
+            for (const auto& kv2 : kv.second.mapStorage)
+            {
+                if (flag)
+                {
+                    flag = false;
+                }
+                else
+                {
+                    ss << ",";
+                }
+                ss << "\"" << kv2.first.ToString() << "\":\"" << ToHexString(kv2.second) << "\"";
+            }
+            ss << "}";
+        }
+        ss << "}";
+    }
+    ss << "}";
+}
+
+void CContractPrevState::TxPrevStateToJsonStream(const uint256& txid, const MapContractPrevState& mapContractPrevState, std::stringstream& ss)
+{
+    ss << "{";
+    ss << "\"txHash\":\"" << txid.ToString() << "\"";
+    ss << ",\"result\":";
+    TxPrevStateResultToJsonStream(mapContractPrevState, ss);
+    ss << "}";
+}
+
+void CContractPrevState::BlockPrevStateToJsonStream(const BlockContractPrevState& vBlockContractPrevState, std::stringstream& ss)
+{
+    ss << "[";
+    bool flag = true;
+    for (const auto& vd : vBlockContractPrevState)
+    {
+        if (flag)
+        {
+            flag = false;
+        }
+        else
+        {
+            ss << ",";
+        }
+        TxPrevStateToJsonStream(vd.first, vd.second, ss);
+    }
+    ss << "]";
+}
+
+//////////////////////////////
 // CTxContractData
 
 bool CTxContractData::PacketCompress(const uint8 nMuxTypeIn, const std::string& strTypeIn, const std::string& strNameIn, const CDestination& destCodeOwnerIn,

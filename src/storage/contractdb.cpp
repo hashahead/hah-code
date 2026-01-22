@@ -285,200 +285,77 @@ bool CForkContractDB::GetContractAddressRoot(const CDestination& destContract, c
     return true;
 }
 
-bool CForkContractDB::RetrieveContractCreateCodeContext(const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode)
+bool CForkContractDB::CreateCacheContractKvRoot(const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
 {
-    uint256 hashCodeRoot;
-    if (!ReadTrieRoot(DB_CONTRACT_ROOT_TYPE_CODE, hashBlock, hashCodeRoot))
-    {
-        return false;
-    }
+    std::map<uint256, CTrieValue> mapCacheNode;
+    return dbTrie.CreateCacheTrie(hashPrevRoot, mapKv, hashNewRoot, mapCacheNode);
+}
+
+bool CForkContractDB::AddContractKvTrie(const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    return dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot);
+}
+
+//-----------------------------------------
+bool CForkContractDB::WriteAddressRoot(const CDestination& destContract, const uint256& hashPrevRoot, const uint256& hashNewRoot, const uint32 nBlockHeight, const uint64 nBlockNumber)
+{
     hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-    ssKey << DB_CONTRACT_KEY_TYPE_CONTRACT_CREATE_CODE << hashContractCreateCode;
-    ssKey.GetData(btKey);
-    if (!dbTrie.Retrieve(hashCodeRoot, btKey, btValue))
-    {
-        return false;
-    }
-    try
-    {
-        ssValue.Write((char*)(btValue.data()), btValue.size());
-        ssValue >> ctxtCode;
-    }
-    catch (std::exception& e)
-    {
-        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
-        return false;
-    }
-    return true;
-}
-
-bool CForkContractDB::RetrieveContractRunCodeContext(const uint256& hashBlock, const uint256& hashContractRunCode, CContractRunCodeContext& ctxtCode)
-{
-    uint256 hashCodeRoot;
-    if (!ReadTrieRoot(DB_CONTRACT_ROOT_TYPE_CODE, hashBlock, hashCodeRoot))
-    {
-        return false;
-    }
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-    ssKey << DB_CONTRACT_KEY_TYPE_CONTRACT_RUN_CODE << hashContractRunCode;
-    ssKey.GetData(btKey);
-    if (!dbTrie.Retrieve(hashCodeRoot, btKey, btValue))
-    {
-        return false;
-    }
-    try
-    {
-        ssValue.Write((char*)(btValue.data()), btValue.size());
-        ssValue >> ctxtCode;
-    }
-    catch (std::exception& e)
-    {
-        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
-        return false;
-    }
-    return true;
-}
-
-bool CForkContractDB::ListContractCreateCodeContext(const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode)
-{
-    uint256 hashRoot;
-    if (!ReadTrieRoot(DB_CONTRACT_ROOT_TYPE_CODE, hashBlock, hashRoot))
-    {
-        StdLog("CForkContractDB", "List wasm create code: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
-        return false;
-    }
-
-    bytes btKeyPrefix;
-    hnbase::CBufStream ssKeyPrefix;
-    ssKeyPrefix << DB_CONTRACT_KEY_TYPE_CONTRACT_CREATE_CODE;
-    ssKeyPrefix.GetData(btKeyPrefix);
-
-    CListCreateCodeTrieDBWalker walker(mapContractCreateCode);
-    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
-    {
-        StdLog("CForkContractDB", "List wasm create code: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
-        return false;
-    }
-    return true;
-}
-
-bool CForkContractDB::VerifyCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
-{
-    if (!ReadTrieRoot(DB_CONTRACT_ROOT_TYPE_CODE, hashBlock, hashRoot))
-    {
-        return false;
-    }
-
-    if (fVerifyAllNode)
-    {
-        std::map<uint256, CTrieValue> mapCacheNode;
-        if (!dbTrie.CheckTrieNode(hashRoot, mapCacheNode))
-        {
-            return false;
-        }
-    }
-
-    uint256 hashPrevRoot;
-    if (hashBlock != hashFork)
-    {
-        if (!ReadTrieRoot(DB_CONTRACT_ROOT_TYPE_CODE, hashPrevBlock, hashPrevRoot))
-        {
-            return false;
-        }
-    }
-
-    uint256 hashRootPrevDb;
-    uint256 hashBlockLocalDb;
-    if (!GetPrevRoot(DB_CONTRACT_ROOT_TYPE_CODE, hashRoot, hashRootPrevDb, hashBlockLocalDb))
-    {
-        return false;
-    }
-    if (hashRootPrevDb != hashPrevRoot || hashBlockLocalDb != hashBlock)
-    {
-        return false;
-    }
-    return true;
-}
-
-///////////////////////////////////
-bool CForkContractDB::WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot)
-{
-    CBufStream ssKey, ssValue;
-    ssKey << nRootType << DB_CONTRACT_KEY_ID_TRIEROOT << hashBlock;
-    ssValue << hashTrieRoot;
+    ssKey << DB_CONTRACT_KEY_TYPE_ADDRESS_ROOT << destContract << hashNewRoot;
+    ssValue << hashPrevRoot << nBlockHeight << nBlockNumber;
     return dbTrie.WriteExtKv(ssKey, ssValue);
 }
 
-bool CForkContractDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot)
+bool CForkContractDB::RemoveAddressRoot(const CDestination& destContract, const uint256& hashRoot)
 {
-    if (hashBlock == 0)
-    {
-        hashTrieRoot = 0;
-        return true;
-    }
-
-    CBufStream ssKey, ssValue;
-    ssKey << nRootType << DB_CONTRACT_KEY_ID_TRIEROOT << hashBlock;
-    if (!dbTrie.ReadExtKv(ssKey, ssValue))
-    {
-        return false;
-    }
-
-    try
-    {
-        ssValue >> hashTrieRoot;
-    }
-    catch (std::exception& e)
-    {
-        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
-        return false;
-    }
-    return true;
+    hnbase::CBufStream ssKey;
+    ssKey << DB_CONTRACT_KEY_TYPE_ADDRESS_ROOT << destContract << hashRoot;
+    return dbTrie.RemoveExtKv(ssKey);
 }
 
-void CForkContractDB::AddPrevRoot(const uint8 nRootType, const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
+bool CForkContractDB::WalkThroughHeightRoot(std::map<CDestination, std::map<uint256, std::pair<uint32, uint64>>>& mapAddressRoot, std::map<uint256, std::set<uint256>>& mapRootNext)
 {
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_CONTRACT_KEY_TYPE_ADDRESS_ROOT)
+            {
+                CDestination destContract;
+                uint256 hashRoot, hashPrevRoot;
+                uint32 nHeight;
+                uint64 nBlockNumber;
 
-    ssKey << nRootType << DB_CONTRACT_KEY_ID_PREVROOT;
-    ssKey.GetData(btKey);
+                ssKey >> destContract >> hashRoot;
+                ssValue >> hashPrevRoot >> nHeight >> nBlockNumber;
 
-    ssValue << hashPrevRoot << hashBlock;
-    ssValue.GetData(btValue);
-
-    mapKv.insert(make_pair(btKey, btValue));
-}
-
-bool CForkContractDB::GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock)
-{
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-    ssKey << nRootType << DB_CONTRACT_KEY_ID_PREVROOT;
-    ssKey.GetData(btKey);
-    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
-    {
+                mapAddressRoot[destContract].insert(std::make_pair(hashRoot, std::make_pair(nHeight, nBlockNumber)));
+                mapRootNext[hashPrevRoot].insert(hashRoot);
+                if (mapRootNext.find(hashRoot) == mapRootNext.end())
+                {
+                    mapRootNext.insert(std::make_pair(hashRoot, std::set<uint256>()));
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
         return false;
-    }
-    try
-    {
-        ssValue.Write((char*)(btValue.data()), btValue.size());
-        ssValue >> hashPrevRoot >> hashBlock;
-    }
-    catch (std::exception& e)
-    {
-        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
-        return false;
-    }
-    return true;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_CONTRACT_KEY_TYPE_ADDRESS_ROOT;
+
+    return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
 }
 
 //////////////////////////////
 // CContractDB
 
-bool CContractDB::Initialize(const boost::filesystem::path& pathData)
+bool CContractDB::Initialize(const boost::filesystem::path& pathData, const bool fPruneStateIn)
 {
     pathContract = pathData / "contract";
 
@@ -491,6 +368,7 @@ bool CContractDB::Initialize(const boost::filesystem::path& pathData)
     {
         return false;
     }
+    fPruneState = fPruneStateIn;
     return true;
 }
 
@@ -521,7 +399,7 @@ bool CContractDB::LoadFork(const uint256& hashFork)
     {
         return false;
     }
-    if (!spWasm->Initialize(pathContract / hashFork.GetHex()))
+    if (!spWasm->Initialize(pathContract / hashFork.GetHex(), fPruneState))
     {
         return false;
     }
@@ -565,14 +443,26 @@ void CContractDB::Clear()
     }
 }
 
-bool CContractDB::AddBlockContractKvValue(const uint256& hashFork, const uint256& hashPrevRoot, uint256& hashContractRoot, const std::map<uint256, bytes>& mapContractState)
+bool CContractDB::AddBlockContractKvValue(const uint256& hashFork, const uint32 nBlockHeight, const uint64 nBlockNumber, const CDestination& destContract, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashContractRoot)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapContractDB.find(hashFork);
     if (it != mapContractDB.end())
     {
-        return it->second->AddBlockContractKvValue(hashPrevRoot, hashContractRoot, mapContractState);
+        return it->second->AddBlockContractKvValue(nBlockHeight, nBlockNumber, destContract, hashPrevRoot, mapContractState, hashContractRoot);
+    }
+    return false;
+}
+
+bool CContractDB::CreateCacheContractKvTrie(const uint256& hashFork, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapContractDB.find(hashFork);
+    if (it != mapContractDB.end())
+    {
+        return it->second->CreateCacheContractKvTrie(hashPrevRoot, mapContractState, hashNewRoot);
     }
     return false;
 }

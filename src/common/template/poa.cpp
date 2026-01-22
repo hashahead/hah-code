@@ -2,7 +2,7 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "proof.h"
+#include "poa.h"
 
 #include "key.h"
 #include "rpc/auto_protocol.h"
@@ -17,25 +17,25 @@ namespace hashahead
 {
 
 //////////////////////////////
-// CTemplateProof
+// CTemplatePoa
 
-CTemplateProof::CTemplateProof(const CDestination& destMintIn, const CDestination& destSpendIn)
-  : CTemplate(TEMPLATE_PROOF), destMint(destMintIn), destSpend(destSpendIn)
+CTemplatePoa::CTemplatePoa(const CDestination& destMintIn, const CDestination& destSpendIn)
+  : CTemplate(TEMPLATE_POA), destMint(destMintIn), destSpend(destSpendIn)
 {
 }
 
-CTemplateProof* CTemplateProof::clone() const
+CTemplatePoa* CTemplatePoa::clone() const
 {
-    return new CTemplateProof(*this);
+    return new CTemplatePoa(*this);
 }
 
-void CTemplateProof::GetTemplateData(rpc::CTemplateResponse& obj) const
+void CTemplatePoa::GetTemplateData(rpc::CTemplateResponse& obj) const
 {
     obj.mint.strMint = destMint.ToString();
     obj.mint.strSpent = destSpend.ToString();
 }
 
-bool CTemplateProof::ValidateParam() const
+bool CTemplatePoa::ValidateParam() const
 {
     if (destMint.IsNull() /*|| !destMint.IsPubKey()*/)
     {
@@ -48,7 +48,7 @@ bool CTemplateProof::ValidateParam() const
     return true;
 }
 
-bool CTemplateProof::SetTemplateData(const vector<uint8>& vchDataIn)
+bool CTemplatePoa::SetTemplateData(const vector<uint8>& vchDataIn)
 {
     // CBufStream is(vchDataIn);
     // try
@@ -69,9 +69,9 @@ bool CTemplateProof::SetTemplateData(const vector<uint8>& vchDataIn)
     return true;
 }
 
-bool CTemplateProof::SetTemplateData(const rpc::CTemplateRequest& obj)
+bool CTemplatePoa::SetTemplateData(const rpc::CTemplateRequest& obj)
 {
-    if (obj.strType != GetTypeName(TEMPLATE_PROOF))
+    if (obj.strType != GetTypeName(TEMPLATE_POA))
     {
         return false;
     }
@@ -90,7 +90,7 @@ bool CTemplateProof::SetTemplateData(const rpc::CTemplateRequest& obj)
     return true;
 }
 
-void CTemplateProof::BuildTemplateData()
+void CTemplatePoa::BuildTemplateData()
 {
     vchData.clear();
     vchData.reserve(destMint.size() + destSpend.size());
@@ -103,13 +103,13 @@ void CTemplateProof::BuildTemplateData()
     // os.GetData(vchData);
 }
 
-bool CTemplateProof::GetSignDestination(const CTransaction& tx, CDestination& destSign) const
+bool CTemplatePoa::GetSignDestination(const CTransaction& tx, CDestination& destSign) const
 {
     destSign = destSpend;
     return true;
 }
 
-bool CTemplateProof::GetBlockSignDestination(CDestination& destSign) const
+bool CTemplatePoa::GetBlockSignDestination(CDestination& destSign) const
 {
     destSign = destMint;
     return true;

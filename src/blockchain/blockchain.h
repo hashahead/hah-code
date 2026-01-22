@@ -34,14 +34,13 @@ public:
     bool GetBlockStatus(const uint256& hashBlock, CBlockStatus& status) override;
     bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) override;
     bool GetLastBlockOfHeight(const uint256& hashFork, const int nHeight, uint256& hashBlock, uint64& nTime) override;
-    bool GetBlockHashOfRefBlock(const uint256& hashRefBlock, const int nHeight, uint256& hashBlock) override;
-    bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) override;
+    bool GetPrimaryBlockHashOfRefBlock(const uint256& hashRefBlock, const int nHeight, uint256& hashBlock) override;
     bool GetLastBlockTime(const uint256& hashFork, int nDepth, std::vector<uint64>& vTime) override;
     bool GetBlock(const uint256& hashBlock, CBlock& block) override;
     bool GetBlockEx(const uint256& hashBlock, CBlockEx& block) override;
     bool GetOrigin(const uint256& hashFork, CBlock& block) override;
     bool Exists(const uint256& hashBlock) override;
-    bool GetTransactionAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, CTxIndex& txIndex) override;
+    bool GetTransactionAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashTxAtBlock, CTxIndex& txIndex) override;
     bool ExistsTx(const uint256& hashFork, const uint256& txid) override;
     bool ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, const uint256& hashBlock = uint256()) override;
     bool RetrieveForkLast(const uint256& hashFork, uint256& hashLastBlock) override;

@@ -37,6 +37,22 @@ public:
             return json_spirit::write_string<json_spirit::Value>(val, indent, RPC_DOUBLE_PRECISION);
         }
     }
+
+    bool IsJsonResult() const
+    {
+        return !strJsonResult.empty();
+    }
+    std::string& GetJsonResult()
+    {
+        return strJsonResult;
+    }
+    void SetJsonResult(const std::string& strResult)
+    {
+        strJsonResult = strResult;
+    }
+
+protected:
+    std::string strJsonResult;
 };
 
 typedef std::shared_ptr<CRPCResult> CRPCResultPtr;
@@ -133,6 +149,8 @@ CRPCRespPtr DeserializeCRPCResp(const std::string& str)
 
 // serialize a resp vector to string
 std::string SerializeCRPCResp(const CRPCRespVec& resp, bool indent = false);
+
+std::string SerializeValueString(const json_spirit::Value& v, bool indent = false);
 
 } // namespace rpc
 

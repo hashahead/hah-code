@@ -11,11 +11,11 @@
 namespace hashahead
 {
 
-class CTemplateProof : virtual public CTemplateMint
+class CTemplatePoa : virtual public CTemplateMint
 {
 public:
-    CTemplateProof(const CDestination& destMintIn = CDestination(), const CDestination& destSpendIn = CDestination());
-    virtual CTemplateProof* clone() const;
+    CTemplatePoa(const CDestination& destMintIn = CDestination(), const CDestination& destSpendIn = CDestination());
+    virtual CTemplatePoa* clone() const;
     virtual void GetTemplateData(rpc::CTemplateResponse& obj) const;
 
 protected:
@@ -26,7 +26,7 @@ protected:
     virtual bool GetSignDestination(const CTransaction& tx, CDestination& destSign) const;
     virtual bool GetBlockSignDestination(CDestination& destSign) const;
 
-protected:
+public:
     CDestination destMint;
     CDestination destSpend;
 };
