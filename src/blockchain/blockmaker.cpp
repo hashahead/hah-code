@@ -540,24 +540,26 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
 
     // create subsidiary task
     multimap<uint64, pair<uint256, CBlock>> mapBlocks;
-    map<uint256, CChainId> mapChainId;
-    for (map<uint256, CForkStatus>::iterator it = mapForkStatus.begin(); it != mapForkStatus.end(); ++it)
+    for (auto it = mapForkStatus.begin(); it != mapForkStatus.end(); ++it)
     {
         const uint256& hashFork = it->first;
         const CForkStatus& status = it->second;
         if (hashFork != pCoreProtocol->GetGenesisBlockHash() && pForkManager->IsAllowed(hashFork))
         {
+            CForkCtxStatus forkCtxStatus;
+            if (!pBlockChain->GetForkCtxStatus(hashFork, forkCtxStatus, hashRefBlock))
+            {
+                StdError("blockmaker", "Process sub fork: Get fork status fail, fork: %s", hashFork.GetBhString().c_str());
+                continue;
+            }
+            if (forkCtxStatus.IsStopped())
+            {
+                continue;
+            }
+
             CBlock block;
             PreparePiggyback(block, agreement, hashRefBlock, nRefBlockTime, nPrevHeight, status, nPrevMintType);
             mapBlocks.insert(make_pair(nRefBlockTime, make_pair(hashFork, block)));
-
-            CForkContext ctxSubFork;
-            if (!pBlockChain->GetForkContext(hashFork, ctxSubFork, hashRefBlock))
-            {
-                StdError("blockmaker", "Process sub fork: Get fork context fail, fork: %s", hashFork.ToString().c_str());
-                return;
-            }
-            mapChainId[hashFork] = ctxSubFork.nChainId;
         }
     }
 
@@ -566,6 +568,7 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
         auto it = mapBlocks.begin();
         int64 nSeconds = it->first - GetNetTime();
         const uint256 hashFork = it->second.first;
+        const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashFork);
         CBlock block = it->second.second;
         mapBlocks.erase(it);
 
@@ -590,7 +593,7 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
                 {
                     if (!pBlockChain->VerifyForkRefLongChain(hashFork, status.hashBlock, hashRefBlock))
                     {
-                        StdError("blockmaker", "Process sub fork: fork does not refer to long chain, fork: %s", hashFork.ToString().c_str());
+                        StdError("blockmaker", "Process sub fork: fork does not refer to long chain, fork: %s", hashFork.GetBhString().c_str());
                     }
                     else if (status.nBlockHeight > nPrevHeight)
                     {
@@ -600,7 +603,7 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
                         }
                         else
                         {
-                            StdError("blockmaker", "Process sub fork: get last block error, fork: %s", hashFork.ToString().c_str());
+                            StdError("blockmaker", "Process sub fork: get last block error, fork: %s", hashFork.GetBhString().c_str());
                         }
                     }
                     else if (status.nBlockHeight == nPrevHeight)
@@ -629,34 +632,34 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
                             }
                             if (nPrevHeight + 1 - forkStat.second >= FORK_WAIT_BLOCK_COUNT * ((nPrevHeight + 1 - status.nBlockHeight) / FORK_WAIT_BLOCK_SECT + 1))
                             {
-                                if (ReplenishSubForkVacant(hashFork, mapChainId[hashFork], status.nBlockHeight, status.hashBlock, status.hashStateRoot, status.nBlockNumber, profile, agreement, hashRefBlock, nPrevHeight))
+                                if (ReplenishSubForkVacant(hashFork, nChainId, status.nBlockHeight, status.hashBlock, status.hashStateRoot, status.nBlockNumber, profile, agreement, hashRefBlock, nPrevHeight))
                                 {
                                     block.hashPrev = status.hashBlock;
                                     block.nNumber = status.nBlockNumber + 1;
                                 }
                                 else
                                 {
-                                    StdError("blockmaker", "Process sub fork: replenish vacant error, fork: %s", hashFork.ToString().c_str());
+                                    StdError("blockmaker", "Process sub fork: replenish vacant error, fork: %s", hashFork.GetBhString().c_str());
                                 }
                             }
                             else
                             {
                                 StdError("blockmaker", "Process sub fork: fork is missing too many blocks, primary height: %d, fork height: %d, fork: %s",
-                                         nPrevHeight + 1, status.nBlockHeight, hashFork.ToString().c_str());
+                                         nPrevHeight + 1, status.nBlockHeight, hashFork.GetBhString().c_str());
                             }
                         }
                         else
                         {
                             if (nPrevMintType != CTransaction::TX_STAKE || GetNetTime() >= WAIT_LAST_EXTENDED_TIME + nRefBlockTime)
                             {
-                                if (ReplenishSubForkVacant(hashFork, mapChainId[hashFork], status.nBlockHeight, status.hashBlock, status.hashStateRoot, status.nBlockNumber, profile, agreement, hashRefBlock, nPrevHeight))
+                                if (ReplenishSubForkVacant(hashFork, nChainId, status.nBlockHeight, status.hashBlock, status.hashStateRoot, status.nBlockNumber, profile, agreement, hashRefBlock, nPrevHeight))
                                 {
                                     block.hashPrev = status.hashBlock;
                                     block.nNumber = status.nBlockNumber + 1;
                                 }
                                 else
                                 {
-                                    StdError("blockmaker", "Process sub fork: replenish vacant error, fork: %s", hashFork.ToString().c_str());
+                                    StdError("blockmaker", "Process sub fork: replenish vacant error, fork: %s", hashFork.GetBhString().c_str());
                                 }
                             }
                             else
@@ -668,14 +671,14 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
                 }
                 else
                 {
-                    StdError("blockmaker", "Process sub fork: GetLastBlock fail, fork: %s", hashFork.ToString().c_str());
+                    StdError("blockmaker", "Process sub fork: GetLastBlock fail, fork: %s", hashFork.GetBhString().c_str());
                 }
             }
 
             // make subsidiary block
             if (block.hashPrev != 0)
             {
-                if (CreateDelegatedBlock(block, hashFork, mapChainId[hashFork], hashRefBlock, profile))
+                if (CreateDelegatedBlock(block, hashFork, nChainId, hashRefBlock, profile))
                 {
                     if (DispatchBlock(hashFork, block))
                     {
@@ -687,12 +690,12 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
                     }
                     else
                     {
-                        StdError("blockmaker", "Process sub fork: dispatch subsidiary block error, fork: %s, block: %s", hashFork.ToString().c_str(), block.GetHash().ToString().c_str());
+                        StdError("blockmaker", "Process sub fork: dispatch subsidiary block error, fork: %s, block: %s", hashFork.GetBhString().c_str(), block.GetHash().GetBhString().c_str());
                     }
                 }
                 else
                 {
-                    StdError("blockmaker", "Process sub fork: Create Delegated Block error, fork: %s, block: %s", hashFork.ToString().c_str(), block.GetHash().ToString().c_str());
+                    StdError("blockmaker", "Process sub fork: Create Delegated Block error, fork: %s, block: %s", hashFork.GetBhString().c_str(), block.GetHash().GetBhString().c_str());
                 }
             }
         }
@@ -702,14 +705,15 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
             bool fContinue = false;
             do
             {
-                if (!ArrangeBlockTx(block, hashFork, profile))
+                bool fMoStatus = false;
+                if (!ArrangeBlockTx(block, hashFork, profile, fMoStatus))
                 {
                     StdError("blockmaker", "Process sub fork: Arrange Block Tx fail, fork: %s, block: %s",
-                             hashFork.ToString().c_str(), block.GetHash().ToString().c_str());
+                             hashFork.GetBhString().c_str(), block.GetHash().GetBhString().c_str());
                     fContinue = true;
                     break;
                 }
-                if (block.vtx.size() == 0)
+                if (block.vtx.size() == 0 && block.mapProve.size() == 0 && !fMoStatus)
                 {
                     fContinue = true;
                     break;
@@ -717,7 +721,7 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
                 if (!SignBlock(block, profile))
                 {
                     StdError("blockmaker", "Process sub fork: extended block sign error, fork: %s, block: %s, seq: %lu",
-                             hashFork.ToString().c_str(), block.GetHash().ToString().c_str(),
+                             hashFork.GetBhString().c_str(), block.GetHash().GetBhString().c_str(),
                              (block.GetBlockTime() - nRefBlockTime) / EXTENDED_BLOCK_SPACING);
                     fContinue = true;
                     break;
@@ -725,7 +729,7 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
                 if (!DispatchBlock(hashFork, block))
                 {
                     StdError("blockmaker", "Process sub fork: dispatch subsidiary block error, fork: %s, block: %s",
-                             hashFork.ToString().c_str(), block.GetHash().ToString().c_str());
+                             hashFork.GetBhString().c_str(), block.GetHash().GetBhString().c_str());
                     fContinue = true;
                     break;
                 }
@@ -751,7 +755,7 @@ void CBlockMaker::ProcessSubFork(const CBlockMakerProfile& profile, const CDeleg
         if (fCreateExtendedTask && nExtendedPrevTime + EXTENDED_BLOCK_SPACING < nRefBlockTime + BLOCK_TARGET_SPACING && GetNetTime() < nRefBlockTime + BLOCK_TARGET_SPACING)
         {
             CBlock extended;
-            CreateExtended(extended, profile, agreement, hashRefBlock, hashFork, mapChainId[hashFork], hashExtendedPrevBlock, nExtendedPrevTime, nExtendedPrevNumber, nExtendedPrevSlot);
+            CreateExtended(extended, profile, agreement, hashRefBlock, hashFork, nChainId, hashExtendedPrevBlock, nExtendedPrevTime, nExtendedPrevNumber, nExtendedPrevSlot);
             mapBlocks.insert(make_pair(extended.GetBlockTime(), make_pair(hashFork, extended)));
         }
     }
