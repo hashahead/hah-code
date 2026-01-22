@@ -3111,6 +3111,8 @@ CRPCResultPtr CRPCMod::RPCValidateAddress(const CReqContext& ctxReq, CRPCParamPt
         auto& addressData = spResult->addressdata;
 
         addressData.strAddress = address.ToString();
+        addressData.strName = "";
+        addressData.strDescribe = "";
         if (ctxAddress.IsPubkey())
         {
             crypto::CPubKey pubkey;
@@ -3124,6 +3126,12 @@ CRPCResultPtr CRPCMod::RPCValidateAddress(const CReqContext& ctxReq, CRPCParamPt
         }
         else if (ctxAddress.IsTemplate())
         {
+            CTemplateAddressContext ctxTemplate;
+            if (ctxAddress.GetTemplateAddressContext(ctxTemplate))
+            {
+                addressData.strName = ctxTemplate.strName;
+                addressData.strDescribe = ctxTemplate.strDescribe;
+            }
             CTemplatePtr ptr = pService->GetTemplate(address);
             if (ptr == nullptr)
             {
@@ -3155,6 +3163,12 @@ CRPCResultPtr CRPCMod::RPCValidateAddress(const CReqContext& ctxReq, CRPCParamPt
         }
         else if (ctxAddress.IsContract())
         {
+            CContractAddressContext ctxContract;
+            if (ctxAddress.GetContractAddressContext(ctxContract))
+            {
+                addressData.strName = ctxContract.strName;
+                addressData.strDescribe = ctxContract.strDescribe;
+            }
             addressData.fIsmine = false;
             addressData.strType = "contract";
         }
