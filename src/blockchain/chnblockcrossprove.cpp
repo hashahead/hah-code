@@ -1,0 +1,76 @@
+// Copyright (c) 2021-2025 The HashAhead developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#include "chnblockcrossprove.h"
+
+#include <boost/bind.hpp>
+
+using namespace std;
+using namespace hnbase;
+using boost::asio::ip::tcp;
+
+#define BLOCK_CROSS_PROVE_CHANNEL_THREAD_COUNT 1
+#define BLOCK_CROSS_PROVE_TIMER_TIME 1000
+#define BLOCK_CROSS_PROVE_CACHE_BROADCAST_PROVE_COUNT 10000
+
+namespace hashahead
+{
+
+////////////////////////////////////////////////////
+// CBlockCrossProveChannel
+
+CBlockCrossProveChannel::CBlockCrossProveChannel()
+  : network::IBlockCrossProveChannel(BLOCK_CROSS_PROVE_CHANNEL_THREAD_COUNT), nBlockCrossProveTimerId(0)
+{
+    pPeerNet = nullptr;
+    pCoreProtocol = nullptr;
+    pBlockChain = nullptr;
+}
+
+CBlockCrossProveChannel::~CBlockCrossProveChannel()
+{
+}
+
+bool CBlockCrossProveChannel::HandleInitialize()
+{
+    if (!GetObject("peernet", pPeerNet))
+    {
+        Error("Failed to request peer net");
+        return false;
+    }
+
+    if (!GetObject("coreprotocol", pCoreProtocol))
+    {
+        Error("Failed to request coreprotocol");
+        return false;
+    }
+
+    if (!GetObject("blockchain", pBlockChain))
+    {
+        Error("Failed to request blockchain");
+        return false;
+    }
+
+    StdLog("CBlockCrossProveChannel", "HandleInitialize");
+    return true;
+}
+
+void CBlockCrossProveChannel::HandleDeinitialize()
+{
+    pPeerNet = nullptr;
+    pCoreProtocol = nullptr;
+    pBlockChain = nullptr;
+}
+
+bool CBlockCrossProveChannel::HandleInvoke()
+{
+    return network::IBlockCrossProveChannel::HandleInvoke();
+}
+
+void CBlockCrossProveChannel::HandleHalt()
+{
+    network::IBlockCrossProveChannel::HandleHalt();
+}
+
+} // namespace hashahead
