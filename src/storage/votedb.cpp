@@ -504,8 +504,7 @@ bool CVoteDB::ListPledgeFinalHeight(const uint256& hashBlock, const uint32 nFina
     }
 
     uint256 hashTrieRoot;
-    uint64 nVoteCount = 0;
-    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashTrieRoot, nVoteCount))
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashTrieRoot))
     {
         StdLog("CVoteDB", "List Pledge Final Height: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -527,8 +526,7 @@ bool CVoteDB::ListPledgeFinalHeight(const uint256& hashBlock, const uint32 nFina
 
 bool CVoteDB::VerifyVote(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
-    uint64 nVoteCount = 0;
-    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashRoot, nVoteCount))
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashBlock, hashRoot))
     {
         StdLog("CVoteDB", "Verify Vote: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -547,7 +545,7 @@ bool CVoteDB::VerifyVote(const uint256& hashPrevBlock, const uint256& hashBlock,
     uint256 hashPrevRoot;
     if (hashPrevBlock != 0)
     {
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashPrevBlock, hashPrevRoot, nVoteCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashPrevBlock, hashPrevRoot))
         {
             StdLog("CVoteDB", "Verify Vote: Read prev trie root fail, prev block: %s", hashPrevBlock.GetHex().c_str());
             return false;
