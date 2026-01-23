@@ -187,6 +187,101 @@ uint32 CChainSnapshot::GetSnapshotStatus(uint256& hashSnapshotBlock)
 
 void CChainSnapshot::SnapshotThreadFunc()
 {
+    do
+    {
+        SnapshotWork();
+    } while (WaitExitEvent(10));
+}
+
+bool CChainSnapshot::WaitExitEvent(const int64 nSeconds)
+{
+    if (nSeconds > 0 && fThreadRun)
+    {
+        try
+        {
+            boost::system_time const timeout = boost::get_system_time() + boost::posix_time::seconds(nSeconds);
+            boost::unique_lock<boost::mutex> lock(mutex);
+            condExit.timed_wait(lock, timeout);
+        }
+        catch (const boost::thread_interrupted&)
+        {
+            StdLog("CChainSnapshot", "Wait exit event thread_interrupted error");
+            return fThreadRun;
+        }
+        catch (const boost::thread_resource_error&)
+        {
+            StdLog("CChainSnapshot", "Wait exit event thread_resource_error error");
+            return fThreadRun;
+        }
+        catch (...)
+        {
+            StdLog("CChainSnapshot", "Wait exit event other error");
+            return fThreadRun;
+        }
+    }
+    return fThreadRun;
+}
+
+void CChainSnapshot::SnapshotWork()
+{
+    uint256 hashSnapshotBlock;
+    std::vector<uint256> vForkHash;
+    if (!CheckSnapshotBlock(hashSnapshotBlock, vForkHash))
+    {
+        // StdLog("CChainSnapshot", "Snapshot work: Check snapshot block failed");
+        return;
+    }
+
+    if (pBlockChain->IsSnapshotBlock(hashSnapshotBlock))
+    {
+        StdLog("CChainSnapshot", "Snapshot work: Block is snapshoted, block: %s", hashSnapshotBlock.GetBhString().c_str());
+
+        {
+            boost::unique_lock<boost::mutex> lock(mutexStatus);
+
+            if (nRpcCreateSnapshotHeight > 0)
+            {
+                nRpcCreateSnapshotHeight = 0;
+                if (!fCfgChainSnapshot)
+                {
+                    fThreadRun = false;
+                }
+            }
+        }
+    }
+    else
+    {
+        {
+            boost::unique_lock<boost::mutex> lock(mutexStatus);
+            nSnapshotStatus = 1;
+            hashSnapshotingBlock = hashSnapshotBlock;
+        }
+
+        StdLog("CChainSnapshot", "Snapshot work: Snapshot block start, snapshot block: %s", hashSnapshotBlock.GetBhString().c_str());
+        bool fRet = pBlockChain->SnapshotBlock(hashSnapshotBlock, nCfgMaxSnapshots, vForkHash);
+
+        {
+            boost::unique_lock<boost::mutex> lock(mutexStatus);
+            if (fRet)
+            {
+                StdLog("CChainSnapshot", "Snapshot work: Snapshot block success, snapshot block: %s", hashSnapshotBlock.GetBhString().c_str());
+            }
+            else
+            {
+                StdLog("CChainSnapshot", "Snapshot work: Snapshot block failed, snapshot block: %s", hashSnapshotBlock.GetBhString().c_str());
+            }
+            nSnapshotStatus = (fRet ? 2 : 3);
+
+            if (nRpcCreateSnapshotHeight > 0)
+            {
+                nRpcCreateSnapshotHeight = 0;
+                if (!fCfgChainSnapshot)
+                {
+                    fThreadRun = false;
+                }
+            }
+        }
+    }
 }
 
 } // namespace hashahead
