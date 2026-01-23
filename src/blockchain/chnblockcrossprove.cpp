@@ -18,6 +18,9 @@ namespace hashahead
 {
 
 ////////////////////////////////////////////////////
+// CBlockCrossProveChnFork
+
+////////////////////////////////////////////////////
 // CBlockCrossProveChannel
 
 CBlockCrossProveChannel::CBlockCrossProveChannel()
@@ -65,12 +68,41 @@ void CBlockCrossProveChannel::HandleDeinitialize()
 
 bool CBlockCrossProveChannel::HandleInvoke()
 {
+    nBlockCrossProveTimerId = SetTimer(BLOCK_CROSS_PROVE_TIMER_TIME, boost::bind(&CBlockCrossProveChannel::BlockCrossProveTimerFunc, this, _1));
+    if (nBlockCrossProveTimerId == 0)
+    {
+        StdLog("CBlockCrossProveChannel", "Handle Invoke: Set timer fail");
+        return false;
+    }
     return network::IBlockCrossProveChannel::HandleInvoke();
 }
 
 void CBlockCrossProveChannel::HandleHalt()
 {
+    if (nBlockCrossProveTimerId != 0)
+    {
+        CancelTimer(nBlockCrossProveTimerId);
+        nBlockCrossProveTimerId = 0;
+    }
     network::IBlockCrossProveChannel::HandleHalt();
+}
+
+bool CBlockCrossProveChannel::HandleEvent(network::CEventPeerActive& eventActive)
+{
+    const uint64 nNonce = eventActive.nNonce;
+    mapChnPeer[nNonce] = CBlockCrossProveChnPeer(eventActive.data.nService, eventActive.data);
+
+    StdLog("CBlockCrossProveChannel", "CEvent Peer Active: peer: %s", GetPeerAddressInfo(nNonce).c_str());
+    return true;
+}
+
+bool CBlockCrossProveChannel::HandleEvent(network::CEventPeerDeactive& eventDeactive)
+{
+    const uint64 nNonce = eventDeactive.nNonce;
+    StdLog("CBlockCrossProveChannel", "CEvent Peer Deactive: peer: %s", GetPeerAddressInfo(nNonce).c_str());
+
+    mapChnPeer.erase(nNonce);
+    return true;
 }
 
 } // namespace hashahead
