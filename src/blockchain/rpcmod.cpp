@@ -955,6 +955,10 @@ CRPCMod::CRPCMod()
         //
         ("getuservotes", &CRPCMod::RPCGetUserVotes)
         //
+        ("getpledgevotes", &CRPCMod::RPCGetPledgeVotes)
+        //
+        ("listpledgevotes", &CRPCMod::RPCListPledgeVotes)
+        //
         ("gettimevault", &CRPCMod::RPCGetTimeVault)
         //
         ("getaddresscount", &CRPCMod::RPCGetAddressCount)
@@ -2573,6 +2577,68 @@ CRPCResultPtr CRPCMod::RPCGetUserVotes(const CReqContext& ctxReq, CRPCParamPtr p
     }
     spResult->strVotes = CoinToTokenBigFloat(nVotes);
     spResult->nUnlockheight = nUnlockHeight;
+
+    return spResult;
+}
+
+CRPCResultPtr CRPCMod::RPCGetPledgeVotes(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetPledgeVotesParam>(param);
+
+    CDestination destVote;
+    destVote.ParseString(spParam->strAddress);
+    if (destVote.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+
+    uint256 hashRefBlock = GetRefBlock(pCoreProtocol->GetGenesisBlockHash(), spParam->strBlock);
+    if (hashRefBlock != 0)
+    {
+        CChainId nChainId;
+        uint256 hashRefFork;
+        int nHeight;
+        if (!pService->GetBlockLocation(hashRefBlock, nChainId, hashRefFork, nHeight))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+        }
+        if (hashRefFork != pCoreProtocol->GetGenesisBlockHash())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+        }
+    }
+    else
+    {
+        int nLastHeight;
+        if (!pService->GetForkLastBlock(pCoreProtocol->GetGenesisBlockHash(), nLastHeight, hashRefBlock))
+        {
+            hashRefBlock = pCoreProtocol->GetGenesisBlockHash();
+        }
+    }
+
+    CPledgeVoteContext ctxPledgeVote;
+    if (!pService->GetPledgeVotes(hashRefBlock, destVote, ctxPledgeVote))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown address");
+    }
+
+    auto spResult = MakeCGetPledgeVotesResultPtr();
+
+    spResult->strVoteaddress = destVote.ToString();
+    spResult->strDelegateaddress = ctxPledgeVote.destDelegate.ToString();
+    spResult->strOwneraddress = ctxPledgeVote.destOwner.ToString();
+    spResult->nPledgetype = ctxPledgeVote.nPledgeType;
+    spResult->nCycles = ctxPledgeVote.nCycles;
+    spResult->nNonce = ctxPledgeVote.nNonce;
+    spResult->strVoteamount = CoinToTokenBigFloat(ctxPledgeVote.nVoteAmount);
+    spResult->nVotetime = ctxPledgeVote.nVoteTime;
+    spResult->nVoteheight = ctxPledgeVote.nVoteHeight;
+    spResult->nStopheight = ctxPledgeVote.nStopHeight;
+    spResult->nRedeemheight = ctxPledgeVote.nRedeemHeight;
+    spResult->nStatus = ctxPledgeVote.nStatus;
+    spResult->strRevoterewardamount = CoinToTokenBigFloat(ctxPledgeVote.nReVoteRewardAmount);
+    spResult->strStopedrewardamount = CoinToTokenBigFloat(ctxPledgeVote.nStopedRewardAmount);
+    spResult->strTotalrewardamount = CoinToTokenBigFloat(ctxPledgeVote.nTotalRewardAmount);
 
     return spResult;
 }
