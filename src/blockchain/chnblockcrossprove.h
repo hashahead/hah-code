@@ -14,6 +14,60 @@ using namespace consensus;
 namespace hashahead
 {
 
+class CBlockCrossProveChnPeer
+{
+public:
+    CBlockCrossProveChnPeer()
+      : nService(0) {}
+    CBlockCrossProveChnPeer(uint64 nServiceIn, const network::CAddress& addr)
+      : nService(nServiceIn), addressRemote(addr) {}
+
+    const std::string GetRemoteAddress()
+    {
+        std::string strRemoteAddress;
+        boost::asio::ip::tcp::endpoint ep;
+        boost::system::error_code ec;
+        addressRemote.ssEndpoint.GetEndpoint(ep);
+        if (ep.address().is_v6())
+        {
+            strRemoteAddress = string("[") + ep.address().to_string(ec) + "]:" + std::to_string(ep.port());
+        }
+        else
+        {
+            strRemoteAddress = ep.address().to_string(ec) + ":" + std::to_string(ep.port());
+        }
+        return strRemoteAddress;
+    }
+    void Subscribe(const uint256& hashFork)
+    {
+        setSubscribeFork.insert(hashFork);
+    }
+    void Unsubscribe(const uint256& hashFork)
+    {
+        setSubscribeFork.erase(hashFork);
+    }
+    bool IsSubscribe(const uint256& hashFork) const
+    {
+        //return (setSubscribeFork.count(hashFork) > 0);
+        return true;
+    }
+
+public:
+    uint64 nService;
+    network::CAddress addressRemote;
+    std::set<uint256> setSubscribeFork;
+};
+
+class CBlockCrossProveChnFork
+{
+public:
+    CBlockCrossProveChnFork(const uint256& hashForkIn)
+      : hashFork(hashForkIn) {}
+
+protected:
+    const uint256 hashFork;
+};
+
 class CBlockCrossProveChannel : public network::IBlockCrossProveChannel
 {
 public:
