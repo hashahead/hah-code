@@ -221,28 +221,47 @@ void CCoreProtocol::GetGenesisBlock(CBlock& block)
     }
 }
 
-Errno CCoreProtocol::ValidateTransaction(const uint256& hashTxAtFork, const uint256& hashMainChainRefBlock, const CTransaction& tx)
+Errno CCoreProtocol::ValidateTransaction(const uint256& hashTxAtFork, const uint256& hashMainChainRefBlock, const uint32 nRefHeight, const CTransaction& tx)
 {
     if (tx.GetTxType() != CTransaction::TX_GENESIS)
     {
-        uint256 hashTempFork;
-        if (!pBlockChain->GetForkHashByChainId(tx.GetChainId(), hashTempFork, hashMainChainRefBlock))
+        if (tx.GetChainId() == 0)
         {
-            return DEBUG(ERR_TRANSACTION_INVALID, "tx chainid error, chainid: %d, txid: %s", tx.GetChainId(), tx.GetHash().GetHex().c_str());
+            if (VERIFY_FHX_HEIGHT_BRANCH_002(nRefHeight))
+            {
+                if (!(tx.GetFromAddress() == FUNCTION_DEPLOYMENT_SIGNER_ADDRESS && tx.GetNonce() == 0))
+                {
+                    return DEBUG(ERR_TRANSACTION_INVALID, "tx chainid error, chainid: %d, from: %s, nonce: %lu, txid: %s",
+                                 tx.GetChainId(), tx.GetFromAddress().ToString().c_str(), tx.GetNonce(), tx.GetHash().GetHex().c_str());
+                }
+            }
+            else
+            {
+                return DEBUG(ERR_TRANSACTION_INVALID, "tx chainid error, chainid: %d, from: %s, nonce: %lu, txid: %s",
+                             tx.GetChainId(), tx.GetFromAddress().ToString().c_str(), tx.GetNonce(), tx.GetHash().GetHex().c_str());
+            }
         }
-        if (hashTempFork != hashTxAtFork)
+        else
         {
-            return DEBUG(ERR_TRANSACTION_INVALID, "tx fork hash error, txid: %s", tx.GetHash().GetHex().c_str());
+            uint256 hashTempFork;
+            if (!pBlockChain->GetForkHashByChainId(tx.GetChainId(), hashTempFork, hashMainChainRefBlock))
+            {
+                return DEBUG(ERR_TRANSACTION_INVALID, "tx chainid error, chainid: %d, txid: %s", tx.GetChainId(), tx.GetHash().GetHex().c_str());
+            }
+            if (hashTempFork != hashTxAtFork)
+            {
+                return DEBUG(ERR_TRANSACTION_INVALID, "tx fork hash error, txid: %s", tx.GetHash().GetHex().c_str());
+            }
         }
     }
-    if (tx.GetTxType() == CTransaction::TX_WORK)
+    if (tx.GetTxType() == CTransaction::TX_POA)
     {
         if (tx.GetTxDataCount() > 0)
         {
             CTransaction txTemp;
             const CDestination destMint(crypto::CPubKey(~uint512()));
             const CDestination destOwner(crypto::CPubKey(~uint512()));
-            CTemplatePtr ptr = CTemplateMint::CreateTemplatePtr(new CTemplateProof(destMint, destOwner));
+            CTemplatePtr ptr = CTemplateMint::CreateTemplatePtr(new CTemplatePoa(destMint, destOwner));
             CTemplateAddressContext ctxTemplate(string(), string(), ptr->GetTemplateType(), ptr->Export());
             txTemp.SetToAddressData(CAddressContext(ctxTemplate));
 
@@ -272,21 +291,24 @@ Errno CCoreProtocol::ValidateTransaction(const uint256& hashTxAtFork, const uint
     }
     else if (tx.GetTxType() == CTransaction::TX_VOTE_REWARD)
     {
-        CTransaction txTemp;
-
-        const CDestination destDelegate(CTemplateId(~uint256()));
-        const CDestination destOwner(crypto::CPubKey(~uint512()));
-        CTemplatePtr ptr = CTemplate::CreateTemplatePtr(new CTemplateVote(destDelegate, destOwner, 0));
-        if (!ptr)
+        if (!VERIFY_FHX_HEIGHT_BRANCH_002(nRefHeight))
         {
-            return DEBUG(ERR_TRANSACTION_INVALID, "create template fail");
-        }
-        CTemplateAddressContext ctxTemplate(string(), string(), ptr->GetTemplateType(), ptr->Export());
-        txTemp.SetToAddressData(CAddressContext(ctxTemplate));
+            CTransaction txTemp;
 
-        if (tx.GetTxDataCount() > 1 || tx.GetTxDataSize() > txTemp.GetTxDataSize())
-        {
-            return DEBUG(ERR_TRANSACTION_INVALID, "tx data error, tx type: %s", tx.GetTypeString().c_str());
+            const CDestination destDelegate(CTemplateId(~uint256()));
+            const CDestination destOwner(crypto::CPubKey(~uint512()));
+            CTemplatePtr ptr = CTemplate::CreateTemplatePtr(new CTemplateVote(destDelegate, destOwner, 0));
+            if (!ptr)
+            {
+                return DEBUG(ERR_TRANSACTION_INVALID, "create template fail");
+            }
+            CTemplateAddressContext ctxTemplate(string(), string(), ptr->GetTemplateType(), ptr->Export());
+            txTemp.SetToAddressData(CAddressContext(ctxTemplate));
+
+            if (tx.GetTxDataCount() > 1 || tx.GetTxDataSize() > txTemp.GetTxDataSize())
+            {
+                return DEBUG(ERR_TRANSACTION_INVALID, "tx data error, tx type: %s", tx.GetTypeString().c_str());
+            }
         }
     }
     if (!tx.GetSignData().empty() && tx.IsRewardTx())
