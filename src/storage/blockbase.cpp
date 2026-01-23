@@ -437,45 +437,88 @@ bool CBlockBase::Retrieve(const BlockIndexPtr pIndex, CBlock& block)
     return true;
 }
 
-bool CBlockMakerFilter::AddBlockHash(const uint256& hashForkIn, const uint256& hashBlock, const uint256& hashPrev)
+bool CBlockBase::Retrieve(const uint256& hash, CBlockEx& block)
 {
-    if (hashForkIn != hashFork)
+    block.SetNull();
+
+    BlockIndexPtr pIndex;
     {
-        return true;
+        CReadLock rlock(rwAccess);
+
+        if (!(pIndex = GetIndex(hash)))
+        {
+            StdTrace("BlockBase", "Retrieve from block hash: Get index failed, block: %s", hash.ToString().c_str());
+            return false;
+        }
     }
-    if (mapBlockHash.size() >= MAX_FILTER_CACHE_COUNT * 2)
+    if (!tsBlock.Read(block, pIndex->nFile, pIndex->nOffset, true, true))
     {
+        StdTrace("BlockBase", "Retrieve from block hash: Read block failed, block: %s", hash.ToString().c_str());
+
         return false;
     }
-    mapBlockHash[hashBlock] = hashPrev;
     return true;
 }
 
-bool CBlockMakerFilter::GetFilterBlockHashs(const uint256& hashLastBlock, const bool fAll, std::vector<uint256>& vBlockhash)
+bool CBlockBase::Retrieve(const BlockIndexPtr pIndex, CBlockEx& block)
 {
-    if (fAll)
+    block.SetNull();
+    if (!tsBlock.Read(block, pIndex->nFile, pIndex->nOffset, true, true))
     {
-        uint256 hash = hashLastBlock;
-        while (true)
+        StdTrace("BlockBase", "Retrieve from index: Get index failed, block: %s", pIndex->GetBlockHash().ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
+BlockIndexPtr CBlockBase::RetrieveIndex(const uint256& hashBlock)
+{
+    CReadLock rlock(rwAccess);
+    return GetIndex(hashBlock);
+}
+
+BlockIndexPtr CBlockBase::RetrieveFork(const uint256& hashFork)
+{
+    CReadLock rlock(rwAccess);
+    return GetForkLastIndex(hashFork);
+}
+
+BlockIndexPtr CBlockBase::RetrieveFork(const string& strName)
+{
+    std::map<uint256, CForkContext> mapForkCtxt;
+    if (!dbBlock.ListForkContext(mapForkCtxt))
+    {
+        return nullptr;
+    }
+    for (const auto& kv : mapForkCtxt)
+    {
+        if (kv.second.strName == strName)
         {
-            auto it = mapBlockHash.find(hash);
-            if (it == mapBlockHash.end())
-            {
-                break;
-            }
-            vBlockhash.push_back(hash);
-            hash = it->second;
+            return RetrieveFork(kv.first);
         }
-        while (true)
-        {
-            auto it = mapHisBlockHash.find(hash);
-            if (it == mapHisBlockHash.end())
-            {
-                break;
-            }
-            vBlockhash.push_back(hash);
-            hash = it->second;
-        }
+    }
+    return nullptr;
+}
+
+bool CBlockBase::RetrieveProfile(const uint256& hashFork, CProfile& profile, const uint256& hashMainChainRefBlock)
+{
+    CForkContext ctxt;
+    if (!dbBlock.RetrieveForkContext(hashFork, ctxt, hashMainChainRefBlock))
+    {
+        StdTrace("BlockBase", "Retrieve Profile: Retrieve fork context fail, fork: %s", hashFork.ToString().c_str());
+        return false;
+    }
+    profile = ctxt.GetProfile();
+    return true;
+}
+
+bool CBlockBase::RetrieveAncestry(const uint256& hashFork, vector<pair<uint256, uint256>> vAncestry)
+{
+    CForkContext ctxt;
+    if (!dbBlock.RetrieveForkContext(hashFork, ctxt))
+    {
+        StdTrace("BlockBase", "Ancestry Retrieve hashFork %s failed", hashFork.ToString().c_str());
+        return false;
     }
     else
     {
