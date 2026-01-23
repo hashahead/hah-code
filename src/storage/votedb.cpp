@@ -652,15 +652,22 @@ bool CVoteDB::WalkThroughDayVote(const uint256& hashBeginBlock, const uint256& h
 }
 
 ///////////////////////////////////
-bool CVoteDB::WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot, const uint64 nVoteCount)
+bool CVoteDB::WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot)
 {
     CBufStream ssKey, ssValue;
-    ssKey << nRootType << DB_VOTE_KEY_ID_TRIEROOT << hashBlock;
-    ssValue << hashTrieRoot << nVoteCount;
+    ssKey << DB_VOTE_KEY_ID_TRIEROOT << nRootType << hashBlock;
+    ssValue << hashTrieRoot;
     return dbTrie.WriteExtKv(ssKey, ssValue);
 }
 
-bool CVoteDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot, uint64& nVoteCount)
+bool CVoteDB::RemoveTrieRoot(const uint8 nRootType, const uint256& hashBlock)
+{
+    CBufStream ssKey;
+    ssKey << DB_VOTE_KEY_ID_TRIEROOT << nRootType << hashBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
+
+bool CVoteDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot)
 {
     if (hashBlock == 0)
     {
@@ -669,7 +676,7 @@ bool CVoteDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint
     }
 
     CBufStream ssKey, ssValue;
-    ssKey << nRootType << DB_VOTE_KEY_ID_TRIEROOT << hashBlock;
+    ssKey << DB_VOTE_KEY_ID_TRIEROOT << nRootType << hashBlock;
     if (!dbTrie.ReadExtKv(ssKey, ssValue))
     {
         return false;
@@ -677,7 +684,7 @@ bool CVoteDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint
 
     try
     {
-        ssValue >> hashTrieRoot >> nVoteCount;
+        ssValue >> hashTrieRoot;
     }
     catch (std::exception& e)
     {
@@ -734,8 +741,7 @@ bool CVoteDB::GetMoreIncVote(const uint256& hashBeginBlock, const uint256& hashT
     }
 
     uint256 hashTrieRoot;
-    uint64 nVoteCount = 0;
-    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashTailBlock, hashTrieRoot, nVoteCount))
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_USER_VOTE, hashTailBlock, hashTrieRoot))
     {
         StdLog("CVoteDB", "Get More Inc Vote: Read trie root fail, hashTailBlock: %s", hashTailBlock.GetHex().c_str());
         return false;
@@ -808,8 +814,7 @@ bool CVoteDB::AddDelegateVote(const uint256& hashPrevBlock, const uint256& hashB
     uint256 hashPrevRoot;
     if (hashPrevBlock != 0)
     {
-        uint64 nDelegateVoteCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashPrevBlock, hashPrevRoot, nDelegateVoteCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashPrevBlock, hashPrevRoot))
         {
             return false;
         }
@@ -829,7 +834,10 @@ bool CVoteDB::AddDelegateVote(const uint256& hashPrevBlock, const uint256& hashB
 
         mapKv.insert(make_pair(btKey, btValue));
     }
-    AddPrevRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashPrevRoot, hashBlock, mapKv);
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddPrevRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashPrevRoot, hashBlock, mapKv);
+    }
 
     if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
     {
@@ -837,7 +845,7 @@ bool CVoteDB::AddDelegateVote(const uint256& hashPrevBlock, const uint256& hashB
         return false;
     }
 
-    if (!WriteTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashNewRoot, mapDelegateVote.size()))
+    if (!WriteTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashNewRoot))
     {
         StdLog("CVoteDB", "Add delegate vote: Write trie root fail, hashBlock: %s", hashBlock.GetHex().c_str());
         return false;
