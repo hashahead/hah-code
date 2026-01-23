@@ -95,15 +95,65 @@ void CNatPortMapping::HandleDeinitialize()
 
 bool CNatPortMapping::HandleInvoke()
 {
+    if (strCfgNat == "any" || strCfgNat == "upnp" || strCfgNat == "pmp")
+    {
+        fThreadRun = true;
+        if (!ThreadDelayStart(thrNatWork))
+        {
+            StdLog("CNatPortMapping", "Handle invoke: Start thread failed");
+            return false;
+        }
+    }
     return true;
 }
 
 void CNatPortMapping::HandleHalt()
 {
+    if (fThreadRun)
+    {
+        fThreadRun = false;
+        condExit.notify_all();
+
+        thrNatWork.Interrupt();
+        ThreadExit(thrNatWork);
+    }
 }
 
 void CNatPortMapping::NatThreadFunc()
 {
+    while (WaitExitEvent(1))
+    {
+        NatPortMapWork();
+    }
+}
+
+bool CNatPortMapping::WaitExitEvent(const int64 nSeconds)
+{
+    if (nSeconds > 0 && fThreadRun)
+    {
+        try
+        {
+            boost::system_time const timeout = boost::get_system_time() + boost::posix_time::seconds(nSeconds);
+            boost::unique_lock<boost::mutex> lock(mutex);
+            condExit.timed_wait(lock, timeout);
+        }
+        catch (const boost::thread_interrupted&)
+        {
+            StdLog("CNatPortMapping", "Wait exit event thread_interrupted error");
+            return fThreadRun;
+        }
+        catch (const boost::thread_resource_error&)
+        {
+            StdLog("CNatPortMapping", "Wait exit event thread_resource_error error");
+            return fThreadRun;
+        }
+        catch (...)
+        {
+            StdLog("CNatPortMapping", "Wait exit event other error");
+            return fThreadRun;
+        }
+    }
+    return fThreadRun;
 }
 
 } // namespace hashahead

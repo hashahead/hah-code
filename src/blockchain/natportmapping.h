@@ -23,6 +23,11 @@ protected:
     bool HandleInvoke() override;
     void HandleHalt() override;
 
+    void NatThreadFunc();
+    bool WaitExitEvent(const int64 nSeconds);
+
+    void NatPortMapWork();
+
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
