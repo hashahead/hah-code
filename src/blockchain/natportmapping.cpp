@@ -156,4 +156,108 @@ bool CNatPortMapping::WaitExitEvent(const int64 nSeconds)
     return fThreadRun;
 }
 
+void CNatPortMapping::NatPortMapWork()
+{
+    int64 nCurrTime = GetTime();
+    if (nCurrTime - nPrevUpnpMapTime >= LEASE_DURATION)
+    {
+        nPrevUpnpMapTime = nCurrTime;
+
+        uint16 nExtPort = 0;
+        if (nCfgNatExtPort != 0)
+        {
+            nExtPort = nCfgNatExtPort;
+        }
+        else
+        {
+            nExtPort = nCfgListenPort;
+        }
+
+        std::string strLocalIp;
+        if (!strCfgNatLocalIp.empty())
+        {
+            strLocalIp = strCfgNatLocalIp;
+        }
+        else
+        {
+            if (!GetNetLocalIp(strLocalIp))
+            {
+                strLocalIp = strLocalIpaddress;
+            }
+        }
+
+        bool fUpnp = true;
+        if (strCfgNat == "any" || strCfgNat == "upnp")
+        {
+            if (!UpnpPortMapping(strLocalIp, nExtPort, nCfgListenPort))
+            {
+                StdLog("CNatPortMapping", "Nat port map work: Upnp port mapping failed, local ip: %s, ext port: %d, listen port: %d", strLocalIp.c_str(), nExtPort, nCfgListenPort);
+                if (strCfgNat == "any")
+                {
+                    if (!PmpPortMapping(strLocalIp, nExtPort, nCfgListenPort, &fThreadRun))
+                    {
+                        StdLog("CNatPortMapping", "Nat port map work: Pmp port mapping failed, local ip: %s, ext port: %d, listen port: %d", strLocalIp.c_str(), nExtPort, nCfgListenPort);
+                        return;
+                    }
+                    fUpnp = false;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            StdLog("CNatPortMapping", "Nat port map work: Upnp port mapping success, local ip: %s, ext port: %d, listen port: %d", strLocalIp.c_str(), nExtPort, nCfgListenPort);
+        }
+        else if (strCfgNat == "pmp")
+        {
+            if (!PmpPortMapping(strLocalIp, nExtPort, nCfgListenPort, &fThreadRun))
+            {
+                StdLog("CNatPortMapping", "Nat port map work: Pmp port mapping failed, local ip: %s, ext port: %d, listen port: %d", strLocalIp.c_str(), nExtPort, nCfgListenPort);
+                return;
+            }
+            fUpnp = false;
+        }
+
+        if (fCfgNatModifyGateway)
+        {
+            if (!fThreadRun)
+            {
+                return;
+            }
+
+            std::string strExtIp;
+            if (!strCfgNatExtIp.empty())
+            {
+                strExtIp = strCfgNatExtIp;
+            }
+            else
+            {
+                if (fUpnp)
+                {
+                    if (!GetUpnpExtIpaddr(strExtIp))
+                    {
+                        StdLog("CNatPortMapping", "Nat port map work: Get upnp ext ip address failed");
+                        return;
+                    }
+                }
+                else
+                {
+                    if (!GetPmpPublicAddress(strExtIp, &fThreadRun))
+                    {
+                        StdLog("CNatPortMapping", "Nat port map work: Get pmp ext ip address failed");
+                        return;
+                    }
+                }
+            }
+            if (!SetGatewayAddress(strExtIp, nExtPort))
+            {
+                StdLog("CNatPortMapping", "Nat port map work: Set gateway address failed, ext ip: %s, ext port: %d", strExtIp.c_str(), nExtPort);
+            }
+            else
+            {
+                StdLog("CNatPortMapping", "Nat port map work: Set gateway address success, ext ip: %s, ext port: %d", strExtIp.c_str(), nExtPort);
+            }
+        }
+    }
+}
 } // namespace hashahead

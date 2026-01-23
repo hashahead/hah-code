@@ -28,6 +28,9 @@ protected:
 
     void NatPortMapWork();
 
+    bool UpnpPortMapping(const std::string& strLocalIp, const uint16 nExtPort, const uint16 nIntPort);
+    bool GetUpnpExtIpaddr(std::string& strExtIp);
+
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
