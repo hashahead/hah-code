@@ -520,32 +520,57 @@ bool CBlockBase::RetrieveAncestry(const uint256& hashFork, vector<pair<uint256, 
         StdTrace("BlockBase", "Ancestry Retrieve hashFork %s failed", hashFork.ToString().c_str());
         return false;
     }
-    else
-    {
-        if (mapBlockHash.count(hashLastBlock) == 0)
-        {
-            return true;
-        }
-        uint256 hash = hashLastBlock;
-        while (true)
-        {
-            auto it = mapBlockHash.find(hash);
-            if (it == mapBlockHash.end())
-            {
-                break;
-            }
-            vBlockhash.push_back(hash);
-            mapHisBlockHash.insert(*it);
-            hash = it->second;
-        }
-        mapBlockHash.clear();
-        nPrevGetChangesTime = GetTime();
-        std::reverse(vBlockhash.begin(), vBlockhash.end());
 
-        while (mapHisBlockHash.size() > MAX_FILTER_CACHE_COUNT * 2)
+    while (ctxt.hashParent != 0)
+    {
+        vAncestry.push_back(make_pair(ctxt.hashParent, ctxt.hashJoint));
+        if (!dbBlock.RetrieveForkContext(ctxt.hashParent, ctxt))
         {
-            mapHisBlockHash.erase(mapHisBlockHash.begin());
+            return false;
         }
+    }
+
+    std::reverse(vAncestry.begin(), vAncestry.end());
+    return true;
+}
+
+bool CBlockBase::RetrieveOrigin(const uint256& hashFork, CBlock& block)
+{
+    block.SetNull();
+
+    CForkContext ctxt;
+    if (!dbBlock.RetrieveForkContext(hashFork, ctxt))
+    {
+        StdTrace("BlockBase", "Retrieve Origin: Retrieve Fork Context %s block failed", hashFork.ToString().c_str());
+        return false;
+    }
+
+    uint256 hashAtFork;
+    uint256 hashTxAtBlock;
+    CTxIndex txIndex;
+    CTransaction tx;
+    if (!RetrieveTxAndIndex(GetGenesisBlockHash(), ctxt.txidEmbedded, tx, hashAtFork, hashTxAtBlock, txIndex))
+    {
+        StdTrace("BlockBase", "Retrieve Origin: Retrieve Tx %s tx failed", ctxt.txidEmbedded.ToString().c_str());
+        return false;
+    }
+
+    bytes btTempData;
+    if (!tx.GetTxData(CTransaction::DF_FORKDATA, btTempData))
+    {
+        StdTrace("BlockBase", "Retrieve Origin: fork data error, txid: %s", ctxt.txidEmbedded.ToString().c_str());
+        return false;
+    }
+
+    try
+    {
+        CBufStream ss(btTempData);
+        ss >> block;
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
     }
     return true;
 }
