@@ -21,6 +21,15 @@ CChainSnapshot::CChainSnapshot()
 
     pCoreProtocol = nullptr;
     pBlockChain = nullptr;
+
+    fCfgChainSnapshot = false;
+    nCfgSnapshotCycleDays = 0;
+    nCfgMaxSnapshots = 0;
+    nCfgSnapshotCycleHeight = 0;
+    fCfgSnapshotRecovery = false;
+    nRpcCreateSnapshotHeight = 0;
+    strCfgSnapshotRecoveryDir = "";
+    nSnapshotStatus = 0;
 }
 
 CChainSnapshot::~CChainSnapshot()
@@ -39,6 +48,38 @@ bool CChainSnapshot::HandleInitialize()
         Error("Failed to request blockchain");
         return false;
     }
+
+    fCfgChainSnapshot = StorageConfig()->fChainSnapshot;
+    if (fCfgChainSnapshot)
+    {
+        nCfgSnapshotCycleDays = StorageConfig()->nSnapshotCycleDays;
+        nCfgMaxSnapshots = StorageConfig()->nMaxSnapshots;
+        if (nCfgSnapshotCycleDays == 0)
+        {
+            nCfgSnapshotCycleDays = 1;
+        }
+        else if (nCfgSnapshotCycleDays > 720)
+        {
+            nCfgSnapshotCycleDays = 720;
+        }
+        nCfgSnapshotCycleHeight = nCfgSnapshotCycleDays * DAY_HEIGHT;
+        if (nCfgMaxSnapshots == 0)
+        {
+            nCfgMaxSnapshots = 1;
+        }
+        else if (nCfgMaxSnapshots > 16)
+        {
+            nCfgMaxSnapshots = 16;
+        }
+    }
+    if (!StorageConfig()->strSnapshotRecoveryDir.empty())
+    {
+        fCfgSnapshotRecovery = true;
+        strCfgSnapshotRecoveryDir = StorageConfig()->strSnapshotRecoveryDir;
+    }
+
+    StdLog("CChainSnapshot", "Handle initialize: chain snapshot enable: %s, snapshot cycle days: %d, snapshot cycle height: %d, max snapshots: %d, snapshot recovery dir: %s",
+           (fCfgChainSnapshot ? "true" : "false"), nCfgSnapshotCycleDays, nCfgSnapshotCycleHeight, nCfgMaxSnapshots, strCfgSnapshotRecoveryDir.c_str());
     return true;
 }
 

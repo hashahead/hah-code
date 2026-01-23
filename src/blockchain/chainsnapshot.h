@@ -29,6 +29,23 @@ protected:
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
+
+    bool fCfgChainSnapshot;
+    uint32 nCfgSnapshotCycleDays;
+    uint32 nCfgMaxSnapshots;
+    uint32 nCfgSnapshotCycleHeight;
+    bool fCfgSnapshotRecovery;
+    uint32 nRpcCreateSnapshotHeight;
+    std::string strCfgSnapshotRecoveryDir;
+
+    hnbase::CThread thrSnapshot;
+    bool fThreadRun;
+    boost::condition_variable condExit;
+    boost::mutex mutex;
+
+    uint32 nSnapshotStatus; // 0: no snapshot, 1: snapshoting, 2: snapshot end
+    uint256 hashSnapshotingBlock;
+    boost::mutex mutexStatus;
 };
 
 } // namespace hashahead
