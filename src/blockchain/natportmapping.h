@@ -27,6 +27,21 @@ protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
     CNetwork* pNetwork;
+
+    std::string strCfgNat;
+    std::string strCfgNatLocalIp;
+    std::string strCfgNatExtIp;
+    uint16 nCfgNatExtPort;
+    uint16 nCfgListenPort;
+    bool fCfgNatModifyGateway;
+    std::string strLocalIpaddress;
+
+    hnbase::CThread thrNatWork;
+    bool fThreadRun;
+    boost::condition_variable condExit;
+    boost::mutex mutex;
+
+    int64 nPrevUpnpMapTime;
 };
 
 } // namespace hashahead

@@ -30,6 +30,11 @@ CNatPortMapping::CNatPortMapping()
     pCoreProtocol = nullptr;
     pBlockChain = nullptr;
     pNetwork = nullptr;
+
+    nPrevUpnpMapTime = GetTime() - LEASE_DURATION + 10;
+    nCfgNatExtPort = 0;
+    nCfgListenPort = 0;
+    fCfgNatModifyGateway = false;
 }
 
 CNatPortMapping::~CNatPortMapping()
@@ -53,6 +58,29 @@ bool CNatPortMapping::HandleInitialize()
         Error("Failed to request network");
         return false;
     }
+
+    strCfgNat = NetworkConfig()->strNat;
+    if (!strCfgNat.empty())
+    {
+        std::transform(strCfgNat.begin(), strCfgNat.end(), strCfgNat.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+    }
+    strCfgNatLocalIp = NetworkConfig()->strNatLocalIp;
+    strCfgNatExtIp = NetworkConfig()->strNatExtIp;
+    nCfgNatExtPort = NetworkConfig()->nNatExtPort;
+    nCfgListenPort = NetworkConfig()->nPort;
+    fCfgNatModifyGateway = NetworkConfig()->fNatModifyGateway;
+    if ((strCfgNat == "any" || strCfgNat == "upnp" || strCfgNat == "pmp") && strCfgNatLocalIp.empty())
+    {
+        if (!GetLocalIp(strLocalIpaddress))
+        {
+            StdLog("CNatPortMapping", "Get local ip address failed");
+            strLocalIpaddress = "";
+            strCfgNat = "";
+        }
+    }
+    StdLog("CNatPortMapping", "Handle initialize: nat: %s, nat local ip: %s, nat ext ip: %s, nat ext port: %d, listen port: %d, local ip: %s",
+           strCfgNat.c_str(), strCfgNatLocalIp.c_str(), strCfgNatExtIp.c_str(), nCfgNatExtPort, nCfgListenPort, strLocalIpaddress.c_str());
     return true;
 }
 
