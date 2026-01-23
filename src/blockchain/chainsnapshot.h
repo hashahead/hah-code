@@ -21,6 +21,8 @@ protected:
     void HandleDeinitialize() override;
     bool HandleInvoke() override;
     void HandleHalt() override;
+    bool StartHeightSnapshot(const uint32 nSnapshotHeight, uint256& hashSnapshotBlock) override;
+    uint32 GetSnapshotStatus(uint256& hashSnapshotBlock) override;
 
     void SnapshotThreadFunc();
 
