@@ -39,6 +39,8 @@ public:
     bool RemoveBlockIndex(const uint256& hashBlock);
     bool RetrieveBlockIndex(const uint256& hashBlock, CBlockIndex& outline);
     bool WalkThroughBlockIndex(CBlockDBWalker& walker);
+    bool RetrieveBlockHashByHeight(const uint256& hashFork, const uint32 nBlockHeight, std::vector<uint256>& vBlockHash);
+    bool GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight);
 
     bool AddBlockNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint64 nBlockNumber, const uint256& hashBlock, uint256& hashNewRoot);
     bool RetrieveBlockHashByNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashLastBlock, const uint64 nBlockNumber, uint256& hashBlock);

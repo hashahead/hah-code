@@ -61,26 +61,73 @@ bool CBlockIndexDB::Initialize(const boost::filesystem::path& pathData)
 
 void CBlockIndexDB::Deinitialize()
 {
-    dbTrie.Deinitialize();
+    Close();
 }
 
 bool CBlockIndexDB::Clear()
 {
-    dbTrie.RemoveAll();
-    return true;
+    return RemoveAll();
 }
 
 //-----------------------------------------------------
 // block index
 
-bool CBlockIndexDB::AddNewBlockIndex(const CBlockOutline& outline)
+bool CBlockIndexDB::AddNewBlockIndex(const CBlockIndex& outline)
 {
-    CBufStream ssKey, ssValue;
-    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_INDEX << outline.GetBlockHash();
-    ssValue << outline;
-    if (!dbTrie.WriteExtKv(ssKey, ssValue))
+    CWriteLock wlock(rwAccess);
+
+    if (!TxnBegin())
     {
-        StdLog("CBlockIndexDB", "Add new block index: Set value node fail, hashBlock: %s", outline.GetBlockHash().GetHex().c_str());
+        StdLog("CBlockIndexDB", "Add new block index: Txn begin fail");
+        return false;
+    }
+
+    const uint256 hashBlock = outline.GetBlockHash();
+    const CChainId nChainId = outline.GetBlockChainId();
+    const uint32 nHeight = outline.GetBlockHeight();
+
+    {
+        CBufStream ssKey, ssValue;
+        ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_INDEX << hashBlock;
+        ssValue << outline;
+        if (!Write(ssKey, ssValue))
+        {
+            StdLog("CBlockIndexDB", "Add new block index: Write fail, block: %s", hashBlock.GetHex().c_str());
+            return false;
+        }
+    }
+
+    {
+        CBufStream ssKey, ssValue;
+        ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_HEIGHT << BSwap32(nChainId) << BSwap32(nHeight) << hashBlock;
+        ssValue << outline.GetBlockNumber();
+        if (!Write(ssKey, ssValue))
+        {
+            StdLog("CBlockIndexDB", "Add new block index: Write block height fail, height: %d, block: %s", nHeight, hashBlock.ToString().c_str());
+            TxnAbort();
+            return false;
+        }
+    }
+
+    uint32 nOldMaxHeight = 0;
+    GetForkMaxHeight(outline.GetOriginHash(), nOldMaxHeight);
+    if (nHeight > nOldMaxHeight)
+    {
+        CBufStream ssKey, ssValue;
+        ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_MAX_HEIGHT << BSwap32(nChainId);
+        ssValue << nHeight;
+        if (!Write(ssKey, ssValue))
+        {
+            StdLog("CBlockIndexDB", "Add new block index: Write block max height fail, height: %d, block: %s", nHeight, hashBlock.ToString().c_str());
+            TxnAbort();
+            return false;
+        }
+    }
+
+    if (!TxnCommit())
+    {
+        StdLog("CBlockIndexDB", "Add new block index: Txn commit fail");
+        TxnAbort();
         return false;
     }
     return true;
