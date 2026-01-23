@@ -83,10 +83,18 @@ protected:
     bool HandleEvent(network::CEventPeerActive& eventActive) override;
     bool HandleEvent(network::CEventPeerDeactive& eventDeactive) override;
 
+    bool HandleEvent(network::CEventPeerBlockCrossProveData& eventBcp) override;
+
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
+
+    std::map<uint64, CBlockCrossProveChnPeer> mapChnPeer;
+    std::map<uint256, CBlockCrossProveChnFork> mapChnFork;
+    uint32 nBlockCrossProveTimerId;
+
+    std::map<uint256, std::map<uint256, bytes, CustomBlockHashCompare>> mapBroadcastProve; // key1: recv fork hash, key2: src block hash, value: prove data
 };
 
 } // namespace hashahead

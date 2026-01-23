@@ -105,4 +105,40 @@ bool CBlockCrossProveChannel::HandleEvent(network::CEventPeerDeactive& eventDeac
     return true;
 }
 
+bool CBlockCrossProveChannel::HandleEvent(network::CEventPeerBlockCrossProveData& eventBcp)
+{
+    const uint64 nRecvPeerNonce = eventBcp.nNonce;
+    const uint256& hashFork = eventBcp.hashFork;
+    const bytes& btProveData = eventBcp.data;
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashFork);
+
+    CBlockProve blockProve;
+    if (!blockProve.Load(btProveData))
+    {
+        StdLog("CBlockChannel", "CEvent Peer Block CrossProve: Load block prove fail, fork: %s", hashFork.ToString().c_str());
+        return false;
+    }
+
+    bytes btCacheProve;
+    if (GetBroadcastProveData(hashFork, blockProve.hashBlock, btCacheProve))
+    {
+        return true;
+    }
+    AddBroadcastProveData(hashFork, blockProve.hashBlock, btProveData);
+
+    //pBlockChain->AddRecvCrosschainProve(nChainId, blockProve);
+
+    for (const auto& kv : mapChnPeer)
+    {
+        if (nRecvPeerNonce == 0 || nRecvPeerNonce != kv.first)
+        {
+            if (!SendBlockProveData(kv.first, btProveData, hashFork))
+            {
+                StdLog("CBlockChannel", "CEvent Peer Block CrossProve: Broadcast block prove fail, peer nonce: 0x%lx", kv.first);
+            }
+        }
+    }
+    return true;
+}
+
 } // namespace hashahead
