@@ -104,16 +104,20 @@ protected:
 class CForkAddressDB
 {
 public:
-    CForkAddressDB(const bool fCacheIn = true);
+    CForkAddressDB();
     ~CForkAddressDB();
 
-    bool Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData);
+    bool Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData, const bool fNeedPrune);
     void Deinitialize();
     bool RemoveAll();
 
     bool AddAddressContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapAddress, const uint64 nNewAddressCount,
-                           const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress, uint256& hashNewRoot);
+                           const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress,
+                           const std::map<CDestination, uint384>& mapBlsPubkeyContext, uint256& hashNewRoot);
+    bool AddTokenContractAddressContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddressContext, const bool fAll);
     bool RetrieveAddressContext(const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress);
+    bool RetrieveTokenContractAddressContext(const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress);
+    bool ListAddress(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress);
     bool ListContractAddress(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
     bool RetrieveTimeVault(const uint256& hashBlock, const CDestination& dest, CTimeVault& tv);
     bool GetAddressCount(const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount);

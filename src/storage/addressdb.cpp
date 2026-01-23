@@ -192,6 +192,118 @@ bool CListFunctionAddressTrieDBWalker::Walk(const bytes& btKey, const bytes& btV
 }
 
 //////////////////////////////
+// CListAddressCreateCodeTrieDBWalker
+
+bool CListAddressCreateCodeTrieDBWalker::Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver)
+{
+    if (btKey.size() == 0 || btValue.size() == 0)
+    {
+        StdError("CListAddressCreateCodeTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+        return false;
+    }
+
+    try
+    {
+        hnbase::CBufStream ssKey(btKey);
+        uint8 nKeyType;
+        ssKey >> nKeyType;
+        if (nKeyType == DB_ADDRESS_KEY_TYPE_CONTRACT_CREATE_CODE)
+        {
+            uint256 hashCreateCode;
+            CContractCreateCodeContext ctxtCreateCode;
+            hnbase::CBufStream ssValue(btValue);
+            ssKey >> hashCreateCode;
+            ssValue >> ctxtCreateCode;
+            mapContractCreateCode.insert(std::make_pair(hashCreateCode, ctxtCreateCode));
+        }
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+//////////////////////////////
+// CCacheAddressData
+
+bool CCacheAddressData::AddBlockAddress(const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapAddress)
+{
+    CWriteLock wlock(rwAccess);
+
+    if (mapBlockAddress.size() > MAX_CACHE_ADDRESS_BLOCK_COUNT)
+    {
+        mapBlockAddress.erase(mapBlockAddress.begin());
+    }
+    mapBlockAddress[hashBlock] = mapAddress;
+    return true;
+}
+
+bool CCacheAddressData::AddBlockContractAddress(const uint256& hashBlock, const std::map<CDestination, CContractAddressContext>& mapContractAddress)
+{
+    CWriteLock wlock(rwAccess);
+
+    if (mapBlockContractAddress.size() > MAX_CACHE_ADDRESS_BLOCK_COUNT)
+    {
+        mapBlockContractAddress.erase(mapBlockContractAddress.begin());
+    }
+    mapBlockContractAddress[hashBlock] = mapContractAddress;
+    return true;
+}
+
+bool CCacheAddressData::AddBlockTokenContractAddress(const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
+{
+    CWriteLock wlock(rwAccess);
+
+    if (mapBlockTokenContractAddress.size() > MAX_CACHE_ADDRESS_BLOCK_COUNT)
+    {
+        mapBlockTokenContractAddress.erase(mapBlockTokenContractAddress.begin());
+    }
+    mapBlockTokenContractAddress[hashBlock] = mapTokenContractAddress;
+    return true;
+}
+
+bool CCacheAddressData::GetBlockAddress(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapBlockAddress.find(hashBlock);
+    if (it != mapBlockAddress.end())
+    {
+        mapAddress = it->second;
+        return true;
+    }
+    return false;
+}
+
+bool CCacheAddressData::GetBlockContractAddress(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapBlockContractAddress.find(hashBlock);
+    if (it != mapBlockContractAddress.end())
+    {
+        mapContractAddress = it->second;
+        return true;
+    }
+    return false;
+}
+
+bool CCacheAddressData::GetBlockTokenContractAddress(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapBlockTokenContractAddress.find(hashBlock);
+    if (it != mapBlockTokenContractAddress.end())
+    {
+        mapTokenContractAddress = it->second;
+        return true;
+    }
+    return false;
+}
+
+//////////////////////////////
 // CForkAddressDB
 
 CForkAddressDB::CForkAddressDB(const bool fCacheIn)
