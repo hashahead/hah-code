@@ -45,7 +45,7 @@ public:
     bool ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, const uint256& hashBlock = uint256()) override;
     bool RetrieveForkLast(const uint256& hashFork, uint256& hashLastBlock) override;
     bool GetForkStorageMaxHeight(const uint256& hashFork, uint32& nMaxHeight) override;
-    Errno AddNewBlock(const CBlock& block, CBlockChainUpdate& update) override;
+    Errno AddNewBlock(const uint256& hashBlock, const CBlock& block, uint256& hashFork, CBlockChainUpdate& update) override;
     Errno AddNewOrigin(const CBlock& block, CBlockChainUpdate& update) override;
     bool GetProofOfWorkTarget(const uint256& hashPrev, int nAlgo, int& nBits) override;
     bool GetBlockMintReward(const uint256& hashPrev, const bool fPow, uint256& nReward, const uint256& hashMainChainRefBlock) override;

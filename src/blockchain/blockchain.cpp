@@ -477,9 +477,9 @@ bool CBlockChain::Exists(const uint256& hashBlock)
     return cntrBlock.Exists(hashBlock);
 }
 
-bool CBlockChain::GetTransactionAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, CTxIndex& txIndex)
+bool CBlockChain::GetTransactionAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashTxAtBlock, CTxIndex& txIndex)
 {
-    return cntrBlock.RetrieveTxAndIndex(hashFork, txid, tx, hashAtFork, txIndex);
+    return cntrBlock.RetrieveTxAndIndex(hashFork, txid, tx, hashAtFork, hashTxAtBlock, txIndex);
 }
 
 bool CBlockChain::ExistsTx(const uint256& hashFork, const uint256& txid)
@@ -580,13 +580,13 @@ Errno CBlockChain::AddNewOrigin(const CBlock& block, CBlockChainUpdate& update)
         return ERR_ALREADY_HAVE;
     }
 
-    CBlockIndex* pIndexPrev;
-    if (!cntrBlock.RetrieveIndex(block.hashPrev, &pIndexPrev))
+    BlockIndexPtr pIndexPrev = cntrBlock.RetrieveIndex(block.hashPrev);
+    if (!pIndexPrev)
     {
         StdLog("BlockChain", "Add new origin: Retrieve prev index fail, prev block: %s", block.hashPrev.ToString().c_str());
         return ERR_SYS_STORAGE_ERROR;
     }
-    uint256 hashFork = block.GetHash();
+    uint256 hashFork = hashBlock;
 
     err = pCoreProtocol->ValidateBlock(hashFork, pIndexPrev->GetRefBlock(), block);
     if (err != OK)
@@ -628,8 +628,8 @@ Errno CBlockChain::AddNewOrigin(const CBlock& block, CBlockChainUpdate& update)
         return err;
     }
 
-    CBlockIndex* pIndexDuplicated;
-    if (cntrBlock.RetrieveFork(profile.strName, &pIndexDuplicated))
+    BlockIndexPtr pIndexDuplicated = cntrBlock.RetrieveFork(profile.strName);
+    if (pIndexDuplicated)
     {
         StdLog("BlockChain", "Add new origin: Validate origin fail, err: duplated fork name, block: %s, existed: %s",
                hashBlock.ToString().c_str(), pIndexDuplicated->GetOriginHash().GetHex().c_str());
@@ -637,19 +637,11 @@ Errno CBlockChain::AddNewOrigin(const CBlock& block, CBlockChainUpdate& update)
     }
 
     uint256 nChainTrust;
-    if (!pCoreProtocol->GetBlockTrust(block, nChainTrust, pIndexPrev))
+    if (!GetBlockTrust(block, nChainTrust, pIndexPrev))
     {
         StdLog("BlockChain", "Add new origin: get block trust fail, block: %s", hashBlock.ToString().c_str());
         return ERR_SYS_STORAGE_ERROR;
     }
-
-    CBlockEx blockex(block, nChainTrust);
-    if (!cntrBlock.StorageNewBlock(hashBlock, hashBlock, blockex, update))
-    {
-        StdLog("BlockChain", "Add new origin: Storage block fail, block: %s", hashBlock.ToString().c_str());
-        return ERR_SYS_STORAGE_ERROR;
-    }
-    StdLog("BlockChain", "Add origin block success, block: %s", hashBlock.ToString().c_str());
 
     return OK;
 }
