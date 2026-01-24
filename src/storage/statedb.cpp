@@ -199,6 +199,22 @@ bool CForkStateDB::VerifyState(const uint256& hashRoot, const bool fVerifyAllNod
     return true;
 }
 
+bool CForkStateDB::ClearStateUnavailableNode(const uint32 nClearRefHeight)
+{
+    return true;
+}
+
+bool CForkStateDB::ListStateRootKv(std::vector<std::pair<uint256, bytesmap>>& vRootKv)
+{
+    return true;
+}
+
+bool CForkStateDB::AddStateKvTrie(const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    return dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot);
+}
+
+//-------------------------------------------------------------------------------------------
 void CForkStateDB::AddPrevRoot(const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, bytesmap& mapKv)
 {
     hnbase::CBufStream ssKey, ssValue;

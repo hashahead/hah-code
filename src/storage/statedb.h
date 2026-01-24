@@ -45,6 +45,10 @@ public:
     bool RetrieveDestState(const uint256& hashBlockRoot, const CDestination& dest, CDestState& state);
     bool ListDestState(const uint256& hashBlockRoot, std::map<CDestination, CDestState>& mapBlockState);
     bool VerifyState(const uint256& hashRoot, const bool fVerifyAllNode = true);
+    bool ClearStateUnavailableNode(const uint32 nClearRefHeight);
+
+    bool ListStateRootKv(std::vector<std::pair<uint256, bytesmap>>& vRootKv);
+    bool AddStateKvTrie(const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot);
 
 protected:
     void AddPrevRoot(const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, bytesmap& mapKv);
