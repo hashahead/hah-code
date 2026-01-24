@@ -859,7 +859,7 @@ bool CBlockChain::VerifyDelegateMinVote(const uint256& hashRefBlock, const uint3
         return false;
     }
     uint256 hashBlock;
-    if (!GetBlockHashOfRefBlock(hashRefBlock, nHeight, hashBlock))
+    if (!GetPrimaryBlockHashOfRefBlock(hashRefBlock, nHeight, hashBlock))
     {
         StdLog("BlockChain", "Verify delegate min vote: Get refblock fail, height: %d, refblock: %s", nHeight, hashRefBlock.ToString().c_str());
         return false;
@@ -889,8 +889,8 @@ bool CBlockChain::GetBlockDelegateEnrolled(const uint256& hashBlock, CDelegateEn
         return true;
     }
 
-    CBlockIndex* pIndex;
-    if (!cntrBlock.RetrieveIndex(hashBlock, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashBlock);
+    if (!pIndex)
     {
         StdLog("BlockChain", "GetBlockDelegateEnrolled: Retrieve block index, block: %s", hashBlock.ToString().c_str());
         return false;
@@ -901,10 +901,10 @@ bool CBlockChain::GetBlockDelegateEnrolled(const uint256& hashBlock, CDelegateEn
         return true;
     }
     vector<uint256> vBlockRange;
-    for (int i = 0; i < CONSENSUS_ENROLL_INTERVAL; i++)
+    for (int i = 0; pIndex && i < CONSENSUS_ENROLL_INTERVAL; i++)
     {
         vBlockRange.push_back(pIndex->GetBlockHash());
-        pIndex = pIndex->pPrev;
+        pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
     }
 
     if (!cntrBlock.RetrieveAvailDelegate(hashBlock, pIndex->GetBlockHeight(), vBlockRange, DELEGATE_PROOF_OF_STAKE_ENROLL_MINIMUM_AMOUNT,
@@ -928,20 +928,20 @@ bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, CDelegateA
         return true;
     }
 
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashBlock, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashBlock);
+    if (!pIndex)
     {
         StdLog("BlockChain", "Get Block Delegate Agreement: Retrieve block index fail, block: %s", hashBlock.ToString().c_str());
         return false;
     }
 
     // is not primary or PoW, return.
-    if (!pIndex->IsPrimary() || pIndex->IsProofOfWork())
+    if (!pIndex->IsPrimary() || pIndex->IsProofOfPoa())
     {
         return true;
     }
 
-    CBlockIndex* pIndexRef = pIndex;
+    BlockIndexPtr pIndexRef = pIndex;
     if (pIndex->GetBlockHeight() < CONSENSUS_INTERVAL)
     {
         return true;
@@ -954,9 +954,9 @@ bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, CDelegateA
         return false;
     }
 
-    for (int i = 0; i < CONSENSUS_DISTRIBUTE_INTERVAL + 1; i++)
+    for (int i = 0; pIndex && i < CONSENSUS_DISTRIBUTE_INTERVAL + 1; i++)
     {
-        pIndex = pIndex->pPrev;
+        pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
     }
 
     CDelegateEnrolled enrolled;
@@ -969,7 +969,7 @@ bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, CDelegateA
     delegate::CDelegateVerify verifier(enrolled.mapWeight, enrolled.mapEnrollData);
     map<CDestination, size_t> mapBallot;
     CProofOfDelegate proof;
-    if (!block.IsProofOfWork())
+    if (!block.IsProofOfPoa())
     {
         if (!block.GetDelegateProof(proof))
         {
