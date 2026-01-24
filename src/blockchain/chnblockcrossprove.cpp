@@ -141,4 +141,43 @@ bool CBlockCrossProveChannel::HandleEvent(network::CEventPeerBlockCrossProveData
     return true;
 }
 
+//------------------------------------------
+bool CBlockCrossProveChannel::HandleEvent(network::CEventLocalBlockcrossproveTimer& eventTimer)
+{
+    return true;
+}
+
+bool CBlockCrossProveChannel::HandleEvent(network::CEventLocalBlockcrossproveSubscribeFork& eventSubsFork)
+{
+    for (auto& hashFork : eventSubsFork.data)
+    {
+        CBlockStatus status;
+        if (!pBlockChain->GetLastBlockStatus(hashFork, status))
+        {
+            StdLog("CBlockCrossProveChannel", "CEvent Local Crossprove Subscribe Fork: Fork is not enabled, fork: %s", hashFork.GetHex().c_str());
+            continue;
+        }
+        StdLog("CBlockCrossProveChannel", "CEvent Local Crossprove Subscribe Fork: Subscribe fork, last block: %s, ref block: %s, fork: %s",
+               status.hashBlock.ToString().c_str(), status.hashRefBlock.ToString().c_str(), hashFork.GetHex().c_str());
+
+        if (mapChnFork.count(hashFork) == 0)
+        {
+            auto it = mapChnFork.insert(std::make_pair(hashFork, CBlockCrossProveChnFork(hashFork))).first;
+            if (it != mapChnFork.end())
+            {
+                StdDebug("CBlockCrossProveChannel", "CEvent Local Crossprove Subscribe Fork: Update block vote success, last block: %s, fork: %s", status.hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
+            }
+            else
+            {
+                StdLog("CBlockCrossProveChannel", "CEvent Local Crossprove Subscribe Fork: Add fork fail, last block: %s, fork: %s", status.hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
+            }
+        }
+        else
+        {
+            StdLog("CBlockCrossProveChannel", "CEvent Local Crossprove Subscribe Fork: Fork existed, last block: %s, fork: %s", status.hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
+        }
+    }
+    return true;
+}
+
 } // namespace hashahead

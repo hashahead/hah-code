@@ -85,6 +85,8 @@ protected:
 
     bool HandleEvent(network::CEventPeerBlockCrossProveData& eventBcp) override;
 
+    bool HandleEvent(network::CEventLocalBlockcrossproveTimer& eventTimer) override;
+    bool HandleEvent(network::CEventLocalBlockcrossproveSubscribeFork& eventSubsFork) override;
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
