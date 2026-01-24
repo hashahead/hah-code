@@ -306,9 +306,9 @@ bool CCacheAddressData::GetBlockTokenContractAddress(const uint256& hashBlock, s
 //////////////////////////////
 // CForkAddressDB
 
-CForkAddressDB::CForkAddressDB(const bool fCacheIn)
+CForkAddressDB::CForkAddressDB()
 {
-    fCache = fCacheIn;
+    fPrune = false;
 }
 
 CForkAddressDB::~CForkAddressDB()
@@ -316,7 +316,7 @@ CForkAddressDB::~CForkAddressDB()
     dbTrie.Deinitialize();
 }
 
-bool CForkAddressDB::Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData)
+bool CForkAddressDB::Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData, const bool fNeedPrune)
 {
     if (!dbTrie.Initialize(pathData))
     {
@@ -324,6 +324,7 @@ bool CForkAddressDB::Initialize(const uint256& hashForkIn, const boost::filesyst
         return false;
     }
     hashFork = hashForkIn;
+    fPrune = fNeedPrune;
     return true;
 }
 
@@ -339,20 +340,24 @@ bool CForkAddressDB::RemoveAll()
 }
 
 bool CForkAddressDB::AddAddressContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapAddress, const uint64 nNewAddressCount,
-                                       const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress, uint256& hashNewRoot)
+                                       const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress,
+                                       const std::map<CDestination, uint384>& mapBlsPubkeyContext, uint256& hashNewRoot)
 {
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
     {
-        if (!ReadTrieRoot(hashPrevBlock, hashPrevRoot))
+        if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashPrevBlock, hashPrevRoot))
         {
-            StdLog("CForkAddressDB", "Add Address Context: Read trie root fail, hashPrevBlock: %s, hashBlock: %s",
+            StdLog("CForkAddressDB", "Add Address Context: Read trie root fail, prev block: %s, block: %s",
                    hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
             return false;
         }
     }
 
+    std::map<CDestination, std::map<CDestination, uint8>> mapOwnerLinkTemplate;    // key1: owner address, key2: template address, value: template type
+    std::map<CDestination, std::map<CDestination, uint8>> mapDelegateLinkTemplate; // key1: owner address, key2: template address, value: template type
     bytesmap mapKv;
+
     for (const auto& kv : mapAddress)
     {
         hnbase::CBufStream ssKey, ssValue;
@@ -365,6 +370,12 @@ bool CForkAddressDB::AddAddressContext(const uint256& hashPrevBlock, const uint2
         ssValue.GetData(btValue);
 
         mapKv.insert(make_pair(btKey, btValue));
+
+        if (kv.second.IsTemplate())
+        {
+            AddOwnerAddressLinkTemplate(hashPrevBlock, kv.first, kv.second, mapOwnerLinkTemplate, mapKv);
+            AddDelegateAddressLinkTemplate(hashPrevBlock, kv.first, kv.second, mapDelegateLinkTemplate, mapKv);
+        }
     }
     for (const auto& kv : mapTimeVault)
     {
