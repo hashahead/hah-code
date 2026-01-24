@@ -479,6 +479,54 @@ bool CContractDB::RetrieveContractKvValue(const uint256& hashFork, const uint256
     return false;
 }
 
+bool CContractDB::ClearContractKvRootUnavailableNode(const uint256& hashFork, const uint32 nRemoveLastHeight, bool& fExit)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapContractDB.find(hashFork);
+    if (it != mapContractDB.end())
+    {
+        return it->second->ClearContractKvRootUnavailableNode(nRemoveLastHeight, fExit);
+    }
+    return false;
+}
+
+bool CContractDB::GetContractAddressRoot(const uint256& hashFork, const CDestination& destContract, const uint256& hashRoot, uint256& hashPrevRoot, uint32& nBlockHeight, uint64& nBlockNumber)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapContractDB.find(hashFork);
+    if (it != mapContractDB.end())
+    {
+        return it->second->GetContractAddressRoot(destContract, hashRoot, hashPrevRoot, nBlockHeight, nBlockNumber);
+    }
+    return false;
+}
+
+bool CContractDB::CreateCacheContractKvRoot(const uint256& hashFork, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapContractDB.find(hashFork);
+    if (it != mapContractDB.end())
+    {
+        return it->second->CreateCacheContractKvRoot(hashPrevRoot, mapKv, hashNewRoot);
+    }
+    return false;
+}
+
+bool CContractDB::AddContractKvTrie(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapContractDB.find(hashFork);
+    if (it != mapContractDB.end())
+    {
+        return it->second->AddContractKvTrie(nBlockHeight, hashPrevRoot, mapKv, hashNewRoot);
+    }
+    return false;
+}
+
 bool CContractDB::CreateStaticContractStateRoot(const std::map<uint256, bytes>& mapContractState, uint256& hashStateRoot)
 {
     bytesmap mapKv;
