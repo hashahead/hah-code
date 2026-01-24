@@ -457,6 +457,60 @@ bool CForkAddressDB::AddAddressContext(const uint256& hashPrevBlock, const uint2
     return true;
 }
 
+bool CForkAddressDB::AddTokenContractAddressContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddressContext, const bool fAll)
+{
+    uint256 hashPrevRoot;
+    if (!fAll)
+    {
+        if (hashBlock != hashFork)
+        {
+            if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_CONTRACT_ADDRESS_TRIEROOT, hashPrevBlock, hashPrevRoot))
+            {
+                StdLog("CForkAddressDB", "Add token constract address context: Read prev root fail, prev block: %s, block: %s",
+                       hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+                return false;
+            }
+        }
+    }
+
+    bytesmap mapKv;
+    for (const auto& kv : mapTokenContractAddressContext)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_ADDRESS_KEY_TYPE_TOKEN_CONTRACT_ADDRESS << kv.first;
+        ssKey.GetData(btKey);
+
+        ssValue << kv.second;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddTokenPrevRoot(hashPrevBlock, hashBlock, mapKv);
+    }
+
+    uint256 hashNewRoot;
+    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
+    {
+        StdLog("CForkAddressDB", "Add token constract address context: Add new trie fail, prev block: %s, block: %s",
+               hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    if (!WriteTrieRoot(DB_ADDRESS_KEY_TYPE_CONTRACT_ADDRESS_TRIEROOT, hashBlock, hashNewRoot))
+    {
+        StdLog("CForkAddressDB", "Add token constract address context: Write trie root fail, prev block: %s, block: %s",
+               hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    AddCacheTokenContractAddressData(hashPrevBlock, hashBlock, mapTokenContractAddressContext, fAll);
+    return true;
+}
+
 bool CForkAddressDB::RetrieveAddressContext(const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress)
 {
     uint256 hashRoot;

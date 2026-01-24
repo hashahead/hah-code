@@ -119,7 +119,7 @@ public:
     bool RetrieveTokenContractAddressContext(const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress);
     bool ListAddress(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress);
     bool ListContractAddress(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
-    bool RetrieveTimeVault(const uint256& hashBlock, const CDestination& dest, CTimeVault& tv);
+    bool ListTokenContractAddress(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress);
     bool GetAddressCount(const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount);
     bool ListFunctionAddress(const uint256& hashBlock, std::map<uint32, CFunctionAddressContext>& mapFunctionAddress);
     bool RetrieveFunctionAddress(const uint256& hashBlock, const uint32 nFuncId, CFunctionAddressContext& ctxFuncAddress);
