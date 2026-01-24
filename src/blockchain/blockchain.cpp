@@ -816,19 +816,19 @@ bool CBlockChain::RetrieveDestVoteContext(const uint256& hashBlock, const CDesti
 
 bool CBlockChain::GetDelegateEnrollByHeight(const uint256& hashRefBlock, const int nEnrollHeight, std::map<CDestination, storage::CDiskPos>& mapEnrollTxPos)
 {
-    CBlockIndex* pIndex;
-    if (!cntrBlock.RetrieveIndex(hashRefBlock, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashRefBlock);
+    if (!pIndex)
     {
         StdLog("BlockChain", "Get Delegate Enroll By Height: Retrieve block index, block: %s", hashRefBlock.ToString().c_str());
         return false;
     }
-    if (pIndex->GetBlockHeight() >= CONSENSUS_ENROLL_INTERVAL)
+    if (pIndex && pIndex->GetBlockHeight() >= CONSENSUS_ENROLL_INTERVAL)
     {
         vector<uint256> vBlockRange;
-        for (int i = 0; i < CONSENSUS_ENROLL_INTERVAL; i++)
+        for (int i = 0; pIndex && i < CONSENSUS_ENROLL_INTERVAL; i++)
         {
             vBlockRange.push_back(pIndex->GetBlockHash());
-            pIndex = pIndex->pPrev;
+            pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
         }
         if (!cntrBlock.GetRangeDelegateEnroll(nEnrollHeight, vBlockRange, mapEnrollTxPos))
         {
