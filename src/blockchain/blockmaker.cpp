@@ -782,6 +782,20 @@ bool CBlockMaker::CreateDelegatedBlock(CBlock& block, const uint256& hashFork, c
     txMint.SetGasPrice(0);
     txMint.SetGasLimit(0);
 
+    bytes btBitmap;
+    bytes btAggSig;
+    uint256 hashVoteBlock;
+    if (pBlockChain->GetMakerVoteBlock(block.hashPrev, btBitmap, btAggSig, hashVoteBlock))
+    {
+        block.AddBlockVoteSig(CBlockVoteSig(hashVoteBlock, btBitmap, btAggSig));
+    }
+
+    std::map<CChainId, CBlockProve> mapCrosschainProve;
+    if (pBlockChain->GetCrosschainProveForPrevBlock(block.GetChainId(), block.hashPrev, mapCrosschainProve))
+    {
+        block.mapProve = mapCrosschainProve;
+    }
+
     CAddressContext ctxAddress;
     if (!pBlockChain->RetrieveAddressContext(hashFork, block.hashPrev, destSendTo, ctxAddress))
     {
@@ -796,7 +810,8 @@ bool CBlockMaker::CreateDelegatedBlock(CBlock& block, const uint256& hashFork, c
         txMint.SetToAddressData(CAddressContext(ctxTemplate));
     }
 
-    if (!ArrangeBlockTx(block, hashFork, profile))
+    bool fMoStatus = false;
+    if (!ArrangeBlockTx(block, hashFork, profile, fMoStatus))
     {
         StdError("blockmaker", "Create delegate block: Arrange block tx fail, hashPrev: %s", block.hashPrev.ToString().c_str());
         return false;
