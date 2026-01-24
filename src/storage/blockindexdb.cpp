@@ -245,44 +245,69 @@ bool CBlockIndexDB::GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight
 //-----------------------------------------------------
 // block number
 
-bool CBlockIndexDB::AddBlockNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint64 nBlockNumber, const uint256& hashBlock, uint256& hashNewRoot)
+bool CBlockIndexDB::UpdateBlockNumberBlockLongChain(const uint256& hashFork, const std::vector<std::pair<uint64, uint256>>& vRemoveNumberBlock, const std::vector<std::pair<uint64, uint256>>& mapNewNumberBlock)
 {
-    uint256 hashPrevRoot;
-    if (hashPrevBlock != 0 && hashBlock != hashFork)
+    CWriteLock wlock(rwAccess);
+
+    if (!TxnBegin())
     {
-        if (!ReadTrieRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashPrevBlock, hashPrevRoot))
+        StdLog("CBlockIndexDB", "Add block number: Txn begin fail");
+        return false;
+    }
+
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashFork);
+
+    for (auto& vd : vRemoveNumberBlock)
+    {
+        const uint64 nBlockNumber = vd.first;
+        const uint256& hashBlock = vd.second;
+
+        CBufStream ssKey;
+        ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_NUMBER << BSwap32(nChainId) << BSwap64(nBlockNumber);
+        if (!Erase(ssKey))
         {
-            StdLog("CBlockIndexDB", "Add block number: Read trie root fail, hashPrevBlock: %s", hashPrevBlock.GetHex().c_str());
+            StdLog("CBlockIndexDB", "Add block number: Remove block number fail, number: %lu, block: %s", nBlockNumber, hashBlock.ToString().c_str());
+            TxnAbort();
             return false;
         }
     }
 
-    bytesmap mapKv;
+    for (auto& vd : mapNewNumberBlock)
     {
-        hnbase::CBufStream ssKey, ssValue;
-        bytes btKey, btValue;
+        const uint64 nBlockNumber = vd.first;
+        const uint256& hashBlock = vd.second;
 
-        ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_NUMBER << nChainId << BSwap64(nBlockNumber);
-        ssKey.GetData(btKey);
-
+        CBufStream ssKey, ssValue;
+        ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_NUMBER << BSwap32(nChainId) << BSwap64(nBlockNumber);
         ssValue << hashBlock;
-        ssValue.GetData(btValue);
-
-        mapKv.insert(make_pair(btKey, btValue));
-    }
-    AddPrevRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashPrevRoot, hashBlock, mapKv);
-
-    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
-    {
-        StdLog("CBlockIndexDB", "Add block number: Add new trie fail, hashPrevBlock: %s, nBlockNumber: %lu",
-               hashPrevBlock.GetHex().c_str(), nBlockNumber);
-        return false;
+        if (!Write(ssKey, ssValue))
+        {
+            StdLog("CBlockIndexDB", "Add block number: Write block number fail, number: %lu, block: %s", nBlockNumber, hashBlock.ToString().c_str());
+            TxnAbort();
+            return false;
+        }
     }
 
-    if (!WriteTrieRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashBlock, hashNewRoot))
+    if (mapNewNumberBlock.size() > 0)
     {
-        StdLog("CBlockIndexDB", "Add block number: Write trie root fail, hashPrevBlock: %s, nBlockNumber: %lu",
-               hashPrevBlock.GetHex().c_str(), nBlockNumber);
+        auto& lastBlock = mapNewNumberBlock[mapNewNumberBlock.size() - 1];
+        const uint64 nLastNumber = lastBlock.first;
+        const uint256& hashLastBlock = lastBlock.second;
+        CBufStream ssKey, ssValue;
+        ssKey << DB_BLOCKINDEX_KEY_TYPE_LAST_BLOCK_NUMBER << nChainId;
+        ssValue << nLastNumber << hashLastBlock;
+        if (!Write(ssKey, ssValue))
+        {
+            StdLog("CBlockIndexDB", "Add block number: Write last block number fail, last number: %lu, last block: %s", nLastNumber, hashLastBlock.ToString().c_str());
+            TxnAbort();
+            return false;
+        }
+    }
+
+    if (!TxnCommit())
+    {
+        StdLog("CBlockIndexDB", "Add block number: Txn commit fail");
+        TxnAbort();
         return false;
     }
     return true;
