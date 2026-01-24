@@ -150,8 +150,8 @@ protected:
                          std::vector<CBlockEx>& vBlockAddNew, std::vector<CBlockEx>& vBlockRemove);
     bool GetBlockDelegateAgreement(const uint256& hashBlock, const CBlock& block, const CBlockIndex* pIndexPrev,
                                    CDelegateAgreement& agreement, uint256& nEnrollTrust);
-    Errno VerifyBlock(const uint256& hashBlock, const CBlock& block, CBlockIndex* pIndexPrev,
-                      uint256& nReward, CDelegateAgreement& agreement, uint256& nEnrollTrust, CBlockIndex** ppIndexRef);
+    Errno VerifyBlock(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const BlockIndexPtr& pIndexPrev,
+                      uint256& nReward, CDelegateAgreement& agreement, uint256& nEnrollTrust, BlockIndexPtr& ppIndexRef);
     bool VerifyBlockCertTx(const CBlock& block);
 
     void InitCheckPoints();

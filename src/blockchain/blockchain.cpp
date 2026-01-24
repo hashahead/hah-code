@@ -1301,14 +1301,38 @@ bool CBlockChain::GetBlockChanges(const CBlockIndex* pIndexNew, const CBlockInde
     return true;
 }
 
-Errno CBlockChain::VerifyBlock(const uint256& hashBlock, const CBlock& block, CBlockIndex* pIndexPrev,
-                               uint256& nReward, CDelegateAgreement& agreement, uint256& nEnrollTrust, CBlockIndex** ppIndexRef)
+Errno CBlockChain::VerifyBlock(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const BlockIndexPtr& pIndexPrev,
+                               uint256& nReward, CDelegateAgreement& agreement, uint256& nEnrollTrust, BlockIndexPtr& pIndexRef)
 {
     nReward = 0;
     if (block.IsOrigin())
     {
         StdLog("BlockChain", "Verify block: Is origin, block: %s", hashBlock.GetHex().c_str());
         return ERR_BLOCK_INVALID_FORK;
+    }
+
+    if (!block.IsPrimary())
+    {
+        CForkContext ctxFork;
+        if (!cntrBlock.RetrieveForkContext(hashFork, ctxFork, pIndexPrev->GetRefBlock()))
+        {
+            StdLog("BlockChain", "Verify block: Get fork context fail, fork: %s, block: %s", hashFork.ToString().c_str(), hashBlock.GetHex().c_str());
+            return ERR_BLOCK_INVALID_FORK;
+        }
+        if (ctxFork.IsUserFork())
+        {
+            CForkCtxStatus forkStatus;
+            if (!cntrBlock.GetForkCtxStatus(hashFork, forkStatus, pIndexPrev->GetRefBlock()))
+            {
+                StdLog("BlockChain", "Verify block: Get fork status fail, fork: %s, block: %s", hashFork.ToString().c_str(), hashBlock.GetHex().c_str());
+                return ERR_BLOCK_INVALID_FORK;
+            }
+            if (forkStatus.IsStopped())
+            {
+                StdLog("BlockChain", "Verify block: Fork is stopped, fork: %s, block: %s", hashFork.ToString().c_str(), hashBlock.GetHex().c_str());
+                return ERR_BLOCK_INVALID_FORK;
+            }
+        }
     }
 
     if (block.IsPrimary())
