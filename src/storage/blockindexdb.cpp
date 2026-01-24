@@ -183,6 +183,65 @@ bool CBlockIndexDB::WalkThroughBlockIndex(CBlockDBWalker& walker)
     return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
 }
 
+bool CBlockIndexDB::RetrieveBlockHashByHeight(const uint256& hashFork, const uint32 nBlockHeight, std::vector<uint256>& vBlockHash)
+{
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashFork);
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nKeyTypeDb;
+            CChainId nChainIdDb;
+            uint32 nHeightDb;
+            uint256 hashBlockDb;
+            ssKey >> nKeyTypeDb >> nChainIdDb >> nHeightDb >> hashBlockDb;
+            nChainIdDb = BSwap32(nChainIdDb);
+            nHeightDb = BSwap32(nHeightDb);
+            if (nKeyTypeDb == DB_BLOCKINDEX_KEY_TYPE_BLOCK_HEIGHT && nChainIdDb == nChainId && nHeightDb == nBlockHeight)
+            {
+                vBlockHash.push_back(hashBlockDb);
+                return true;
+            }
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyBegin << DB_BLOCKINDEX_KEY_TYPE_BLOCK_HEIGHT << BSwap32(nChainId) << BSwap32(nBlockHeight);
+    ssKeyPrefix << DB_BLOCKINDEX_KEY_TYPE_BLOCK_HEIGHT << BSwap32(nChainId) << BSwap32(nBlockHeight);
+
+    return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
+bool CBlockIndexDB::GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight)
+{
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashFork);
+
+    CBufStream ssKey, ssValue;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_MAX_HEIGHT << BSwap32(nChainId);
+    if (!Read(ssKey, ssValue))
+    {
+        nMaxHeight = 0;
+    }
+    else
+    {
+        try
+        {
+            ssValue >> nMaxHeight;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            nMaxHeight = 0;
+        }
+    }
+    return true;
+}
+
 //-----------------------------------------------------
 // block number
 
