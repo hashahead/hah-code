@@ -403,11 +403,27 @@ bool CForkAddressDB::AddAddressContext(const uint256& hashPrevBlock, const uint2
 
         mapKv.insert(make_pair(btKey, btValue));
     }
-    AddPrevRoot(hashPrevRoot, hashBlock, mapKv);
+    for (const auto& kv : mapBlsPubkeyContext)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_ADDRESS_KEY_TYPE_BLSPUBKEY << kv.first;
+        ssKey.GetData(btKey);
+
+        ssValue << kv.second;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddPrevRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashPrevRoot, hashBlock, mapKv);
+    }
 
     if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
     {
-        StdLog("CForkAddressDB", "Add Address Context: Add new trie fail, hashPrevBlock: %s, hashBlock: %s",
+        StdLog("CForkAddressDB", "Add Address Context: Add new trie fail, prev block: %s, block: %s",
                hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
@@ -418,24 +434,26 @@ bool CForkAddressDB::AddAddressContext(const uint256& hashPrevBlock, const uint2
         uint64 nPrevNewAddressCount = 0;
         if (!GetAddressCount(hashPrevBlock, nPrevAddressCount, nPrevNewAddressCount))
         {
-            StdLog("CForkAddressDB", "Add Address Context: Get prev address count fail, hashPrevBlock: %s, hashBlock: %s",
+            StdLog("CForkAddressDB", "Add Address Context: Get prev address count fail, prev block: %s, block: %s",
                    hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
             return false;
         }
     }
     if (!AddAddressCount(hashBlock, nPrevAddressCount + nNewAddressCount, nNewAddressCount))
     {
-        StdLog("CForkAddressDB", "Add Address Context: Add address count fail, hashPrevBlock: %s, hashBlock: %s",
+        StdLog("CForkAddressDB", "Add Address Context: Add address count fail, prev block: %s, block: %s",
                hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
 
-    if (!WriteTrieRoot(hashBlock, hashNewRoot))
+    if (!WriteTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashNewRoot))
     {
-        StdLog("CForkAddressDB", "Add Address Context: Write trie root fail, hashPrevBlock: %s, hashBlock: %s",
+        StdLog("CForkAddressDB", "Add Address Context: Write trie root fail, prev block: %s, block: %s",
                hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
+
+    AddCacheAddressData(hashPrevBlock, hashBlock, mapAddress);
     return true;
 }
 
