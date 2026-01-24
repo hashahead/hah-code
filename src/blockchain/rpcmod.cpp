@@ -2115,8 +2115,12 @@ CRPCResultPtr CRPCMod::RPCGetBlockDetail(const CReqContext& ctxReq, CRPCParamPtr
     {
         data.strBloom = "0x";
     }
+    data.fConfirm = pService->IsBlockConfirm(hashBlock);
+
     int nDepth = height < 0 ? 0 : pService->GetForkHeight(hashFork) - height;
     data.txmint = TxToJSON(block.txMint.GetHash(), block.txMint, hashFork, hashBlock, nDepth);
+    data.nTxcount = block.vtx.size();
+
     for (int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction& tx = block.vtx[i];
@@ -2163,8 +2167,7 @@ CRPCResultPtr CRPCMod::RPCGetBlockData(const CReqContext& ctxReq, CRPCParamPtr p
                 {
                     nSlot = spParam->nSlot;
                 }
-                uint32 nBlockHeight = spParam->nHeight;
-                if (!pService->GetBlockHashByHeightSlot(hashFork, nBlockHeight, nSlot, hashBlock))
+                if (!pService->GetBlockHashByHeightSlot(hashFork, 0, spParam->nHeight, nSlot, hashBlock))
                 {
                     throw CRPCException(RPC_INVALID_PARAMETER, "Invalid height or slot");
                 }
@@ -2214,7 +2217,7 @@ CRPCResultPtr CRPCMod::RPCGetTxPool(const CReqContext& ctxReq, CRPCParamPtr para
     }
     bool fDetail = spParam->fDetail.IsValid() ? bool(spParam->fDetail) : false;
     int64 nGetOffset = spParam->nGetoffset.IsValid() ? int64(spParam->nGetoffset) : 0;
-    int64 nGetCount = spParam->nGetcount.IsValid() ? int64(spParam->nGetcount) : 20;
+    int64 nGetCount = spParam->nGetcount.IsValid() ? int64(spParam->nGetcount) : 30;
 
     auto spResult = MakeCGetTxPoolResultPtr();
     if (!fDetail)
@@ -2407,6 +2410,17 @@ CRPCResultPtr CRPCMod::RPCGetVotes(const CReqContext& ctxReq, CRPCParamPtr param
 CRPCResultPtr CRPCMod::RPCListDelegate(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListDelegateParam>(param);
+
+    CDestination destDelegateAddress;
+    if (spParam->strDelegateaddress.IsValid())
+    {
+        destDelegateAddress.ParseString(spParam->strDelegateaddress);
+        if (destDelegateAddress.IsNull())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid delegateaddress");
+        }
+    }
+    bool fValidDelegate = spParam->fValiddelegate;
 
     uint256 hashRefBlock = GetRefBlock(pCoreProtocol->GetGenesisBlockHash(), spParam->strBlock);
     if (hashRefBlock != 0)
