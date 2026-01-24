@@ -856,7 +856,7 @@ bool CVoteDB::AddDelegateVote(const uint256& hashPrevBlock, const uint256& hashB
 bool CVoteDB::AddDelegateEnroll(const uint256& hashBlock, const std::map<int, std::map<CDestination, CDiskPos>>& mapEnrollTx)
 {
     CBufStream ssKey, ssValue;
-    ssKey << DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL << DB_VOTE_KEY_ID_DELEGATEENROLL << hashBlock;
+    ssKey << DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL << hashBlock;
     ssValue << mapEnrollTx;
     if (!dbTrie.WriteExtKv(ssKey, ssValue))
     {
@@ -871,8 +871,7 @@ bool CVoteDB::RetrieveDestDelegateVote(const uint256& hashBlock, const CDestinat
     uint256 hashTrieRoot;
     if (hashBlock != 0)
     {
-        uint64 nDelegateVoteCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashTrieRoot, nDelegateVoteCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashTrieRoot))
         {
             return false;
         }
@@ -906,15 +905,19 @@ bool CVoteDB::RetrieveDelegatedVote(const uint256& hashBlock, std::map<CDestinat
     uint256 hashTrieRoot;
     if (hashBlock != 0)
     {
-        uint64 nDelegateVoteCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashTrieRoot, nDelegateVoteCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashTrieRoot))
         {
             return false;
         }
     }
 
+    bytes btKeyPrefix;
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_VOTE_KEY_TYPE_DELEGATE_VOTE_ADDRESS;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
     CListDelegateVoteTrieDBWalker walker(mapDelegateVote);
-    if (!dbTrie.WalkThroughTrie(hashTrieRoot, walker))
+    if (!dbTrie.WalkThroughTrie(hashTrieRoot, walker, btKeyPrefix))
     {
         return false;
     }
