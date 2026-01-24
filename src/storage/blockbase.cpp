@@ -591,17 +591,30 @@ bool CBlockBase::RetrieveTxAndIndex(const uint256& hashFork, const uint256& txid
     return true;
 }
 
-bool CBlockPendingTxFilter::AddPendingTx(const uint256& hashForkIn, const uint256& txid)
+bool CBlockBase::RetrieveAvailDelegate(const uint256& hash, int height, const vector<uint256>& vBlockRange,
+                                       const uint256& nMinEnrollAmount,
+                                       map<CDestination, size_t>& mapWeight,
+                                       map<CDestination, vector<unsigned char>>& mapEnrollData,
+                                       vector<pair<CDestination, uint256>>& vecAmount)
 {
-    if (hashForkIn != hashFork)
+    map<CDestination, uint256> mapVote;
+    if (!dbBlock.RetrieveDelegate(hash, mapVote))
     {
-        return true;
-    }
-    if (setTxid.size() >= MAX_FILTER_CACHE_COUNT * 2)
-    {
+        StdTrace("BlockBase", "Retrieve Avail Delegate: Retrieve Delegate %s block failed",
+                 hash.ToString().c_str());
         return false;
     }
-    if (setTxid.find(txid) == setTxid.end())
+
+    map<CDestination, CDiskPos> mapEnrollTxPos;
+    if (!dbBlock.RetrieveRangeEnroll(height, vBlockRange, mapEnrollTxPos))
+    {
+        StdTrace("BlockBase", "Retrieve Avail Retrieve Enroll block %s height %d failed",
+                 hash.ToString().c_str(), height);
+        return false;
+    }
+
+    map<pair<uint256, CDiskPos>, pair<CDestination, vector<uint8>>> mapSortEnroll;
+    for (auto it = mapVote.begin(); it != mapVote.end(); ++it)
     {
         setTxid.insert(txid);
         if (setHisTxid.find(txid) != setHisTxid.end())
