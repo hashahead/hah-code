@@ -406,6 +406,11 @@ Errno CCoreProtocol::ValidateBlock(const uint256& hashFork, const uint256& hashM
         return DEBUG(ERR_BLOCK_TIMESTAMP_OUT_OF_RANGE, "%ld", block.GetBlockTime());
     }
 
+    if (!block.VerifyBlockHeight())
+    {
+        return DEBUG(ERR_BLOCK_PROOF_OF_STAKE_INVALID, "block height error, height: %d, prev height: %d, block type: %d",
+                     block.nHeight, CBlock::GetBlockHeightByHash(block.hashPrev), block.nType);
+    }
     if (!block.VerifyBlockProof())
     {
         return DEBUG(ERR_BLOCK_PROOF_OF_STAKE_INVALID, "block proof error");
@@ -427,7 +432,7 @@ Errno CCoreProtocol::ValidateBlock(const uint256& hashFork, const uint256& hashM
     }
 
     // Validate mint tx
-    if (!block.txMint.IsMintTx() || ValidateTransaction(hashFork, hashMainChainRefBlock, block.txMint) != OK)
+    if (!block.txMint.IsMintTx() || ValidateTransaction(hashFork, hashMainChainRefBlock, block.GetBlockHeight(), block.txMint) != OK)
     {
         return DEBUG(ERR_BLOCK_TRANSACTIONS_INVALID, "invalid mint tx, tx type: %d", block.txMint.GetTxType());
     }
@@ -443,7 +448,7 @@ Errno CCoreProtocol::ValidateBlock(const uint256& hashFork, const uint256& hashM
         return DEBUG(ERR_BLOCK_TRANSACTIONS_INVALID, "origin block vtx is not empty");
     }
 
-    if (block.hashMerkleRoot != block.CalcMerkleTreeRoot())
+    if (!block.VerifyBlockMerkleTreeRoot())
     {
         return DEBUG(ERR_BLOCK_TXHASH_MISMATCH, "tx merkleroot mismatched");
     }
@@ -460,7 +465,7 @@ Errno CCoreProtocol::ValidateBlock(const uint256& hashFork, const uint256& hashM
 
     for (const CTransaction& tx : block.vtx)
     {
-        if (tx.IsMintTx() || ValidateTransaction(hashFork, hashMainChainRefBlock, tx) != OK)
+        if (tx.IsMintTx() || ValidateTransaction(hashFork, hashMainChainRefBlock, block.GetBlockHeight(), tx) != OK)
         {
             return DEBUG(ERR_BLOCK_TRANSACTIONS_INVALID, "invalid tx %s", tx.GetHash().GetHex().c_str());
         }
