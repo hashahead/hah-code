@@ -575,16 +575,20 @@ bool CBlockBase::RetrieveOrigin(const uint256& hashFork, CBlock& block)
     return true;
 }
 
-//////////////////////////////
-// CBlockPendingTxFilter
-
-bool CBlockPendingTxFilter::isTimeout()
+bool CBlockBase::RetrieveTxAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashTxAtBlock, CTxIndex& txIndex)
 {
-    if (GetTime() - nPrevGetChangesTime >= FILTER_DEFAULT_TIMEOUT)
+    if (!GetTxIndex(hashFork, txid, hashAtFork, hashTxAtBlock, txIndex))
     {
-        return true;
+        StdLog("BlockBase", "Retrieve Tx: Get tx index fail, txid: %s, fork: %s", txid.ToString().c_str(), hashFork.ToString().c_str());
+        return false;
     }
-    return false;
+    tx.SetNull();
+    if (!tsBlock.Read(tx, txIndex.nFile, txIndex.nOffset, false, true))
+    {
+        StdLog("BlockBase", "Retrieve Tx: Read fail, txid: %s, fork: %s", txid.ToString().c_str(), hashFork.ToString().c_str());
+        return false;
+    }
+    return true;
 }
 
 bool CBlockPendingTxFilter::AddPendingTx(const uint256& hashForkIn, const uint256& txid)
