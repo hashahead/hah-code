@@ -616,28 +616,64 @@ bool CBlockBase::RetrieveAvailDelegate(const uint256& hash, int height, const ve
     map<pair<uint256, CDiskPos>, pair<CDestination, vector<uint8>>> mapSortEnroll;
     for (auto it = mapVote.begin(); it != mapVote.end(); ++it)
     {
-        setTxid.insert(txid);
-        if (setHisTxid.find(txid) != setHisTxid.end())
+        if ((*it).second >= nMinEnrollAmount)
         {
-            setHisTxid.erase(txid);
+            const CDestination& dest = (*it).first;
+            map<CDestination, CDiskPos>::iterator mi = mapEnrollTxPos.find(dest);
+            if (mi != mapEnrollTxPos.end())
+            {
+                CTransaction tx;
+                if (!tsBlock.Read(tx, (*mi).second, false, true))
+                {
+                    StdLog("BlockBase", "Retrieve Avail Delegate::Read %s tx failed", tx.GetHash().ToString().c_str());
+                    return false;
+                }
+
+                bytes btCertData;
+                if (!tx.GetTxData(CTransaction::DF_CERTTXDATA, btCertData))
+                {
+                    StdLog("BlockBase", "Retrieve Avail Delegate: tx data error1, txid: %s",
+                           tx.GetHash().ToString().c_str());
+                    return false;
+                }
+
+                mapSortEnroll.insert(make_pair(make_pair(it->second, mi->second), make_pair(dest, btCertData)));
+            }
         }
+    }
+    // first 25 destination sorted by amount and sequence
+    for (auto it = mapSortEnroll.rbegin(); it != mapSortEnroll.rend() && mapWeight.size() < MAX_DELEGATE_THRESH; it++)
+    {
+        mapWeight.insert(make_pair(it->second.first, 1));
+        mapEnrollData.insert(make_pair(it->second.first, it->second.second));
+        vecAmount.push_back(make_pair(it->second.first, it->first.first));
+    }
+    for (const auto& d : vecAmount)
+    {
+        StdTrace("BlockBase", "Retrieve Avail Delegate: dest: %s, amount: %s",
+                 d.first.ToString().c_str(), CoinToTokenBigFloat(d.second).c_str());
     }
     return true;
 }
 
-bool CBlockPendingTxFilter::GetFilterTxids(const uint256& hashForkIn, const bool fAll, std::vector<uint256>& vTxid)
+bool CBlockBase::RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount)
 {
-    if (hashForkIn != hashFork)
+    return dbBlock.RetrieveDestDelegateVote(hashBlock, destDelegate, nVoteAmount);
+}
+
+void CBlockBase::ListForkIndex(std::map<uint256, BlockIndexPtr>& mapForkIndex)
+{
+    CReadLock rlock(rwAccess);
+
+    std::map<uint256, CForkContext> mapForkCtxt;
+    if (!dbBlock.ListForkContext(mapForkCtxt))
     {
-        return true;
+        return;
     }
-    if (fAll)
+    for (const auto& kv : mapForkCtxt)
     {
-        for (auto& txid : setTxid)
-        {
-            vTxid.push_back(txid);
-        }
-        for (auto& txid : setHisTxid)
+        BlockIndexPtr pIndex = GetForkLastIndex(kv.first);
+        if (pIndex)
         {
             vTxid.push_back(txid);
         }
