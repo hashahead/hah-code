@@ -4387,10 +4387,11 @@ CRPCResultPtr CRPCMod::RPCCallContract(const CReqContext& ctxReq, CRPCParamPtr p
         nGasPrice = pService->GetForkMintMinGasPrice(hashFork);
     }
     uint256 nGas = uint256(spParam->nGas);
-    if (nGas == 0)
-    {
-        nGas = DEF_TX_GAS_LIMIT;
-    }
+    // No need to handle 0 values
+    // if (nGas == 0)
+    // {
+    //     nGas = DEF_TX_GAS_LIMIT;
+    // }
 
     CAddressContext ctxAddress;
     if (!pService->RetrieveAddressContext(hashFork, to, ctxAddress))
@@ -4402,18 +4403,36 @@ CRPCResultPtr CRPCMod::RPCCallContract(const CReqContext& ctxReq, CRPCParamPtr p
         throw CRPCException(RPC_INTERNAL_ERROR, "to not is contract");
     }
 
-    uint256 nUsedGas;
-    uint64 nGasLeft = 0;
-    int nStatus = 0;
-    bytes btResult;
-    if (!pService->CallContract(false, hashFork, uint256(), from, to, nAmount, nGasPrice, nGas, btContractParam, nUsedGas, nGasLeft, nStatus, btResult))
+    CVmCallTx vmCallTx;
+    CVmCallResult vmCallResult;
+
+    vmCallTx.fEthCall = false;
+    vmCallTx.destFrom = from;
+    vmCallTx.destTo = to;
+    vmCallTx.nTxNonce = 0;
+    vmCallTx.nGasPrice = nGasPrice;
+    vmCallTx.nGasLimit = nGas;
+    vmCallTx.nAmount = nAmount;
+    vmCallTx.btData = btContractParam;
+
+    if (!pService->CallContract(hashFork, uint256(), vmCallTx, vmCallResult))
     {
-        throw CRPCException(RPC_INTERNAL_ERROR, "Call fail");
+        string strError;
+        if (GetVmExecResultInfo(vmCallResult.nStatus, vmCallResult.btResult, strError))
+        {
+            StdLog("CRPCMod", "RPC Call Contract: call execution reverted, err: %s, to: %s", strError.c_str(), to.ToString().c_str());
+            throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, std::string("execution reverted: ") + strError, json_spirit::Value(ToHexString(vmCallResult.btResult)));
+        }
+        else
+        {
+            StdLog("CRPCMod", "RPC Call Contract: call fail, to: %s", to.ToString().c_str());
+            throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "execution failed");
+        }
     }
 
     auto spResult = MakeCCallContractResultPtr();
-    spResult->nStatus = nStatus;
-    spResult->strResult = ToHexString(btResult);
+    spResult->nStatus = vmCallResult.nStatus;
+    spResult->strResult = ToHexString(vmCallResult.btResult);
     return spResult;
 }
 
