@@ -442,6 +442,46 @@ bool CBbEntry::InitializeModules(const EModeType& mode)
             }
             break;
         }
+        case EModuleType::WSSERVICE:
+        {
+            if (!AttachModule(new CWsService()))
+            {
+                return false;
+            }
+            break;
+        }
+        case EModuleType::BLOCKFILTER:
+        {
+            if (!AttachModule(new CBlockFilter()))
+            {
+                return false;
+            }
+            break;
+        }
+        case EModuleType::PRUNEDB:
+        {
+            if (!AttachModule(new CPruneDb()))
+            {
+                return false;
+            }
+            break;
+        }
+        case EModuleType::CHAINSNAPSHOT:
+        {
+            if (!AttachModule(new CChainSnapshot()))
+            {
+                return false;
+            }
+            break;
+        }
+        case EModuleType::NATPORTMAPPING:
+        {
+            if (!AttachModule(new CNatPortMapping()))
+            {
+                return false;
+            }
+            break;
+        }
         default:
             cerr << "Unknown module:%d" << CMode::IntValue(m) << endl;
             break;
@@ -471,14 +511,14 @@ bool CBbEntry::GetRPCHostConfig(std::vector<hnbase::CHttpHostConfig>& vHostCfg)
     CHttpHostConfig cfgHost(GENESIS_CHAINID, pConfig->epRPC, pConfig->nRPCMaxConnections, sslRPC, mapUsrRPC, pConfig->vRPCAllowIP, "rpcmod");
     vHostCfg.push_back(cfgHost);
 
-    for (auto& vd : pConfig->vecChainIdRpcPort)
+    for (const auto& kv : pConfig->mapChainIdRpcPort)
     {
-        if (vd.first == GENESIS_CHAINID)
+        if (kv.first == GENESIS_CHAINID)
         {
             continue;
         }
-        cfgHost.nLinkChainId = vd.first;
-        cfgHost.epHost = boost::asio::ip::tcp::endpoint(pConfig->epRPC.address(), vd.second);
+        cfgHost.nLinkChainId = kv.first;
+        cfgHost.epHost = boost::asio::ip::tcp::endpoint(pConfig->epRPC.address(), kv.second.first);
         vHostCfg.push_back(cfgHost);
     }
     return true;
@@ -491,20 +531,20 @@ void CBbEntry::PurgeStorage()
     if (!TryLockFile((pathData / ".lock").string()))
     {
         cerr << "Cannot obtain a lock on data directory " << pathData << "\n"
-             << "HashAhead is probably already running.\n";
+             << "HashAhead is probably already running." << endl;
         return;
     }
 
     CProofOfWorkParam param(config.GetConfig()->fTestNet);
 
     storage::CPurger purger;
-    if (purger(pathData, param.hashGenesisBlock, config.GetConfig()->fFullDb))
+    if (purger(pathData, param.hashGenesisBlock, config.GetConfig()->fFullDb, config.GetConfig()->fTraceDb, config.GetConfig()->fCacheTrace))
     {
-        cout << "Reset database and removed blockfiles\n";
+        cout << "Reset database and removed blockfiles" << endl;
     }
     else
     {
-        cout << "Failed to purge storage\n";
+        cout << "Failed to purge storage" << endl;
     }
 }
 
