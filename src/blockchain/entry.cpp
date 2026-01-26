@@ -11,9 +11,14 @@
 #include <string>
 
 #include "blockchain.h"
+#include "blockfilter.h"
 #include "blockmaker.h"
+#include "chainsnapshot.h"
 #include "chnblock.h"
+#include "chnblockcrossprove.h"
+#include "chnblockvote.h"
 #include "chncerttx.h"
+#include "chnsnapshotdown.h"
 #include "chnusertx.h"
 #include "consensus.h"
 #include "core.h"
@@ -21,8 +26,10 @@
 #include "delegatedchn.h"
 #include "dispatcher.h"
 #include "forkmanager.h"
+#include "natportmapping.h"
 #include "netchn.h"
 #include "network.h"
+#include "prunedb.h"
 #include "purger.h"
 #include "recovery.h"
 #include "rpcclient.h"
@@ -31,6 +38,7 @@
 #include "txpool.h"
 #include "version.h"
 #include "wallet.h"
+#include "wsservice.h"
 
 #ifdef _WIN32
 #include <shlobj.h>
@@ -71,7 +79,7 @@ bool CBbEntry::Initialize(int argc, char* argv[])
 {
     if (!config.Load(argc, argv, GetDefaultDataDir(), "hashahead.conf") || !config.PostLoad())
     {
-        cerr << "Failed to load/parse arguments and config file\n";
+        cerr << "Failed to load/parse arguments and config file" << endl;
         return false;
     }
 
@@ -105,12 +113,12 @@ bool CBbEntry::Initialize(int argc, char* argv[])
     // check log size
     if (config.GetConfig()->nLogFileSize < 1 || config.GetConfig()->nLogFileSize > 2048)
     {
-        cerr << "Log file size beyond range(range: 1 ~ 2048), value: " << config.GetConfig()->nLogFileSize << "\n";
+        cerr << "Log file size beyond range(range: 1 ~ 2048), value: " << config.GetConfig()->nLogFileSize << endl;
         return false;
     }
     if (config.GetConfig()->nLogHistorySize < 2 || config.GetConfig()->nLogHistorySize > 0x7FFFFFFF)
     {
-        cerr << "Log history size beyond range(range: 2 ~ 2147483647), value: " << config.GetConfig()->nLogHistorySize << "\n";
+        cerr << "Log history size beyond range(range: 2 ~ 2147483647), value: " << config.GetConfig()->nLogHistorySize << endl;
         return false;
     }
 
@@ -120,21 +128,21 @@ bool CBbEntry::Initialize(int argc, char* argv[])
     {
         if (!create_directories(pathData))
         {
-            cerr << "Failed create directory : " << pathData << "\n";
+            cerr << "Failed create directory : " << pathData << endl;
             return false;
         }
     }
 
     if (!is_directory(pathData))
     {
-        cerr << "Failed to access data directory : " << pathData << "\n";
+        cerr << "Failed to access data directory : " << pathData << endl;
         return false;
     }
 
     // hard disk
     if (space(pathData).available < MINIMUM_HARD_DISK_AVAILABLE)
     {
-        cerr << "Warning: hard disk available < 100M\n";
+        cerr << "Warning: hard disk available < 100M" << endl;
         return false;
     }
 
@@ -145,7 +153,7 @@ bool CBbEntry::Initialize(int argc, char* argv[])
         {
             return false;
         }
-        cout << "hashahead server starting\n";
+        cout << "hashahead server starting, version is v" << VERSION_STR << ", git commit id is " << GetGitVersion() << endl;
     }
 
     TESTNET_FLAG = config.GetConfig()->fTestNet;
@@ -167,7 +175,7 @@ bool CBbEntry::Initialize(int argc, char* argv[])
         && log.SetLogFilePath((pathData / "hashahead.log").string())
         && !InitLog(pathData, config.GetConfig()->fDebug, config.GetConfig()->fDaemon, config.GetConfig()->nLogFileSize, config.GetConfig()->nLogHistorySize))
     {
-        cerr << "Failed to open log file : " << (pathData / "hashahead.log") << "\n";
+        cerr << "Failed to open log file : " << (pathData / "hashahead.log") << endl;
         return false;
     }
 
@@ -178,7 +186,7 @@ bool CBbEntry::Initialize(int argc, char* argv[])
     // docker
     if (!docker.Initialize(config.GetConfig(), &log))
     {
-        cerr << "Failed to initialize docker\n";
+        cerr << "Failed to initialize docker" << endl;
         return false;
     }
     StdLog("HashAheadStartup", "Initialize: hashahead version is v%s, git commit id: %s", VERSION_STR.c_str(), GetGitVersion());
@@ -211,7 +219,7 @@ bool CBbEntry::InitializeModules(const EModeType& mode)
             if (!TryLockFile((config.GetConfig()->pathData / ".lock").string()))
             {
                 cerr << "Cannot obtain a lock on data directory " << config.GetConfig()->pathData << "\n"
-                     << "HashAhead is probably already running.\n";
+                     << "HashAhead is probably already running." << endl;
                 return false;
             }
             break;
@@ -264,6 +272,14 @@ bool CBbEntry::InitializeModules(const EModeType& mode)
             }
             break;
         }
+        case EModuleType::DELEGATEDCHANNEL:
+        {
+            if (!AttachModule(new CDelegatedChannel()))
+            {
+                return false;
+            }
+            break;
+        }
         case EModuleType::BLOCKCHANNEL:
         {
             if (!AttachModule(new CBlockChannel()))
@@ -288,9 +304,25 @@ bool CBbEntry::InitializeModules(const EModeType& mode)
             }
             break;
         }
-        case EModuleType::DELEGATEDCHANNEL:
+        case EModuleType::BLOCKVOTECHANNEL:
         {
-            if (!AttachModule(new CDelegatedChannel()))
+            if (!AttachModule(new CBlockVoteChannel()))
+            {
+                return false;
+            }
+            break;
+        }
+        case EModuleType::BLOCKCROSSPROVE:
+        {
+            if (!AttachModule(new CBlockCrossProveChannel()))
+            {
+                return false;
+            }
+            break;
+        }
+        case EModuleType::SNAPSHOTDOWN:
+        {
+            if (!AttachModule(new CSnapshotDownChannel()))
             {
                 return false;
             }

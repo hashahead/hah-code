@@ -45,11 +45,16 @@ protected:
     IService* pService;
     IBlockMaker* pBlockMaker;
     network::INetChannel* pNetChannel;
+    network::IDelegatedChannel* pDelegatedChannel;
     network::IBlockChannel* pBlockChannel;
     network::ICertTxChannel* pCertTxChannel;
     network::IUserTxChannel* pUserTxChannel;
-    network::IDelegatedChannel* pDelegatedChannel;
+    network::IBlockVoteChannel* pBlockVoteChannel;
+    network::IBlockCrossProveChannel* pBlockCrossProveChannel;
     IDataStat* pDataStat;
+    IBlockFilter* pBlockFilter;
+    bool fSyncForkHeight;
+    uint32 nPrimaryMinHeight;
 };
 
 } // namespace hashahead
