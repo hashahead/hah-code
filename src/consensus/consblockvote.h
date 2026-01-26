@@ -26,6 +26,7 @@ public:
     CConsBlockVote(const uint8 nTunnelIdIn, const int64 nEpochDurationIn, funcSendNetData sendNetDataIn, funcGetVoteBlockCandidatePubkey getVoteBlockCandidatePubkeyIn, funcAddBlockLocalSignFlag addBlockLocalSignFlagIn, funcCommitVoteResult commitVoteResultIn)
       : nTunnelId(nTunnelIdIn), nEpochDuration(nEpochDurationIn), sendNetData(sendNetDataIn), getVoteBlockCandidatePubkey(getVoteBlockCandidatePubkeyIn), addBlockLocalSignFlag(addBlockLocalSignFlagIn), commitVoteResult(commitVoteResultIn), nPrevCheckPreVoteBitmapTime(0) {}
 
+    bool AddConsKey(const uint256& prikey, const uint384& pubkey);
 private:
     const uint8 nTunnelId;
     const int64 nEpochDuration; //Unit: milliseconds
@@ -33,6 +34,13 @@ private:
     funcGetVoteBlockCandidatePubkey getVoteBlockCandidatePubkey;
     funcAddBlockLocalSignFlag addBlockLocalSignFlag;
     funcCommitVoteResult commitVoteResult;
+
+    map<uint256, CConsKey> mapConsKey;     // key: prikey
+    map<uint64, CNetNode> mapNetNode;      // key: node netid
+    map<uint256, CConsBlock> mapConsBlock; // key: block hash
+    map<uint64, set<uint256>> mapAddTime;
+
+    int64 nPrevCheckPreVoteBitmapTime;
 };
 
 } // namespace consblockvote

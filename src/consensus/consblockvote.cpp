@@ -13,5 +13,17 @@ namespace consblockvote
 using namespace std;
 using namespace hashahead::crypto;
 
+
+/////////////////////////////////
+// CConsBlockVote
+
+bool CConsBlockVote::AddConsKey(const uint256& prikey, const uint384& pubkey)
+{
+    if (mapConsKey.find(prikey) == mapConsKey.end())
+    {
+        mapConsKey.insert(make_pair(prikey, CConsKey(prikey, pubkey)));
+    }
+    return true;
+}
 } // namespace consblockvote
 } // namespace consensus
