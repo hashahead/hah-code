@@ -18,6 +18,68 @@ using namespace hnbase;
 using namespace hashahead::crypto;
 
 /////////////////////////////////
+// Protocol version
+
+#define BLOCK_VOTE_PRO_VER_1 1
+
+/////////////////////////////////
+// const define
+
+#define MAX_AWAIT_BIT_COUNT 20
+#define MAX_CONS_HEIGHT_COUNT 2048
+
+/////////////////////////////////
+// Message id
+
+#define PS_MSGID_BLOCKVOTE_SUBSCRIBE_REQ 1
+#define PS_MSGID_BLOCKVOTE_SUBSCRIBE_RSP 2
+
+/////////////////////////////////
+// CNetNode
+
+class CNetNode
+{
+public:
+    CNetNode()
+      : fSubscribe(false), nPeerVersion(0), nPrevBitmapReqTime(0) {}
+
+    void Subscribe()
+    {
+        fSubscribe = true;
+    }
+    bool IsSubscribe() const
+    {
+        return fSubscribe;
+    }
+    void SetPeerVersion(const uint32 nPeerVersionIn)
+    {
+        nPeerVersion = nPeerVersionIn;
+    }
+    uint32 GetPeerVersion() const
+    {
+        return nPeerVersion;
+    }
+
+    void SetPrevBitmapReqTime()
+    {
+        nPrevBitmapReqTime = GetTimeMillis();
+    }
+    bool CheckPrevBitmapReqTime(const int64 nTimeLen)
+    {
+        if (fSubscribe && GetTimeMillis() - nPrevBitmapReqTime >= nTimeLen)
+        {
+            nPrevBitmapReqTime = GetTimeMillis();
+            return true;
+        }
+        return false;
+    }
+
+private:
+    bool fSubscribe;
+    uint32 nPeerVersion;
+    int64 nPrevBitmapReqTime;
+};
+
 // CConsBlockVote
 
 class CConsBlockVote
