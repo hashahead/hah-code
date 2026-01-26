@@ -169,4 +169,16 @@ bool CBlockFilter::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bo
     return true;
 }
 
+uint256 CBlockFilter::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
+{
+    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
+    uint256 nFilterId = createFilterId.CreateBlockFilterId(hashClient);
+    while (mapBlockFilter.count(nFilterId) > 0)
+    {
+        nFilterId = createFilterId.CreateBlockFilterId(hashClient);
+    }
+    mapBlockFilter.insert(make_pair(nFilterId, CBlockMakerFilter(hashFork)));
+    return nFilterId;
+}
+
 } // namespace hashahead
