@@ -555,6 +555,10 @@ Errno CCoreProtocol::VerifyForkCreateTx(const uint256& hashTxAtFork, const CTran
     }
     else
     {
+        if (!fCreateUserForkEnable)
+        {
+            return DEBUG(ERR_BLOCK_INVALID_FORK, "disable create user fork");
+        }
         if (tx.GetAmount() < MORTGAGE_BASE)
         {
             return DEBUG(ERR_TRANSACTION_INVALID, "invalid tx amount");
@@ -618,6 +622,14 @@ Errno CCoreProtocol::ValidateOrigin(const CBlock& block, const CProfile& parentP
     {
         return DEBUG(ERR_BLOCK_INVALID_FORK, "invalid profile");
     }
+    if (forkProfile.strSymbol.empty() || forkProfile.strSymbol.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        return DEBUG(ERR_BLOCK_INVALID_FORK, "invalid symbol");
+    }
+    if (forkProfile.strName.empty() || forkProfile.strName.size() > MAX_FORK_NAME_SIZE)
+    {
+        return DEBUG(ERR_BLOCK_INVALID_FORK, "invalid name");
+    }
     if (!MoneyRange(forkProfile.nAmount))
     {
         return DEBUG(ERR_BLOCK_INVALID_FORK, "invalid fork amount");
@@ -629,6 +641,11 @@ Errno CCoreProtocol::ValidateOrigin(const CBlock& block, const CProfile& parentP
     if (block.txMint.GetToAddress() != forkProfile.destOwner)
     {
         return DEBUG(ERR_BLOCK_INVALID_FORK, "invalid fork to");
+    }
+    CBlockVoteSig proofVote;
+    if (block.GetBlockVoteSig(proofVote))
+    {
+        return DEBUG(ERR_BLOCK_INVALID_FORK, "invalid block vote");
     }
     if (forkProfile.nChainId != block.txMint.GetChainId())
     {
@@ -647,6 +664,13 @@ Errno CCoreProtocol::ValidateOrigin(const CBlock& block, const CProfile& parentP
         if (forkProfile.nMintReward != 0)
         {
             return DEBUG(ERR_BLOCK_INVALID_FORK, "invalid fork reward");
+        }
+    }
+    else
+    {
+        if (!fCreateUserForkEnable)
+        {
+            return DEBUG(ERR_BLOCK_INVALID_FORK, "disable create user fork");
         }
     }
     return OK;
