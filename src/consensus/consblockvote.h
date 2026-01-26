@@ -80,6 +80,67 @@ private:
     int64 nPrevBitmapReqTime;
 };
 
+/////////////////////////////////
+// CConsKey
+
+class CConsKey
+{
+public:
+    CConsKey(const uint256& prikeyIn, const uint384& pubkeyIn)
+      : prikey(prikeyIn), pubkey(pubkeyIn) {}
+
+    bool Sign(const uint256& hash, bytes& btSig);
+    bool Verify(const uint256& hash, const bytes& btSig);
+
+public:
+    const uint256 prikey;
+    const uint384 pubkey;
+};
+
+class CNodePubkey
+{
+public:
+    CNodePubkey(const uint32 nIndexIn, const uint384& pubkeyIn)
+      : nIndex(nIndexIn), pubkey(pubkeyIn), eStatus(ES_INIT), tmStatusTime(time(NULL)) {}
+
+    enum E_STATUS
+    {
+        ES_INIT,
+        ES_WAITING,
+        ES_COMPLETED,
+    };
+
+    void InitStatus()
+    {
+        eStatus = ES_INIT;
+        tmStatusTime = time(NULL);
+    }
+    void SetStatus(const E_STATUS eStatusIn)
+    {
+        eStatus = eStatusIn;
+        tmStatusTime = time(NULL);
+    }
+    E_STATUS GetStatus() const
+    {
+        return eStatus;
+    }
+    void CheckStatus()
+    {
+        if (eStatus == ES_WAITING && time(NULL) - tmStatusTime >= 100)
+        {
+            eStatus = ES_INIT;
+            tmStatusTime = time(NULL);
+        }
+    }
+
+public:
+    const uint32 nIndex;
+    const uint384 pubkey;
+
+    E_STATUS eStatus;
+    time_t tmStatusTime;
+};
+
 // CConsBlockVote
 
 class CConsBlockVote
