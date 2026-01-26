@@ -25,6 +25,10 @@ protected:
     uint32 GetSnapshotStatus(uint256& hashSnapshotBlock) override;
 
     void SnapshotThreadFunc();
+    bool WaitExitEvent(const int64 nSeconds);
+
+    void SnapshotWork();
+    bool CheckSnapshotBlock(uint256& hashSnapshotBlock, std::vector<uint256>& vForkHash);
 
 protected:
     ICoreProtocol* pCoreProtocol;

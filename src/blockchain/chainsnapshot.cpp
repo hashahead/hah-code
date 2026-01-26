@@ -284,4 +284,65 @@ void CChainSnapshot::SnapshotWork()
     }
 }
 
+bool CChainSnapshot::CheckSnapshotBlock(uint256& hashSnapshotBlock, std::vector<uint256>& vForkHash)
+{
+    uint32 nRpcSnapHeight = 0;
+    {
+        boost::unique_lock<boost::mutex> lock(mutexStatus);
+        nRpcSnapHeight = nRpcCreateSnapshotHeight;
+    }
+
+    if (nRpcSnapHeight > 0)
+    {
+        return GetHeightSnapshotBlock(nRpcSnapHeight, hashSnapshotBlock, vForkHash);
+    }
+
+    if (fCfgChainSnapshot)
+    {
+        const uint32 nMinLastHeight = pBlockChain->GetAllForkMinLastBlockHeight(&vForkHash);
+        if (nMinLastHeight <= nCfgSnapshotCycleHeight)
+        {
+            StdLog("CChainSnapshot", "Check snapshot block: Min height not enough, min height: %d, config snapshot height: %d", nMinLastHeight, nCfgSnapshotCycleHeight);
+            return false;
+        }
+        const uint32 nSnapshotHeight = ((nMinLastHeight / nCfgSnapshotCycleHeight) * nCfgSnapshotCycleHeight) + MAX_SNAPSHOT_STATE_HEIGHT;
+        if (nSnapshotHeight + DAY_HEIGHT / 2 > nMinLastHeight)
+        {
+            StdLog("CChainSnapshot", "Check snapshot block: Snapshot height not enough, snapshot height: %d, start snapshot min height: %d, current min height: %d, config snapshot height: %d",
+                   nSnapshotHeight, nSnapshotHeight + DAY_HEIGHT / 2, nMinLastHeight, nCfgSnapshotCycleHeight);
+            return false;
+        }
+        uint256 hashPrimaryLastBlock;
+        if (!pBlockChain->RetrieveForkLast(pCoreProtocol->GetGenesisBlockHash(), hashPrimaryLastBlock))
+        {
+            StdLog("CChainSnapshot", "Check snapshot block: Get genesis fork last block failed, min height: %d, config snapshot height: %d", nMinLastHeight, nCfgSnapshotCycleHeight);
+            return false;
+        }
+        if (!pBlockChain->GetPrimaryBlockHashOfRefBlock(hashPrimaryLastBlock, nSnapshotHeight, hashSnapshotBlock))
+        {
+            StdLog("CChainSnapshot", "Check snapshot block: Get primary block hash failed, snapshot height: %d, min height: %d, config snapshot height: %d", nSnapshotHeight, nMinLastHeight, nCfgSnapshotCycleHeight);
+            return false;
+        }
+        if (!pBlockChain->IsBlockConfirm(hashSnapshotBlock))
+        {
+            StdLog("CChainSnapshot", "Check snapshot block: Block not is confirmed, snapshot block: %s", hashSnapshotBlock.GetBhString().c_str());
+            return false;
+        }
+        for (auto it = vForkHash.begin(); it != vForkHash.end();)
+        {
+            if (nSnapshotHeight < CBlock::GetBlockHeightByHash(*it))
+            {
+                StdLog("CChainSnapshot", "Check snapshot block: Remove fork, snapshot height: %d, fork: %s", nSnapshotHeight, (*it).GetBhString().c_str());
+                it = vForkHash.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
 } // namespace hashahead
