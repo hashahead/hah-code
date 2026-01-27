@@ -49,6 +49,34 @@ protected:
 };
 
 ////////////////////////////////////////////////////
+// CSnapDownMsgDownDataReq
+
+class CSnapDownMsgDownDataReq
+{
+    friend class hnbase::CStream;
+
+public:
+    CSnapDownMsgDownDataReq()
+      : nOffset(0) {}
+    CSnapDownMsgDownDataReq(const uint256& hashSnapBlockIn, const std::string& strFileNameIn, const uint64 nOffsetIn)
+      : hashSnapBlock(hashSnapBlockIn), strFileName(strFileNameIn), nOffset(nOffsetIn) {}
+
+public:
+    uint256 hashSnapBlock;
+    std::string strFileName;
+    uint64 nOffset;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashSnapBlock, opt);
+        s.Serialize(strFileName, opt);
+        s.Serialize(nOffset, opt);
+    }
+};
+
+////////////////////////////////////////////////////
 // CSnapshotDownChannel
 
 class CSnapshotDownChannel : public network::ISnapshotDownChannel
