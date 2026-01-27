@@ -16,6 +16,39 @@ namespace hashahead
 {
 
 ////////////////////////////////////////////////////
+// down msg id
+
+const uint8 SNAP_DOWN_MSGID_FILELIST_REQ = 0x01;
+const uint8 SNAP_DOWN_MSGID_FILELIST_RSP = 0x02;
+const uint8 SNAP_DOWN_MSGID_DOWNDATA_REQ = 0x03;
+const uint8 SNAP_DOWN_MSGID_DOWNDATA_RSP = 0x04;
+
+////////////////////////////////////////////////////
+// CSnapDownMsgFilelistRsp
+
+class CSnapDownMsgFilelistRsp
+{
+    friend class hnbase::CStream;
+
+public:
+    CSnapDownMsgFilelistRsp() {}
+    CSnapDownMsgFilelistRsp(const uint256& hashSnapBlockIn)
+      : hashSnapBlock(hashSnapBlockIn) {}
+
+public:
+    uint256 hashSnapBlock;
+    std::vector<CSnapshotFileInfo> vFilelist;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashSnapBlock, opt);
+        s.Serialize(vFilelist, opt);
+    }
+};
+
+////////////////////////////////////////////////////
 // CSnapshotDownChannel
 
 class CSnapshotDownChannel : public network::ISnapshotDownChannel
