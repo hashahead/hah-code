@@ -260,4 +260,49 @@ void CNatPortMapping::NatPortMapWork()
         }
     }
 }
+
+bool CNatPortMapping::UpnpPortMapping(const std::string& strLocalIp, const uint16 nExtPort, const uint16 nIntPort)
+{
+    int error = 0;
+    struct UPNPDev* devlist = upnpDiscover(UPNP_ORDER_WAIT_DURATION, nullptr, nullptr, 0, 0, 2, &error);
+    if (!devlist)
+    {
+        StdLog("CNatPortMapping", "Upnp port mapping: upnpDiscover failed, error: %d", error);
+        return false;
+    }
+
+    struct UPNPUrls urls;
+    struct IGDdatas data;
+    if (UPNP_GetValidIGD(devlist, &urls, &data, nullptr, 0) == 0)
+    {
+        StdLog("CNatPortMapping", "Upnp port mapping: UPNP_GetValidIGD failed");
+        freeUPNPDevlist(devlist);
+        return false;
+    }
+
+    char ext_port[32] = { 0 };
+    char int_port[32] = { 0 };
+    char local_ip[32] = { 0 };
+    char lease_duration[32] = { 0 };
+
+    sprintf(ext_port, "%d", nExtPort);
+    sprintf(int_port, "%d", nIntPort);
+    strcpy(local_ip, strLocalIp.c_str());
+    sprintf(lease_duration, "%d", LEASE_DURATION);
+
+    int result = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype, ext_port, int_port, local_ip,
+                                     "hah port mapping", "TCP", nullptr, lease_duration);
+    if (result != UPNPCOMMAND_SUCCESS)
+    {
+        StdLog("CNatPortMapping", "Upnp port mapping: UPNP_AddPortMapping failed, result: %d %s", result, strupnperror(result));
+        FreeUPNPUrls(&urls);
+        freeUPNPDevlist(devlist);
+        return false;
+    }
+
+    FreeUPNPUrls(&urls);
+    freeUPNPDevlist(devlist);
+    return true;
+}
+
 } // namespace hashahead
