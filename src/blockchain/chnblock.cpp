@@ -5,6 +5,7 @@
 #include "chnblock.h"
 
 #include <boost/bind.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 
 using namespace std;
 using namespace hnbase;
@@ -12,9 +13,49 @@ using boost::asio::ip::tcp;
 
 #define MAX_CACHE_CHN_BLOCK_COUNT 2000
 #define MAX_CACHE_CHN_BLOCK_SIZE (1024 * 1024 * 1024)
+#define SINGLE_REQ_BLOCK_HASH_COUNT 32
+#define BLOCK_SYNC_TIMER_TIME 300
 
 namespace hashahead
 {
+
+////////////////////////////////////
+// CBlockChnFork
+
+void CBlockChnFork::AddPrevBlockHash(const uint256& hashPrevBlock, const uint256& hashBlock)
+{
+    mapBlockHash[hashBlock] = hashPrevBlock;
+    mapPrevHash[hashPrevBlock] = hashBlock;
+}
+
+bool CBlockChnFork::AddBlockHash(const std::vector<uint256>& vBlockHash)
+{
+    bool fAllExist = true;
+    uint256 hashPrev;
+    for (auto& hash : boost::adaptors::reverse(vBlockHash))
+    {
+        auto it = mapBlockHash.find(hash);
+        if (it == mapBlockHash.end())
+        {
+            fAllExist = false;
+            mapBlockHash[hash] = hashPrev;
+        }
+        else
+        {
+            if (it->second == 0)
+            {
+                it->second = hashPrev;
+            }
+        }
+
+        if (hashPrev != 0 && mapPrevHash.count(hashPrev) == 0)
+        {
+            mapPrevHash[hashPrev] = hash;
+        }
+        hashPrev = hash;
+    }
+    return fAllExist;
+}
 
 CBlockChannel::CBlockChannel()
   : nPrevCheckCacheTimeoutTime(0), nCacheBlockByteCount(0)
