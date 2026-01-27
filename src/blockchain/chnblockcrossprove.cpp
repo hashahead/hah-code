@@ -180,4 +180,53 @@ bool CBlockCrossProveChannel::HandleEvent(network::CEventLocalBlockcrossproveSub
     return true;
 }
 
+bool CBlockCrossProveChannel::HandleEvent(network::CEventLocalBlockcrossproveBroadcastProve& eventBroadcastProve)
+{
+    const uint64 nRecvNonce = eventBroadcastProve.nNonce;
+    const uint256& hashFork = eventBroadcastProve.hashFork;
+    const CBlockBroadcastProve& broadProve = eventBroadcastProve.data;
+
+    CBlockStatus statusBlock;
+    if (!pBlockChain->GetBlockStatus(broadProve.hashBlock, statusBlock))
+    {
+        StdLog("CBlockChannel", "CEvent Local CrossProve Broadcast prove: Get block status fail, block: %s", broadProve.hashBlock.ToString().c_str());
+        return false;
+    }
+
+    for (const auto& kv : broadProve.mapBlockProve)
+    {
+        const CChainId nChainId = kv.first;
+        const CBlockProve& blockProve = kv.second;
+
+        bytes btProveData;
+        blockProve.Save(btProveData);
+
+        uint256 hashRecvFork;
+        if (!pBlockChain->GetForkHashByChainId(nChainId, hashRecvFork, statusBlock.hashRefBlock))
+        {
+            StdLog("CBlockChannel", "CEvent Local CrossProve Broadcast prove: Get fork hash by chainid fail, chainid: %d, ref block: %s", nChainId, statusBlock.hashRefBlock.ToString().c_str());
+            continue;
+        }
+
+        bytes btCacheProve;
+        if (GetBroadcastProveData(hashRecvFork, broadProve.hashBlock, btCacheProve))
+        {
+            continue;
+        }
+        AddBroadcastProveData(hashRecvFork, broadProve.hashBlock, btProveData);
+
+        for (const auto& mkv : mapChnPeer)
+        {
+            if (nRecvNonce == 0 || mkv.first != nRecvNonce)
+            {
+                if (!SendBlockProveData(mkv.first, btProveData, hashRecvFork))
+                {
+                    StdLog("CBlockChannel", "CEvent Local CrossProve Broadcast prove: Broadcast block prove fail, peer nonce: 0x%lx, chainid: %d", mkv.first, nChainId);
+                }
+            }
+        }
+    }
+    return true;
+}
+
 } // namespace hashahead
