@@ -47,6 +47,7 @@ public:
     bool GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs) override;
 
     uint256 AddBlockFilter(const uint256& hashClient, const uint256& hashFork) override;
+    void AddNewBlockInfo(const uint256& hashFork, const uint256& hashBlock, const CBlock& block) override;
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;

@@ -181,4 +181,76 @@ uint256 CBlockFilter::AddBlockFilter(const uint256& hashClient, const uint256& h
     return nFilterId;
 }
 
+void CBlockFilter::AddNewBlockInfo(const uint256& hashFork, const uint256& hashBlock, const CBlock& block)
+{
+    {
+        boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
+        for (auto it = mapBlockFilter.begin(); it != mapBlockFilter.end();)
+        {
+            if (it->second.isTimeout())
+            {
+                mapBlockFilter.erase(it++);
+            }
+            else
+            {
+                if (!it->second.AddBlockHash(hashFork, hashBlock, block.hashPrev))
+                {
+                    mapBlockFilter.erase(it++);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        }
+    }
+
+    {
+        CEventWsServicePushNewBlock* pPushEvent = new CEventWsServicePushNewBlock(0);
+        if (pPushEvent != nullptr)
+        {
+            pPushEvent->data.hashFork = hashFork;
+            pPushEvent->data.hashBlock = hashBlock;
+            pPushEvent->data.block = block;
+
+            pWsService->PostEvent(pPushEvent);
+        }
+    }
+
+    {
+        boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
+
+        CForkBlockStat& stat = mapForkBlockStat[hashFork];
+
+        if (stat.nStartBlockNumber == 0)
+        {
+            stat.nStartBlockNumber = block.GetBlockNumber();
+        }
+        stat.nCurrBlockNumber = block.GetBlockNumber();
+        if (stat.nMaxPeerBlockNumber < block.GetBlockNumber())
+        {
+            stat.nMaxPeerBlockNumber = block.GetBlockNumber();
+        }
+
+        if (GetTime() > stat.nPrevSendStatTime)
+        {
+            stat.nPrevSendStatTime = GetTime();
+
+            CEventWsServicePushSyncing* pPushEvent = new CEventWsServicePushSyncing(0);
+            if (pPushEvent != nullptr)
+            {
+                pPushEvent->data.hashFork = hashFork;
+                pPushEvent->data.fSyncing = true;
+                pPushEvent->data.nStartingBlockNumber = stat.nStartBlockNumber;
+                pPushEvent->data.nCurrentBlockNumber = stat.nCurrBlockNumber;
+                pPushEvent->data.nHighestBlockNumber = stat.nMaxPeerBlockNumber;
+                pPushEvent->data.nPulledStates = 0;
+                pPushEvent->data.nKnownStates = 0;
+
+                pWsService->PostEvent(pPushEvent);
+            }
+        }
+    }
+}
+
 } // namespace hashahead
