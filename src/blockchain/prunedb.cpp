@@ -15,7 +15,14 @@ namespace hashahead
 // CPruneDb
 
 CPruneDb::CPruneDb()
+  : thrPruneDb("prunedb", boost::bind(&CPruneDb::PruneDbThreadFunc, this))
 {
+    fExit = false;
+    fCfgPruneStateData = false;
+    fCfgTraceDb = false;
+    nCfgPruneRetentionDays = 0;
+    nCfgPruneReserveHeight = 0;
+
     pCoreProtocol = nullptr;
     pBlockChain = nullptr;
 }
@@ -36,6 +43,32 @@ bool CPruneDb::HandleInitialize()
         Error("Failed to request blockchain");
         return false;
     }
+
+    fCfgPruneStateData = StorageConfig()->fPrune;
+    nCfgPruneRetentionDays = StorageConfig()->nPruneRetentionDays;
+    fCfgTraceDb = Config()->fTraceDb;
+    if (fCfgPruneStateData)
+    {
+        if (nCfgPruneRetentionDays < 2)
+        {
+            nCfgPruneRetentionDays = 2;
+        }
+        else
+        {
+            const uint32 nMaxDays = 180;
+            if (nCfgPruneRetentionDays > nMaxDays)
+            {
+                nCfgPruneRetentionDays = nMaxDays;
+            }
+        }
+        nCfgPruneReserveHeight = nCfgPruneRetentionDays * DAY_HEIGHT;
+    }
+    else
+    {
+        nCfgPruneRetentionDays = 0;
+        nCfgPruneReserveHeight = 0;
+    }
+    StdLog("CPruneDb", "Handle initialize: prune: %s, prune retention days: %d, prune reserve height: %d", (fCfgPruneStateData ? "true" : "false"), nCfgPruneRetentionDays, nCfgPruneReserveHeight);
     return true;
 }
 
