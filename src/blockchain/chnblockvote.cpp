@@ -36,6 +36,16 @@ bool CBlockVoteChnFork::AddBlockCandidatePubkey(const uint256& hashBlock, const 
     return consBlockVote.AddCandidatePubkey(hashBlock, nBlockHeight, nBlockTime, vPubkey);
 }
 
+void CBlockVoteChnFork::CheckBlockVoteState(const uint256& hashBlock)
+{
+    consBlockVote.CheckBlockVoteState(hashBlock);
+}
+
+bool CBlockVoteChnFork::GetBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig)
+{
+    return consBlockVote.GetBlockVoteResult(hashBlock, btBitmap, btAggSig);
+}
+
 ////////////////////////////////////////////////////
 // CBlockVoteChannel
 
