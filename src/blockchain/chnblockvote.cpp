@@ -11,8 +11,30 @@ using namespace hnbase;
 using namespace consensus::consblockvote;
 using boost::asio::ip::tcp;
 
+#define BLOCK_VOTE_CHANNEL_THREAD_COUNT 1
+#define BLOCK_VOTE_TIMER_TIME 1000
+#define MAX_BLOCK_VOTE_RESULT_COUNT 1000
+
 namespace hashahead
 {
+
+////////////////////////////////////////////////////
+// CBlockVoteChnFork
+
+bool CBlockVoteChnFork::AddLocalConsKey(const uint256& prikey, const uint384& pubkey)
+{
+    return consBlockVote.AddConsKey(prikey, pubkey);
+}
+
+bool CBlockVoteChnFork::AddBlockCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, const vector<uint384>& vPubkey)
+{
+    while (mapVoteResult.size() >= MAX_BLOCK_VOTE_RESULT_COUNT)
+    {
+        mapVoteResult.erase(mapVoteResult.begin());
+    }
+    mapVoteResult[hashBlock] = CBlockVoteResult();
+    return consBlockVote.AddCandidatePubkey(hashBlock, nBlockHeight, nBlockTime, vPubkey);
+}
 
 ////////////////////////////////////////////////////
 // CBlockVoteChannel
