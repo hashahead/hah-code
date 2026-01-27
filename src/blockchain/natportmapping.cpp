@@ -343,4 +343,42 @@ bool CNatPortMapping::GetUpnpExtIpaddr(std::string& strExtIp)
     return true;
 }
 
+bool CNatPortMapping::GetLocalIp(std::string& strLocalIp)
+{
+    struct ifaddrs *ifaddr, *ifa;
+    int family;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1)
+    {
+        return false;
+    }
+
+    for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == nullptr)
+            continue;
+
+        family = ifa->ifa_addr->sa_family;
+        if (family == AF_INET)
+        {
+            if (std::string(ifa->ifa_name) == "lo")
+                continue;
+
+            int s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host,
+                                NI_MAXHOST, nullptr, 0, NI_NUMERICHOST);
+            if (s != 0)
+            {
+                continue;
+            }
+            strLocalIp = host;
+            freeifaddrs(ifaddr);
+            return true;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return false;
+}
+
 } // namespace hashahead

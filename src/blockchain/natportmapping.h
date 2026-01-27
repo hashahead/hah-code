@@ -31,6 +31,7 @@ protected:
     bool UpnpPortMapping(const std::string& strLocalIp, const uint16 nExtPort, const uint16 nIntPort);
     bool GetUpnpExtIpaddr(std::string& strExtIp);
 
+    bool GetLocalIp(std::string& strLocalIp);
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
