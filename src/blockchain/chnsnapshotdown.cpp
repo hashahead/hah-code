@@ -8,6 +8,8 @@ using namespace std;
 using namespace hnbase;
 using boost::asio::ip::tcp;
 
+#define READ_SNAPSHOT_FILE_SIZE (1024 * 1024 * 2)
+
 namespace hashahead
 {
 
@@ -44,6 +46,27 @@ bool CSnapshotDownChannel::HandleInitialize()
         Error("Failed to request blockchain");
         return false;
     }
+
+    if (!NetworkConfig()->strSnapDownAddress.empty() && !NetworkConfig()->strSnapDownBlock.empty())
+    {
+        const uint16 nPortDefault = (NetworkConfig()->fTestNet ? DEFAULT_TESTNET_P2PPORT : DEFAULT_P2PPORT);
+
+        CNetHost hostSnapshotDown;
+        if (!hostSnapshotDown.SetHostPort(NetworkConfig()->strSnapDownAddress, nPortDefault))
+        {
+            Error("Set host port failed");
+            return false;
+        }
+        strCfgSnapshotDownAddress = hostSnapshotDown.ToString();
+        hashCfgSnapshotDownBlock.SetHex(NetworkConfig()->strSnapDownBlock.c_str());
+        if (hashCfgSnapshotDownBlock == 0)
+        {
+            strCfgSnapshotDownAddress.clear();
+            Error("Snapshot block error, config snapshot block: %s", NetworkConfig()->strSnapDownBlock.c_str());
+            return false;
+        }
+    }
+    StdLog("CSnapshotDownChannel", "Handle initialize: Snapshot down address: %s, snapshot block: %s", strCfgSnapshotDownAddress.c_str(), hashCfgSnapshotDownBlock.ToString().c_str());
     return true;
 }
 
