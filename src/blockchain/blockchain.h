@@ -48,12 +48,14 @@ public:
     Errno AddNewBlock(const uint256& hashBlock, const CBlock& block, uint256& hashFork, CBlockChainUpdate& update) override;
     Errno AddNewOrigin(const CBlock& block, CBlockChainUpdate& update) override;
     bool GetProofOfWorkTarget(const uint256& hashPrev, int nAlgo, int& nBits) override;
-    bool GetBlockMintReward(const uint256& hashPrev, const bool fPow, uint256& nReward, const uint256& hashMainChainRefBlock) override;
+    bool GetBlockMintReward(const uint256& hashPrev, const bool fPoa, uint256& nReward, const uint256& hashMainChainRefBlock) override;
     bool GetBlockLocator(const uint256& hashFork, CBlockLocator& locator, uint256& hashDepth, int nIncStep) override;
     bool GetBlockInv(const uint256& hashFork, const CBlockLocator& locator, std::vector<uint256>& vBlockHash, std::size_t nMaxCount) override;
     bool GetBlockDelegateEnrolled(const uint256& hashBlock, CDelegateEnrolled& enrolled) override;
     bool GetBlockDelegateAgreement(const uint256& hashBlock, CDelegateAgreement& agreement) override;
     bool GetDelegateVotes(const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes) override;
+    bool RetrieveDelegateEnrollStatus(const uint256& hashBlock, std::map<CDestination, std::pair<uint32, uint64>>& mapDelegateEnrollStatus) override;
+    bool RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDestination, std::pair<uint256, double>>& mapDelegateRewardApy) override;
     bool GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight) override;
     bool ListDelegate(const uint256& hashRefBlock, const uint32 nStartIndex, const uint32 nCount, std::multimap<uint256, CDestination>& mapVotes) override;
     bool VerifyRepeatBlock(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const uint256& hashBlockRef) override;

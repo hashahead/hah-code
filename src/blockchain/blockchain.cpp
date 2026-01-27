@@ -648,8 +648,8 @@ Errno CBlockChain::AddNewOrigin(const CBlock& block, CBlockChainUpdate& update)
 
 bool CBlockChain::GetProofOfWorkTarget(const uint256& hashPrev, int nAlgo, int& nBits)
 {
-    CBlockIndex* pIndexPrev;
-    if (!cntrBlock.RetrieveIndex(hashPrev, &pIndexPrev))
+    BlockIndexPtr pIndexPrev = cntrBlock.RetrieveIndex(hashPrev);
+    if (!pIndexPrev)
     {
         StdLog("BlockChain", "Get ProofOfWork Target : Retrieve Prev Index Error: %s", hashPrev.ToString().c_str());
         return false;
@@ -667,10 +667,10 @@ bool CBlockChain::GetProofOfWorkTarget(const uint256& hashPrev, int nAlgo, int& 
     return true;
 }
 
-bool CBlockChain::GetBlockMintReward(const uint256& hashPrev, const bool fPow, uint256& nReward, const uint256& hashMainChainRefBlock)
+bool CBlockChain::GetBlockMintReward(const uint256& hashPrev, const bool fPoa, uint256& nReward, const uint256& hashMainChainRefBlock)
 {
-    CBlockIndex* pIndexPrev;
-    if (!cntrBlock.RetrieveIndex(hashPrev, &pIndexPrev))
+    BlockIndexPtr pIndexPrev = cntrBlock.RetrieveIndex(hashPrev);
+    if (!pIndexPrev)
     {
         StdLog("BlockChain", "Get block reward: Retrieve Prev Index Error, hashPrev: %s", hashPrev.ToString().c_str());
         return false;
@@ -678,7 +678,7 @@ bool CBlockChain::GetBlockMintReward(const uint256& hashPrev, const bool fPow, u
 
     if (pIndexPrev->IsPrimary())
     {
-        if (fPow)
+        if (fPoa)
         {
             nReward = 0;
         }
@@ -733,6 +733,16 @@ bool CBlockChain::GetBlockInv(const uint256& hashFork, const CBlockLocator& loca
 bool CBlockChain::GetDelegateVotes(const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes)
 {
     return cntrBlock.GetDelegateVotes(pCoreProtocol->GetGenesisBlockHash(), hashRefBlock, destDelegate, nVotes);
+}
+
+bool CBlockChain::RetrieveDelegateEnrollStatus(const uint256& hashBlock, std::map<CDestination, std::pair<uint32, uint64>>& mapDelegateEnrollStatus)
+{
+    return cntrBlock.RetrieveDelegateEnrollStatus(hashBlock, mapDelegateEnrollStatus);
+}
+
+bool CBlockChain::RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDestination, std::pair<uint256, double>>& mapDelegateRewardApy)
+{
+    return cntrBlock.RetrieveDelegateRewardApy(hashBlock, mapDelegateRewardApy);
 }
 
 bool CBlockChain::GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight)
