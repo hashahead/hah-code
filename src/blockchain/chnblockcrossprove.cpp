@@ -229,4 +229,26 @@ bool CBlockCrossProveChannel::HandleEvent(network::CEventLocalBlockcrossproveBro
     return true;
 }
 
+//-------------------------------------------------------------------------------------------
+bool CBlockCrossProveChannel::SendBlockProveData(const uint64 nNetId, const bytes& btData, const uint256& hashFork)
+{
+    if (pPeerNet)
+    {
+        network::CEventPeerBlockCrossProveData eventBvp(nNetId, hashFork);
+        eventBvp.data = btData;
+        return pPeerNet->DispatchEvent(&eventBvp);
+    }
+    return false;
+}
+
+void CBlockCrossProveChannel::SubscribeFork(const uint256& hashFork, const uint64 nNonce)
+{
+    network::CEventLocalBlockcrossproveSubscribeFork* pEvent = new network::CEventLocalBlockcrossproveSubscribeFork(nNonce, hashFork);
+    if (pEvent)
+    {
+        pEvent->data.push_back(hashFork);
+        PostEvent(pEvent);
+    }
+}
+
 } // namespace hashahead
