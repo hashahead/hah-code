@@ -305,4 +305,42 @@ bool CNatPortMapping::UpnpPortMapping(const std::string& strLocalIp, const uint1
     return true;
 }
 
+bool CNatPortMapping::GetUpnpExtIpaddr(std::string& strExtIp)
+{
+    int error = 0;
+    struct UPNPDev* devlist = upnpDiscover(UPNP_ORDER_WAIT_DURATION, nullptr, nullptr, 0, 0, 2, &error);
+    if (!devlist)
+    {
+        StdLog("CNatPortMapping", "Get ext ipaddr: upnpDiscover failed, error: %d", error);
+        return false;
+    }
+
+    struct UPNPUrls urls;
+    struct IGDdatas data;
+    if (UPNP_GetValidIGD(devlist, &urls, &data, nullptr, 0) == 0)
+    {
+        StdLog("CNatPortMapping", "Get ext ipaddr: UPNP_GetValidIGD failed");
+        freeUPNPDevlist(devlist);
+        return false;
+    }
+
+    char external_ip[64] = { 0 };
+    int result;
+
+    result = UPNP_GetExternalIPAddress(urls.controlURL, data.first.servicetype, external_ip);
+    if (result != UPNPCOMMAND_SUCCESS)
+    {
+        StdLog("CNatPortMapping", "Get ext ipaddr: UPNP_GetExternalIPAddress failed, result: %d %s", result, strupnperror(result));
+        FreeUPNPUrls(&urls);
+        freeUPNPDevlist(devlist);
+        return false;
+    }
+
+    FreeUPNPUrls(&urls);
+    freeUPNPDevlist(devlist);
+
+    strExtIp = external_ip;
+    return true;
+}
+
 } // namespace hashahead
