@@ -88,6 +88,13 @@ protected:
     bool HandleEvent(network::CEventLocalBlockcrossproveTimer& eventTimer) override;
     bool HandleEvent(network::CEventLocalBlockcrossproveSubscribeFork& eventSubsFork) override;
     bool HandleEvent(network::CEventLocalBlockcrossproveBroadcastProve& eventBroadcastProve) override;
+	
+public:
+    bool SendBlockProveData(const uint64 nNetId, const bytes& btData, const uint256& hashFork);
+
+    void SubscribeFork(const uint256& hashFork, const uint64 nNonce) override;
+    void BroadcastBlockProve(const uint256& hashFork, const uint256& hashBlock, const uint64 nNonce, const std::map<CChainId, CBlockProve>& mapBlockProve) override;
+
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;

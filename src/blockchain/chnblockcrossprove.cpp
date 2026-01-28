@@ -251,4 +251,15 @@ void CBlockCrossProveChannel::SubscribeFork(const uint256& hashFork, const uint6
     }
 }
 
+void CBlockCrossProveChannel::BroadcastBlockProve(const uint256& hashFork, const uint256& hashBlock, const uint64 nNonce, const std::map<CChainId, CBlockProve>& mapBlockProve)
+{
+    network::CEventLocalBlockcrossproveBroadcastProve* pEvent = new network::CEventLocalBlockcrossproveBroadcastProve(nNonce, hashFork);
+    if (pEvent)
+    {
+        pEvent->data.hashBlock = hashBlock;
+        pEvent->data.mapBlockProve = mapBlockProve;
+        PostEvent(pEvent);
+    }
+}
+
 } // namespace hashahead
