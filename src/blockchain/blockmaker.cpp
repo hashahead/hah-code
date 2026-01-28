@@ -831,6 +831,7 @@ void CBlockMaker::PreparePiggyback(CBlock& block, const CDelegateAgreement& agre
     block.nType = CBlock::BLOCK_SUBSIDIARY;
     block.SetBlockTime(nRefBlockTime);
     block.nNumber = status.nLastBlockNumber + 1;
+    block.nHeight = CBlock::GetBlockHeightByHash(hashRefBlock);
     block.nSlot = 0;
 
     block.AddPiggybackProof(proof);
@@ -859,10 +860,25 @@ void CBlockMaker::CreateExtended(CBlock& block, const CBlockMakerProfile& profil
     block.nType = CBlock::BLOCK_EXTENDED;
     block.SetBlockTime(nPrevTime + EXTENDED_BLOCK_SPACING);
     block.nNumber = nExtendedPrevNumber + 1;
+    block.nHeight = CBlock::GetBlockHeightByHash(hashRefBlock);
     block.nSlot = nExtendedPrevSlot + 1;
     block.hashPrev = hashPrevBlock;
 
     block.AddPiggybackProof(proof);
+
+    bytes btBitmap;
+    bytes btAggSig;
+    uint256 hashVoteBlock;
+    if (pBlockChain->GetMakerVoteBlock(block.hashPrev, btBitmap, btAggSig, hashVoteBlock))
+    {
+        block.AddBlockVoteSig(CBlockVoteSig(hashVoteBlock, btBitmap, btAggSig));
+    }
+
+    std::map<CChainId, CBlockProve> mapCrosschainProve;
+    if (pBlockChain->GetCrosschainProveForPrevBlock(block.GetChainId(), block.hashPrev, mapCrosschainProve))
+    {
+        block.mapProve = mapCrosschainProve;
+    }
 
     CTransaction& txMint = block.txMint;
 
