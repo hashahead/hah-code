@@ -394,17 +394,38 @@ bool CForkAddressTxInfoDB::WriteSnapshotAddressTxCount(const uint256& hashLastBl
     return true;
 }
 
-bool CForkAddressTxInfoDB::GetAddressTxCount(const uint256& hashBlock, const CDestination& dest, uint64& nTxCount)
+bool CForkAddressTxInfoDB::WriteSnapshotTokenTxCount(const std::map<CDestination, std::map<CDestination, uint64>>& mapTokenTxCount)
 {
-    uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    for (const auto& kv : mapTokenTxCount)
     {
-        StdLog("CForkAddressTxInfoDB", "Get address last info: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
-        return false;
+        for (const auto& kv2 : kv.second)
+        {
+            if (!WriteTokenTxCount(kv.first, kv2.first, kv2.second))
+            {
+                StdLog("CForkAddressTxInfoDB", "Write snapshot token tx count: Write token tx count failed, contract address: %s, user address: %s", kv.first.ToString().c_str(), kv2.first.ToString().c_str());
+                return false;
+            }
+        }
     }
-    if (!ReadAddressLast(hashRoot, dest, nTxCount))
+    return true;
+}
+
+//------------------------------------------------------------------------------------------
+bool CForkAddressTxInfoDB::GetBlockAddressTxInfo(const uint256& hashBlock, map<CDestination, vector<CDestTxInfo>>& mapAddressTxInfo, map<CDestination, vector<CTokenTransRecord>>& mapTokenRecord)
+{
+    try
     {
-        StdLog("CForkAddressTxInfoDB", "Get address last info: Read address last fail, dest: %s, block: %s", dest.ToString().c_str(), hashBlock.GetHex().c_str());
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_DATA << hashBlock;
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
+        ssValue >> mapAddressTxInfo >> mapTokenRecord;
+    }
+    catch (exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
         return false;
     }
     return true;
