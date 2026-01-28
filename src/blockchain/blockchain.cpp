@@ -767,6 +767,11 @@ bool CBlockChain::GetUserVotes(const uint256& hashRefBlock, const CDestination& 
     return true;
 }
 
+bool CBlockChain::GetPledgeVotes(const uint256& hashRefBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote)
+{
+    return cntrBlock.RetrieveDestPledgeVoteContext(hashRefBlock, destVote, ctxPledgeVote);
+}
+
 bool CBlockChain::ListDelegate(const uint256& hashRefBlock, const uint32 nStartIndex, const uint32 nCount, std::multimap<uint256, CDestination>& mapVotes)
 {
     return cntrBlock.GetDelegateList(hashRefBlock, nStartIndex, nCount, mapVotes);
