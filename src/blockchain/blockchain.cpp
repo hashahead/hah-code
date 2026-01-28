@@ -782,11 +782,11 @@ bool CBlockChain::VerifyRepeatBlock(const uint256& hashFork, const uint256& hash
     uint64 nRefTimeStamp = 0;
     if (hashBlockRef != 0 && (block.IsSubsidiary() || block.IsExtended()))
     {
-        CBlockIndex* pIndexRef;
-        if (!cntrBlock.RetrieveIndex(hashBlockRef, &pIndexRef))
+        BlockIndexPtr pIndexRef = cntrBlock.RetrieveIndex(hashBlockRef);
+        if (!pIndexRef)
         {
-            StdLog("BlockChain", "Verify Repeat Block: RetrieveIndex fail, hashBlockRef: %s, block: %s",
-                   hashBlockRef.GetHex().c_str(), block.GetHash().GetHex().c_str());
+            StdLog("BlockChain", "Verify Repeat Block: Retrieve index fail, hashBlockRef: %s, block: %s",
+                   hashBlockRef.GetHex().c_str(), hashBlock.GetHex().c_str());
             return false;
         }
         if (block.IsSubsidiary())
@@ -794,7 +794,7 @@ bool CBlockChain::VerifyRepeatBlock(const uint256& hashFork, const uint256& hash
             if (block.GetBlockTime() != pIndexRef->GetBlockTime())
             {
                 StdLog("BlockChain", "Verify Repeat Block: Subsidiary block time error, block time: %lu, ref block time: %lu, hashBlockRef: %s, block: %s",
-                       block.GetBlockTime(), pIndexRef->GetBlockTime(), hashBlockRef.GetHex().c_str(), block.GetHash().GetHex().c_str());
+                       block.GetBlockTime(), pIndexRef->GetBlockTime(), hashBlockRef.GetHex().c_str(), hashBlock.GetHex().c_str());
                 return false;
             }
         }
@@ -805,7 +805,7 @@ bool CBlockChain::VerifyRepeatBlock(const uint256& hashFork, const uint256& hash
                 || ((block.GetBlockTime() - pIndexRef->GetBlockTime()) % EXTENDED_BLOCK_SPACING) != 0)
             {
                 StdLog("BlockChain", "Verify Repeat Block: Extended block time error, block time: %lu, ref block time: %lu, hashBlockRef: %s, block: %s",
-                       block.GetBlockTime(), pIndexRef->GetBlockTime(), hashBlockRef.GetHex().c_str(), block.GetHash().GetHex().c_str());
+                       block.GetBlockTime(), pIndexRef->GetBlockTime(), hashBlockRef.GetHex().c_str(), hashBlock.GetHex().c_str());
                 return false;
             }
         }
