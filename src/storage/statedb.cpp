@@ -255,7 +255,7 @@ bool CForkStateDB::GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, C
 //////////////////////////////
 // CStateDB
 
-bool CStateDB::Initialize(const boost::filesystem::path& pathData)
+bool CStateDB::Initialize(const boost::filesystem::path& pathData, const bool fPruneStateIn)
 {
     pathState = pathData / "state";
 
@@ -268,6 +268,7 @@ bool CStateDB::Initialize(const boost::filesystem::path& pathData)
     {
         return false;
     }
+    fPruneState = fPruneStateIn;
     return true;
 }
 
@@ -293,12 +294,12 @@ bool CStateDB::LoadFork(const uint256& hashFork)
         return true;
     }
 
-    std::shared_ptr<CForkStateDB> spState(new CForkStateDB());
+    std::shared_ptr<CForkStateDB> spState(new CForkStateDB(hashFork));
     if (spState == nullptr)
     {
         return false;
     }
-    if (!spState->Initialize(pathState / hashFork.GetHex()))
+    if (!spState->Initialize(pathState / hashFork.GetHex(), fPruneState))
     {
         return false;
     }
@@ -342,14 +343,14 @@ void CStateDB::Clear()
     }
 }
 
-bool CStateDB::AddBlockState(const uint256& hashFork, const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot)
+bool CStateDB::AddBlockState(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapStateDB.find(hashFork);
     if (it != mapStateDB.end())
     {
-        return it->second->AddBlockState(hashPrevRoot, statusBlockRoot, mapBlockState, hashBlockRoot);
+        return it->second->AddBlockState(nBlockHeight, hashPrevRoot, statusBlockRoot, mapBlockState, hashBlockRoot);
     }
     return false;
 }

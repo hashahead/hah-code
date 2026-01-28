@@ -40,7 +40,7 @@ public:
     bool Initialize(const boost::filesystem::path& pathData, const bool fPruneIn);
     void Deinitialize();
     bool RemoveAll();
-    bool AddBlockState(const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot);
+    bool AddBlockState(const uint32 nBlockHeight, const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot);
     bool CreateCacheStateTrie(const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot);
     bool RetrieveDestState(const uint256& hashBlockRoot, const CDestination& dest, CDestState& state);
     bool ListDestState(const uint256& hashBlockRoot, std::map<CDestination, CDestState>& mapBlockState);
@@ -55,15 +55,9 @@ protected:
     bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, CBlockRootStatus& statusBlockRoot);
 
 protected:
-    enum
-    {
-        MAX_CACHE_COUNT = 16
-    };
-    bool fCache;
+    uint256 hashFork;
+    bool fPrune;
     hnbase::CRWAccess rwAccess;
-    std::map<uint256, std::map<CDestination, CDestState>> mapCacheState;
-    std::map<uint256, std::map<uint256, CTrieValue>> mapCacheTrie;
-    std::map<uint64, uint256> mapCacheIndex;
     CTrieDB dbTrie;
 };
 
