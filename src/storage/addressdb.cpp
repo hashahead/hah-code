@@ -514,7 +514,7 @@ bool CForkAddressDB::AddTokenContractAddressContext(const uint256& hashPrevBlock
 bool CForkAddressDB::RetrieveAddressContext(const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress)
 {
     uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
     {
         StdLog("CForkAddressDB", "Retrieve address context: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -525,8 +525,6 @@ bool CForkAddressDB::RetrieveAddressContext(const uint256& hashBlock, const CDes
     ssKey.GetData(btKey);
     if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
     {
-        // StdLog("CForkAddressDB", "Retrieve address context: Trie retrieve kv fail, root: %s, dest: %s, block: %s",
-        //        hashRoot.GetHex().c_str(), dest.ToString().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
     try
@@ -542,51 +540,26 @@ bool CForkAddressDB::RetrieveAddressContext(const uint256& hashBlock, const CDes
     return true;
 }
 
-bool CForkAddressDB::ListContractAddress(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress)
+bool CForkAddressDB::RetrieveTokenContractAddressContext(const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress)
 {
     uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_CONTRACT_ADDRESS_TRIEROOT, hashBlock, hashRoot))
     {
-        StdLog("CForkAddressDB", "List contract address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
-        return false;
-    }
-
-    hnbase::CBufStream ssKeyPrefix;
-    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_ADDRESS;
-    bytes btKeyPrefix;
-    ssKeyPrefix.GetData(btKeyPrefix);
-
-    CListContractAddressTrieDBWalker walker(mapContractAddress);
-    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
-    {
-        StdLog("CForkAddressDB", "List contract address: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
-        return false;
-    }
-    return true;
-}
-
-bool CForkAddressDB::RetrieveTimeVault(const uint256& hashBlock, const CDestination& dest, CTimeVault& tv)
-{
-    uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
-    {
-        StdLog("CForkAddressDB", "Retrieve time vault: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        StdLog("CForkAddressDB", "Retrieve token contract address context: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
     hnbase::CBufStream ssKey, ssValue;
     bytes btKey, btValue;
-    ssKey << DB_ADDRESS_KEY_TYPE_TIMEVAULT << dest;
+    ssKey << DB_ADDRESS_KEY_TYPE_TOKEN_CONTRACT_ADDRESS << dest;
     ssKey.GetData(btKey);
     if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
     {
-        // StdLog("CForkAddressDB", "Retrieve time vault: Trie retrieve kv fail, root: %s, dest: %s, block: %s",
-        //        hashRoot.GetHex().c_str(), dest.ToString().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
     try
     {
         ssValue.Write((char*)(btValue.data()), btValue.size());
-        ssValue >> tv;
+        ssValue >> ctxAddress;
     }
     catch (std::exception& e)
     {
