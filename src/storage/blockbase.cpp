@@ -728,21 +728,24 @@ bool CBlockBase::GetPrevBlockHashList(const uint256& hashBlock, const uint32 nGe
     return true;
 }
 
-//////////////////////////////
-// CBlockFilter
-
-void CBlockFilter::RemoveFilter(const uint256& nFilterId)
+BlockIndexPtr CBlockBase::LoadBlockIndex(const CBlockIndex& outline)
 {
-    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
-    if (CFilterId::isLogsFilter(nFilterId))
+    BlockIndexPtr pIndex = MAKE_SHARED_BLOCK_INDEX(outline);
+    if (pIndex)
     {
-        mapLogFilter.erase(nFilterId);
+        if (!GetCacheBlockIndex(outline.GetBlockHash()))
+        {
+            AddCacheBlockIndex(pIndex);
+        }
+        return pIndex;
     }
-    else if (CFilterId::isBlockFilter(nFilterId))
-    {
-        mapBlockFilter.erase(nFilterId);
-    }
-    else if (CFilterId::isTxFilter(nFilterId))
+    return nullptr;
+}
+
+bool CBlockBase::LoadTx(const uint32 nTxFile, const uint32 nTxOffset, CTransaction& tx)
+{
+    tx.SetNull();
+    if (!tsBlock.Read(tx, nTxFile, nTxOffset, false, true))
     {
         mapTxFilter.erase(nFilterId);
     }
