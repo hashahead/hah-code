@@ -1005,7 +1005,7 @@ bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, CDelegateA
     return true;
 }
 
-bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, const CBlock& block, const CBlockIndex* pIndexPrev,
+bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, const CBlock& block, const BlockIndexPtr pIndexPrev,
                                             CDelegateAgreement& agreement, uint256& nEnrollTrust)
 {
     agreement.Clear();
@@ -1015,10 +1015,10 @@ bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, const CBlo
         return true;
     }
 
-    const CBlockIndex* pIndex = pIndexPrev;
-    for (int i = 0; i < CONSENSUS_DISTRIBUTE_INTERVAL; i++)
+    BlockIndexPtr pIndex = pIndexPrev;
+    for (int i = 0; pIndex && i < CONSENSUS_DISTRIBUTE_INTERVAL; i++)
     {
-        pIndex = pIndex->pPrev;
+        pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
     }
 
     CDelegateEnrolled enrolled;
@@ -1031,7 +1031,7 @@ bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, const CBlo
     delegate::CDelegateVerify verifier(enrolled.mapWeight, enrolled.mapEnrollData);
     map<CDestination, size_t> mapBallot;
     CProofOfDelegate proof;
-    if (!block.IsProofOfWork())
+    if (!block.IsProofOfPoa())
     {
         if (!block.GetDelegateProof(proof))
         {
