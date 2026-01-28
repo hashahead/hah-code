@@ -907,7 +907,7 @@ void CBlockMaker::CreateExtended(CBlock& block, const CBlockMakerProfile& profil
 
 bool CBlockMaker::CreateVacant(CBlock& block, const CBlockMakerProfile& profile, const CDelegateAgreement& agreement,
                                const uint256& hashRefBlock, const uint256& hashFork, const CChainId nChainId, const uint256& hashPrevBlock,
-                               const uint256& hashPrevStateRoot, const uint64 nTime, const uint64 nBlockNumber)
+                               const uint256& hashPrevStateRoot, const uint64 nTime, const uint64 nBlockNumber, const uint32 nBlockHeight)
 {
     CDestination destSendTo = profile.GetDestination();
 
@@ -921,6 +921,7 @@ bool CBlockMaker::CreateVacant(CBlock& block, const CBlockMakerProfile& profile,
     block.nType = CBlock::BLOCK_VACANT;
     block.SetBlockTime(nTime);
     block.nNumber = nBlockNumber;
+    block.nHeight = nBlockHeight;
     block.nSlot = 0;
     block.hashPrev = hashPrevBlock;
 
@@ -951,13 +952,14 @@ bool CBlockMaker::CreateVacant(CBlock& block, const CBlockMakerProfile& profile,
     }
 
     uint256 nTotalMintReward;
+    bool fMoStatus = false;
     if (!pBlockChain->CreateBlockStateRoot(hashFork, block, block.hashStateRoot, block.hashReceiptsRoot,
-                                           block.nGasUsed, block.btBloomData, nTotalMintReward))
+                                           block.hashCrosschainMerkleRoot, block.nGasUsed, block.btBloomData, nTotalMintReward, fMoStatus))
     {
         StdError("blockmaker", "Create vacant: Get block state root fail, prev block: %s", hashPrevBlock.ToString().c_str());
         return false;
     }
-    block.hashMerkleRoot = block.CalcMerkleTreeRoot();
+    block.UpdateMerkleRoot();
 
     return SignBlock(block, profile);
 }
@@ -977,7 +979,7 @@ bool CBlockMaker::ReplenishSubForkVacant(const uint256& hashFork, const CChainId
     while (nNextHeight < nPrimaryHeight)
     {
         CBlock block;
-        if (!CreateVacant(block, profile, agreement, hashRefBlock, hashFork, nChainId, hashLastBlock, hashLastStateRoot, vTime[nPrimaryHeight - nNextHeight], nLastBlockNumber + 1))
+        if (!CreateVacant(block, profile, agreement, hashRefBlock, hashFork, nChainId, hashLastBlock, hashLastStateRoot, vTime[nPrimaryHeight - nNextHeight], nLastBlockNumber + 1, nNextHeight))
         {
             StdError("blockmaker", "Replenish vacant: create vacane fail");
             return false;
@@ -987,11 +989,11 @@ bool CBlockMaker::ReplenishSubForkVacant(const uint256& hashFork, const CChainId
             StdError("blockmaker", "Replenish vacant: dispatch block fail");
             return false;
         }
-        StdTrace("blockmaker", "Replenish vacant: height: %d, block: %s, fork: %s",
-                 block.GetBlockHeight(), block.GetHash().GetHex().c_str(), hashFork.GetHex().c_str());
         hashLastBlock = block.GetHash();
         nNextHeight++;
         nLastBlockNumber++;
+        StdTrace("blockmaker", "Replenish vacant: height: %d, block: %s, fork: %s",
+                 block.GetBlockHeight(), hashLastBlock.GetHex().c_str(), hashFork.GetHex().c_str());
     }
     return true;
 }
