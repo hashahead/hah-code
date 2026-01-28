@@ -710,12 +710,20 @@ bool CBlockBase::GetBlockBranchList(const uint256& hashBlock, std::vector<CBlock
     return GetBlockBranchListNolock(GetIndex(hashBlock), 0, nullptr, vRemoveBlockInvertedOrder, vAddBlockPositiveOrder);
 }
 
-        while (setHisTxid.size() > MAX_FILTER_CACHE_COUNT * 2 && mapHisSeq.size() > 0)
-        {
-            auto it = mapHisSeq.begin();
-            setHisTxid.erase(it->second);
-            mapHisSeq.erase(it);
-        }
+bool CBlockBase::GetPrevBlockHashList(const uint256& hashBlock, const uint32 nGetCount, std::vector<uint256>& vPrevBlockhash)
+{
+    CReadLock rlock(rwAccess);
+
+    BlockIndexPtr pIndex = GetIndex(hashBlock);
+    if (!pIndex)
+    {
+        return false;
+    }
+    pIndex = GetPrevBlockIndex(pIndex);
+    while (pIndex && !pIndex->IsOrigin() && vPrevBlockhash.size() < (std::size_t)nGetCount)
+    {
+        vPrevBlockhash.push_back(pIndex->GetBlockHash());
+        pIndex = GetPrevBlockIndex(pIndex);
     }
     return true;
 }
