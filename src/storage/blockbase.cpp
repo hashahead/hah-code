@@ -747,8 +747,10 @@ bool CBlockBase::LoadTx(const uint32 nTxFile, const uint32 nTxOffset, CTransacti
     tx.SetNull();
     if (!tsBlock.Read(tx, nTxFile, nTxOffset, false, true))
     {
-        mapTxFilter.erase(nFilterId);
+        StdTrace("BlockBase", "LoadTx::Read %s block failed", tx.GetHash().ToString().c_str());
+        return false;
     }
+    return true;
 }
 
 uint256 CBlockFilter::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logFilterIn)
