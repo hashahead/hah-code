@@ -54,8 +54,10 @@ protected:
 class CContractDB
 {
 public:
-    CContractDB() {}
-    bool Initialize(const boost::filesystem::path& pathData);
+    CContractDB()
+      : fPruneState(false) {}
+
+    bool Initialize(const boost::filesystem::path& pathData, const bool fPruneStateIn);
     void Deinitialize();
 
     bool ExistFork(const uint256& hashFork);
@@ -67,24 +69,19 @@ public:
     bool AddBlockContractKvValue(const uint256& hashFork, const uint32 nBlockHeight, const uint64 nBlockNumber, const CDestination& destContract, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashContractRoot);
     bool CreateCacheContractKvTrie(const uint256& hashFork, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot);
     bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashContractRoot, const uint256& key, bytes& value);
-    static bool CreateStaticContractStateRoot(const std::map<uint256, bytes>& mapContractState, uint256& hashStateRoot);
+    bool ClearContractKvRootUnavailableNode(const uint256& hashFork, const uint32 nRemoveLastHeight, bool& fExit);
 
-    bool AddCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock,
-                        const std::map<uint256, CContractSourceCodeContext>& mapSourceCode,
-                        const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
-                        const std::map<uint256, CContractRunCodeContext>& mapContractRunCode,
-                        const std::map<uint256, CTemplateContext>& mapTemplateData,
-                        uint256& hashCodeRoot);
-    bool RetrieveSourceCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode);
-    bool RetrieveContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode);
-    bool RetrieveContractRunCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractRunCode, CContractRunCodeContext& ctxtCode);
-    bool ListContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode);
-    bool VerifyCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+    bool GetContractAddressRoot(const uint256& hashFork, const CDestination& destContract, const uint256& hashRoot, uint256& hashPrevRoot, uint32& nBlockHeight, uint64& nBlockNumber);
+    bool CreateCacheContractKvRoot(const uint256& hashFork, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot);
+    bool AddContractKvTrie(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot);
+
+    static bool CreateStaticContractStateRoot(const std::map<uint256, bytes>& mapContractState, uint256& hashStateRoot);
 
 protected:
     boost::filesystem::path pathContract;
     hnbase::CRWAccess rwAccess;
     std::map<uint256, std::shared_ptr<CForkContractDB>> mapContractDB;
+    bool fPruneState;
 };
 
 } // namespace storage

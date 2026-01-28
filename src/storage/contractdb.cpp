@@ -532,13 +532,12 @@ bool CContractDB::CreateStaticContractStateRoot(const std::map<uint256, bytes>& 
     bytesmap mapKv;
     for (const auto& kv : mapContractState)
     {
-        hnbase::CBufStream ssKey;
+        hnbase::CBufStream ssKey, ssValue;
         bytes btKey, btValue;
 
         ssKey << DB_CONTRACT_KEY_TYPE_CONTRACTKV << kv.first;
         ssKey.GetData(btKey);
 
-        hnbase::CBufStream ssValue;
         ssValue << kv.second;
         ssValue.GetData(btValue);
 
@@ -548,86 +547,6 @@ bool CContractDB::CreateStaticContractStateRoot(const std::map<uint256, bytes>& 
     CTrieDB dbTrieTemp;
     std::map<uint256, CTrieValue> mapCacheNode;
     return dbTrieTemp.CreateCacheTrie(uint256(), mapKv, hashStateRoot, mapCacheNode);
-}
-
-////////////////////////////////////////////
-// contract code
-
-bool CContractDB::AddCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock,
-                                 const std::map<uint256, CContractSourceCodeContext>& mapSourceCode,
-                                 const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
-                                 const std::map<uint256, CContractRunCodeContext>& mapContractRunCode,
-                                 const std::map<uint256, CTemplateContext>& mapTemplateData,
-                                 uint256& hashCodeRoot)
-{
-    CReadLock rlock(rwAccess);
-
-    auto it = mapContractDB.find(hashFork);
-    if (it != mapContractDB.end())
-    {
-        return it->second->AddCodeContext(hashPrevBlock, hashBlock, mapSourceCode, mapContractCreateCode, mapContractRunCode, mapTemplateData, hashCodeRoot);
-    }
-    return false;
-}
-
-bool CContractDB::RetrieveSourceCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode)
-{
-    CReadLock rlock(rwAccess);
-
-    auto it = mapContractDB.find(hashFork);
-    if (it != mapContractDB.end())
-    {
-        return it->second->RetrieveSourceCodeContext(hashBlock, hashSourceCode, ctxtCode);
-    }
-    return false;
-}
-
-bool CContractDB::RetrieveContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode)
-{
-    CReadLock rlock(rwAccess);
-
-    auto it = mapContractDB.find(hashFork);
-    if (it != mapContractDB.end())
-    {
-        return it->second->RetrieveContractCreateCodeContext(hashBlock, hashContractCreateCode, ctxtCode);
-    }
-    return false;
-}
-
-bool CContractDB::RetrieveContractRunCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractRunCode, CContractRunCodeContext& ctxtCode)
-{
-    CReadLock rlock(rwAccess);
-
-    auto it = mapContractDB.find(hashFork);
-    if (it != mapContractDB.end())
-    {
-        return it->second->RetrieveContractRunCodeContext(hashBlock, hashContractRunCode, ctxtCode);
-    }
-    return false;
-}
-
-bool CContractDB::ListContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode)
-{
-    CReadLock rlock(rwAccess);
-
-    auto it = mapContractDB.find(hashFork);
-    if (it != mapContractDB.end())
-    {
-        return it->second->ListContractCreateCodeContext(hashBlock, mapContractCreateCode);
-    }
-    return false;
-}
-
-bool CContractDB::VerifyCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
-{
-    CReadLock rlock(rwAccess);
-
-    auto it = mapContractDB.find(hashFork);
-    if (it != mapContractDB.end())
-    {
-        return it->second->VerifyCodeContext(hashPrevBlock, hashBlock, hashRoot, fVerifyAllNode);
-    }
-    return false;
 }
 
 } // namespace storage
