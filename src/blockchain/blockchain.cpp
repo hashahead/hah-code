@@ -1053,6 +1053,28 @@ bool CBlockChain::GetBlockDelegateAgreement(const uint256& hashBlock, const CBlo
     return true;
 }
 
+bool CBlockChain::GetBlockDelegateVoteAddress(const uint256& hashBlock, std::set<CDestination>& setVoteAddress)
+{
+    std::map<CDestination, uint256> mapVote;
+    if (!cntrBlock.GetBlockDelegateVote(hashBlock, mapVote))
+    {
+        StdLog("BlockChain", "Get block delegate vote address: Get delegate vote fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    std::map<std::pair<uint256, CDestination>, CDestination> mapVoteSort;
+    for (auto& kv : mapVote)
+    {
+        mapVoteSort.insert(std::make_pair(std::make_pair(kv.second, kv.first), kv.first));
+    }
+    for (auto it = mapVoteSort.rbegin(); it != mapVoteSort.rend() && setVoteAddress.size() < MAX_DELEGATE_BLOCK_VOTE; ++it)
+    {
+        //StdDebug("BlockChain", "Get block delegate vote address: vote amount: %s, address: %s", CoinToTokenBigFloat(it->first.first).c_str(), it->second.ToString().c_str());
+        setVoteAddress.insert(it->second);
+    }
+    return true;
+}
+
 uint256 CBlockChain::GetBlockMoneySupply(const uint256& hashBlock)
 {
     CBlockIndex* pIndex = nullptr;
