@@ -675,26 +675,40 @@ void CBlockBase::ListForkIndex(std::map<uint256, BlockIndexPtr>& mapForkIndex)
         BlockIndexPtr pIndex = GetForkLastIndex(kv.first);
         if (pIndex)
         {
-            vTxid.push_back(txid);
+            mapForkIndex.insert(make_pair(kv.first, pIndex));
         }
     }
-    else
+}
+
+void CBlockBase::ListForkIndex(multimap<int, BlockIndexPtr>& mapForkIndex)
+{
+    CReadLock rlock(rwAccess);
+
+    std::map<uint256, CForkContext> mapForkCtxt;
+    if (!dbBlock.ListForkContext(mapForkCtxt))
     {
-        for (auto& txid : setTxid)
+        return;
+    }
+    for (const auto& kv : mapForkCtxt)
+    {
+        BlockIndexPtr pIndex = GetForkLastIndex(kv.first);
+        if (pIndex)
         {
-            vTxid.push_back(txid);
-            setHisTxid.insert(txid);
-            if (++nSeqCreate == 0)
+            BlockIndexPtr pOriginIndex = GetOriginBlockIndex(pIndex);
+            if (pOriginIndex)
             {
-                nSeqCreate++;
-                mapHisSeq.clear();
-                setHisTxid.clear();
-                setHisTxid.insert(txid);
+                mapForkIndex.insert(make_pair(pOriginIndex->GetBlockHeight() - 1, pIndex));
             }
-            mapHisSeq.insert(std::make_pair(nSeqCreate, txid));
         }
-        setTxid.clear();
-        nPrevGetChangesTime = GetTime();
+    }
+}
+
+bool CBlockBase::GetBlockBranchList(const uint256& hashBlock, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder)
+{
+    CReadLock rlock(rwAccess);
+
+    return GetBlockBranchListNolock(GetIndex(hashBlock), 0, nullptr, vRemoveBlockInvertedOrder, vAddBlockPositiveOrder);
+}
 
         while (setHisTxid.size() > MAX_FILTER_CACHE_COUNT * 2 && mapHisSeq.size() > 0)
         {
