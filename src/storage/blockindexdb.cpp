@@ -313,30 +313,20 @@ bool CBlockIndexDB::UpdateBlockNumberBlockLongChain(const uint256& hashFork, con
     return true;
 }
 
-bool CBlockIndexDB::RetrieveBlockHashByNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashLastBlock, const uint64 nBlockNumber, uint256& hashBlock)
+bool CBlockIndexDB::RetrieveBlockHashByNumber(const uint256& hashFork, const uint64 nBlockNumber, uint256& hashBlock)
 {
-    uint256 hashRoot;
-    if (!ReadTrieRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashLastBlock, hashRoot))
+    CReadLock rlock(rwAccess);
+
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashFork);
+
+    CBufStream ssKey, ssValue;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_NUMBER << BSwap32(nChainId) << BSwap64(nBlockNumber);
+    if (!Read(ssKey, ssValue))
     {
-        StdLog("CBlockIndexDB", "Retrieve block hash by number: Read trie root fail, last block: %s", hashLastBlock.GetHex().c_str());
         return false;
     }
-
-    hnbase::CBufStream ssKey;
-    bytes btKey, btValue;
-    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_NUMBER << nChainId << BSwap64(nBlockNumber);
-    ssKey.GetData(btKey);
-
-    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
-    {
-        StdLog("CBlockIndexDB", "Retrieve block hash by number: Trie retrieve kv fail, root: %s, chainid: %u, number: %lu, last block: %s",
-               hashRoot.GetHex().c_str(), nChainId, nBlockNumber, hashLastBlock.GetHex().c_str());
-        return false;
-    }
-
     try
     {
-        hnbase::CBufStream ssValue(btValue);
         ssValue >> hashBlock;
     }
     catch (std::exception& e)
