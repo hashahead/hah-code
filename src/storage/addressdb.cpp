@@ -827,24 +827,39 @@ bool CForkAddressDB::GetDelegateLinkTemplateAddress(const uint256& hashBlock, co
             }
             return true;
         }
-        uint256 hashRootLocal;
-        if (!ReadTrieRoot(hashBlockLocal, hashRootLocal))
-        {
-            return false;
-        }
-        if (hashRootLocal != hashRoot)
-        {
-            return false;
-        }
-        hashRoot = hashRootPrev;
-    } while (hashBlockLocal != hashFork);
 
+    public:
+        const uint32 nTemplateType;
+        const uint64 nBegin;
+        const uint64 nCount;
+        std::vector<std::pair<CDestination, uint8>>& vTemplateAddress;
+        uint64 nWalkIndex;
+    };
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
+    {
+        StdLog("CForkAddressDB", "Get delegate link template address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_DELEGATE_LINK_ADDRESS << destDelegate;
+    bytes btKeyPrefix;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListTrieDBWalker walker(nTemplateType, nBegin, nCount, vTemplateAddress);
+    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+    {
+        StdLog("CForkAddressDB", "Get delegate link template address: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
     return true;
 }
 
 bool CForkAddressDB::VerifyAddressContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
     {
         StdLog("CForkAddressDB", "Verify address context: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -859,6 +874,8 @@ bool CForkAddressDB::VerifyAddressContext(const uint256& hashPrevBlock, const ui
             return false;
         }
     }
+    return true;
+}
 
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
