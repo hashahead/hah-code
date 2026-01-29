@@ -489,71 +489,18 @@ bool CBlockIndexDB::GetLastBlockVoteResult(const uint256& hashFork, uint256& has
     return true;
 }
 
-bool CBlockIndexDB::VerifyBlockNumberContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
+bool CBlockIndexDB::GetLastConfirmBlock(const uint256& hashFork, uint256& hashLastConfirmBlock)
 {
-    if (!ReadTrieRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashBlock, hashRoot))
+    CReadLock rlock(rwAccess);
+    CBufStream ssKey, ssValue;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_LAST_BLOCK_VOTE << hashFork;
+    if (!Read(ssKey, ssValue))
     {
         return false;
     }
-
-    if (fVerifyAllNode)
-    {
-        std::map<uint256, CTrieValue> mapCacheNode;
-        if (!dbTrie.CheckTrieNode(hashRoot, mapCacheNode))
-        {
-            return false;
-        }
-    }
-
-    uint256 hashPrevRoot;
-    if (hashBlock != hashFork)
-    {
-        if (!ReadTrieRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashPrevBlock, hashPrevRoot))
-        {
-            return false;
-        }
-    }
-
-    uint256 hashRootPrevDb;
-    uint256 hashBlockLocalDb;
-    if (!GetPrevRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashRoot, hashRootPrevDb, hashBlockLocalDb))
-    {
-        return false;
-    }
-    if (hashRootPrevDb != hashPrevRoot || hashBlockLocalDb != hashBlock)
-    {
-        return false;
-    }
-    return true;
-}
-
-///////////////////////////////////
-bool CBlockIndexDB::WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot)
-{
-    hnbase::CBufStream ssKey, ssValue;
-    ssKey << nRootType << DB_BLOCKINDEX_KEY_ID_TRIEROOT << hashBlock;
-    ssValue << hashTrieRoot;
-    return dbTrie.WriteExtKv(ssKey, ssValue);
-}
-
-bool CBlockIndexDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot)
-{
-    if (hashBlock == 0)
-    {
-        hashTrieRoot = 0;
-        return true;
-    }
-
-    hnbase::CBufStream ssKey, ssValue;
-    ssKey << nRootType << DB_BLOCKINDEX_KEY_ID_TRIEROOT << hashBlock;
-    if (!dbTrie.ReadExtKv(ssKey, ssValue))
-    {
-        return false;
-    }
-
     try
     {
-        ssValue >> hashTrieRoot;
+        ssValue >> hashLastConfirmBlock;
     }
     catch (std::exception& e)
     {
