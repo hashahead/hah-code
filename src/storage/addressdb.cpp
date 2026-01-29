@@ -569,6 +569,33 @@ bool CForkAddressDB::RetrieveTokenContractAddressContext(const uint256& hashBloc
     return true;
 }
 
+bool CForkAddressDB::ListAddress(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress)
+{
+    if (cacheAddressData.GetBlockAddress(hashBlock, mapAddress))
+    {
+        return true;
+    }
+    return ListAddressDb(hashBlock, mapAddress);
+}
+
+bool CForkAddressDB::ListContractAddress(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress)
+{
+    if (cacheAddressData.GetBlockContractAddress(hashBlock, mapContractAddress))
+    {
+        return true;
+    }
+    return ListContractAddressDb(hashBlock, mapContractAddress);
+}
+
+bool CForkAddressDB::ListTokenContractAddress(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
+{
+    if (cacheAddressData.GetBlockTokenContractAddress(hashBlock, mapTokenContractAddress))
+    {
+        return true;
+    }
+    return ListTokenContractAddressDb(hashBlock, mapTokenContractAddress);
+}
+
 bool CForkAddressDB::GetAddressCount(const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount)
 {
     if (hashBlock == 0)
