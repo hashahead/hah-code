@@ -53,6 +53,29 @@ public:
 
     bool AddDexOrderCache(const uint256& hashDexOrder, const CDestination& destOrder, const uint64 nOrderNumber, const CDexOrderBody& dexOrder,
                           const CChainId nOrderAtChainId, const uint256& hashOrderAtBlock, const uint256& nPrevCompletePrice);
+    bool UpdateCompleteOrderCache(const uint256& hashCoinPair, const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount);
+    void UpdatePeerProveLastBlock(const CChainId nPeerChainId, const uint256& hashLastProveBlock);
+    void UpdateCompletePrice(const uint256& hashCoinPair, const uint256& nCompletePrice);
+
+    bool GetMatchDexResult(std::map<uint256, CMatchOrderResult>& mapMatchResult);
+    bool ListMatchDexOrder(const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder);
+
+    friend bool operator==(const CCacheBlockDexOrder& a, const CCacheBlockDexOrder& b)
+    {
+        if (a.hashLastBlock != b.hashLastBlock)
+        {
+            return false;
+        }
+        if (*a.ptrMatchDex != *b.ptrMatchDex)
+        {
+            return false;
+        }
+        return true;
+    }
+    friend inline bool operator!=(const CCacheBlockDexOrder& a, const CCacheBlockDexOrder& b)
+    {
+        return (!(a == b));
+    }
 
 protected:
     uint256 hashLastBlock;

@@ -58,6 +58,31 @@ bool CCacheBlockDexOrder::AddDexOrderCache(const uint256& hashDexOrder, const CD
     return ptrMatchDex->AddMatchDexOrder(hashDexOrder, destOrder, nOrderNumber, dexOrder, nOrderAtChainId, hashOrderAtBlock, nPrevCompletePrice);
 }
 
+bool CCacheBlockDexOrder::UpdateCompleteOrderCache(const uint256& hashCoinPair, const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount)
+{
+    return ptrMatchDex->UpdateMatchCompleteOrder(hashCoinPair, hashDexOrder, nCompleteAmount, nCompleteCount);
+}
+
+void CCacheBlockDexOrder::UpdatePeerProveLastBlock(const CChainId nPeerChainId, const uint256& hashLastProveBlock)
+{
+    ptrMatchDex->UpdatePeerProveLastBlock(nPeerChainId, hashLastProveBlock);
+}
+
+void CCacheBlockDexOrder::UpdateCompletePrice(const uint256& hashCoinPair, const uint256& nCompletePrice)
+{
+    ptrMatchDex->UpdateCompletePrice(hashCoinPair, nCompletePrice);
+}
+
+bool CCacheBlockDexOrder::GetMatchDexResult(std::map<uint256, CMatchOrderResult>& mapMatchResult)
+{
+    return ptrMatchDex->MatchDex(mapMatchResult);
+}
+
+bool CCacheBlockDexOrder::ListMatchDexOrder(const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder)
+{
+    return ptrMatchDex->ListDexOrder(strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
+}
+
 ////////////////////////////////////////////
 // CHdexDB
 
