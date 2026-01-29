@@ -69,7 +69,7 @@ public:
     uint256 GetBlockMoneySupply(const uint256& hashBlock) override;
     bool GetBlockDelegateVoteAddress(const uint256& hashBlock, std::set<CDestination>& setVoteAddress) override;
     uint64 GetNextBlockTimestamp(const uint256& hashPrev) override;
-    Errno VerifyPowBlock(const CBlock& block, bool& fLongChain) override;
+    Errno VerifyPoaBlock(const CBlock& block, bool& fLongChain) override;
     bool VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& tx, std::vector<std::pair<CDestination, CForkContext>>& vForkCtxt) override;
     bool CheckForkValidLast(const uint256& hashFork, CBlockChainUpdate& update) override;
     bool VerifyForkRefLongChain(const uint256& hashFork, const uint256& hashForkBlock, const uint256& hashPrimaryBlock) override;

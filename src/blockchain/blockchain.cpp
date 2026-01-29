@@ -1077,8 +1077,8 @@ bool CBlockChain::GetBlockDelegateVoteAddress(const uint256& hashBlock, std::set
 
 uint256 CBlockChain::GetBlockMoneySupply(const uint256& hashBlock)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashBlock, &pIndex) || pIndex == nullptr)
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashBlock);
+    if (!pIndex)
     {
         return -1;
     }
