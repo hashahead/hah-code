@@ -17,6 +17,15 @@ namespace hashahead
 namespace storage
 {
 
+///////////////////////////////////
+// CCacheBlockDexOrder
+
+bool CCacheBlockDexOrder::AddDexOrderCache(const uint256& hashDexOrder, const CDestination& destOrder, const uint64 nOrderNumber, const CDexOrderBody& dexOrder,
+                                           const CChainId nOrderAtChainId, const uint256& hashOrderAtBlock, const uint256& nPrevCompletePrice)
+{
+    return ptrMatchDex->AddMatchDexOrder(hashDexOrder, destOrder, nOrderNumber, dexOrder, nOrderAtChainId, hashOrderAtBlock, nPrevCompletePrice);
+}
+
 ////////////////////////////////////////////
 // CHdexDB
 
