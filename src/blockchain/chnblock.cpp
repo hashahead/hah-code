@@ -57,6 +57,17 @@ bool CBlockChnFork::AddBlockHash(const std::vector<uint256>& vBlockHash)
     return fAllExist;
 }
 
+bool CBlockChnFork::GetNextBlockHash(const uint256& hashPrevBlock, uint256& hashBlock)
+{
+    auto it = mapPrevHash.find(hashPrevBlock);
+    if (it != mapPrevHash.end())
+    {
+        hashBlock = it->second;
+        return (hashBlock != 0);
+    }
+    return false;
+}
+
 CBlockChannel::CBlockChannel()
   : nPrevCheckCacheTimeoutTime(0), nCacheBlockByteCount(0)
 {

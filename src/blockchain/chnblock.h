@@ -62,6 +62,9 @@ public:
     CBlockChnFork(const uint256& hashForkIn)
       : hashFork(hashForkIn) {}
 
+    void AddPrevBlockHash(const uint256& hashPrevBlock, const uint256& hashBlock);
+    bool AddBlockHash(const std::vector<uint256>& vBlockHash);
+    bool GetNextBlockHash(const uint256& hashPrevBlock, uint256& hashBlock);
 public:
     uint256 hashFork;
 };
