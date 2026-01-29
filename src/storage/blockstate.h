@@ -23,6 +23,43 @@ namespace storage
 {
 
 //////////////////////////////
+// CFuncInputParam & CFuncOutputParam
+
+class CBlockBase;
+
+class CFuncInputParam
+{
+public:
+    CFuncInputParam()
+      : nGasLimit(0) {}
+
+public:
+    CDestination destFrom;
+    CDestination destTo;
+    uint256 nAmount;
+    bytes btTxParam;
+    uint64 nGasLimit;
+};
+
+class CFuncOutputParam
+{
+public:
+    CFuncOutputParam()
+      : nGasLeft(0), nStatus(0) {}
+
+    static std::string GetStatusInfo(const int nStatus);
+
+public:
+    uint64 nGasLeft;
+    CTransactionLogs logs;
+    bytes btResult;
+
+    int nStatus;
+    std::string strError;
+    std::string strRevertReason;
+};
+
+//////////////////////////////
 // CBlockState
 
 class CBlockState
