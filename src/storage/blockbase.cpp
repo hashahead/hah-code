@@ -853,17 +853,32 @@ bool CBlockBase::VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& 
     }
     if (!block.IsOrigin() || block.IsPrimary())
     {
-        if (it->second.isTimeout())
+        StdLog("BlockBase", "Verify block fork tx: invalid block, tx: %s", tx.GetHash().ToString().c_str());
+        return false;
+    }
+    if (!block.GetForkProfile(profile))
+    {
+        StdLog("BlockBase", "Verify block fork tx: invalid profile, tx: %s", tx.GetHash().ToString().c_str());
+        return false;
+    }
+    uint256 hashNewFork = block.GetHash();
+
+    do
+    {
+        CForkContext ctxtParent;
+        if (!dbBlock.RetrieveForkContext(profile.hashParent, ctxtParent, hashPrev))
         {
-            mapLogFilter.erase(it++);
-        }
-        else
-        {
-            if (!it->second.AddTxReceipt(hashForkIn, nBlockNumber, hashBlock, txid, receipt))
+            bool fFindParent = false;
+            for (const auto& vd : vForkCtxt)
             {
-                mapLogFilter.erase(it++);
+                if (vd.second.hashFork == profile.hashParent)
+                {
+                    ctxtParent = vd.second;
+                    fFindParent = true;
+                    break;
+                }
             }
-            else
+            if (!fFindParent)
             {
                 ++it;
             }
