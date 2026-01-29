@@ -66,6 +66,48 @@ public:
 };
 
 ///////////////////////////////////
+// CDexOrderKey
+
+class CDexOrderKey
+{
+public:
+    CDexOrderKey()
+      : nHeight(0), nSlot(0) {}
+    CDexOrderKey(const uint256 nPriceIn, const uint32 nHeightIn, const uint16 nSlotIn, const uint256& hashOrderRandomIn)
+      : nPrice(nPriceIn), nHeight(nHeightIn), nSlot(nSlotIn), hashOrderRandom(hashOrderRandomIn) {}
+
+    uint64 GetHeightSlotValue() const
+    {
+        return GetHeightSlotStatic(nHeight, nSlot);
+    }
+
+    static inline uint64 GetHeightSlotStatic(const uint32 nHeight, const uint16 nSlot)
+    {
+        return (((uint64)nHeight << 32) | nSlot);
+    }
+    static inline uint32 GetHeightByHsStatic(const uint64 nHeightSlot)
+    {
+        return (uint32)(nHeightSlot >> 32);
+    }
+    static inline uint16 GetSlotByHsStatic(const uint64 nHeightSlot)
+    {
+        return (uint16)(nHeightSlot & 0xFFFF);
+    }
+
+    friend bool operator==(const CDexOrderKey& a, const CDexOrderKey& b);
+    friend inline bool operator!=(const CDexOrderKey& a, const CDexOrderKey& b)
+    {
+        return (!(a == b));
+    }
+
+public:
+    uint256 nPrice;
+    uint32 nHeight;
+    uint16 nSlot;
+    uint256 hashOrderRandom;
+};
+
+///////////////////////////////////
 // CMatchDex
 
 class CMatchDex
