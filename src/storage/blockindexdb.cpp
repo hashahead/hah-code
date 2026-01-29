@@ -510,7 +510,25 @@ bool CBlockIndexDB::GetLastConfirmBlock(const uint256& hashFork, uint256& hashLa
     return true;
 }
 
-void CBlockIndexDB::AddPrevRoot(const uint8 nRootType, const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
+bool CBlockIndexDB::AddBlockLocalVoteSignFlag(const uint256& hashBlock)
+{
+    CWriteLock wlock(rwAccess);
+
+    uint256 hashBlockDb;
+    if (GetBlockLocalSignFlagDb(CBlock::GetBlockChainIdByHash(hashBlock), CBlock::GetBlockHeightByHash(hashBlock), CBlock::GetBlockSlotByHash(hashBlock), hashBlockDb))
+    {
+        return hashBlockDb == hashBlock;
+    }
+    return AddBlockLocalSignFlagDb(hashBlock);
+}
+
+bool CBlockIndexDB::GetBlockLocalSignFlag(const CChainId nChainId, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock)
+{
+    CReadLock rlock(rwAccess);
+    return GetBlockLocalSignFlagDb(nChainId, nHeight, nSlot, hashBlock);
+}
+
+bool CBlockIndexDB::GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockHash, bytes& btSnapData)
 {
     hnbase::CBufStream ssKey, ssValue;
     bytes btKey, btValue;
