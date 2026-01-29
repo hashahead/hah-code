@@ -775,14 +775,57 @@ bool CForkAddressDB::GetDelegateLinkTemplateAddress(const uint256& hashBlock, co
 {
     class CListTrieDBWalker : public CTrieDBWalker
     {
-        if (!dbTrie.CheckTrieNode(hashRoot, mapCacheNode))
+    public:
+        CListTrieDBWalker(const uint32 nTemplateTypeIn, const uint64 nBeginIn, const uint64 nCountIn, std::vector<std::pair<CDestination, uint8>>& vTemplateAddressIn)
+          : nTemplateType(nTemplateTypeIn), nBegin(nBeginIn), nCount(nCountIn), vTemplateAddress(vTemplateAddressIn), nWalkIndex(0) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver)
         {
-            return false;
-        }
-        uint256 hashRootPrev;
-        if (!GetPrevRoot(hashRoot, hashRootPrev, hashBlockLocal))
-        {
-            return false;
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                StdError("CListTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_ADDRESS_KEY_TYPE_DELEGATE_LINK_ADDRESS)
+                {
+                    CDestination destDelegate;
+                    CDestination destTemplate;
+                    uint8 nTemplateTypeDb;
+
+                    ssKey >> destDelegate >> destTemplate;
+
+                    hnbase::CBufStream ssValue(btValue);
+                    ssValue >> nTemplateTypeDb;
+
+                    if (nTemplateType != 0 && nTemplateType != nTemplateTypeDb)
+                    {
+                        return true;
+                    }
+                    if (nWalkIndex < nBegin)
+                    {
+                        return true;
+                    }
+                    nWalkIndex++;
+                    vTemplateAddress.push_back(std::make_pair(destTemplate, nTemplateTypeDb));
+                    if (nCount > 0 && vTemplateAddress.size() >= nCount)
+                    {
+                        fWalkOver = true;
+                        return true;
+                    }
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
         }
         uint256 hashRootLocal;
         if (!ReadTrieRoot(hashBlockLocal, hashRootLocal))
