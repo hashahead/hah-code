@@ -880,11 +880,22 @@ bool CBlockBase::VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& 
             }
             if (!fFindParent)
             {
-                ++it;
+                StdLog("BlockBase", "Verify block fork tx: Retrieve parent context, tx: %s", tx.GetHash().ToString().c_str());
+                break;
             }
         }
-    }
-}
+
+        if (!VerifyOriginBlock(block, ctxtParent.GetProfile()))
+        {
+            StdLog("BlockBase", "Verify block fork tx: Verify origin fail, tx: %s", tx.GetHash().ToString().c_str());
+            break;
+        }
+
+        if (!VerifyForkFlag(hashNewFork, profile.nChainId, profile.strSymbol, profile.strName, hashPrev))
+        {
+            StdLog("BlockBase", "Verify block fork tx: Verify fork flag fail, fork: %s, txid: %s, prev block: %s", hashNewFork.ToString().c_str(), tx.GetHash().ToString().c_str(), hashPrev.ToString().c_str());
+            break;
+        }
 
 bool CBlockFilter::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs)
 {
