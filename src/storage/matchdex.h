@@ -19,6 +19,53 @@ namespace storage
 {
 
 ///////////////////////////////////
+// CMatchTools
+
+class CMatchTools
+{
+public:
+    CMatchTools() {}
+
+public:
+    static inline uint256 CalcPeerPrice(const uint256& nSelfPrice, const uint256& nPriceAnchor)
+    {
+        if (nSelfPrice == 0)
+        {
+            return 0;
+        }
+        return nPriceAnchor * nPriceAnchor / nSelfPrice;
+    }
+    static inline uint256 CalcCompletePrice(const uint256& nBuyPrice, const uint256& nSellPrice, const uint256& nPrevCompletePrice)
+    {
+        if (nSellPrice >= nPrevCompletePrice)
+        {
+            return nSellPrice;
+        }
+        if (nBuyPrice >= nPrevCompletePrice)
+        {
+            return nPrevCompletePrice;
+        }
+        return nBuyPrice;
+    }
+    static inline uint256 CalcBuyAmount(const uint256& nSellAmount, const uint256& nCompletePrice, const uint256& nSellPriceAnchor)
+    {
+        if (nSellPriceAnchor == 0)
+        {
+            return 0;
+        }
+        return nSellAmount * nCompletePrice / nSellPriceAnchor;
+    }
+    static inline uint256 CalcSellAmount(const uint256& nBuyAmount, const uint256& nCompletePrice, const uint256& nSellPriceAnchor)
+    {
+        if (nCompletePrice == 0)
+        {
+            return 0;
+        }
+        return nBuyAmount * nSellPriceAnchor / nCompletePrice;
+    }
+};
+
+///////////////////////////////////
 // CMatchDex
 
 class CMatchDex
