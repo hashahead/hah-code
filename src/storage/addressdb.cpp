@@ -674,6 +674,35 @@ bool CForkAddressDB::RetrieveFunctionAddress(const uint256& hashBlock, const uin
     return true;
 }
 
+bool CForkAddressDB::RetrieveBlsPubkeyContext(const uint256& hashBlock, const CDestination& dest, uint384& blsPubkey)
+{
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
+    {
+        StdLog("CForkAddressDB", "Retrieve bls pubkey context: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+    ssKey << DB_ADDRESS_KEY_TYPE_BLSPUBKEY << dest;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        ssValue.Write((char*)(btValue.data()), btValue.size());
+        ssValue >> blsPubkey;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 bool CForkAddressDB::CheckAddressContext(const std::vector<uint256>& vCheckBlock)
 {
     if (vCheckBlock.size() > 0)
