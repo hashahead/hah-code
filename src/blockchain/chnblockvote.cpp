@@ -46,6 +46,16 @@ bool CBlockVoteChnFork::GetBlockVoteResult(const uint256& hashBlock, bytes& btBi
     return consBlockVote.GetBlockVoteResult(hashBlock, btBitmap, btAggSig);
 }
 
+bool CBlockVoteChnFork::AddPeerNode(const uint64 nPeerNonce)
+{
+    return consBlockVote.AddNetNode(nPeerNonce);
+}
+
+void CBlockVoteChnFork::RemovePeerNode(const uint64 nPeerNonce)
+{
+    consBlockVote.RemoveNetNode(nPeerNonce);
+}
+
 ////////////////////////////////////////////////////
 // CBlockVoteChannel
 

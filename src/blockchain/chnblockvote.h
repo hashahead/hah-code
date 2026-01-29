@@ -45,6 +45,40 @@ public:
     network::CAddress addressRemote;
 };
 
+class CBlockVoteResult
+{
+public:
+    CBlockVoteResult()
+      : nVoteBeginTimeMillis(GetTimeMillis()), nVoteCommitTimeMillis(0) {}
+
+    void SetVoteResult(const bytes& btBitmapIn, const bytes& btAggSigIn)
+    {
+        btBitmap = btBitmapIn;
+        btAggSig = btAggSigIn;
+        nVoteCommitTimeMillis = GetTimeMillis();
+    }
+    void GetVoteResult(bytes& btBitmapOut, bytes& btAggSigOut) const
+    {
+        btBitmapOut = btBitmap;
+        btAggSigOut = btAggSig;
+    }
+    int64 GetVoteBeginTime() const
+    {
+        return nVoteBeginTimeMillis;
+    }
+    int64 GetVoteEndTime() const
+    {
+        return nVoteCommitTimeMillis;
+    }
+
+protected:
+    bytes btBitmap;
+    bytes btAggSig;
+
+    int64 nVoteBeginTimeMillis;
+    int64 nVoteCommitTimeMillis;
+};
+
 class CBlockVoteChannel : public network::IBlockVoteChannel
 {
 public:
