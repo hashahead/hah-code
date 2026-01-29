@@ -1186,15 +1186,15 @@ bool CBlockChain::VerifyBlockForkTx(const uint256& hashPrev, const CTransaction&
 
 bool CBlockChain::CheckForkValidLast(const uint256& hashFork, CBlockChainUpdate& update)
 {
-    CBlockIndex* pValidLastIndex = cntrBlock.GetForkValidLast(pCoreProtocol->GetGenesisBlockHash(), hashFork);
+    BlockIndexPtr pValidLastIndex = cntrBlock.GetForkValidLast(pCoreProtocol->GetGenesisBlockHash(), hashFork);
     if (pValidLastIndex == nullptr)
     {
         return false;
     }
 
-    CBlockIndex* pOldLastIndex = nullptr;
+    BlockIndexPtr pOldLastIndex = cntrBlock.RetrieveFork(hashFork);
     uint256 hashOldLastBlock;
-    if (cntrBlock.RetrieveFork(hashFork, &pOldLastIndex))
+    if (pOldLastIndex)
     {
         hashOldLastBlock = pOldLastIndex->GetBlockHash();
     }
@@ -1203,7 +1203,7 @@ bool CBlockChain::CheckForkValidLast(const uint256& hashFork, CBlockChainUpdate&
            hashOldLastBlock.ToString().c_str(), pValidLastIndex->GetBlockHash().ToString().c_str(),
            pValidLastIndex->hashRefBlock.ToString().c_str(), hashFork.GetHex().c_str());
 
-    update = CBlockChainUpdate(pValidLastIndex);
+    update = CBlockChainUpdate(pValidLastIndex, {});
     if (!cntrBlock.GetBlockBranchList(pValidLastIndex->GetBlockHash(), update.vBlockRemove, update.vBlockAddNew))
     {
         StdError("BlockChain", "Check Fork Valid Last: get block branch list fail, last block: %s, fork: %s",
@@ -1239,7 +1239,7 @@ bool CBlockChain::VerifyForkRefLongChain(const uint256& hashFork, const uint256&
     bool fOrigin = false;
     if (!cntrBlock.GetLastRefBlockHash(hashFork, hashForkBlock, hashRefBlock, fOrigin))
     {
-        StdLog("BlockChain", "VerifyForkRefLongChain: Get ref block fail, last block: %s, fork: %s",
+        StdLog("BlockChain", "Verify Fork Ref LongChain: Get ref block fail, last block: %s, fork: %s",
                hashForkBlock.GetHex().c_str(), hashFork.GetHex().c_str());
         return false;
     }
@@ -1247,7 +1247,7 @@ bool CBlockChain::VerifyForkRefLongChain(const uint256& hashFork, const uint256&
     {
         if (!cntrBlock.VerifySameChain(hashRefBlock, hashPrimaryBlock))
         {
-            StdLog("BlockChain", "VerifyForkRefLongChain: Fork does not refer to long chain, fork last: %s, ref block: %s, primayr block: %s, fork: %s",
+            StdLog("BlockChain", "Verify Fork Ref LongChain: Fork does not refer to long chain, fork last: %s, ref block: %s, primayr block: %s, fork: %s",
                    hashForkBlock.GetHex().c_str(), hashRefBlock.GetHex().c_str(),
                    hashPrimaryBlock.GetHex().c_str(), hashFork.GetHex().c_str());
             return false;
@@ -1270,13 +1270,7 @@ bool CBlockChain::IsVacantBlockBeforeCreatedForkHeight(const uint256& hashFork, 
     }
     else
     {
-        CBlockIndex* pPrevIndex;
-        if (!cntrBlock.RetrieveIndex(block.hashPrev, &pPrevIndex))
-        {
-            StdLog("BlockChain", "Check created fork height: Get prev block index fail, prev block: %s", block.hashPrev.ToString().c_str());
-            return false;
-        }
-        hashPrimaryRefBlock = pPrevIndex->hashRefBlock;
+        hashPrimaryRefBlock = block.GetRefBlock();
     }
     int nCreatedHeight = cntrBlock.GetForkCreatedHeight(hashFork, hashPrimaryRefBlock);
     if (nCreatedHeight < 0)
@@ -1300,23 +1294,25 @@ bool CBlockChain::IsVacantBlockBeforeCreatedForkHeight(const uint256& hashFork, 
 bool CBlockChain::InsertGenesisBlock(CBlock& block)
 {
     uint256 nChainTrust;
-    if (!pCoreProtocol->GetBlockTrust(block, nChainTrust))
+    if (!GetBlockTrust(block, nChainTrust))
     {
         return false;
     }
     return cntrBlock.Initiate(block.GetHash(), block, nChainTrust);
 }
 
-bool CBlockChain::GetBlockChanges(const CBlockIndex* pIndexNew, const CBlockIndex* pIndexFork,
+bool CBlockChain::GetBlockChanges(const BlockIndexPtr pIndexNew, const BlockIndexPtr pIndexFork,
                                   vector<CBlockEx>& vBlockAddNew, vector<CBlockEx>& vBlockRemove)
 {
-    while (pIndexNew != pIndexFork)
+    BlockIndexPtr pIndexNewPtr = pIndexNew;
+    BlockIndexPtr pIndexForkPtr = pIndexFork;
+    while (pIndexNewPtr && pIndexForkPtr && pIndexNewPtr->GetBlockHash() != pIndexForkPtr->GetBlockHash())
     {
-        int64 nLastBlockTime = pIndexFork ? pIndexFork->GetBlockTime() : -1;
-        if (pIndexNew->GetBlockTime() >= nLastBlockTime)
+        int64 nLastBlockTime = pIndexForkPtr->GetBlockTime();
+        if (pIndexNewPtr->GetBlockTime() >= nLastBlockTime)
         {
             CBlockEx block;
-            if (!cntrBlock.Retrieve(pIndexNew, block))
+            if (!cntrBlock.Retrieve(pIndexNewPtr, block))
             {
                 return false;
             }
