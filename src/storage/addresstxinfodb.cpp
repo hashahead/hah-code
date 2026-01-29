@@ -431,6 +431,26 @@ bool CForkAddressTxInfoDB::GetBlockAddressTxInfo(const uint256& hashBlock, map<C
     return true;
 }
 
+bool CForkAddressTxInfoDB::GetBlockPrevBlock(const uint256& hashBlock, uint256& hashPrevBlock)
+{
+    try
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_PREVBLOCK << hashBlock;
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
+        ssValue >> hashPrevBlock;
+    }
+    catch (exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 bool CForkAddressTxInfoDB::RetrieveAddressTxInfo(const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo)
 {
     uint256 hashRoot;

@@ -626,9 +626,8 @@ bool CForkAddressDB::GetAddressCount(const uint256& hashBlock, uint64& nAddressC
 bool CForkAddressDB::ListFunctionAddress(const uint256& hashBlock, std::map<uint32, CFunctionAddressContext>& mapFunctionAddress)
 {
     uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
     {
-        StdLog("CForkAddressDB", "List function address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
 
@@ -649,9 +648,9 @@ bool CForkAddressDB::ListFunctionAddress(const uint256& hashBlock, std::map<uint
 bool CForkAddressDB::RetrieveFunctionAddress(const uint256& hashBlock, const uint32 nFuncId, CFunctionAddressContext& ctxFuncAddress)
 {
     uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
     {
-        StdLog("CForkAddressDB", "Retrieve function address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        //StdLog("CForkAddressDB", "Retrieve function address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
     hnbase::CBufStream ssKey, ssValue;

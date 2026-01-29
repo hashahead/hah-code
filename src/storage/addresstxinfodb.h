@@ -40,6 +40,7 @@ public:
     bool ListTokenTx(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
                      const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord);
 
+    bool WalkThroughSnapshotAddressTxKv(const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker);
     bool VerifyAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
 protected:
