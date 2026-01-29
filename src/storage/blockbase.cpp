@@ -753,6 +753,83 @@ bool CBlockBase::LoadTx(const uint32 nTxFile, const uint32 nTxOffset, CTransacti
     return true;
 }
 
+bool CBlockBase::AddBlockForkContext(const uint256& hashBlock, const CBlockEx& blockex, const std::map<CDestination, CAddressContext>& mapAddressContext, const std::map<std::string, CCoinContext>& mapNewSymbolCoin,
+                                     const std::set<CDestination>& setTimeVaultWhitelist, const std::set<uint256>& setStopFork, uint256& hashNewRoot)
+{
+    map<uint256, CForkContext> mapNewForkCtxt;
+    if (hashBlock == GetGenesisBlockHash())
+    {
+        CProfile profile;
+        if (!blockex.GetForkProfile(profile))
+        {
+            StdError("BlockBase", "Add block fork context: Load genesis block proof failed, block: %s", hashBlock.ToString().c_str());
+            return false;
+        }
+
+        CForkContext ctxt(hashBlock, uint256(), blockex.txMint.GetHash(), profile);
+        ctxt.nJointHeight = 0;
+        mapNewForkCtxt.insert(make_pair(hashBlock, ctxt));
+    }
+    else
+    {
+        vector<pair<CDestination, CForkContext>> vForkCtxt;
+        for (size_t i = 0; i < blockex.vtx.size(); i++)
+        {
+            const CTransaction& tx = blockex.vtx[i];
+            if (!tx.GetToAddress().IsNull())
+            {
+                auto it = mapAddressContext.find(tx.GetToAddress());
+                if (it != mapAddressContext.end())
+                {
+                    if (it->second.IsTemplate() && it->second.GetTemplateType() == TEMPLATE_FORK)
+                    {
+                        if (!VerifyBlockForkTx(blockex.hashPrev, tx, vForkCtxt))
+                        {
+                            StdLog("BlockBase", "Add block fork context: Verify block fork tx fail, txid: %s, block: %s", tx.GetHash().ToString().c_str(), hashBlock.ToString().c_str());
+                        }
+                    }
+                }
+            }
+            if (!tx.GetFromAddress().IsNull())
+            {
+                auto mt = mapAddressContext.find(tx.GetFromAddress());
+                if (mt != mapAddressContext.end())
+                {
+                    if (mt->second.IsTemplate() && mt->second.GetTemplateType() == TEMPLATE_FORK)
+                    {
+                        auto it = vForkCtxt.begin();
+                        while (it != vForkCtxt.end())
+                        {
+                            if (it->first == tx.GetFromAddress())
+                            {
+                                StdLog("BlockBase", "Add block fork context: cancel fork, block: %s, fork: %s, dest: %s",
+                                       hashBlock.ToString().c_str(), it->second.hashFork.ToString().c_str(),
+                                       tx.GetFromAddress().ToString().c_str());
+                                it = vForkCtxt.erase(it);
+                            }
+                            else
+                            {
+                                ++it;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (const auto& vd : vForkCtxt)
+        {
+            mapNewForkCtxt.insert(make_pair(vd.second.hashFork, vd.second));
+        }
+    }
+
+    if (!dbBlock.AddForkContext(blockex.hashPrev, hashBlock, mapNewForkCtxt, mapNewSymbolCoin, setTimeVaultWhitelist, setStopFork, fCfgTraceDb, hashNewRoot))
+    {
+        StdLog("BlockBase", "Add block fork context: Add fork context to db fail, block: %s", hashBlock.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
 uint256 CBlockFilter::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logFilterIn)
 {
     boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
