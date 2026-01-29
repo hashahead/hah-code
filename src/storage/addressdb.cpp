@@ -703,45 +703,77 @@ bool CForkAddressDB::RetrieveBlsPubkeyContext(const uint256& hashBlock, const CD
     return true;
 }
 
-bool CForkAddressDB::CheckAddressContext(const std::vector<uint256>& vCheckBlock)
+bool CForkAddressDB::GetOwnerLinkTemplateAddress(const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress)
 {
-    if (vCheckBlock.size() > 0)
+    class CListTrieDBWalker : public CTrieDBWalker
     {
-        std::vector<uint256> vCheckRoot;
-        vCheckRoot.reserve(vCheckBlock.size());
-        for (size_t i = 0; i < vCheckBlock.size(); i++)
+    public:
+        CListTrieDBWalker(std::map<CDestination, uint8>& mapTemplateAddressIn)
+          : mapTemplateAddress(mapTemplateAddressIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver)
         {
-            if (!ReadTrieRoot(vCheckBlock[i], vCheckRoot[i]))
+            if (btKey.size() == 0 || btValue.size() == 0)
             {
-                StdLog("CForkAddressDB", "Check address context: Read trie root fail, block: %s", vCheckBlock[i].GetHex().c_str());
+                StdError("CListTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
                 return false;
             }
+
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_ADDRESS_KEY_TYPE_OWNER_LINK_ADDRESS)
+                {
+                    CDestination destOwner;
+                    CDestination destTemplate;
+                    uint8 nTemplateType;
+
+                    ssKey >> destOwner >> destTemplate;
+
+                    hnbase::CBufStream ssValue(btValue);
+                    ssValue >> nTemplateType;
+
+                    mapTemplateAddress.insert(std::make_pair(destTemplate, nTemplateType));
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
         }
-        if (!dbTrie.CheckTrie(vCheckRoot))
-        {
-            StdLog("CForkAddressDB", "Check address context: Check trie fail");
-            return false;
-        }
+
+    public:
+        std::map<CDestination, uint8>& mapTemplateAddress;
+    };
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
+    {
+        StdLog("CForkAddressDB", "Get owner link template address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_OWNER_LINK_ADDRESS << destOwner;
+    bytes btKeyPrefix;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListTrieDBWalker walker(mapTemplateAddress);
+    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+    {
+        StdLog("CForkAddressDB", "Get owner link template address: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
     }
     return true;
 }
 
-bool CForkAddressDB::CheckAddressContext(const uint256& hashLastBlock, const uint256& hashLastRoot)
+bool CForkAddressDB::GetDelegateLinkTemplateAddress(const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress)
 {
-    uint256 hashLastRootRead;
-    if (!ReadTrieRoot(hashLastBlock, hashLastRootRead))
-    {
-        return false;
-    }
-    if (hashLastRootRead != hashLastRoot)
-    {
-        return false;
-    }
-
-    uint256 hashBlockLocal;
-    uint256 hashRoot = hashLastRoot;
-    std::map<uint256, CTrieValue> mapCacheNode;
-    do
+    class CListTrieDBWalker : public CTrieDBWalker
     {
         if (!dbTrie.CheckTrieNode(hashRoot, mapCacheNode))
         {
