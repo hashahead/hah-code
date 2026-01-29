@@ -830,22 +830,28 @@ bool CBlockBase::AddBlockForkContext(const uint256& hashBlock, const CBlockEx& b
     return true;
 }
 
-uint256 CBlockFilter::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logFilterIn)
+bool CBlockBase::VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& tx, vector<pair<CDestination, CForkContext>>& vForkCtxt)
 {
-    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
-    uint256 nFilterId = createFilterId.CreateLogsFilterId(hashClient);
-    while (mapLogFilter.count(nFilterId) > 0)
+    bytes btTempData;
+    if (!tx.GetTxData(CTransaction::DF_FORKDATA, btTempData))
     {
-        nFilterId = createFilterId.CreateLogsFilterId(hashClient);
+        StdLog("BlockBase", "Verify block fork tx: tx data error, tx: %s", tx.GetHash().ToString().c_str());
+        return false;
     }
-    mapLogFilter.insert(make_pair(nFilterId, CBlockLogsFilter(hashFork, logFilterIn)));
-    return nFilterId;
-}
 
-void CBlockFilter::AddTxReceipt(const uint256& hashForkIn, const uint64 nBlockNumber, const uint256& hashBlock, const uint256& txid, const CTransactionReceipt& receipt)
-{
-    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
-    for (auto it = mapLogFilter.begin(); it != mapLogFilter.end();)
+    CBlock block;
+    CProfile profile;
+    try
+    {
+        CBufStream ss(btTempData);
+        ss >> block;
+    }
+    catch (std::exception& e)
+    {
+        StdLog("BlockBase", "Verify block fork tx: invalid fork data, tx: %s", tx.GetHash().ToString().c_str());
+        return false;
+    }
+    if (!block.IsOrigin() || block.IsPrimary())
     {
         if (it->second.isTimeout())
         {
