@@ -438,6 +438,35 @@ bool CBlockIndexDB::AddBlockVoteResult(const uint256& hashBlock, const bool fLon
     return true;
 }
 
+bool CBlockIndexDB::RemoveBlockVoteResult(const uint256& hashBlock)
+{
+    CWriteLock wlock(rwAccess);
+    CBufStream ssKey;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_VOTE_RESULT << hashBlock;
+    return Erase(ssKey);
+}
+
+bool CBlockIndexDB::RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock)
+{
+    CReadLock rlock(rwAccess);
+    CBufStream ssKey, ssValue;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_VOTE_RESULT << hashBlock;
+    if (!Read(ssKey, ssValue))
+    {
+        return false;
+    }
+    try
+    {
+        ssValue >> btBitmap >> btAggSig >> fAtChain >> hashAtBlock;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 bool CBlockIndexDB::VerifyBlockNumberContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     if (!ReadTrieRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashBlock, hashRoot))
