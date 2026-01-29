@@ -467,6 +467,28 @@ bool CBlockIndexDB::RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btB
     return true;
 }
 
+bool CBlockIndexDB::GetLastBlockVoteResult(const uint256& hashFork, uint256& hashLastBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock)
+{
+    CReadLock rlock(rwAccess);
+    CBufStream ssKey, ssValue;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_LAST_BLOCK_VOTE << hashFork;
+    if (!Read(ssKey, ssValue))
+    {
+        return false;
+    }
+    try
+    {
+        uint64 nLastNumber = 0;
+        ssValue >> hashLastBlock >> nLastNumber >> btBitmap >> btAggSig >> fAtChain >> hashAtBlock;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 bool CBlockIndexDB::VerifyBlockNumberContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     if (!ReadTrieRoot(DB_BLOCKINDEX_ROOT_TYPE_BLOCK_NUMBER, hashBlock, hashRoot))
