@@ -147,6 +147,7 @@ public:
 };
 
 bool GetEthTxData(const uint256& secret, const CEthTxSkeleton& ets, uint256& hashTx, bytes& btEthTxData);
+bytes MakeEthTxCallData(const std::string& strFunction, const std::vector<bytes>& vParamList);
 
 // assume:
 //   1. 1 <= i <= j <= n

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sodium.h>
 
+#include "bls.hpp"
 #include "curve25519/curve25519.h"
 #include "devcommon/util.h"
 #include "keccak/Keccak.h"
@@ -15,6 +16,8 @@
 #include "util.h"
 
 using namespace std;
+using namespace bls;
+using namespace hnbase;
 
 namespace hashahead
 {
@@ -356,6 +359,18 @@ bool GetEthTxData(const uint256& secret, const CEthTxSkeleton& ets, uint256& has
     }
     CryptoFree(pSecret);
     return true;
+}
+
+bytes MakeEthTxCallData(const std::string& strFunction, const std::vector<bytes>& vParamList)
+{
+    bytes btData;
+    bytes btFuncSign = CryptoKeccakSign(strFunction);
+    btData.insert(btData.end(), btFuncSign.begin(), btFuncSign.end());
+    for (auto& p : vParamList)
+    {
+        btData.insert(btData.end(), p.begin(), p.end());
+    }
+    return btData;
 }
 
 ///////////////////////////////////////////////////////////////
