@@ -29,6 +29,7 @@ protected:
 
     void SnapshotWork();
     bool CheckSnapshotBlock(uint256& hashSnapshotBlock, std::vector<uint256>& vForkHash);
+    bool GetHeightSnapshotBlock(const uint32 nSnapshotHeight, uint256& hashSnapshotBlock, std::vector<uint256>& vForkHash);
 
 protected:
     ICoreProtocol* pCoreProtocol;
