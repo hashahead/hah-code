@@ -1087,15 +1087,15 @@ uint256 CBlockChain::GetBlockMoneySupply(const uint256& hashBlock)
 
 uint64 CBlockChain::GetNextBlockTimestamp(const uint256& hashPrev)
 {
-    CBlockIndex* pIndexPrev = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashPrev, &pIndexPrev) || pIndexPrev == nullptr)
+    BlockIndexPtr pIndexPrev = cntrBlock.RetrieveIndex(hashPrev);
+    if (!pIndexPrev)
     {
         return 0;
     }
     return pCoreProtocol->GetNextBlockTimestamp(pIndexPrev->GetBlockTime());
 }
 
-Errno CBlockChain::VerifyPowBlock(const CBlock& block, bool& fLongChain)
+Errno CBlockChain::VerifyPoaBlock(const CBlock& block, bool& fLongChain)
 {
     uint256 hashBlock = block.GetHash();
     Errno err = OK;
@@ -1106,8 +1106,8 @@ Errno CBlockChain::VerifyPowBlock(const CBlock& block, bool& fLongChain)
         return ERR_ALREADY_HAVE;
     }
 
-    CBlockIndex* pIndexPrev;
-    if (!cntrBlock.RetrieveIndex(block.hashPrev, &pIndexPrev))
+    BlockIndexPtr pIndexPrev = cntrBlock.RetrieveIndex(block.hashPrev);
+    if (!pIndexPrev)
     {
         StdLog("BlockChain", "Verify poa block: Retrieve prev index fail, prev block: %s", block.hashPrev.ToString().c_str());
         return ERR_SYS_STORAGE_ERROR;
@@ -1124,8 +1124,8 @@ Errno CBlockChain::VerifyPowBlock(const CBlock& block, bool& fLongChain)
     uint256 nReward;
     CDelegateAgreement agreement;
     uint256 nEnrollTrust;
-    CBlockIndex* pIndexRef = nullptr;
-    err = VerifyBlock(hashBlock, block, pIndexPrev, nReward, agreement, nEnrollTrust, &pIndexRef);
+    BlockIndexPtr pIndexRef;
+    err = VerifyBlock(hashFork, hashBlock, block, pIndexPrev, nReward, agreement, nEnrollTrust, pIndexRef);
     if (err != OK)
     {
         StdLog("BlockChain", "Verify poa block: Verify block fail, err: %s, block: %s", ErrorString(err), hashBlock.ToString().c_str());
@@ -1157,16 +1157,15 @@ Errno CBlockChain::VerifyPowBlock(const CBlock& block, bool& fLongChain)
 
     // Get block trust
     uint256 nNewBlockChainTrust;
-    if (!pCoreProtocol->GetBlockTrust(block, nNewBlockChainTrust, pIndexPrev, agreement, pIndexRef, nEnrollTrust))
+    if (!GetBlockTrust(block, nNewBlockChainTrust, pIndexPrev, agreement, pIndexRef, nEnrollTrust))
     {
         StdLog("BlockChain", "Verify poa block: get block trust fail, block: %s", hashBlock.GetHex().c_str());
         return ERR_BLOCK_TRANSACTIONS_INVALID;
     }
     nNewBlockChainTrust += pIndexPrev->nChainTrust;
 
-    CBlockIndex* pIndexFork = nullptr;
-    if (cntrBlock.RetrieveFork(pIndexPrev->GetOriginHash(), &pIndexFork)
-        && pIndexFork->nChainTrust > nNewBlockChainTrust)
+    BlockIndexPtr pIndexFork = cntrBlock.RetrieveFork(pIndexPrev->GetOriginHash());
+    if (pIndexFork && pIndexFork->nChainTrust > nNewBlockChainTrust)
     {
         StdLog("BlockChain", "Verify poa block: Short chain, new block height: %d, block: %s, fork chain trust: %s, fork last block: %s",
                block.GetBlockHeight(), hashBlock.GetHex().c_str(), pIndexFork->nChainTrust.GetValueHex().c_str(), pIndexFork->GetBlockHash().GetHex().c_str());
