@@ -87,4 +87,22 @@ void CSnapshotDownChannel::HandleHalt()
     network::ISnapshotDownChannel::HandleHalt();
 }
 
+bool CSnapshotDownChannel::HandleEvent(network::CEventPeerActive& eventActive)
+{
+    const uint64 nNonce = eventActive.nNonce;
+    mapChnPeer[nNonce] = CSnapDownChnPeer(eventActive.data.nService, eventActive.data);
+
+    StdLog("CSnapshotDownChannel", "CEvent Peer Active: peer: %s", GetPeerAddressInfo(nNonce).c_str());
+
+    if (!strCfgSnapshotDownAddress.empty() && hashCfgSnapshotDownBlock != 0 && GetPeerAddressInfo(nNonce) == strCfgSnapshotDownAddress)
+    {
+        nSnapshotDownNetId = nNonce;
+        if (!RequstFileList(hashCfgSnapshotDownBlock))
+        {
+            StdLog("CSnapshotDownChannel", "CEvent Peer Active: Request file list failed, peer: %s", GetPeerAddressInfo(nNonce).c_str());
+        }
+    }
+    return true;
+}
+
 }; // namespace hashahead
