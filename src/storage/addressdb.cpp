@@ -877,6 +877,75 @@ bool CForkAddressDB::VerifyAddressContext(const uint256& hashPrevBlock, const ui
     return true;
 }
 
+//////////////////////////////
+// contract code
+
+bool CForkAddressDB::AddCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock,
+                                    const std::map<uint256, CContractSourceCodeContext>& mapSourceCode,
+                                    const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
+                                    const std::map<uint256, CContractRunCodeContext>& mapContractRunCode,
+                                    const std::map<uint256, CTemplateContext>& mapTemplateData,
+                                    uint256& hashCodeRoot)
+{
+    uint256 hashPrevRoot;
+    if (hashBlock != hashFork)
+    {
+        if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashPrevBlock, hashPrevRoot))
+        {
+            StdLog("CForkAddressDB", "Add Code Context: Read trie root fail, hashPrevBlock: %s, hashBlock: %s",
+                   hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+            return false;
+        }
+    }
+
+    bytesmap mapKv;
+    for (const auto& kv : mapSourceCode)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_ADDRESS_KEY_TYPE_SOURCE_CODE << kv.first;
+        ssKey.GetData(btKey);
+
+        ssValue << kv.second;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+    for (const auto& kv : mapContractCreateCode)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_ADDRESS_KEY_TYPE_CONTRACT_CREATE_CODE << kv.first;
+        ssKey.GetData(btKey);
+
+        ssValue << kv.second;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddPrevRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashPrevRoot, hashBlock, mapKv);
+    }
+
+    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashCodeRoot))
+    {
+        StdLog("CForkAddressDB", "Add Code Context: Add new trie fail, hashPrevBlock: %s, hashBlock: %s",
+               hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    if (!WriteTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashBlock, hashCodeRoot))
+    {
+        StdLog("CForkAddressDB", "Add Code Context: Write trie root fail, hashPrevBlock: %s, hashBlock: %s",
+               hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
     {

@@ -128,6 +128,12 @@ public:
     bool CheckAddressContext(const uint256& hashLastBlock, const uint256& hashLastRoot);
     bool VerifyAddressContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
+    bool AddCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock,
+                        const std::map<uint256, CContractSourceCodeContext>& mapSourceCode,
+                        const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
+                        const std::map<uint256, CContractRunCodeContext>& mapContractRunCode,
+                        const std::map<uint256, CTemplateContext>& mapTemplateData,
+                        uint256& hashCodeRoot);
 protected:
     bool WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot);
     bool ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot);
