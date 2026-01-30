@@ -19,6 +19,23 @@ namespace hashahead
 namespace storage
 {
 
+class CCacheBlockContractReceipts
+{
+public:
+    CCacheBlockContractReceipts(const BlockContractReceipts& bcr);
+
+    const BlockContractReceipts& GetBlockContractReceipts() const
+    {
+        return bcReceipts;
+    }
+
+    bool GetTxContractReceipts(const uint256& txid, TxContractReceipts& tcrReceipt) const;
+
+protected:
+    const BlockContractReceipts bcReceipts;
+    std::map<uint256, uint32> mapTxCr; // key: txid, value: index
+};
+
 class CTraceDB
 {
 public:

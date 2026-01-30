@@ -17,6 +17,29 @@ namespace storage
 {
 
 //////////////////////////////
+// CCacheBlockContractReceipts
+
+CCacheBlockContractReceipts::CCacheBlockContractReceipts(const BlockContractReceipts& bcr)
+  : bcReceipts(bcr)
+{
+    for (uint32 i = 0; i < (uint32)(bcReceipts.size()); i++)
+    {
+        mapTxCr.insert(std::make_pair(bcReceipts[i].first, i));
+    }
+}
+
+bool CCacheBlockContractReceipts::GetTxContractReceipts(const uint256& txid, TxContractReceipts& tcrReceipt) const
+{
+    auto it = mapTxCr.find(txid);
+    if (it != mapTxCr.end() && it->second < (uint32)(bcReceipts.size()))
+    {
+        tcrReceipt = bcReceipts[it->second].second;
+        return true;
+    }
+    return false;
+}
+
+//////////////////////////////
 // CTraceDB
 
 bool CTraceDB::Initialize(const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn)
