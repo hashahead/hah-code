@@ -56,6 +56,31 @@ void CBlockVoteChnFork::RemovePeerNode(const uint64 nPeerNonce)
     consBlockVote.RemoveNetNode(nPeerNonce);
 }
 
+void CBlockVoteChnFork::OnNetData(const uint64 nPeerNonce, const bytes& btNetData)
+{
+    consBlockVote.OnEventNetData(nPeerNonce, btNetData);
+}
+
+void CBlockVoteChnFork::OnTimer()
+{
+    consBlockVote.OnTimer();
+}
+
+void CBlockVoteChnFork::SetVoteResult(const uint256& hashBlock, const bytes& btBitmapIn, const bytes& btAggSigIn)
+{
+    auto it = mapVoteResult.find(hashBlock);
+    if (it != mapVoteResult.end())
+    {
+        it->second.SetVoteResult(btBitmapIn, btAggSigIn);
+
+        CBitmap bmVoteBitmap;
+        bmVoteBitmap.ImportBytes(btBitmapIn);
+        // StdDebug("TEST", "Commit Block Vote Result: vote bitmap: %s, agg sig: %s, vote duration: %lu ms, block: [%d] %s, fork: %s",
+        //          bmVoteBitmap.GetBitmapString().c_str(), ToHexString(btAggSigIn).c_str(), GetTimeMillis() - it->second.GetVoteBeginTime(),
+        //          CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetHex().c_str(), hashFork.GetHex().c_str());
+    }
+}
+
 ////////////////////////////////////////////////////
 // CBlockVoteChannel
 
