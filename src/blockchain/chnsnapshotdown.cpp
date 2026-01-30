@@ -105,4 +105,18 @@ bool CSnapshotDownChannel::HandleEvent(network::CEventPeerActive& eventActive)
     return true;
 }
 
+bool CSnapshotDownChannel::HandleEvent(network::CEventPeerDeactive& eventDeactive)
+{
+    const uint64 nNonce = eventDeactive.nNonce;
+    StdLog("CSnapshotDownChannel", "CEvent Peer Deactive: peer: %s", GetPeerAddressInfo(nNonce).c_str());
+
+    mapChnPeer.erase(nNonce);
+
+    if (nSnapshotDownNetId == nNonce)
+    {
+        nSnapshotDownNetId = 0;
+    }
+    return true;
+}
+
 }; // namespace hashahead
