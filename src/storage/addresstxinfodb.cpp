@@ -509,15 +509,41 @@ bool CForkAddressTxInfoDB::WalkThroughAddressTxInfo(const CDestination& address,
             hnbase::StdError(__PRETTY_FUNCTION__, e.what());
         }
         return false;
-    }
-    try
-    {
-        ssValue.Write((char*)(btValue.data()), btValue.size());
-        ssValue >> ctxtAddressTxInfo;
-    }
-    catch (std::exception& e)
-    {
-        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyBegin << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO << address << BSwap64(nBeginTxIndex);
+    ssKeyPrefix << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO << address;
+
+    return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
+bool CForkAddressTxInfoDB::WalkThroughTokenTxInfo(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nBeginTxIndex, const uint64 nGetTxCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxInfo)
+{
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nKeyType;
+            ssKey >> nKeyType;
+            if (nKeyType == DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO)
+            {
+                CDestination destContractAddressDb, destUserAddressDb;
+                uint64 nIndexDb;
+                ssKey >> destContractAddressDb >> destUserAddressDb >> nIndexDb;
+                nIndexDb = BSwap64(nIndexDb);
+                if (nIndexDb < nBeginTxIndex + nGetTxCount)
+                {
+                    CTokenTransRecord tokenRecord;
+                    ssValue >> tokenRecord;
+                    vTokenTxInfo.push_back(std::make_pair(nIndexDb, tokenRecord));
+                    return true;
+                }
+            }
+        }
+        catch (exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
         return false;
     }
     return true;
