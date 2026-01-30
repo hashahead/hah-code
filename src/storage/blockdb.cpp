@@ -18,7 +18,7 @@ namespace storage
 // CBlockDB
 
 CBlockDB::CBlockDB()
-  : fCfgFullDb(false)
+  : fCfgFullDb(false), fCfgTraceDb(false), fCfgCacheTrace(false)
 {
 }
 
@@ -26,9 +26,12 @@ CBlockDB::~CBlockDB()
 {
 }
 
-bool CBlockDB::Initialize(const boost::filesystem::path& pathData, const uint256& hashGenesisBlockIn, const bool fFullDbIn)
+bool CBlockDB::BdInitialize(const boost::filesystem::path& pathData, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn, const bool fCacheTraceIn, const bool fPruneIn)
 {
     fCfgFullDb = fFullDbIn;
+    fCfgTraceDb = fTraceDbIn;
+    fCfgCacheTrace = fCacheTraceIn;
+    fCfgPrune = fPruneIn;
     if (!dbVerify.Initialize(pathData))
     {
         StdLog("CBlockDB", "Initialize: dbVerify initialize fail");
@@ -49,17 +52,22 @@ bool CBlockDB::Initialize(const boost::filesystem::path& pathData, const uint256
         StdLog("CBlockDB", "Initialize: dbTxIndex initialize fail");
         return false;
     }
-    if (!dbVote.Initialize(pathData))
+    if (!dbVote.Initialize(pathData, fPruneIn))
     {
         StdLog("CBlockDB", "Initialize: dbVote initialize fail");
         return false;
     }
-    if (!dbState.Initialize(pathData))
+    if (!dbHdex.Initialize(pathData, fPruneIn))
+    {
+        StdLog("CBlockDB", "Initialize: dbHdex initialize fail");
+        return false;
+    }
+    if (!dbState.Initialize(pathData, fPruneIn))
     {
         StdLog("CBlockDB", "Initialize: dbState initialize fail");
         return false;
     }
-    if (!dbAddress.Initialize(pathData))
+    if (!dbAddress.Initialize(pathData, hashGenesisBlockIn, fPruneIn))
     {
         StdLog("CBlockDB", "Initialize: dbAddress initialize fail");
         return false;
