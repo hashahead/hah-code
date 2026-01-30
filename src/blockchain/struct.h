@@ -189,7 +189,7 @@ public:
         nAgreement = 0;
         nWeight = 0;
     }
-    bool IsProofOfWork() const
+    bool IsProofOfPoa() const
     {
         return (vBallot.empty());
     }

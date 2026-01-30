@@ -33,6 +33,7 @@ public:
     bool GetForkLastBlock(const uint256& hashFork, int& nLastHeight, uint256& hashLastBlock) override;
     void ListFork(std::vector<std::pair<uint256, CProfile>>& vFork, bool fAll = false) override;
     bool GetForkContext(const uint256& hashFork, CForkContext& ctxtFork, const uint256& hashMainChainRefBlock = uint256()) override;
+    bool GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock = uint256()) override;
     bool VerifyForkNameAndChainId(const uint256& hashFork, const CChainId nChainIdIn, const std::string& strForkName, const uint256& hashBlock = uint256()) override;
     bool GetForkGenealogy(const uint256& hashFork, std::vector<std::pair<uint256, int>>& vAncestry,
                           std::vector<std::pair<int, uint256>>& vSubline) override;

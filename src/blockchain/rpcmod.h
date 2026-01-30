@@ -112,7 +112,11 @@ private:
     rpc::CRPCResultPtr RPCGetPledgeVotes(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListPledgeVotes(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCGetTimeVault(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCEstimateTimeVaultGas(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCGetAddressCount(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCListOwnerTemplate(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCListDelegateLinkAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCListUserVoteByDelegate(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     /* Wallet */
     rpc::CRPCResultPtr RPCListKey(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCGetNewKey(const CReqContext& ctxReq, rpc::CRPCParamPtr param);

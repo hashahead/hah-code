@@ -900,6 +900,7 @@ CRPCMod::CRPCMod()
     pDataStat = nullptr;
     pForkManager = nullptr;
     pBlockMaker = nullptr;
+    pWsService = nullptr;
 
     std::map<std::string, RPCFunc> temp_map = boost::assign::map_list_of
         /* System */
@@ -933,11 +934,17 @@ CRPCMod::CRPCMod()
         //
         ("getblocknumberhash", &CRPCMod::RPCGetBlockNumberHash)
         //
+        ("getblockheader", &CRPCMod::RPCGetBlockHeader)
+        //
         ("getblock", &CRPCMod::RPCGetBlock)
         //
         ("getblockdetail", &CRPCMod::RPCGetBlockDetail)
         //
         ("getblockdata", &CRPCMod::RPCGetBlockData)
+        //
+        ("getblockencode", &CRPCMod::RPCGetBlockEncode)
+        //
+        ("getblockdecode", &CRPCMod::RPCGetBlockDecode)
         //
         ("gettxpool", &CRPCMod::RPCGetTxPool)
         //
@@ -961,7 +968,15 @@ CRPCMod::CRPCMod()
         //
         ("gettimevault", &CRPCMod::RPCGetTimeVault)
         //
+        ("estimatetimevaultgas", &CRPCMod::RPCEstimateTimeVaultGas)
+        //
         ("getaddresscount", &CRPCMod::RPCGetAddressCount)
+        //
+        ("listownertemplate", &CRPCMod::RPCListOwnerTemplate)
+        //
+        ("listdelegatelinkaddress", &CRPCMod::RPCListDelegateLinkAddress)
+        //
+        ("listuservotebydelegate", &CRPCMod::RPCListUserVoteByDelegate)
         /* Wallet */
         ("listkey", &CRPCMod::RPCListKey)
         //
