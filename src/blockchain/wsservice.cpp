@@ -13,6 +13,38 @@ using namespace hashahead::crypto;
 namespace hashahead
 {
 
+/////////////////////////////
+// CClientSubscribe
+
+void CClientSubscribe::matchesLogs(CTransactionReceipt const& _m, MatchLogsVec& vLogs) const
+{
+    for (unsigned i = 0; i < _m.vLogs.size(); ++i)
+    {
+        auto& logs = _m.vLogs[i];
+        if (!setSubsAddress.empty() && setSubsAddress.count(logs.address) == 0)
+        {
+            continue;
+        }
+        if (!setSubsTopics.empty())
+        {
+            bool m = false;
+            for (auto& h : logs.topics)
+            {
+                if (setSubsTopics.count(h) > 0)
+                {
+                    m = true;
+                    break;
+                }
+            }
+            if (!m)
+            {
+                continue;
+            }
+        }
+        vLogs.push_back(CMatchLogs(i, logs));
+    }
+}
+
 //////////////////////////////
 // CWsService
 
