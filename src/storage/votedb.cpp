@@ -866,6 +866,13 @@ bool CVoteDB::AddDelegateEnroll(const uint256& hashBlock, const std::map<int, st
     return true;
 }
 
+bool CVoteDB::RemoveDelegateEnroll(const uint256& hashBlock)
+{
+    CBufStream ssKey;
+    ssKey << DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL << hashBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
+
 bool CVoteDB::RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount)
 {
     uint256 hashTrieRoot;
@@ -932,7 +939,7 @@ bool CVoteDB::RetrieveDelegatedEnroll(const uint256& hashBlock, std::map<int, st
     }
 
     CBufStream ssKey, ssValue;
-    ssKey << DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL << DB_VOTE_KEY_ID_DELEGATEENROLL << hashBlock;
+    ssKey << DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL << hashBlock;
     if (!dbTrie.ReadExtKv(ssKey, ssValue))
     {
         return false;
@@ -981,8 +988,7 @@ bool CVoteDB::VerifyDelegateVote(const uint256& hashPrevBlock, const uint256& ha
 {
     if (hashBlock != 0)
     {
-        uint64 nDelegateVoteCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashRoot, nDelegateVoteCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashBlock, hashRoot))
         {
             StdLog("CVoteDB", "Verify delegate vote: Read trie root fail, hashBlock: %s", hashBlock.GetHex().c_str());
             return false;
