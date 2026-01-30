@@ -998,97 +998,23 @@ bool CBlockMaker::ReplenishSubForkVacant(const uint256& hashFork, const CChainId
     return true;
 }
 
-bool CBlockMaker::CreateProofOfWork()
-{
-    int nConsensus = CM_CRYPTONIGHT;
-    map<int, CBlockMakerProfile>::iterator it = mapWorkProfile.find(nConsensus);
-    if (it == mapWorkProfile.end())
-    {
-        StdError("blockmaker", "did not find Work profile");
-        return false;
-    }
-    CBlockMakerProfile& profile = (*it).second;
-    CBlockMakerHashAlgo* pHashAlgo = mapHashAlgo[profile.nAlgo];
-    if (pHashAlgo == nullptr)
-    {
-        StdError("blockmaker", "pHashAlgo is null");
-        return false;
-    }
-
-    vector<unsigned char> vchWorkData;
-    int nPrevBlockHeight = 0;
-    uint256 hashPrev;
-    int nAlgo = 0, nBits = 0;
-    if (!pService->GetWork(vchWorkData, nPrevBlockHeight, hashPrev, nAlgo, nBits, profile.templMint))
-    {
-        return false;
-    }
-
-    uint32& nTime = *((uint32*)&vchWorkData[4]);
-    uint64_t& nNonce = *((uint64_t*)&vchWorkData[vchWorkData.size() - sizeof(uint64_t)]);
-    nNonce = (GetTime() % 0xFFFFFF) << 40;
-
-    int64& nHashRate = pHashAlgo->nHashRate;
-    int64 nHashComputeCount = 0;
-    int64 nHashComputeBeginTime = GetTime();
-    int64 nTimeDiff = (int64)nTime - GetNetTime();
-
-    StdLog("blockmaker", "Proof-of-work: start hash compute, target height: %d, difficulty bits: (%d)", nPrevBlockHeight + 1, nBits);
-
-    uint256 hashTarget = (~uint256(uint64(0)) >> nBits);
-    while (!InterruptedPoW(hashPrev))
-    {
-        if (nHashRate == 0)
-        {
-            nHashRate = 1;
-        }
-        for (int i = 0; i < nHashRate; i++)
-        {
-            uint256 hash = pHashAlgo->Hash(vchWorkData);
-            nHashComputeCount++;
-            if (hash <= hashTarget)
-            {
-                int64 nDuration = GetTime() - nHashComputeBeginTime;
-                int nCompHashRate = ((nDuration <= 0) ? 0 : (nHashComputeCount / nDuration));
-
-                StdLog("blockmaker", "Proof-of-work: block found (%s), target height: %d, compute: (rate:%ld, count:%ld, duration:%lds, hashrate:%ld), difficulty bits: (%d)\nhash :   %s\ntarget : %s",
-                       pHashAlgo->strAlgo.c_str(), nPrevBlockHeight + 1, nHashRate, nHashComputeCount, nDuration, nCompHashRate, nBits,
-                       hash.GetHex().c_str(), hashTarget.GetHex().c_str());
-
-                uint256 hashBlock;
-                Errno err = pService->SubmitWork(vchWorkData, profile.templMint, profile.keyMint, hashBlock);
-                if (err != OK)
-                {
-                    return false;
-                }
-                return true;
-            }
-            nNonce++;
-        }
-
-        int64 nNetTime = GetNetTime() + nTimeDiff;
-        if (nTime + 1 < nNetTime)
-        {
-            nHashRate /= (nNetTime - nTime);
-            nTime = nNetTime;
-        }
-        else if (nTime == nNetTime)
-        {
-            nHashRate *= 2;
-        }
-    }
-    StdLog("blockmaker", "Proof-of-work: target height: %d, compute interrupted.", nPrevBlockHeight + 1);
-    return false;
-}
-
+//---------------------------------------------------------------
 void CBlockMaker::BlockMakerThreadFunc()
 {
+    while (pRecovery->IsRecoverying())
+    {
+        if (!WaitExit(1))
+        {
+            break;
+        }
+    }
+
     uint256 hashLastBlock;
     {
         boost::unique_lock<boost::mutex> lock(mutex);
         hashLastBlock = lastStatus.hashBlock;
     }
-    bool fCachePow = false;
+    bool fCachePoa = false;
     int64 nWaitTime = 1;
     while (!fExit)
     {
@@ -1112,15 +1038,19 @@ void CBlockMaker::BlockMakerThreadFunc()
                 StdDebug("blockmaker", "Block Maker Thread Func: Wait next time, target height: %d, wait time: %ld, last height: %d, prev block: %s",
                          consParam.nPrevHeight + 1, consParam.nWaitTime, lastStatus.nBlockHeight, consParam.hashPrev.GetHex().c_str());
                 nWaitTime = consParam.nWaitTime;
-                continue;
+                if (nWaitTime < 1)
+                {
+                    nWaitTime = 1;
+                }
+                break;
             }
             nWaitTime = consParam.nWaitTime;
 
-            if (hashLastBlock != consParam.hashPrev || fCachePow != consParam.agreement.IsProofOfWork())
+            if (hashLastBlock != consParam.hashPrev || fCachePoa != consParam.agreement.IsProofOfPoa())
             {
                 hashLastBlock = consParam.hashPrev;
-                fCachePow = consParam.agreement.IsProofOfWork();
-                if (consParam.agreement.IsProofOfWork())
+                fCachePoa = consParam.agreement.IsProofOfPoa();
+                if (consParam.agreement.IsProofOfPoa())
                 {
                     StdLog("blockmaker", "GetAgreement: height: %d, consensus: poa", consParam.nPrevHeight + 1);
                 }
