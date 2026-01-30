@@ -964,38 +964,33 @@ bool CBlockBase::VerifyForkFlag(const uint256& hashNewFork, const CChainId nChai
     return true;
 }
 
-uint256 CBlockFilter::AddPendingTxFilter(const uint256& hashClient, const uint256& hashForkIn)
+bool CBlockBase::VerifyOriginBlock(const CBlock& block, const CProfile& parentProfile)
 {
-    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
-    uint256 nFilterId = createFilterId.CreateTxFilterId(hashClient);
-    while (mapTxFilter.count(nFilterId) > 0)
+    CProfile forkProfile;
+    if (!block.GetForkProfile(forkProfile))
     {
-        nFilterId = createFilterId.CreateTxFilterId(hashClient);
+        StdLog("BlockBase", "Verify origin block: load profile error");
+        return false;
     }
-    mapTxFilter.insert(make_pair(nFilterId, CBlockPendingTxFilter(hashForkIn)));
-    return nFilterId;
-}
-
-void CBlockFilter::AddPendingTx(const uint256& hashForkIn, const uint256& txid)
-{
-    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
-    for (auto it = mapTxFilter.begin(); it != mapTxFilter.end();)
+    if (forkProfile.IsNull())
     {
-        if (it->second.isTimeout())
-        {
-            mapTxFilter.erase(it++);
-        }
-        else
-        {
-            if (!it->second.AddPendingTx(hashForkIn, txid))
-            {
-                mapTxFilter.erase(it++);
-            }
-            else
-            {
-                ++it;
-            }
-        }
+        StdLog("BlockBase", "Verify origin block: invalid profile");
+        return false;
+    }
+    if (forkProfile.nChainId == 0 || forkProfile.nChainId != block.txMint.GetChainId())
+    {
+        StdLog("BlockBase", "Verify origin block: invalid chainid");
+        return false;
+    }
+    if (!MoneyRange(forkProfile.nAmount))
+    {
+        StdLog("BlockBase", "Verify origin block: invalid fork amount");
+        return false;
+    }
+    if (!RewardRange(forkProfile.nMintReward))
+    {
+        StdLog("BlockBase", "Verify origin block: invalid fork reward");
+        return false;
     }
 }
 
