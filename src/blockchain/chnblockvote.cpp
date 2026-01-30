@@ -148,4 +148,18 @@ void CBlockVoteChannel::HandleHalt()
     network::IBlockVoteChannel::HandleHalt();
 }
 
+bool CBlockVoteChannel::HandleEvent(network::CEventPeerActive& eventActive)
+{
+    const uint64 nNonce = eventActive.nNonce;
+    mapChnPeer[nNonce] = CBlockVoteChnPeer(eventActive.data.nService, eventActive.data);
+
+    StdLog("CBlockVoteChannel", "CEvent Peer Active: peer: [0x%lx] %s", nNonce, GetPeerAddressInfo(nNonce).c_str());
+
+    for (auto& kv : mapChnFork)
+    {
+        kv.second.AddPeerNode(nNonce);
+    }
+    return true;
+}
+
 } // namespace hashahead
