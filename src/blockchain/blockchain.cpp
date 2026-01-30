@@ -1317,18 +1317,22 @@ bool CBlockChain::GetBlockChanges(const BlockIndexPtr pIndexNew, const BlockInde
                 return false;
             }
             vBlockAddNew.push_back(block);
-            pIndexNew = pIndexNew->pPrev;
+            pIndexNewPtr = cntrBlock.GetPrevBlockIndex(pIndexNewPtr);
         }
         else
         {
             CBlockEx block;
-            if (!cntrBlock.Retrieve(pIndexFork, block))
+            if (!cntrBlock.Retrieve(pIndexForkPtr, block))
             {
                 return false;
             }
             vBlockRemove.push_back(block);
-            pIndexFork = pIndexFork->pPrev;
+            pIndexForkPtr = cntrBlock.GetPrevBlockIndex(pIndexForkPtr);
         }
+    }
+    if (!pIndexNewPtr || !pIndexForkPtr)
+    {
+        return false;
     }
     return true;
 }
