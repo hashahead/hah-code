@@ -1446,16 +1446,17 @@ Errno CBlockChain::VerifyBlock(const uint256& hashFork, const uint256& hashBlock
         }
 
         if (agreement.nAgreement != proof.nAgreement || agreement.nWeight != proof.nWeight
-            || agreement.IsProofOfWork())
+            || agreement.IsProofOfPoa())
         {
             StdLog("BlockChain", "Verify block: SubFork agreement error, ref agreement: %s, block agreement: %s, ref weight: %d, block weight: %d, type: %s, block: %s",
                    agreement.nAgreement.GetHex().c_str(), proof.nAgreement.GetHex().c_str(),
-                   agreement.nWeight, proof.nWeight, (agreement.IsProofOfWork() ? "poa" : "pos"),
+                   agreement.nWeight, proof.nWeight, (agreement.IsProofOfPoa() ? "poa" : "pos"),
                    hashBlock.GetHex().c_str());
             return ERR_BLOCK_PROOF_OF_STAKE_INVALID;
         }
 
-        if (!cntrBlock.RetrieveIndex(proof.hashRefBlock, ppIndexRef) || *ppIndexRef == nullptr || !(*ppIndexRef)->IsPrimary())
+        pIndexRef = cntrBlock.RetrieveIndex(proof.hashRefBlock);
+        if (!pIndexRef || !pIndexRef->IsPrimary())
         {
             StdLog("BlockChain", "Verify block: SubFork retrieve ref index fail, ref block: %s, block: %s",
                    proof.hashRefBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
