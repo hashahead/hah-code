@@ -897,28 +897,30 @@ bool CBlockBase::VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& 
             break;
         }
 
-bool CBlockFilter::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs)
-{
-    boost::shared_lock<boost::shared_mutex> lock(mutexFilter);
-    auto it = mapLogFilter.find(nFilterId);
-    if (it == mapLogFilter.end())
-    {
-        return false;
-    }
-    it->second.GetTxReceiptLogs(fAll, receiptLogs);
-    return true;
-}
+        bool fCheckRet = true;
+        for (const auto& vd : vForkCtxt)
+        {
+            if (vd.second.hashFork == hashNewFork
+                || vd.second.strSymbol == profile.strSymbol
+                || vd.second.strName == profile.strName
+                || vd.second.nChainId == profile.nChainId)
+            {
+                StdLog("BlockBase", "Verify block fork tx: fork existed or name repeated, tx: %s, new fork: %s, symbol: %s, name: %s, chainid: %d",
+                       tx.GetHash().ToString().c_str(), hashNewFork.GetHex().c_str(), vd.second.strSymbol.c_str(), vd.second.strName.c_str(), profile.nChainId);
+                fCheckRet = false;
+                break;
+            }
+        }
+        if (!fCheckRet)
+        {
+            break;
+        }
 
-uint256 CBlockFilter::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
-{
-    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
-    uint256 nFilterId = createFilterId.CreateBlockFilterId(hashClient);
-    while (mapBlockFilter.count(nFilterId) > 0)
-    {
-        nFilterId = createFilterId.CreateBlockFilterId(hashClient);
-    }
-    mapBlockFilter.insert(make_pair(nFilterId, CBlockMakerFilter(hashFork)));
-    return nFilterId;
+        vForkCtxt.push_back(make_pair(tx.GetToAddress(), CForkContext(block.GetHash(), block.hashPrev, tx.GetHash(), profile)));
+        StdLog("BlockBase", "Verify block fork tx success: valid fork: %s, tx: %s", hashNewFork.GetHex().c_str(), tx.GetHash().ToString().c_str());
+    } while (0);
+
+    return true;
 }
 
 void CBlockFilter::AddNewBlockHash(const uint256& hashForkIn, const uint256& hashBlock, const uint256& hashPrev)
