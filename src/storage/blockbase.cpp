@@ -992,17 +992,19 @@ bool CBlockBase::VerifyOriginBlock(const CBlock& block, const CProfile& parentPr
         StdLog("BlockBase", "Verify origin block: invalid fork reward");
         return false;
     }
-}
-
-bool CBlockFilter::GetFilterTxids(const uint256& hashForkIn, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid)
-{
-    boost::shared_lock<boost::shared_mutex> lock(mutexFilter);
-    auto it = mapTxFilter.find(nFilterId);
-    if (it == mapTxFilter.end())
+    if (block.txMint.GetToAddress() != forkProfile.destOwner)
     {
+        StdLog("BlockBase", "Verify origin block: invalid fork to");
         return false;
     }
-    it->second.GetFilterTxids(hashForkIn, fAll, vTxid);
+    // if (parentProfile.IsPrivate())
+    // {
+    //     if (!forkProfile.IsPrivate() || parentProfile.destOwner != forkProfile.destOwner)
+    //     {
+    //         StdLog("BlockBase", "Verify origin block: permission denied");
+    //         return false;
+    //     }
+    // }
     return true;
 }
 
