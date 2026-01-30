@@ -32,6 +32,7 @@ public:
     bool Remove();
 
     bool IsSnapshotBlock(const uint256& hashBlock);
+    bool StartSnapshot(const uint256& hashLastBlock, const uint32 nMaxSnapshots);
 protected:
     hnbase::CRWAccess rwAccess;
 

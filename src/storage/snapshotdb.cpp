@@ -59,5 +59,20 @@ bool CSnapshotDB::IsSnapshotBlock(const uint256& hashBlock)
     return (setBlockHash.find(hashBlock) != setBlockHash.end());
 }
 
+bool CSnapshotDB::StartSnapshot(const uint256& hashLastBlock, const uint32 nMaxSnapshots)
+{
+    fs::path pathLastBlock = pathSnapshot / hashLastBlock.ToString();
+    if (fs::exists(pathLastBlock))
+    {
+        fs::remove_all(pathLastBlock);
+    }
+
+    RemoveHeightSnapshot(CBlock::GetBlockHeightByHash(hashLastBlock));
+    RemoveRedundantSnapshot(nMaxSnapshots);
+
+    fs::create_directories(pathLastBlock);
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
