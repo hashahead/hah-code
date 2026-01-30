@@ -85,6 +85,7 @@ void CBlockVoteChnFork::SetVoteResult(const uint256& hashBlock, const bytes& btB
 // CBlockVoteChannel
 
 CBlockVoteChannel::CBlockVoteChannel()
+  : network::IBlockVoteChannel(BLOCK_VOTE_CHANNEL_THREAD_COUNT), nBlockVoteTimerId(0)
 {
     pPeerNet = nullptr;
     pCoreProtocol = nullptr;
@@ -128,11 +129,22 @@ void CBlockVoteChannel::HandleDeinitialize()
 
 bool CBlockVoteChannel::HandleInvoke()
 {
+    nBlockVoteTimerId = SetTimer(BLOCK_VOTE_TIMER_TIME, boost::bind(&CBlockVoteChannel::BlockVoteTimerFunc, this, _1));
+    if (nBlockVoteTimerId == 0)
+    {
+        StdLog("CBlockVoteChannel", "Handle Invoke: Set timer fail");
+        return false;
+    }
     return network::IBlockVoteChannel::HandleInvoke();
 }
 
 void CBlockVoteChannel::HandleHalt()
 {
+    if (nBlockVoteTimerId != 0)
+    {
+        CancelTimer(nBlockVoteTimerId);
+        nBlockVoteTimerId = 0;
+    }
     network::IBlockVoteChannel::HandleHalt();
 }
 
