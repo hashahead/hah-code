@@ -74,5 +74,41 @@ bool CSnapshotDB::StartSnapshot(const uint256& hashLastBlock, const uint32 nMaxS
     return true;
 }
 
+bool CSnapshotDB::SaveBlockFile(const uint256& hashLastBlock, const uint32 nFile, const uint32 nOffset)
+{
+    CTimeSeriesCached tsBlock;
+    if (!tsBlock.Initialize(pathDataLocation / "block", BLOCKFILE_PREFIX))
+    {
+        StdLog("CSnapshotDB", "Save block file: Initialize failed, last block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+    const uint32 nBlockSize = tsBlock.GetBlockSize(nFile, nOffset);
+    if (nBlockSize == 0)
+    {
+        StdLog("CSnapshotDB", "Save block file: Get last block size failed, last block: %s", hashLastBlock.GetBhString().c_str());
+        tsBlock.Deinitialize();
+        return false;
+    }
+    const uint32 nCopyFileSize = nOffset + nBlockSize;
+
+    fs::path pathLastBlock = pathSnapshot / hashLastBlock.ToString();
+    if (!fs::exists(pathLastBlock))
+    {
+        StdLog("CSnapshotDB", "Save block file: Snapshot directory not exist, dir: %s, last block: %s", pathLastBlock.string().c_str(), hashLastBlock.GetBhString().c_str());
+        tsBlock.Deinitialize();
+        return false;
+    }
+
+    if (!tsBlock.CopyToPath(nFile, nCopyFileSize, pathLastBlock))
+    {
+        StdLog("CSnapshotDB", "Save block file: Copy file failed, last block: %s", hashLastBlock.GetBhString().c_str());
+        tsBlock.Deinitialize();
+        return false;
+    }
+
+    tsBlock.Deinitialize();
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
