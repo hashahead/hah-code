@@ -1008,17 +1008,15 @@ bool CBlockBase::VerifyOriginBlock(const CBlock& block, const CProfile& parentPr
     return true;
 }
 
-//////////////////////////////
-// CBlockState
-
-bool CBlockState::AddTxState(const CTransaction& tx, const int nTxIndex)
+bool CBlockBase::ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, const uint256& hashBlock)
 {
-    uint256 txid = tx.GetHash();
+    return dbBlock.ListForkContext(mapForkCtxt, hashBlock);
+}
 
-    if (tx.GetTxType() == CTransaction::TX_VOTE_REWARD)
-    {
-        mapBlockRewardLocked[tx.GetToAddress()] += tx.GetAmount();
-    }
+bool CBlockBase::RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.RetrieveForkContext(hashFork, ctxt, hashMainChainRefBlock);
+}
 
     bool fToContract = false;
     CDestination destTo;
