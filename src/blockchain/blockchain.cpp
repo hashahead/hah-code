@@ -1380,7 +1380,7 @@ Errno CBlockChain::VerifyBlock(const uint256& hashFork, const uint256& hashBlock
             return ERR_BLOCK_INVALID_FORK;
         }
 
-        if (!VerifyBlockCertTx(block))
+        if (!VerifyBlockCertTx(hashBlock, block))
         {
             StdLog("BlockChain", "Verify block: Verify cert tx fail, block: %s", hashBlock.GetHex().c_str());
             return ERR_BLOCK_CERTTX_OUT_OF_BOUND;
@@ -1392,15 +1392,29 @@ Errno CBlockChain::VerifyBlock(const uint256& hashFork, const uint256& hashBlock
             return ERR_BLOCK_PROOF_OF_STAKE_INVALID;
         }
 
-        if (!GetBlockMintReward(block.hashPrev, agreement.IsProofOfWork(), nReward, block.hashPrev))
+        if (!GetBlockMintReward(block.hashPrev, agreement.IsProofOfPoa(), nReward, block.hashPrev))
         {
             StdLog("BlockChain", "Verify block: Get mint reward fail, block: %s", hashBlock.GetHex().c_str());
             return ERR_BLOCK_COINBASE_INVALID;
         }
 
-        if (agreement.IsProofOfWork())
+        if (!VerifyBlockVoteResult(hashBlock, block))
         {
-            return pCoreProtocol->VerifyProofOfWork(block, pIndexPrev);
+            StdLog("BlockChain", "Verify block: Verify block vote fail, prev: %s, block: %s",
+                   pIndexPrev->GetBlockHash().GetHex().c_str(), hashBlock.GetHex().c_str());
+            return ERR_BLOCK_INVALID_FORK;
+        }
+
+        if (!VerifyBlockCrosschainProve(hashBlock, block))
+        {
+            StdLog("BlockChain", "Verify block: Verify block crosschain prove fail, prev: %s, block: %s",
+                   pIndexPrev->GetBlockHash().GetHex().c_str(), hashBlock.GetHex().c_str());
+            return ERR_BLOCK_INVALID_FORK;
+        }
+
+        if (agreement.IsProofOfPoa())
+        {
+            return pCoreProtocol->VerifyProofOfPoa(block, pIndexPrev);
         }
         else
         {
