@@ -1062,16 +1062,29 @@ void CBlockMaker::BlockMakerThreadFunc()
 
             try
             {
-                if (!consParam.agreement.IsProofOfWork())
+                if (!consParam.agreement.IsProofOfPoa())
                 {
-                    ProcessDelegatedProofOfStake(consParam);
+                    if (!ProcessDelegatedProofOfStake(consParam))
+                    {
+                        nWaitTime = 1;
+                    }
+                }
+                else
+                {
+                    if (nWaitTime < 1)
+                    {
+                        nWaitTime = 1;
+                    }
                 }
                 pDispatcher->SetConsensus(consParam);
             }
             catch (exception& e)
             {
                 StdError("blockmaker", "Block maker error: %s", e.what());
-                break;
+                if (nWaitTime < 1)
+                {
+                    nWaitTime = 1;
+                }
             }
             break;
         }
@@ -1101,7 +1114,7 @@ void CBlockMaker::BlockMakerThreadFunc()
             }
 
             CDelegateAgreement agreement;
-            if (pBlockChain->GetBlockDelegateAgreement(hashLastBlock, agreement) && !agreement.IsProofOfWork())
+            if (pBlockChain->GetBlockDelegateAgreement(hashLastBlock, agreement) && !agreement.IsProofOfPoa())
             {
                 map<CDestination, CBlockMakerProfile>::iterator it = mapDelegatedProfile.find(agreement.vBallot[0]);
                 if (it != mapDelegatedProfile.end())
