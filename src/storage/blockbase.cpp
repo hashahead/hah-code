@@ -952,17 +952,15 @@ bool CBlockBase::VerifyForkFlag(const uint256& hashNewFork, const CChainId nChai
             return false;
         }
     }
-}
-
-bool CBlockFilter::GetFilterBlockHashs(const uint256& nFilterId, const uint256& hashLastBlock, const bool fAll, std::vector<uint256>& vBlockHash)
-{
-    boost::shared_lock<boost::shared_mutex> lock(mutexFilter);
-    auto it = mapBlockFilter.find(nFilterId);
-    if (it == mapBlockFilter.end())
+    if (!strForkName.empty())
     {
-        return false;
+        uint256 hashTempFork;
+        if (dbBlock.GetForkHashByForkName(strForkName, hashTempFork, hashPrevBlock))
+        {
+            StdLog("BlockBase", "Verify fork flag: Fork name existed, name: %s", strForkName.c_str());
+            return false;
+        }
     }
-    it->second.GetFilterBlockHashs(hashLastBlock, fAll, vBlockHash);
     return true;
 }
 
