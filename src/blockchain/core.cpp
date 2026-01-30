@@ -676,49 +676,15 @@ Errno CCoreProtocol::ValidateOrigin(const CBlock& block, const CProfile& parentP
     return OK;
 }
 
-Errno CCoreProtocol::VerifyProofOfWork(const CBlock& block, const CBlockIndex* pIndexPrev)
+Errno CCoreProtocol::VerifyProofOfPoa(const CBlock& block, const BlockIndexPtr pIndexPrev)
 {
     uint64 nNextTimestamp = GetNextBlockTimestamp(pIndexPrev->GetBlockTime());
     if (block.GetBlockTime() < nNextTimestamp)
     {
-        return DEBUG(ERR_BLOCK_TIMESTAMP_OUT_OF_RANGE, "Verify proof work: Timestamp out of range 2, height: %d, block time: %lu, next time: %lu, prev minttype: 0x%x, prev time: %lu, block: %s.",
+        return DEBUG(ERR_BLOCK_TIMESTAMP_OUT_OF_RANGE, "Verify proof poa: Timestamp out of range 2, height: %d, block time: %lu, next time: %lu, prev minttype: 0x%x, prev time: %lu, block: %s.",
                      block.GetBlockHeight(), block.GetBlockTime(), nNextTimestamp,
                      pIndexPrev->nMintType, pIndexPrev->GetBlockTime(), block.GetHash().GetHex().c_str());
     }
-
-    CProofOfHashWork proof;
-    if (!block.GetHashWorkProof(proof))
-    {
-        return DEBUG(ERR_BLOCK_PROOF_OF_WORK_INVALID, "load proof fail.");
-    }
-
-    // int nBits = 0;
-    // if (!GetProofOfWorkTarget(pIndexPrev, proof.nAlgo, nBits))
-    // {
-    //     return DEBUG(ERR_BLOCK_PROOF_OF_WORK_INVALID, "get target fail.");
-    // }
-
-    // if (nBits != proof.nBits || proof.nAlgo != CM_CRYPTONIGHT)
-    // {
-    //     return DEBUG(ERR_BLOCK_PROOF_OF_WORK_INVALID, "algo or bits error, nAlgo: %d, nBits: %d.", proof.nAlgo, proof.nBits);
-    // }
-    // if (proof.destMint != block.txMint.GetToAddress())
-    // {
-    //     return DEBUG(ERR_BLOCK_PROOF_OF_WORK_INVALID, "destMint error, destMint: %s.", proof.destMint.ToString().c_str());
-    // }
-
-    // uint256 hashTarget = (~uint256(uint64(0)) >> nBits);
-
-    // vector<unsigned char> vchProofOfWork;
-    // block.GetSerializedProofOfWorkData(vchProofOfWork);
-    // uint256 hash = crypto::CryptoPowHash(&vchProofOfWork[0], vchProofOfWork.size());
-
-    // if (hash > hashTarget)
-    // {
-    //     return DEBUG(ERR_BLOCK_PROOF_OF_WORK_INVALID, "hash error: proof[%s] vs. target[%s] with bits[%d]",
-    //                  hash.ToString().c_str(), hashTarget.ToString().c_str(), nBits);
-    // }
-
     return OK;
 }
 
