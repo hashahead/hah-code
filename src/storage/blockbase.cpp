@@ -923,25 +923,33 @@ bool CBlockBase::VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& 
     return true;
 }
 
-void CBlockFilter::AddNewBlockHash(const uint256& hashForkIn, const uint256& hashBlock, const uint256& hashPrev)
+bool CBlockBase::VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainId, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashPrevBlock)
 {
-    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
-    for (auto it = mapBlockFilter.begin(); it != mapBlockFilter.end();)
+    if (hashNewFork != 0)
     {
-        if (it->second.isTimeout())
+        CForkContext ctxt;
+        if (dbBlock.RetrieveForkContext(hashNewFork, ctxt, hashPrevBlock))
         {
-            mapBlockFilter.erase(it++);
+            StdLog("BlockBase", "Verify fork flag: Fork id existed, fork: %s, symbol: %s, create txid: %s", hashNewFork.GetHex().c_str(), ctxt.strSymbol.c_str(), ctxt.txidEmbedded.ToString().c_str());
+            return false;
         }
-        else
+    }
+    if (nChainId != 0)
+    {
+        uint256 hashTempFork;
+        if (dbBlock.GetForkHashByChainId(nChainId, hashTempFork, hashPrevBlock))
         {
-            if (!it->second.AddBlockHash(hashForkIn, hashBlock, hashPrev))
-            {
-                mapBlockFilter.erase(it++);
-            }
-            else
-            {
-                ++it;
-            }
+            StdLog("BlockBase", "Verify fork flag: Chain id existed, chainid: %d", nChainId);
+            return false;
+        }
+    }
+    if (!strForkSymbol.empty())
+    {
+        CCoinContext ctxCoin;
+        if (dbBlock.GetForkCoinCtxByForkSymbol(strForkSymbol, ctxCoin, hashPrevBlock))
+        {
+            StdLog("BlockBase", "Verify fork flag: Symbol existed, symbol: %s", strForkSymbol.c_str());
+            return false;
         }
     }
 }
