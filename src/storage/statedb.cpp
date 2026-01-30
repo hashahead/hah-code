@@ -403,6 +403,18 @@ bool CStateDB::VerifyState(const uint256& hashFork, const uint256& hashRoot, con
     return false;
 }
 
+bool CStateDB::ClearStateUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapStateDB.find(hashFork);
+    if (it != mapStateDB.end())
+    {
+        return it->second->ClearStateUnavailableNode(nClearRefHeight);
+    }
+    return false;
+}
+
 bool CStateDB::CreateStaticStateRoot(const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashStateRoot)
 {
     bytesmap mapKv;
