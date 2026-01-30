@@ -116,7 +116,7 @@ public:
                              const size_t nMaxSize, vector<CTransaction>& vtx, uint256& nTotalTxFee);
     bool SynchronizeBlockChain(const CBlockChainUpdate& update);
 
-    void ListTx(std::vector<std::pair<uint256, std::size_t>>& vTxPool);
+    void ListTx(std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true);
     void ListTx(std::vector<uint256>& vTxPool);
     bool ListTx(const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount);
     void GetDestBalance(const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
