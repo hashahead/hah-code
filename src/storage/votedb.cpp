@@ -984,6 +984,30 @@ bool CVoteDB::RetrieveRangeEnroll(int height, const std::vector<uint256>& vBlock
     return true;
 }
 
+bool CVoteDB::RetrieveDelegateEnrollStatus(const std::vector<uint256>& vBlockRange, std::map<CDestination, uint32>& mapDelegateEnrollStatus)
+{
+    for (const auto& hashBlock : vBlockRange)
+    {
+        const uint32 nHeight = CBlock::GetBlockHeightByHash(hashBlock);
+        std::map<int, std::map<CDestination, CDiskPos>> mapGetEnrollTx;
+        if (RetrieveDelegatedEnroll(hashBlock, mapGetEnrollTx))
+        {
+            for (auto& kv : mapGetEnrollTx)
+            {
+                for (auto& kv2 : kv.second)
+                {
+                    auto& nLastHeight = mapDelegateEnrollStatus[kv2.first];
+                    if (nHeight > nLastHeight)
+                    {
+                        nLastHeight = nHeight;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
 bool CVoteDB::VerifyDelegateVote(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     if (hashBlock != 0)
