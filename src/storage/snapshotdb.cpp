@@ -52,5 +52,12 @@ bool CSnapshotDB::Remove()
     return true;
 }
 
+bool CSnapshotDB::IsSnapshotBlock(const uint256& hashBlock)
+{
+    set<uint256, CustomBlockHashCompare> setBlockHash;
+    GetAllSnapshotBlock(setBlockHash);
+    return (setBlockHash.find(hashBlock) != setBlockHash.end());
+}
+
 } // namespace storage
 } // namespace hashahead

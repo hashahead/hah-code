@@ -31,6 +31,7 @@ public:
     void Deinitialize();
     bool Remove();
 
+    bool IsSnapshotBlock(const uint256& hashBlock);
 protected:
     hnbase::CRWAccess rwAccess;
 
