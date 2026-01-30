@@ -451,22 +451,63 @@ bool CForkAddressTxInfoDB::GetBlockPrevBlock(const uint256& hashBlock, uint256& 
     return true;
 }
 
-bool CForkAddressTxInfoDB::RetrieveAddressTxInfo(const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo)
+bool CForkAddressTxInfoDB::WalkThroughAllBlockHash(set<uint256>& setBlockHash)
 {
-    uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
-    {
-        StdLog("CForkAddressTxInfoDB", "Retrieve address tx info: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nKeyType;
+            ssKey >> nKeyType;
+            if (nKeyType == DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_PREVBLOCK)
+            {
+                uint256 hashBlock;
+                ssKey >> hashBlock;
+                setBlockHash.insert(hashBlock);
+            }
+            return true;
+        }
+        catch (exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
         return false;
-    }
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS << dest << BSwap64(nTxIndex);
-    ssKey.GetData(btKey);
-    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
-    {
-        StdLog("CForkAddressTxInfoDB", "Retrieve address tx info: Trie retrieve kv fail, root: %s, block: %s",
-               hashRoot.GetHex().c_str(), hashBlock.GetHex().c_str());
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_PREVBLOCK;
+
+    return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
+bool CForkAddressTxInfoDB::WalkThroughAddressTxInfo(const CDestination& address, const uint64 nBeginTxIndex, const uint64 nGetTxCount, vector<CDestTxInfo>& vAddressTxInfo)
+{
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nKeyType;
+            ssKey >> nKeyType;
+            if (nKeyType == DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO)
+            {
+                CDestination addressDb;
+                uint64 nIndexDb;
+                ssKey >> addressDb >> nIndexDb;
+                nIndexDb = BSwap64(nIndexDb);
+                if (nIndexDb < nBeginTxIndex + nGetTxCount)
+                {
+                    CDestTxInfo txIndexDb;
+                    ssValue >> txIndexDb;
+
+                    txIndexDb.nTxIndex = nIndexDb;
+
+                    vAddressTxInfo.push_back(txIndexDb);
+                    return true;
+                }
+            }
+        }
+        catch (exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
         return false;
     }
     try
