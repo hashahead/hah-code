@@ -36,6 +36,23 @@ protected:
     std::map<uint256, uint32> mapTxCr; // key: txid, value: index
 };
 
+class CCacheBlockContractPrevState
+{
+public:
+    CCacheBlockContractPrevState(const BlockContractPrevState& bcps);
+
+    const BlockContractPrevState& GetBlockContractPrevState() const
+    {
+        return bcPrevState;
+    }
+
+    bool GetTxContractPrevState(const uint256& txid, MapContractPrevState& prevState) const;
+
+protected:
+    const BlockContractPrevState bcPrevState;
+    std::map<uint256, uint32> mapTxPs; // key: txid, value: index
+};
+
 class CTraceDB
 {
 public:

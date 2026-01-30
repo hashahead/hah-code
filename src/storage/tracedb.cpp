@@ -40,6 +40,29 @@ bool CCacheBlockContractReceipts::GetTxContractReceipts(const uint256& txid, TxC
 }
 
 //////////////////////////////
+// CCacheBlockContractPrevState
+
+CCacheBlockContractPrevState::CCacheBlockContractPrevState(const BlockContractPrevState& bcps)
+  : bcPrevState(bcps)
+{
+    for (uint32 i = 0; i < (uint32)(bcPrevState.size()); i++)
+    {
+        mapTxPs.insert(std::make_pair(bcPrevState[i].first, i));
+    }
+}
+
+bool CCacheBlockContractPrevState::GetTxContractPrevState(const uint256& txid, MapContractPrevState& prevState) const
+{
+    auto it = mapTxPs.find(txid);
+    if (it != mapTxPs.end() && it->second < (uint32)(bcPrevState.size()))
+    {
+        prevState = bcPrevState[it->second].second;
+        return true;
+    }
+    return false;
+}
+
+//////////////////////////////
 // CTraceDB
 
 bool CTraceDB::Initialize(const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn)
