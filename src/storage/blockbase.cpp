@@ -1018,19 +1018,15 @@ bool CBlockBase::RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt
     return dbBlock.RetrieveForkContext(hashFork, ctxt, hashMainChainRefBlock);
 }
 
-    bool fToContract = false;
-    CDestination destTo;
-    if (tx.GetToAddress().IsNull())
-    {
-        uint8 nCodeType;
-        CTemplateContext ctxTemplate;
-        CTxContractData ctxContract;
-        if (!tx.GetCreateCodeContext(nCodeType, ctxTemplate, ctxContract))
-        {
-            StdLog("CBlockState", "Add tx state: Get create code fail, txid: %s, from: %s",
-                   txid.GetHex().c_str(), tx.GetFromAddress().ToString().c_str());
-            return false;
-        }
+bool CBlockBase::GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.GetForkCtxStatus(hashFork, forkStatus, hashMainChainRefBlock);
+}
+
+bool CBlockBase::RetrieveForkLast(const uint256& hashFork, uint256& hashLastBlock)
+{
+    return dbBlock.RetrieveForkLast(hashFork, hashLastBlock);
+}
 
         if (nCodeType == CODE_TYPE_TEMPLATE)
         {
