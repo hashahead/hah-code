@@ -30,6 +30,59 @@ namespace storage
 {
 
 //////////////////////////////
+// CFuncOutputParam
+
+std::string CFuncOutputParam::GetStatusInfo(const int nStatus)
+{
+    switch (nStatus)
+    {
+    case BS_EVMC_SUCCESS:
+        return "Success";
+    case BS_EVMC_FAILURE:
+        return "Generic execution failure";
+    case BS_EVMC_REVERT:
+        return "Execution terminated with REVERT opcode";
+    case BS_EVMC_OUT_OF_GAS:
+        return "The execution has run out of gas";
+    case BS_EVMC_INVALID_INSTRUCTION:
+        return "The designated INVALID instruction has been hit during execution";
+    case BS_EVMC_UNDEFINED_INSTRUCTION:
+        return "An undefined instruction has been encountered";
+    case BS_EVMC_STACK_OVERFLOW:
+        return "The execution has attempted to put more items on the EVM stack than the specified limit";
+    case BS_EVMC_STACK_UNDERFLOW:
+        return "Execution of an opcode has required more items on the EVM stack";
+    case BS_EVMC_BAD_JUMP_DESTINATION:
+        return "Execution has violated the jump destination restrictions";
+    case BS_EVMC_INVALID_MEMORY_ACCESS:
+        return "Tried to read outside memory bounds";
+    case BS_EVMC_CALL_DEPTH_EXCEEDED:
+        return "Call depth has exceeded the limit (if any)";
+    case BS_EVMC_STATIC_MODE_VIOLATION:
+        return "Tried to execute an operation which is restricted in static mode";
+    case BS_EVMC_PRECOMPILE_FAILURE:
+        return "A call to a precompiled or system contract has ended with a failure";
+    case BS_EVMC_CONTRACT_VALIDATION_FAILURE:
+        return "Contract validation has failed (e.g. due to EVM 1.5 jump validity";
+    case BS_EVMC_ARGUMENT_OUT_OF_RANGE:
+        return "An argument to a state accessing method has a value outside of the accepted range of values";
+    case BS_EVMC_WASM_UNREACHABLE_INSTRUCTION:
+        return "A WebAssembly unreachable instruction has been hit during execution";
+    case BS_EVMC_WASM_TRAP:
+        return "A WebAssembly trap has been hit during execution. This can be for many reasons, including division by zero, validation errors";
+    case BS_EVMC_INTERNAL_ERROR:
+        return "EVM implementation generic internal error";
+    case BS_EVMC_REJECTED:
+        return "The execution of the given code and/or message has been rejected by the EVM implementation";
+    case BS_EVMC_OUT_OF_MEMORY:
+        return "The VM failed to allocate the amount of memory needed for execution";
+    default:
+        return "Other error";
+    }
+    return "";
+}
+
+//////////////////////////////
 // CBlockState
 
 CBlockState::CBlockState(CBlockBase& dbBlockBaseIn, const uint256& hashForkIn, const CForkContext& ctxForkIn, const CBlock& block, const uint256& hashPrevStateRootIn, const uint32 nPrevBlockTimeIn, const std::map<CDestination, CAddressContext>& mapAddressContext, const bool fBtTraceDbIn)

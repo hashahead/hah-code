@@ -19,6 +19,34 @@ namespace hashahead
 namespace storage
 {
 
+#define BLOCKFILE_PREFIX "block"
+#define SNAPSHOTFILE_PREFIX "snapshot"
+
+//////////////////////////////
+// Snapshot data type
+
+const uint8 SNAP_DATA_TYPE_FORK_BLOCK_INDEX = 0x01;
+const uint8 SNAP_DATA_TYPE_FORK_FORK_KV = 0x02;
+const uint8 SNAP_DATA_TYPE_FORK_VOTE_KV = 0x03;
+const uint8 SNAP_DATA_TYPE_FORK_STATE_KV = 0x04;
+const uint8 SNAP_DATA_TYPE_FORK_ADDRESS_KV = 0x05;
+const uint8 SNAP_DATA_TYPE_FORK_HDEX_KV = 0x06;
+const uint8 SNAP_DATA_TYPE_FORK_TRACE_KV = 0x07;
+const uint8 SNAP_DATA_TYPE_FORK_TX_INDEX = 0x08;
+const uint8 SNAP_DATA_TYPE_FORK_ADDRESS_TX = 0x09;
+
+const uint8 SNAP_SUB_TYPE_ADDRESS_TX_INDEX = 0x01;
+const uint8 SNAP_SUB_TYPE_ADDRESS_TX_COUNT = 0x02;
+const uint8 SNAP_SUB_TYPE_TOKEN_TX_INDEX = 0x03;
+const uint8 SNAP_SUB_TYPE_TOKEN_TX_COUNT = 0x04;
+
+//////////////////////////////
+// Walker function
+
+typedef boost::function<bool(const bytes& btKey, const bytes& btValue)> WalkerTxIndexKvFunc;
+typedef boost::function<bool(const CDestination& address, const uint64 nTxIndex, const bytes& btKey, const bytes& btValue)> WalkerAddressTxKvFunc;
+typedef boost::function<bool(const CDestination& destContract, const CDestination& destUserAddress, const uint64 nTxIndex, const bytes& btKey, const bytes& btValue)> WalkerTokenTxKvFunc;
+
 //////////////////////////////
 // CSnapForkRootKv
 
