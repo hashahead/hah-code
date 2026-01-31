@@ -2246,7 +2246,7 @@ void CNetChannel::InnerBroadcastBlockInv(const uint256& hashFork, const uint256&
     }
 }
 
-void CNetChannel::InnerSubmitCachePowBlock()
+void CNetChannel::InnerSubmitCachePoaBlock()
 {
     bool fContinue;
     uint256 hashPrevBlock;
@@ -2266,10 +2266,10 @@ void CNetChannel::InnerSubmitCachePowBlock()
             consParam.nPrevNumber = agreeBlock.nPrevNumber;
             consParam.nPrevMintType = agreeBlock.nPrevMintType;
             consParam.nWaitTime = agreeBlock.nWaitTime;
-            consParam.fPow = agreeBlock.agreement.IsProofOfWork();
+            consParam.fPoa = agreeBlock.agreement.IsProofOfPoa();
             consParam.ret = agreeBlock.ret;
 
-            fContinue = SubmitCachePowBlock(consParam);
+            fContinue = SubmitCachePoaBlock(consParam);
         }
     } while (fContinue);
 }
