@@ -1112,35 +1112,31 @@ bool CBlockBase::GetBlockIndexHashByNumberNoLock(const uint256& hashFork, const 
                 }
                 if (pIndex->IsOrigin())
                 {
-                    StdLog("CBlockState", "Add tx state: Contract address no state, txid: %s, to: %s",
-                           txid.GetHex().c_str(), destTo.ToString().c_str());
-                    return false;
+                    break;
                 }
-                state.SetNull();
-                state.SetType(ctxAddress.GetDestType(), ctxAddress.GetTemplateType());
+                pIndex = GetPrevBlockIndex(pIndex);
             }
-            nt = mapBlockState.insert(make_pair(destTo, state)).first;
-        }
-        if (nt != mapBlockState.end())
-        {
-            CDestState& state = nt->second;
-            if (state.IsPubkey() && ctxAddress.IsTemplate())
-            {
-                // When correcting the address type, it is necessary to simultaneously modify the address type in the status data.
-                state.SetType(ctxAddress.GetDestType(), ctxAddress.GetTemplateType());
-            }
-        }
-    }
-    if (tx.GetAmount() != 0 && !destTo.IsNull())
-    {
-        auto it = mapBlockState.find(destTo);
-        if (it == mapBlockState.end())
-        {
-            StdLog("CBlockState", "Add tx state: Get address state fail, txid: %s, destTo: %s",
-                   txid.GetHex().c_str(), destTo.ToString().c_str());
             return false;
         }
-        it->second.IncBalance(tx.GetAmount());
+    }
+    return dbBlock.RetrieveBlockHashByNumber(hashFork, nBlockNumber, hashBlock);
+}
+
+bool CBlockBase::GetBlockIndexHashByNumberLock(const uint256& hashFork, const uint64 nBlockNumber, uint256& hashBlock)
+{
+    CReadLock rlock(rwAccess);
+    return GetBlockIndexHashByNumberNoLock(hashFork, 0, nBlockNumber, hashBlock);
+}
+
+bool CBlockBase::GetForkBlockLocator(const uint256& hashFork, CBlockLocator& locator, uint256& hashDepth, int nIncStep)
+{
+    CReadLock rlock(rwAccess);
+
+    BlockIndexPtr pIndex = GetForkLastIndex(hashFork);
+    if (!pIndex)
+    {
+        StdLog("BlockBase", "Get Fork Block Locator: Get frok last index failed, fork: %s", hashFork.ToString().c_str());
+        return false;
     }
 
     uint256 nTvGasFee;
