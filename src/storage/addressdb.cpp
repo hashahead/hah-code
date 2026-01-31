@@ -946,6 +946,34 @@ bool CForkAddressDB::AddCodeContext(const uint256& hashPrevBlock, const uint256&
     return true;
 }
 
+bool CForkAddressDB::RetrieveSourceCodeContext(const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode)
+{
+    uint256 hashCodeRoot;
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashBlock, hashCodeRoot))
+    {
+        return false;
+    }
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+    ssKey << DB_ADDRESS_KEY_TYPE_SOURCE_CODE << hashSourceCode;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashCodeRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        ssValue.Write((char*)(btValue.data()), btValue.size());
+        ssValue >> ctxtCode;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
     {
