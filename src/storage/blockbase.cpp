@@ -1139,25 +1139,18 @@ bool CBlockBase::GetForkBlockLocator(const uint256& hashFork, CBlockLocator& loc
         return false;
     }
 
-    uint256 nTvGasFee;
-    uint256 nTvGas;
-    uint256 nLeftGas;
-    if (!tx.GetFromAddress().IsNull())
+    if (hashDepth != 0)
     {
-        auto mt = mapBlockState.find(tx.GetFromAddress());
-        if (mt == mapBlockState.end())
+        BlockIndexPtr pStartIndex = GetIndex(hashDepth);
+        if (pStartIndex && IsLongchainBlock(hashFork, hashDepth))
         {
-            CDestState state;
-            if (!dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, tx.GetFromAddress(), state))
-            {
-                StdLog("CBlockState", "Add tx state: Retrieve dest state fail, txid: %s, from: %s",
-                       txid.GetHex().c_str(), tx.GetFromAddress().ToString().c_str());
-                return false;
-            }
-            mt = mapBlockState.insert(make_pair(tx.GetFromAddress(), state)).first;
+            pIndex = pStartIndex;
         }
-        CDestState& stateFrom = mt->second;
-        if (stateFrom.GetBalance() < (tx.GetAmount() + tx.GetTxFee()))
+    }
+
+    while (pIndex)
+    {
+        if (pIndex->GetOriginHash() != hashFork)
         {
             StdLog("CBlockState", "Add tx state: From dest balance error, nBalance: %s, nAmount+Fee: %s, txid: %s, from: %s",
                    CoinToTokenBigFloat(stateFrom.GetBalance()).c_str(), CoinToTokenBigFloat(tx.GetAmount() + tx.GetTxFee()).c_str(),
