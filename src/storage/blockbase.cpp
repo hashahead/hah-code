@@ -1152,48 +1152,51 @@ bool CBlockBase::GetForkBlockLocator(const uint256& hashFork, CBlockLocator& loc
     {
         if (pIndex->GetOriginHash() != hashFork)
         {
-            StdLog("CBlockState", "Add tx state: From dest balance error, nBalance: %s, nAmount+Fee: %s, txid: %s, from: %s",
-                   CoinToTokenBigFloat(stateFrom.GetBalance()).c_str(), CoinToTokenBigFloat(tx.GetAmount() + tx.GetTxFee()).c_str(),
-                   txid.GetHex().c_str(), tx.GetFromAddress().ToString().c_str());
-            return false;
+            hashDepth = 0;
+            break;
         }
-        stateFrom.DecBalance(tx.GetAmount() + tx.GetTxFee());
-
-        if (tx.GetTxType() != CTransaction::TX_CERT)
+        locator.vBlockHash.push_back(pIndex->GetBlockHash());
+        if (pIndex->IsOrigin())
         {
-            stateFrom.IncTxNonce();
-
-            CAddressContext ctxFromAddress;
-            if (GetAddressContext(tx.GetFromAddress(), ctxFromAddress) && ctxFromAddress.IsPubkey())
+            hashDepth = 0;
+            break;
+        }
+        if (locator.vBlockHash.size() >= nIncStep / 2)
+        {
+            pIndex = GetPrevBlockIndex(pIndex);
+            if (!pIndex)
             {
-                CTimeVault tv;
-                if (!dbBlockBase.RetrieveTimeVault(hashFork, hashPrevBlock, tx.GetFromAddress(), tv))
-                {
-                    //StdLog("CBlockState", "Add tx state: Retrieve time vault fail, from: %s, txid: %s", tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-                    tv.SetNull();
-                }
-                nTvGasFee = tv.EstimateTransTvGasFee(nBlockTimestamp, tx.GetAmount());
+                hashDepth = 0;
+            }
+            else
+            {
+                hashDepth = pIndex->GetBlockHash();
+            }
+            break;
+        }
+        // for (int i = 0; i < nIncStep && !pIndex->IsOrigin(); i++)
+        // {
+        //     pIndex = GetPrevBlockIndex(pIndex);
+        //     if (!pIndex)
+        //     {
+        //         hashDepth = 0;
+        //         break;
+        //     }
+        // }
 
-                uint256 nPayTvFee;
-                auto ht = mapBlockPayTvFee.find(tx.GetFromAddress());
-                if (ht != mapBlockPayTvFee.end())
-                {
-                    nPayTvFee = ht->second;
-                }
-                uint256 nSyTvFee;
-                if (tv.nTvAmount > nPayTvFee)
-                {
-                    nSyTvFee = tv.nTvAmount - nPayTvFee;
-                }
-                // StdDebug("TEST", "Add tx state: Calc prev, nTvGasFee: %s, nSyTvFee: %s, tv.nTvAmount: %s%s, nPayTvFee: %s, from: %s, txid: %s",
-                //          CoinToTokenBigFloat(nTvGasFee).c_str(), CoinToTokenBigFloat(nSyTvFee).c_str(),
-                //          (tv.fSurplus ? "" : "-"), CoinToTokenBigFloat(tv.nTvAmount).c_str(), CoinToTokenBigFloat(nPayTvFee).c_str(),
-                //          tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-                if (nTvGasFee > nSyTvFee)
-                {
-                    nTvGasFee = nSyTvFee;
-                }
-                CTimeVault::CalcRealityTvGasFee(tx.GetGasPrice(), nTvGasFee, nTvGas);
+        uint256 hashPrevStepBlock;
+        if (pIndex->GetBlockNumber() <= nIncStep || !GetBlockIndexHashByNumberNoLock(hashFork, 0, pIndex->GetBlockNumber() - nIncStep, hashPrevStepBlock))
+        {
+            hashDepth = 0;
+            break;
+        }
+        pIndex = GetIndex(hashPrevStepBlock);
+        if (!pIndex)
+        {
+            hashDepth = 0;
+            break;
+        }
+    }
 
                 // StdDebug("TEST", "Add tx state: Reality tv gas, nTvGasFee: %s, nTvGas: %lu, from: %s, txid: %s",
                 //          CoinToTokenBigFloat(nTvGasFee).c_str(), nTvGas.Get64(),
