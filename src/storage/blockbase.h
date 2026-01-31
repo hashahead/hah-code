@@ -123,10 +123,11 @@ class CBlockBase
 public:
     CBlockBase();
     ~CBlockBase();
-    bool Initialize(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fRewardCheckIn, const bool fRenewDB = false);
-    void Deinitialize();
+    bool BsInitialize(const fs::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn,
+                      const bool fCacheTrace, const bool fRewardCheckIn, const bool fRenewDB, const bool fPruneDb);
+    void BsDeinitialize();
     void Clear();
-    bool IsEmpty() const;
+    bool IsEmpty();
     const uint256& GetGenesisBlockHash() const;
     bool Exists(const uint256& hash) const;
     bool ExistsTx(const uint256& hashFork, const uint256& txid);
