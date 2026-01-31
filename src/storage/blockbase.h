@@ -94,6 +94,30 @@ protected:
     uint64 nTxNonce;
 };
 
+//////////////////////////////////////////
+// CCacheBlockReceipt
+
+class CCacheBlockReceipt
+{
+public:
+    CCacheBlockReceipt() {}
+
+    void AddBlockReceiptCache(const uint256& hashBlock, const std::vector<CTransactionReceipt>& vBlockReceipt);
+    bool GetBlockReceiptCache(const uint256& hashBlock, std::vector<CTransactionReceipt>& vBlockReceipt);
+
+protected:
+    enum
+    {
+        MAX_CACHE_BLOCK_RECEIPT_COUNT = 1000 * 1000
+    };
+
+    mutable hnbase::CRWAccess rwBrcAccess;
+    std::map<CChainId, std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>> mapBlockReceiptCache; // key: chainid, value: key: block hash, value: receipt
+};
+
+//////////////////////////////////////////
+// CBlockBase
+
 class CBlockBase
 {
 public:
