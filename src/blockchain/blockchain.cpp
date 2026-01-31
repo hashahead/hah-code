@@ -1513,7 +1513,21 @@ Errno CBlockChain::VerifyBlock(const uint256& hashFork, const uint256& hashBlock
             }
         }
 
-        return pCoreProtocol->VerifySubsidiary(block, pIndexPrev, *ppIndexRef, agreement);
+        if (!VerifyBlockVoteResult(hashBlock, block))
+        {
+            StdLog("BlockChain", "Verify block: SubFork verify block vote fail, prev: %s, block: %s",
+                   pIndexPrev->GetBlockHash().GetHex().c_str(), hashBlock.GetHex().c_str());
+            return ERR_BLOCK_INVALID_FORK;
+        }
+
+        if (!VerifyBlockCrosschainProve(hashBlock, block))
+        {
+            StdLog("BlockChain", "Verify block: SubFork verify block crosschain prove fail, prev: %s, block: %s",
+                   pIndexPrev->GetBlockHash().GetHex().c_str(), hashBlock.GetHex().c_str());
+            return ERR_BLOCK_INVALID_FORK;
+        }
+
+        return pCoreProtocol->VerifySubsidiary(block, pIndexPrev, pIndexRef, agreement);
     }
     else if (block.IsVacant())
     {
