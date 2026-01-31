@@ -53,6 +53,9 @@ public:
     bool AddBlockLocalVoteSignFlag(const uint256& hashBlock);
     bool GetBlockLocalSignFlag(const CChainId nChainId, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock);
 
+    bool GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoverySnapshotBlockVoteData(bytes& btSnapData);
+
 protected:
     bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot);
     bool ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot);

@@ -530,8 +530,11 @@ bool CBlockIndexDB::GetBlockLocalSignFlag(const CChainId nChainId, const uint32 
 
 bool CBlockIndexDB::GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockHash, bytes& btSnapData)
 {
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
+    if (vBlockHash.empty())
+    {
+        StdLog("CBlockIndexDB", "Get snapshot block vote data: Block hash is empty");
+        return false;
+    }
 
     ssKey << nRootType << DB_BLOCKINDEX_KEY_ID_PREVROOT;
     ssKey.GetData(btKey);
