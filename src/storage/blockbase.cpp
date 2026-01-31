@@ -1038,23 +1038,30 @@ bool CBlockBase::GetForkHashByForkName(const std::string& strForkName, uint256& 
     return dbBlock.GetForkHashByForkName(strForkName, hashFork, hashMainChainRefBlock);
 }
 
-            if (mapBlockState.find(dest) == mapBlockState.end())
-            {
-                CDestState state;
-                if (!dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, dest, state))
-                {
-                    state.SetNull();
-                    state.SetType(CDestination::PREFIX_TEMPLATE, ptr->GetTemplateType());
-                    state.SetCodeHash(static_cast<uint256>(ptr->GetTemplateId()));
-                }
-                mapBlockState.insert(make_pair(dest, state));
-            }
-        }
-        else if (nCodeType == CODE_TYPE_CONTRACT)
-        {
-            //destTo.SetContractId(tx.GetFromAddress(), tx.GetNonce());
-            destTo = CreateContractAddressByNonce(tx.GetFromAddress(), tx.GetNonce());
-            fToContract = true;
+bool CBlockBase::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.GetForkHashByChainId(nChainId, hashFork, hashMainChainRefBlock);
+}
+
+bool CBlockBase::ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.ListCoinContext(mapSymbolCoin, hashMainChainRefBlock);
+}
+
+bool CBlockBase::GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.GetDexCoinPairBySymbolPair(strSymbol1, strSymbol2, nCoinPair, hashMainChainRefBlock);
+}
+
+bool CBlockBase::GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& strSymbol1, std::string& strSymbol2, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.GetSymbolPairByDexCoinPair(nCoinPair, strSymbol1, strSymbol2, hashMainChainRefBlock);
+}
+
+bool CBlockBase::ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.ListDexCoinPair(nCoinPair, strCoinSymbol, mapDexCoinPair, hashMainChainRefBlock);
+}
 
             if (mapBlockState.find(destTo) == mapBlockState.end())
             {
