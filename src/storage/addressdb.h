@@ -135,6 +135,7 @@ public:
                         const std::map<uint256, CTemplateContext>& mapTemplateData,
                         uint256& hashCodeRoot);
     bool RetrieveSourceCodeContext(const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode);
+    bool RetrieveContractCreateCodeContext(const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode);
 protected:
     bool WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot);
     bool ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot);
