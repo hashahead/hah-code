@@ -129,7 +129,7 @@ public:
     void Clear();
     bool IsEmpty();
     const uint256& GetGenesisBlockHash() const;
-    bool Exists(const uint256& hash) const;
+    bool Exists(const uint256& hash);
     bool ExistsTx(const uint256& hashFork, const uint256& txid);
     bool Initiate(const uint256& hashGenesis, const CBlock& blockGenesis, const uint256& nChainTrust);
     bool CheckForkLongChain(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const BlockIndexPtr pIndexNew);

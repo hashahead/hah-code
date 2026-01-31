@@ -1102,16 +1102,15 @@ bool CBlockBase::GetBlockIndexHashByNumberNoLock(const uint256& hashFork, const 
         if (pForkLastIndex && hashLastBlock != pForkLastIndex->GetBlockHash()
             && pForkLastIndex->GetBlockNumber() <= nBlockNumber + 1024)
         {
-            fToContract = true;
-        }
-
-        auto nt = mapBlockState.find(destTo);
-        if (nt == mapBlockState.end())
-        {
-            CDestState state;
-            if (!dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, destTo, state))
+            BlockIndexPtr pIndex = GetIndex(hashLastBlock);
+            while (pIndex)
             {
-                if (ctxAddress.IsContract())
+                if (pIndex->GetBlockNumber() == nBlockNumber)
+                {
+                    hashBlock = pIndex->GetBlockHash();
+                    return true;
+                }
+                if (pIndex->IsOrigin())
                 {
                     StdLog("CBlockState", "Add tx state: Contract address no state, txid: %s, to: %s",
                            txid.GetHex().c_str(), destTo.ToString().c_str());
