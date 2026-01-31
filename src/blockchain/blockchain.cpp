@@ -1638,7 +1638,7 @@ Errno CBlockChain::VerifyBlock(const uint256& hashFork, const uint256& hashBlock
     return OK;
 }
 
-bool CBlockChain::VerifyBlockCertTx(const CBlock& block)
+bool CBlockChain::VerifyBlockCertTx(const uint256& hashBlock, const CBlock& block)
 {
     set<pair<CDestination, int>> setDelegateEnroll;
     for (const auto& tx : block.vtx)
@@ -1661,13 +1661,13 @@ bool CBlockChain::VerifyBlockCertTx(const CBlock& block)
             {
                 StdLog("BlockChain", "Verify block cert tx: Delegate is enrolled, enroll height: %d, delegate address: %s, txid: %s, prev: [%d] %s, block: %s",
                        (int)(tx.GetNonce()), tx.GetToAddress().ToString().c_str(), tx.GetHash().ToString().c_str(), CBlock::GetBlockHeightByHash(block.hashPrev),
-                       block.hashPrev.ToString().c_str(), block.GetHash().ToString().c_str());
+                       block.hashPrev.ToString().c_str(), hashBlock.ToString().c_str());
                 return false;
             }
             if (setDelegateEnroll.find(make_pair(tx.GetToAddress(), (int)(tx.GetNonce()))) != setDelegateEnroll.end())
             {
                 StdLog("BlockChain", "Verify block cert tx: Duplicate cert tx, enroll height: %d, delegate address: %s, txid: %s, block: %s",
-                       (int)(tx.GetNonce()), tx.GetToAddress().ToString().c_str(), tx.GetHash().ToString().c_str(), block.GetHash().ToString().c_str());
+                       (int)(tx.GetNonce()), tx.GetToAddress().ToString().c_str(), tx.GetHash().ToString().c_str(), hashBlock.ToString().c_str());
                 return false;
             }
             setDelegateEnroll.insert(make_pair(tx.GetToAddress(), (int)(tx.GetNonce())));
