@@ -161,5 +161,45 @@ bool CBlockState::GetDestState(const CDestination& dest, CDestState& stateDest)
     return dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, dest, stateDest);
 }
 
+void CBlockState::SetDestState(const CDestination& dest, const CDestState& stateDest)
+{
+    mapBlockState[dest] = stateDest;
+}
+
+void CBlockState::SetCacheDestState(const CDestination& dest, const CDestState& stateDest)
+{
+    mapCacheContractData[dest].cacheDestState = stateDest;
+}
+
+bool CBlockState::GetDestKvData(const CDestination& dest, const uint256& key, bytes& value)
+{
+    auto nt = mapCacheContractData.find(dest);
+    if (nt != mapCacheContractData.end())
+    {
+        auto mt = nt->second.cacheContractKv.find(key);
+        if (mt != nt->second.cacheContractKv.end())
+        {
+            value = mt->second;
+            return true;
+        }
+    }
+    auto it = mapContractKvState.find(dest);
+    if (it != mapContractKvState.end())
+    {
+        auto mt = it->second.find(key);
+        if (mt != it->second.end())
+        {
+            value = mt->second;
+            return true;
+        }
+    }
+    CDestState stateDest;
+    if (!GetDestState(dest, stateDest))
+    {
+        return false;
+    }
+    return dbBlockBase.RetrieveContractKvValue(hashFork, stateDest.GetStorageRoot(), key, value);
+}
+
 } // namespace storage
 } // namespace hashahead
