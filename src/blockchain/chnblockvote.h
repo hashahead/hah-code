@@ -79,6 +79,22 @@ protected:
     int64 nVoteCommitTimeMillis;
 };
 
+class CUpdateBlockData
+{
+public:
+    CUpdateBlockData()
+      : nBlockTime(0), nNonce(0) {}
+    CUpdateBlockData(const uint256& hashForkIn, const uint256& hashBlockIn, const uint256& hashRefBlockIn, const int64 nBlockTimeIn, const uint64 nNonceIn)
+      : hashFork(hashForkIn), hashBlock(hashBlockIn), hashRefBlock(hashRefBlockIn), nBlockTime(nBlockTimeIn), nNonce(nNonceIn) {}
+
+public:
+    uint256 hashFork;
+    uint256 hashBlock;
+    uint256 hashRefBlock;
+    int64 nBlockTime;
+    uint64 nNonce;
+};
+
 class CBlockVoteChannel : public network::IBlockVoteChannel
 {
 public:

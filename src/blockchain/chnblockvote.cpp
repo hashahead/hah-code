@@ -162,4 +162,17 @@ bool CBlockVoteChannel::HandleEvent(network::CEventPeerActive& eventActive)
     return true;
 }
 
+bool CBlockVoteChannel::HandleEvent(network::CEventPeerDeactive& eventDeactive)
+{
+    const uint64 nNonce = eventDeactive.nNonce;
+    StdLog("CBlockVoteChannel", "CEvent Peer Deactive: peer: [0x%lx] %s", nNonce, GetPeerAddressInfo(nNonce).c_str());
+
+    mapChnPeer.erase(nNonce);
+    for (auto& kv : mapChnFork)
+    {
+        kv.second.RemovePeerNode(nNonce);
+    }
+    return true;
+}
+
 } // namespace hashahead

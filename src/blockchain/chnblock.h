@@ -66,8 +66,14 @@ public:
     bool AddBlockHash(const std::vector<uint256>& vBlockHash);
     bool GetNextBlockHash(const uint256& hashPrevBlock, uint256& hashBlock);
     void RemoveBlockHash(const uint256& hashBlock);
+    void ClearPrevBlockHash(const uint256& hashLastExistBlock);
+    bool CheckPrevExist(const uint256& hashBlock);
+
 public:
     uint256 hashFork;
+
+    std::map<uint256, uint256, CustomBlockHashCompare> mapBlockHash; // key: block hash, value: prev block hash
+    std::map<uint256, uint256, CustomBlockHashCompare> mapPrevHash;  // key: prev hash, value: block hash
 };
 
 class CChnCacheBlock

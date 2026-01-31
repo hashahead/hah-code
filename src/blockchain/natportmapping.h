@@ -33,6 +33,7 @@ protected:
 
     bool GetLocalIp(std::string& strLocalIp);
     bool GetNetLocalIp(std::string& strLocalIp);
+    bool SetGatewayAddress(const std::string& strExtIp, const uint16 nExtPort);
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;

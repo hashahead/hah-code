@@ -688,13 +688,13 @@ Errno CCoreProtocol::VerifyProofOfPoa(const CBlock& block, const BlockIndexPtr p
     return OK;
 }
 
-Errno CCoreProtocol::VerifyDelegatedProofOfStake(const CBlock& block, const CBlockIndex* pIndexPrev,
+Errno CCoreProtocol::VerifyDelegatedProofOfStake(const CBlock& block, const BlockIndexPtr pIndexPrev,
                                                  const CDelegateAgreement& agreement)
 {
     uint64 nTime = GetNextBlockTimestamp(pIndexPrev->GetBlockTime());
     if (block.GetBlockTime() < nTime)
     {
-        return DEBUG(ERR_BLOCK_TIMESTAMP_OUT_OF_RANGE, "Timestamp out of range. block time %lu is not equal %lu", block.GetBlockTime(), nTime);
+        return DEBUG(ERR_BLOCK_TIMESTAMP_OUT_OF_RANGE, "Timestamp out of range, block time %lu is not equal %lu", block.GetBlockTime(), nTime);
     }
     if (block.txMint.GetToAddress() != agreement.vBallot[0])
     {

@@ -101,6 +101,7 @@ protected:
         return dynamic_cast<const CMintConfig*>(hnbase::IBase::Config());
     }
     const string GetPeerAddressInfo(uint64 nNonce);
+    void BlockCrossProveTimerFunc(uint32 nTimerId);
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;

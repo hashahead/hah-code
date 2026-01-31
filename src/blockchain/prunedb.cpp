@@ -109,4 +109,12 @@ void CPruneDb::HandleHalt()
     }
 }
 
+void CPruneDb::PruneDbThreadFunc()
+{
+    while (WaitExitEvent(10))
+    {
+        PruneStateWork();
+    }
+}
+
 } // namespace hashahead

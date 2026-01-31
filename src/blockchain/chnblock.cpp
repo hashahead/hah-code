@@ -81,6 +81,43 @@ void CBlockChnFork::RemoveBlockHash(const uint256& hashBlock)
     }
 }
 
+void CBlockChnFork::ClearPrevBlockHash(const uint256& hashLastExistBlock)
+{
+    uint256 hashBlock = hashLastExistBlock;
+    while (hashBlock != 0)
+    {
+        auto it = mapBlockHash.find(hashBlock);
+        if (it == mapBlockHash.end())
+        {
+            break;
+        }
+        hashBlock = it->second;
+        mapBlockHash.erase(it);
+        if (hashBlock != 0)
+        {
+            mapPrevHash.erase(hashBlock);
+        }
+    }
+}
+
+bool CBlockChnFork::CheckPrevExist(const uint256& hashBlock)
+{
+    uint256 hash = hashBlock;
+    for (uint32 i = 0; i < SINGLE_REQ_BLOCK_HASH_COUNT; i++)
+    {
+        auto it = mapBlockHash.find(hash);
+        if (it == mapBlockHash.end())
+        {
+            return false;
+        }
+        hash = it->second;
+    }
+    return true;
+}
+
+////////////////////////////////////
+// CBlockChannel
+
 CBlockChannel::CBlockChannel()
   : nPrevCheckCacheTimeoutTime(0), nCacheBlockByteCount(0)
 {

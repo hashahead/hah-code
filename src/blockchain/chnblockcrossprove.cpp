@@ -273,4 +273,18 @@ const string CBlockCrossProveChannel::GetPeerAddressInfo(uint64 nNonce)
     return string("0.0.0.0");
 }
 
+void CBlockCrossProveChannel::BlockCrossProveTimerFunc(uint32 nTimerId)
+{
+    if (nTimerId == nBlockCrossProveTimerId)
+    {
+        nBlockCrossProveTimerId = SetTimer(BLOCK_CROSS_PROVE_TIMER_TIME, boost::bind(&CBlockCrossProveChannel::BlockCrossProveTimerFunc, this, _1));
+        network::CEventLocalBlockcrossproveTimer* pEvent = new network::CEventLocalBlockcrossproveTimer(0, pCoreProtocol->GetGenesisBlockHash());
+        if (pEvent)
+        {
+            pEvent->data = nTimerId;
+            PostEvent(pEvent);
+        }
+    }
+}
+
 } // namespace hashahead

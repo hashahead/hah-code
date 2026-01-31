@@ -392,4 +392,11 @@ bool CNatPortMapping::GetNetLocalIp(std::string& strLocalIp)
     return false;
 }
 
+bool CNatPortMapping::SetGatewayAddress(const std::string& strExtIp, const uint16 nExtPort)
+{
+    CEventPeerNetSetGateway eventSetGateway(0);
+    eventSetGateway.data = CNetHost(strExtIp, nExtPort, "gateway", boost::any(uint64(network::NODE_NETWORK)));
+    return pNetwork->DispatchEvent(&eventSetGateway);
+}
+
 } // namespace hashahead
