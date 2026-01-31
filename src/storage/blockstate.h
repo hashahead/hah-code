@@ -13,6 +13,7 @@
 #include <numeric>
 
 #include "block.h"
+#include "cmstruct.h"
 #include "forkcontext.h"
 #include "hnbase.h"
 #include "param.h"
@@ -59,6 +60,30 @@ public:
     std::string strRevertReason;
 };
 
+enum bs_evmc_status_code
+{
+    BS_EVMC_SUCCESS = 0,
+    BS_EVMC_FAILURE = 1,
+    BS_EVMC_REVERT = 2,
+    BS_EVMC_OUT_OF_GAS = 3,
+    BS_EVMC_INVALID_INSTRUCTION = 4,
+    BS_EVMC_UNDEFINED_INSTRUCTION = 5,
+    BS_EVMC_STACK_OVERFLOW = 6,
+    BS_EVMC_STACK_UNDERFLOW = 7,
+    BS_EVMC_BAD_JUMP_DESTINATION = 8,
+    BS_EVMC_INVALID_MEMORY_ACCESS = 9,
+    BS_EVMC_CALL_DEPTH_EXCEEDED = 10,
+    BS_EVMC_STATIC_MODE_VIOLATION = 11,
+    BS_EVMC_PRECOMPILE_FAILURE = 12,
+    BS_EVMC_CONTRACT_VALIDATION_FAILURE = 13,
+    BS_EVMC_ARGUMENT_OUT_OF_RANGE = 14,
+    BS_EVMC_WASM_UNREACHABLE_INSTRUCTION = 15,
+    BS_EVMC_WASM_TRAP = 16,
+    BS_EVMC_INTERNAL_ERROR = -1,
+    BS_EVMC_REJECTED = -2,
+    BS_EVMC_OUT_OF_MEMORY = -3
+};
+
 //////////////////////////////
 // CBlockState
 
@@ -69,6 +94,17 @@ class CBlockState
 public:
     CBlockState(CBlockBase& dbBlockBaseIn, const uint256& hashForkIn, const CForkContext& ctxForkIn, const CBlock& block, const uint256& hashPrevStateRootIn, const uint32 nPrevBlockTimeIn,
                 const std::map<CDestination, CAddressContext>& mapAddressContext, const bool fBtTraceDbIn);
+
+    CBlockState(CBlockBase& dbBlockBaseIn, const uint256& hashForkIn, const CForkContext& ctxForkIn, const uint256& hashPrevBlockIn, const uint256& hashPrevStateRootIn, const uint32 nPrevBlockTimeIn,
+                const uint64 nOriBlockGasLimitIn, const uint64 nBlockTimestampIn, const int nBlockHeightIn, const uint64 nBlockNumberIn, const bool fPrimaryBlockIn, const bool fBtTraceDbIn);
+
+    bool GetDestState(const CDestination& dest, CDestState& stateDest);
+    void SetDestState(const CDestination& dest, const CDestState& stateDest);
+    void SetCacheDestState(const CDestination& dest, const CDestState& stateDest);
+    bool GetDestKvData(const CDestination& dest, const uint256& key, bytes& value);
+    bool GetAddressContext(const CDestination& dest, CAddressContext& ctxAddress);
+    bool IsContractAddress(const CDestination& addr);
+    bool GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy);
 
 protected:
     CBlockBase& dbBlockBase;
