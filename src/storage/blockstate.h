@@ -13,6 +13,7 @@
 #include <numeric>
 
 #include "block.h"
+#include "cmstruct.h"
 #include "forkcontext.h"
 #include "hnbase.h"
 #include "param.h"
@@ -103,6 +104,7 @@ public:
     bool GetDestKvData(const CDestination& dest, const uint256& key, bytes& value);
     bool GetAddressContext(const CDestination& dest, CAddressContext& ctxAddress);
     bool IsContractAddress(const CDestination& addr);
+    bool GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy);
 
 protected:
     CBlockBase& dbBlockBase;

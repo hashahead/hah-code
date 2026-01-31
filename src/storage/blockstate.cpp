@@ -228,5 +228,59 @@ bool CBlockState::IsContractAddress(const CDestination& addr)
     return ctxAddress.IsContract();
 }
 
+bool CBlockState::GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy)
+{
+    CDestState stateContract;
+    if (!GetDestState(destContractIn, stateContract))
+    {
+        StdLog("CBlockState", "Get contract run code: Get contract state failed, contract address: %s", destContractIn.ToString().c_str());
+        return false;
+    }
+    if (stateContract.IsDestroy())
+    {
+        StdLog("CBlockState", "Get contract run code: Contract has been destroyed, contract address: %s", destContractIn.ToString().c_str());
+        fDestroy = true;
+        return true;
+    }
+    fDestroy = false;
+
+    bytes btDestCodeData;
+    if (!GetDestKvData(destContractIn, destContractIn.ToHash(), btDestCodeData))
+    {
+        StdLog("CBlockState", "Get contract run code: Get contract code fail, contract address: %s", destContractIn.ToString().c_str());
+        return false;
+    }
+
+    CContractDestCodeContext ctxDestCode;
+    try
+    {
+        CBufStream ss(btDestCodeData);
+        ss >> ctxDestCode;
+    }
+    catch (std::exception& e)
+    {
+        StdLog("CBlockState", "Get contract run code: Parse contract code fail, contract address: %s", destContractIn.ToString().c_str());
+        return false;
+    }
+
+    CContractRunCodeContext ctxRunCode;
+    bool fCacheContext = false;
+    if (VERIFY_FHX_HEIGHT_BRANCH_001(CBlock::GetBlockHeightByHash(hashPrevBlock)))
+    {
+        auto it = mapCacheContractRunCodeContext.find(ctxDestCode.hashContractRunCode);
+        if (it != mapCacheContractRunCodeContext.end())
+        {
+            ctxRunCode = it->second;
+            fCacheContext = true;
+        }
+    }
+
+    hashContractCreateCode = ctxDestCode.hashContractCreateCode;
+    destCodeOwner = ctxDestCode.destCodeOwner;
+    hashContractRunCode = ctxDestCode.hashContractRunCode;
+    btContractRunCode = ctxRunCode.btContractRunCode;
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
