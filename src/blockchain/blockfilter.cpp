@@ -253,4 +253,16 @@ void CBlockFilter::AddNewBlockInfo(const uint256& hashFork, const uint256& hashB
     }
 }
 
+bool CBlockFilter::GetFilterBlockHashs(const uint256& nFilterId, const uint256& hashLastBlock, const bool fAll, std::vector<uint256>& vBlockHash)
+{
+    boost::shared_lock<boost::shared_mutex> lock(mutexFilter);
+    auto it = mapBlockFilter.find(nFilterId);
+    if (it == mapBlockFilter.end())
+    {
+        return false;
+    }
+    it->second.GetFilterBlockHashs(hashLastBlock, fAll, vBlockHash);
+    return true;
+}
+
 } // namespace hashahead
