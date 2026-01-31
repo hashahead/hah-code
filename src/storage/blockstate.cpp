@@ -201,5 +201,22 @@ bool CBlockState::GetDestKvData(const CDestination& dest, const uint256& key, by
     return dbBlockBase.RetrieveContractKvValue(hashFork, stateDest.GetStorageRoot(), key, value);
 }
 
+bool CBlockState::GetAddressContext(const CDestination& dest, CAddressContext& ctxAddress)
+{
+    auto it = mapCacheAddressContext.find(dest);
+    if (it != mapCacheAddressContext.end())
+    {
+        ctxAddress = it->second;
+        return true;
+    }
+    auto nt = mapBlockAddressContext.find(dest);
+    if (nt != mapBlockAddressContext.end())
+    {
+        ctxAddress = nt->second;
+        return true;
+    }
+    return dbBlockBase.RetrieveAddressContext(hashFork, hashPrevBlock, dest, ctxAddress);
+}
+
 } // namespace storage
 } // namespace hashahead
