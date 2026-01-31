@@ -1028,15 +1028,15 @@ bool CBlockBase::RetrieveForkLast(const uint256& hashFork, uint256& hashLastBloc
     return dbBlock.RetrieveForkLast(hashFork, hashLastBlock);
 }
 
-        if (nCodeType == CODE_TYPE_TEMPLATE)
-        {
-            CTemplatePtr ptr = CTemplate::Import(ctxTemplate.GetTemplateData());
-            if (!ptr)
-            {
-                StdLog("CBlockState", "Add tx state: Import template fail, txid: %s", txid.GetHex().c_str());
-                return false;
-            }
-            CDestination dest(ptr->GetTemplateId());
+bool CBlockBase::GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.GetForkCoinCtxByForkSymbol(strForkSymbol, ctxCoin, hashMainChainRefBlock);
+}
+
+bool CBlockBase::GetForkHashByForkName(const std::string& strForkName, uint256& hashFork, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.GetForkHashByForkName(strForkName, hashFork, hashMainChainRefBlock);
+}
 
             if (mapBlockState.find(dest) == mapBlockState.end())
             {
