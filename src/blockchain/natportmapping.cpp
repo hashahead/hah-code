@@ -381,4 +381,15 @@ bool CNatPortMapping::GetLocalIp(std::string& strLocalIp)
     return false;
 }
 
+bool CNatPortMapping::GetNetLocalIp(std::string& strLocalIp)
+{
+    CEventPeerNetGetIP eventGetIp(0);
+    if (pNetwork->DispatchEvent(&eventGetIp) && !eventGetIp.result.empty() && eventGetIp.result != "0.0.0.0")
+    {
+        strLocalIp = eventGetIp.result;
+        return true;
+    }
+    return false;
+}
+
 } // namespace hashahead

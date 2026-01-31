@@ -32,6 +32,7 @@ protected:
     bool GetUpnpExtIpaddr(std::string& strExtIp);
 
     bool GetLocalIp(std::string& strLocalIp);
+    bool GetNetLocalIp(std::string& strLocalIp);
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
