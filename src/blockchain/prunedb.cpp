@@ -76,15 +76,37 @@ void CPruneDb::HandleDeinitialize()
 {
     pCoreProtocol = nullptr;
     pBlockChain = nullptr;
+
+    fExit = false;
+    fCfgPruneStateData = false;
+    nCfgPruneRetentionDays = 0;
+    nCfgPruneReserveHeight = 0;
 }
 
 bool CPruneDb::HandleInvoke()
 {
+    if (fCfgPruneStateData)
+    {
+        fExit = false;
+        if (!ThreadDelayStart(thrPruneDb))
+        {
+            StdLog("CPruneDb", "Handle invoke: Start thread failed");
+            return false;
+        }
+    }
     return true;
 }
 
 void CPruneDb::HandleHalt()
 {
+    if (fCfgPruneStateData)
+    {
+        fExit = true;
+        condExit.notify_all();
+
+        thrPruneDb.Interrupt();
+        ThreadExit(thrPruneDb);
+    }
 }
 
 } // namespace hashahead
