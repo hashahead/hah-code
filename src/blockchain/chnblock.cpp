@@ -68,6 +68,19 @@ bool CBlockChnFork::GetNextBlockHash(const uint256& hashPrevBlock, uint256& hash
     return false;
 }
 
+void CBlockChnFork::RemoveBlockHash(const uint256& hashBlock)
+{
+    auto it = mapBlockHash.find(hashBlock);
+    if (it != mapBlockHash.end())
+    {
+        if (it->second != 0)
+        {
+            mapPrevHash.erase(it->second);
+        }
+        mapBlockHash.erase(it);
+    }
+}
+
 CBlockChannel::CBlockChannel()
   : nPrevCheckCacheTimeoutTime(0), nCacheBlockByteCount(0)
 {
