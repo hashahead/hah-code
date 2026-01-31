@@ -70,6 +70,16 @@ public:
     CBlockState(CBlockBase& dbBlockBaseIn, const uint256& hashForkIn, const CForkContext& ctxForkIn, const CBlock& block, const uint256& hashPrevStateRootIn, const uint32 nPrevBlockTimeIn,
                 const std::map<CDestination, CAddressContext>& mapAddressContext, const bool fBtTraceDbIn);
 
+    CBlockState(CBlockBase& dbBlockBaseIn, const uint256& hashForkIn, const CForkContext& ctxForkIn, const uint256& hashPrevBlockIn, const uint256& hashPrevStateRootIn, const uint32 nPrevBlockTimeIn,
+                const uint64 nOriBlockGasLimitIn, const uint64 nBlockTimestampIn, const int nBlockHeightIn, const uint64 nBlockNumberIn, const bool fPrimaryBlockIn, const bool fBtTraceDbIn);
+
+    bool GetDestState(const CDestination& dest, CDestState& stateDest);
+    void SetDestState(const CDestination& dest, const CDestState& stateDest);
+    void SetCacheDestState(const CDestination& dest, const CDestState& stateDest);
+    bool GetDestKvData(const CDestination& dest, const uint256& key, bytes& value);
+    bool GetAddressContext(const CDestination& dest, CAddressContext& ctxAddress);
+    bool IsContractAddress(const CDestination& addr);
+
 protected:
     CBlockBase& dbBlockBase;
     const uint16 nBlockType;

@@ -218,5 +218,15 @@ bool CBlockState::GetAddressContext(const CDestination& dest, CAddressContext& c
     return dbBlockBase.RetrieveAddressContext(hashFork, hashPrevBlock, dest, ctxAddress);
 }
 
+bool CBlockState::IsContractAddress(const CDestination& addr)
+{
+    CAddressContext ctxAddress;
+    if (!GetAddressContext(addr, ctxAddress))
+    {
+        return false;
+    }
+    return ctxAddress.IsContract();
+}
+
 } // namespace storage
 } // namespace hashahead
