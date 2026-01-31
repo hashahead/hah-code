@@ -1606,19 +1606,27 @@ Errno CBlockChain::VerifyBlock(const uint256& hashFork, const uint256& hashBlock
         {
             uint256 hashPrimaryBlock;
             int64 nPrimaryTime = 0;
-            if (!cntrBlock.GetPrimaryHeightBlockTime((*ppIndexRef)->GetBlockHash(), block.GetBlockHeight(), hashPrimaryBlock, nPrimaryTime))
+            if (!cntrBlock.GetPrimaryHeightBlockTime(pIndexRef->GetBlockHash(), block.GetBlockHeight(), hashPrimaryBlock, nPrimaryTime))
             {
                 StdLog("BlockChain", "Verify block: Vacant get height time, block ref: %s, block: %s",
-                       (*ppIndexRef)->GetBlockHash().GetHex().c_str(), hashBlock.GetHex().c_str());
+                       pIndexRef->GetBlockHash().GetHex().c_str(), hashBlock.GetHex().c_str());
                 return ERR_BLOCK_PROOF_OF_STAKE_INVALID;
             }
             if (block.GetBlockTime() != nPrimaryTime)
             {
                 StdLog("BlockChain", "Verify block: Vacant time error, block time: %d, primary time: %d, ref block: %s, same height block: %s, block: %s",
-                       block.GetBlockTime(), nPrimaryTime, (*ppIndexRef)->GetBlockHash().GetHex().c_str(),
+                       block.GetBlockTime(), nPrimaryTime, pIndexRef->GetBlockHash().GetHex().c_str(),
                        hashPrimaryBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
                 return ERR_BLOCK_TIMESTAMP_OUT_OF_RANGE;
             }
+        }
+
+        CBlockVoteSig proofVote;
+        if (block.GetBlockVoteSig(proofVote))
+        {
+            StdLog("BlockChain", "Verify block: Vacant block vote not empty, prev: %s, block: %s",
+                   pIndexPrev->GetBlockHash().GetHex().c_str(), hashBlock.GetHex().c_str());
+            return ERR_BLOCK_INVALID_FORK;
         }
     }
     else
