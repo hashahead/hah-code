@@ -1063,35 +1063,44 @@ bool CBlockBase::ListDexCoinPair(const uint32 nCoinPair, const std::string& strC
     return dbBlock.ListDexCoinPair(nCoinPair, strCoinSymbol, mapDexCoinPair, hashMainChainRefBlock);
 }
 
-            if (mapBlockState.find(destTo) == mapBlockState.end())
-            {
-                CDestState state;
-                if (!dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, destTo, state))
-                {
-                    state.SetNull();
-                    state.SetType(CDestination::PREFIX_CONTRACT);
-                }
-                mapBlockState.insert(make_pair(destTo, state));
-            }
-        }
-        else
-        {
-            StdLog("CBlockState", "Add tx state: Code type error, txid: %s", txid.GetHex().c_str());
-            return false;
-        }
-    }
-    else
-    {
-        destTo = tx.GetToAddress();
+bool CBlockBase::IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.IsTimeVaultWhitelistAddressExist(address, hashMainChainRefBlock);
+}
 
-        CAddressContext ctxAddress;
-        if (!GetAddressContext(destTo, ctxAddress))
-        {
-            StdLog("CBlockState", "Add tx state: Retrieve address context fail, txid: %s, to: %s",
-                   txid.GetHex().c_str(), destTo.ToString().c_str());
-            return false;
-        }
-        if (ctxAddress.IsContract())
+bool CBlockBase::ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock)
+{
+    return dbBlock.ListTimeVaultWhitelist(setTimeVaultWhitelist, hashMainChainRefBlock);
+}
+
+int CBlockBase::GetForkCreatedHeight(const uint256& hashFork, const uint256& hashRefBlock)
+{
+    CForkContext ctxFork;
+    if (!dbBlock.RetrieveForkContext(hashFork, ctxFork, hashRefBlock))
+    {
+        return -1;
+    }
+    return ctxFork.nJointHeight;
+}
+
+bool CBlockBase::GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock)
+{
+    CForkContext ctxFork;
+    if (!dbBlock.RetrieveForkContext(hashGenesisBlock, ctxFork, hashRefBlock))
+    {
+        return false;
+    }
+    destForkOwner = ctxFork.destOwner;
+    return true;
+}
+
+bool CBlockBase::GetBlockIndexHashByNumberNoLock(const uint256& hashFork, const uint256& hashLastBlock, const uint64 nBlockNumber, uint256& hashBlock)
+{
+    if (hashLastBlock != 0)
+    {
+        BlockIndexPtr pForkLastIndex = GetForkLastIndex(hashFork);
+        if (pForkLastIndex && hashLastBlock != pForkLastIndex->GetBlockHash()
+            && pForkLastIndex->GetBlockNumber() <= nBlockNumber + 1024)
         {
             fToContract = true;
         }
