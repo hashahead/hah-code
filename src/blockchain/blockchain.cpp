@@ -1676,6 +1676,103 @@ bool CBlockChain::VerifyBlockCertTx(const uint256& hashBlock, const CBlock& bloc
     return true;
 }
 
+bool CBlockChain::c(const uint256& hashBlock, const CBlock& block)
+{
+    CBlockVoteSig proofVote;
+    if (block.GetBlockVoteSig(proofVote) && !proofVote.IsNull())
+    {
+        CBlockStatus statusVoteBlock;
+        if (!GetBlockStatus(proofVote.hashBlockVote, statusVoteBlock))
+        {
+            StdLog("BlockChain", "Verify block vote result: Get block status fail, vote block: %s, block: %s",
+                   proofVote.hashBlockVote.ToString().c_str(), hashBlock.ToString().c_str());
+            return false;
+        }
+        if (statusVoteBlock.nBlockNumber >= block.GetBlockNumber())
+        {
+            StdLog("BlockChain", "Verify block vote result: Vote block number error, vote block number: %lu, local block number: %lu, vote block: %s, block: %s",
+                   statusVoteBlock.nBlockNumber, block.GetBlockNumber(),
+                   proofVote.hashBlockVote.ToString().c_str(), hashBlock.ToString().c_str());
+            return false;
+        }
+        if (block.IsPrimary())
+        {
+            if (proofVote.hashBlockVote != block.hashPrev)
+            {
+                StdLog("BlockChain", "Verify block vote result: Primary chain block vote error, vote block: %s, block: %s",
+                       proofVote.hashBlockVote.ToString().c_str(), hashBlock.ToString().c_str());
+                return false;
+            }
+        }
+        else
+        {
+            if (proofVote.hashBlockVote != block.hashPrev && !cntrBlock.VerifySameChain(proofVote.hashBlockVote, block.hashPrev))
+            {
+                StdLog("BlockChain", "Verify block vote result: Vote block not at chain, vote block number: %lu, local block number: %lu, prev block: %s, vote block: %s, block: %s",
+                       statusVoteBlock.nBlockNumber, block.GetBlockNumber(), block.hashPrev.ToString().c_str(),
+                       proofVote.hashBlockVote.ToString().c_str(), hashBlock.ToString().c_str());
+                return false;
+            }
+        }
+
+        // bytes btTempBitmap;
+        // bytes btTempAggSig;
+        // bool fTempAtChain = false;
+        // uint256 hashTempAtBlock;
+        // if (cntrBlock.RetrieveBlockVoteResult(proofVote.hashBlockVote, btTempBitmap, btTempAggSig, fTempAtChain, hashTempAtBlock) && fTempAtChain)
+        // {
+        //     StdLog("BlockChain", "Verify block vote result: Vote is already on the chain, vote block: %s, block: %s",
+        //            proofVote.hashBlockVote.ToString().c_str(), hashBlock.ToString().c_str());
+        //     return false;
+        // }
+
+        if (!VerifyBlockCommitVoteAggSig(proofVote.hashBlockVote, proofVote.btBlockVoteBitmap, proofVote.btBlockVoteAggSig))
+        {
+            StdLog("BlockChain", "Verify block vote result: Verify commit vote fail, vote block: %s, block: %s",
+                   proofVote.hashBlockVote.ToString().c_str(), hashBlock.ToString().c_str());
+            return false;
+        }
+    }
+    else
+    {
+        if (block.IsPrimary() && block.hashPrev != pCoreProtocol->GetGenesisBlockHash())
+        {
+            bool fNeedProve = true;
+            do
+            {
+                std::vector<uint384> vCandidatePubkey;
+                if (!GetPrevBlockCandidatePubkey(block.hashPrev, vCandidatePubkey))
+                {
+                    StdLog("BlockChain", "Verify block vote result: Get prev block candidate pubkey fail, prev block: %s", block.hashPrev.GetBhString().c_str());
+                    break;
+                }
+                if (!vCandidatePubkey.empty())
+                {
+                    break;
+                }
+                CBlockStatus status;
+                if (!GetBlockStatus(block.hashPrev, status))
+                {
+                    StdLog("BlockChain", "Verify block vote result: Get block status fail, prev block: %s", block.hashPrev.GetBhString().c_str());
+                    break;
+                }
+                if (status.nMintType == CTransaction::TX_POA)
+                {
+                    fNeedProve = false;
+                }
+            } while (0);
+
+            if (fNeedProve)
+            {
+                StdLog("BlockChain", "Verify block vote result: Primary chain is not block vote sig, prev block: %s, block: %s",
+                       block.hashPrev.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 void CBlockChain::InitCheckPoints(const uint256& hashFork, const map<int, uint256>& mapCheckPointsIn)
 {
     MapCheckPointsType& mapCheckPoints = mapForkCheckPoints[hashFork];

@@ -150,9 +150,9 @@ protected:
     bool HandleInvoke() override;
     void HandleHalt() override;
     bool InsertGenesisBlock(CBlock& block);
-    bool GetBlockChanges(const CBlockIndex* pIndexNew, const CBlockIndex* pIndexFork,
+    bool GetBlockChanges(const BlockIndexPtr pIndexNew, const BlockIndexPtr pIndexFork,
                          std::vector<CBlockEx>& vBlockAddNew, std::vector<CBlockEx>& vBlockRemove);
-    bool GetBlockDelegateAgreement(const uint256& hashBlock, const CBlock& block, const CBlockIndex* pIndexPrev,
+    bool GetBlockDelegateAgreement(const uint256& hashBlock, const CBlock& block, const BlockIndexPtr pIndexPrev,
                                    CDelegateAgreement& agreement, uint256& nEnrollTrust);
     Errno VerifyBlock(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const BlockIndexPtr& pIndexPrev,
                       uint256& nReward, CDelegateAgreement& agreement, uint256& nEnrollTrust, BlockIndexPtr& ppIndexRef);
