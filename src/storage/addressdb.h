@@ -136,6 +136,7 @@ public:
                         uint256& hashCodeRoot);
     bool RetrieveSourceCodeContext(const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode);
     bool RetrieveContractCreateCodeContext(const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode);
+    bool ListContractCreateCodeContext(const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode);
 protected:
     bool WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot);
     bool ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot);

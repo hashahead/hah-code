@@ -1002,6 +1002,29 @@ bool CForkAddressDB::RetrieveContractCreateCodeContext(const uint256& hashBlock,
     return true;
 }
 
+bool CForkAddressDB::ListContractCreateCodeContext(const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode)
+{
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashBlock, hashRoot))
+    {
+        StdLog("CForkAddressDB", "List wasm create code: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    bytes btKeyPrefix;
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_CONTRACT_CREATE_CODE;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListAddressCreateCodeTrieDBWalker walker(mapContractCreateCode);
+    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+    {
+        StdLog("CForkAddressDB", "List wasm create code: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
     {
