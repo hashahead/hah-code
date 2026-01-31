@@ -265,4 +265,16 @@ bool CBlockFilter::GetFilterBlockHashs(const uint256& nFilterId, const uint256& 
     return true;
 }
 
+uint256 CBlockFilter::AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork)
+{
+    boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
+    uint256 nFilterId = createFilterId.CreateTxFilterId(hashClient);
+    while (mapTxFilter.count(nFilterId) > 0)
+    {
+        nFilterId = createFilterId.CreateTxFilterId(hashClient);
+    }
+    mapTxFilter.insert(make_pair(nFilterId, CBlockPendingTxFilter(hashFork)));
+    return nFilterId;
+}
+
 } // namespace hashahead

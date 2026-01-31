@@ -49,6 +49,8 @@ public:
     uint256 AddBlockFilter(const uint256& hashClient, const uint256& hashFork) override;
     void AddNewBlockInfo(const uint256& hashFork, const uint256& hashBlock, const CBlock& block) override;
     bool GetFilterBlockHashs(const uint256& nFilterId, const uint256& hashLastBlock, const bool fAll, std::vector<uint256>& vBlockHash) override;
+
+    uint256 AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork) override;
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;
