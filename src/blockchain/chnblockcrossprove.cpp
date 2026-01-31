@@ -262,4 +262,15 @@ void CBlockCrossProveChannel::BroadcastBlockProve(const uint256& hashFork, const
     }
 }
 
+//-------------------------------------------------------------------------------------------
+const string CBlockCrossProveChannel::GetPeerAddressInfo(uint64 nNonce)
+{
+    auto it = mapChnPeer.find(nNonce);
+    if (it != mapChnPeer.end())
+    {
+        return it->second.GetRemoteAddress();
+    }
+    return string("0.0.0.0");
+}
+
 } // namespace hashahead
