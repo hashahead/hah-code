@@ -137,5 +137,29 @@ CBlockState::CBlockState(CBlockBase& dbBlockBaseIn, const uint256& hashForkIn, c
     nOriginalBlockMintReward = nMintCoint + nTotalTxFee;
 }
 
+CBlockState::CBlockState(CBlockBase& dbBlockBaseIn, const uint256& hashForkIn, const CForkContext& ctxForkIn, const uint256& hashPrevBlockIn, const uint256& hashPrevStateRootIn, const uint32 nPrevBlockTimeIn,
+                         const uint64 nOriBlockGasLimitIn, const uint64 nBlockTimestampIn, const int nBlockHeightIn, const uint64 nBlockNumberIn, const bool fPrimaryBlockIn, const bool fBtTraceDbIn)
+  : dbBlockBase(dbBlockBaseIn), nBlockType(0), nLocalChainId(CBlock::GetBlockChainIdByHash(hashForkIn)), hashFork(hashForkIn), ctxFork(ctxForkIn), hashPrevBlock(hashPrevBlockIn), hashPrevStateRoot(hashPrevStateRootIn), nPrevBlockTime(nPrevBlockTimeIn),
+    nOriBlockGasLimit(nOriBlockGasLimitIn), nSurplusBlockGasLimit(nOriBlockGasLimitIn), nBlockTimestamp(nBlockTimestampIn), nBlockHeight(nBlockHeightIn), nBlockNumber(nBlockNumberIn), fPrimaryBlock(fPrimaryBlockIn), fBtTraceDb(fBtTraceDbIn)
+{
+}
+
+bool CBlockState::GetDestState(const CDestination& dest, CDestState& stateDest)
+{
+    auto mt = mapCacheContractData.find(dest);
+    if (mt != mapCacheContractData.end() && !mt->second.cacheDestState.IsNull())
+    {
+        stateDest = mt->second.cacheDestState;
+        return true;
+    }
+    auto it = mapBlockState.find(dest);
+    if (it != mapBlockState.end())
+    {
+        stateDest = it->second;
+        return true;
+    }
+    return dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, dest, stateDest);
+}
+
 } // namespace storage
 } // namespace hashahead
