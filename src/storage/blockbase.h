@@ -135,10 +135,10 @@ public:
     bool CheckForkLongChain(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const BlockIndexPtr pIndexNew);
     bool Retrieve(const BlockIndexPtr pIndex, CBlock& block);
     bool Retrieve(const uint256& hash, CBlockEx& block);
-    bool Retrieve(const CBlockIndex* pIndex, CBlockEx& block);
-    bool RetrieveIndex(const uint256& hashBlock, CBlockIndex** ppIndex);
-    bool RetrieveFork(const uint256& hashFork, CBlockIndex** ppIndex);
-    bool RetrieveFork(const std::string& strName, CBlockIndex** ppIndex);
+    bool Retrieve(const BlockIndexPtr pIndex, CBlockEx& block);
+    BlockIndexPtr RetrieveIndex(const uint256& hashBlock);
+    BlockIndexPtr RetrieveFork(const uint256& hashFork);
+    BlockIndexPtr RetrieveFork(const std::string& strName);
     bool RetrieveProfile(const uint256& hashFork, CProfile& profile, const uint256& hashMainChainRefBlock);
     bool RetrieveAncestry(const uint256& hashFork, std::vector<std::pair<uint256, uint256>> vAncestry);
     bool RetrieveOrigin(const uint256& hashFork, CBlock& block);

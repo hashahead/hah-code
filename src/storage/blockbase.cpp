@@ -1198,26 +1198,19 @@ bool CBlockBase::GetForkBlockLocator(const uint256& hashFork, CBlockLocator& loc
         }
     }
 
-                // StdDebug("TEST", "Add tx state: Reality tv gas, nTvGasFee: %s, nTvGas: %lu, from: %s, txid: %s",
-                //          CoinToTokenBigFloat(nTvGasFee).c_str(), nTvGas.Get64(),
-                //          tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-            }
+    return true;
+}
 
-            uint256 nTxBaseGas = tx.GetTxBaseGas();
-            if (nTxBaseGas + nTvGas > tx.GetGasLimit())
-            {
-                // Gas not enough, cancel transaction
+bool CBlockBase::GetForkBlockInv(const uint256& hashFork, const CBlockLocator& locator, vector<uint256>& vBlockHash, size_t nMaxCount)
+{
+    CReadLock rlock(rwAccess);
 
-                StdLog("CBlockState", "Add tx state: Gas not enough, cancel transaction, base gas: %lu, tv gas: %lu, gas limit: %lu, from: %s, txid: %s",
-                       nTxBaseGas.Get64(), nTvGas.Get64(), tx.GetGasLimit().Get64(), tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-
-                uint256 nCanLeftGas;
-                if (tx.GetGasLimit() > nTxBaseGas)
-                {
-                    nCanLeftGas = tx.GetGasLimit() - nTxBaseGas;
-                }
-                uint256 nLeftFee = tx.GetGasPrice() * nCanLeftGas;
-                uint256 nUsedFee = tx.GetGasPrice() * nTxBaseGas;
+    BlockIndexPtr pIndexLast = GetForkLastIndex(hashFork);
+    if (!pIndexLast)
+    {
+        StdLog("BlockBase", "Get Fork Block Inv: Retrieve fork failed, fork: %s", hashFork.ToString().c_str());
+        return false;
+    }
 
                 if (tx.GetAmount() != 0 && !destTo.IsNull())
                 {
