@@ -1083,6 +1083,16 @@ CRPCMod::CRPCMod()
         ("setfunctionaddress", &CRPCMod::RPCSetFunctionAddress)
         //
         ("listfunctionaddress", &CRPCMod::RPCListFunctionAddress)
+        //
+        ("addtimevaultwhitelistaddress", &CRPCMod::RPCAddTimeVaultWhitelistAddress)
+        //
+        ("listtimevaultwhitelistaddress", &CRPCMod::RPCListTimeVaultWhitelistAddress)
+        //
+        ("stopfork", &CRPCMod::RPCStopFork)
+        //
+        ("setdelegatename", &CRPCMod::RPCSetDelegateName)
+        //
+        ("listtokentransaction", &CRPCMod::RPCListTokenTransaction)
         /* Util */
         ("verifymessage", &CRPCMod::RPCVerifyMessage)
         //
