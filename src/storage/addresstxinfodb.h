@@ -41,7 +41,10 @@ public:
                      const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord);
 
     bool WalkThroughSnapshotAddressTxKv(const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker);
-    bool VerifyAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+    bool WalkThroughSnapshotTokenTxKv(const uint64 nLastBlockNumber, WalkerTokenTxKvFunc fnWalker);
+    bool WriteSnapshotAddressTxKvData(const bytes& btKey, const bytes& btValue);
+    bool WriteSnapshotAddressTxCount(const uint256& hashLastBlock, const std::map<CDestination, uint64>& mapAddressTxCount);
+    bool WriteSnapshotTokenTxCount(const std::map<CDestination, std::map<CDestination, uint64>>& mapTokenTxCount);
 
 protected:
     bool WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot);

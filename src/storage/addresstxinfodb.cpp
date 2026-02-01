@@ -545,14 +545,78 @@ bool CForkAddressTxInfoDB::WalkThroughTokenTxInfo(const CDestination& destContra
             hnbase::StdError(__PRETTY_FUNCTION__, e.what());
         }
         return false;
+    };
+
+    CDestination destAddress;
+    if (destUserAddress.IsNull())
+    {
+        destAddress = destContractAddress;
     }
-    return true;
+    else
+    {
+        destAddress = destUserAddress;
+    }
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyBegin << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO << destContractAddress << destAddress << BSwap64(nBeginTxIndex);
+    ssKeyPrefix << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO << destContractAddress << destAddress;
+
+    return WalkThroughOfPrefix(ssKeyBegin, ssKeyPrefix, funcWalker);
 }
 
-bool CForkAddressTxInfoDB::ListAddressTxInfo(const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
+void CForkAddressTxInfoDB::RemoveOldBlockData(const uint256& hashBlock)
 {
-    uint256 hashRoot;
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    {
+        hnbase::CBufStream ssKey;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_DATA << hashBlock;
+        Erase(ssKey);
+    }
+
+    {
+        hnbase::CBufStream ssKey;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_PREVBLOCK << hashBlock;
+        Erase(ssKey);
+
+        setCacheBlockHash.erase(hashBlock);
+    }
+
+    {
+        hnbase::CBufStream ssKey;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_RANGE << hashBlock;
+        Erase(ssKey);
+    }
+
+    {
+        hnbase::CBufStream ssKey;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_TOKEN_ADDRESS_TX_RANGE << hashBlock;
+        Erase(ssKey);
+    }
+}
+
+void CForkAddressTxInfoDB::ClearOldBlockData()
+{
+    uint256 hashLastBlock;
+    if (!ReadLastBlock(hashLastBlock))
+    {
+        StdLog("CForkAddressTxInfoDB", "Clear old block data: Read last block fail");
+        return;
+    }
+    const uint32 nLastHeight = CBlock::GetBlockHeightByHash(hashLastBlock);
+    if (nLastHeight <= CACHE_ROLLBACK_HEIGHT)
+    {
+        return;
+    }
+    const uint32 nClearEndHeight = nLastHeight - CACHE_ROLLBACK_HEIGHT;
+
+    vector<uint256> vRemoveHash;
+    for (auto& hashBlock : setCacheBlockHash)
+    {
+        if (CBlock::GetBlockHeightByHash(hashBlock) < nClearEndHeight)
+        {
+            vRemoveHash.push_back(hashBlock);
+        }
+    }
+    for (auto& hashBlock : vRemoveHash)
     {
         StdLog("CForkAddressTxInfoDB", "List address tx info: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
