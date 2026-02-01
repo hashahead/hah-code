@@ -1052,6 +1052,8 @@ CRPCMod::CRPCMod()
         //
         ("makeorigin", &CRPCMod::RPCMakeOrigin)
         //
+        ("makefork", &CRPCMod::RPCMakeFork)
+        //
         ("callcontract", &CRPCMod::RPCCallContract)
         //
         ("gettransactionreceipt", &CRPCMod::RPCGetTransactionReceipt)
@@ -1063,6 +1065,8 @@ CRPCMod::CRPCMod()
         ("listcontractcode", &CRPCMod::RPCListContractCode)
         //
         ("listcontractaddress", &CRPCMod::RPCListContractAddress)
+        //
+        ("listtokenaddress", &CRPCMod::RPCListTokenAddress)
         //
         ("getdestcontract", &CRPCMod::RPCGetDestContract)
         //
