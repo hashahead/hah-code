@@ -707,8 +707,7 @@ Errno CCoreProtocol::VerifyDelegatedProofOfStake(const CBlock& block, const Bloc
     return OK;
 }
 
-Errno CCoreProtocol::VerifySubsidiary(const CBlock& block, const CBlockIndex* pIndexPrev, const CBlockIndex* pIndexRef,
-                                      const CDelegateAgreement& agreement)
+Errno CCoreProtocol::VerifySubsidiary(const CBlock& block, const BlockIndexPtr pIndexPrev, const BlockIndexPtr pIndexRef, const CDelegateAgreement& agreement)
 {
     if (block.GetBlockTime() <= pIndexPrev->GetBlockTime())
     {

@@ -119,4 +119,8 @@ bool CSnapshotDownChannel::HandleEvent(network::CEventPeerDeactive& eventDeactiv
     return true;
 }
 
+bool CSnapshotDownChannel::HandleEvent(network::CEventPeerSnapshotDownData& event)
+{
+    return true;
+}
 }; // namespace hashahead

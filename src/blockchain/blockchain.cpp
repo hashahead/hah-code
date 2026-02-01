@@ -1936,17 +1936,6 @@ bool CBlockChain::FindPreviousCheckPointBlock(const uint256& hashFork, CBlock& b
     return true;
 }
 
-bool CBlockChain::IsSameBranch(const uint256& hashFork, const CBlock& block)
-{
-    uint256 bestChainBlockHash;
-    if (!GetBlockHashByHeightSlot(hashFork, block.GetBlockHeight(), block.GetBlockSlot(), bestChainBlockHash))
-    {
-        return true;
-    }
-
-    return block.GetHash() == bestChainBlockHash;
-}
-
 int64 CBlockChain::GetAddressTxList(const uint256& hashFork, const CDestination& dest, const int nPrevHeight, const uint64 nPrevTxSeq, const int64 nOffset, const int64 nCount, vector<CTxInfo>& vTx)
 {
     return 0;

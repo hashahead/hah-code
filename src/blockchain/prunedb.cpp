@@ -143,4 +143,20 @@ bool CPruneDb::WaitExitEvent(const int64 nSeconds)
     return !fExit;
 }
 
+void CPruneDb::PruneStateWork()
+{
+    std::vector<uint256> vForkHash;
+    const uint32 nMinLastHeight = pBlockChain->GetAllForkMinLastBlockHeight(&vForkHash);
+    if (nMinLastHeight == 0xFFFFFFFF)
+    {
+        StdLog("CPruneDb", "Prune state work: Min last height error");
+        return;
+    }
+    for (auto& hashFork : vForkHash)
+    {
+        PruneForkData(hashFork, nMinLastHeight);
+        PruneForkKvData(hashFork, nMinLastHeight);
+    }
+}
+
 } // namespace hashahead

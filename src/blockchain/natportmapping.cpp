@@ -399,4 +399,13 @@ bool CNatPortMapping::SetGatewayAddress(const std::string& strExtIp, const uint1
     return pNetwork->DispatchEvent(&eventSetGateway);
 }
 
+static void handlenatpmpbadreplytype(natpmp_t* pnatpmp, const natpmpresp_t* presponse, int* preturncode)
+{
+    if (pnatpmp->try_number <= 9)
+    {
+        *preturncode = NATPMP_TRYAGAIN;
+        pnatpmp->has_pending_request = 1;
+    }
+}
+
 } // namespace hashahead

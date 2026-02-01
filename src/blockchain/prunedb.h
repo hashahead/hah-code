@@ -25,6 +25,7 @@ protected:
     void PruneDbThreadFunc();
     bool WaitExitEvent(const int64 nSeconds);
 
+    void PruneStateWork();
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
