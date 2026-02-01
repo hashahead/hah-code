@@ -391,6 +391,46 @@ bytes MakeEthErrorResultData(const std::string& strErrInfo)
     return btData;
 }
 
+std::string ParserEthErrorResult(const bytes& btResult)
+{
+    std::size_t nSySize = btResult.size();
+    const uint8* pPos = btResult.data();
+
+    // signid
+    if (nSySize < 4 || bytes(pPos, pPos + 4) != CryptoKeccakSign("Error(string)"))
+    {
+        return "";
+    }
+    nSySize -= 4;
+    pPos += 4;
+
+    // offset
+    if (nSySize < 32 || bytes(pPos, pPos + 32) != uint256((uint64)0x20).ToBigEndian())
+    {
+        return "";
+    }
+    nSySize -= 32;
+    pPos += 32;
+
+    // size
+    if (nSySize < 32)
+    {
+        return "";
+    }
+    uint256 tempData;
+    tempData.FromBigEndian(pPos, 32);
+    std::size_t nInfoSize = tempData.Get64();
+    nSySize -= 32;
+    pPos += 32;
+
+    // info
+    if (nSySize < nInfoSize)
+    {
+        return "";
+    }
+    return std::string((char*)pPos, (char*)(pPos + nInfoSize));
+}
+
 ///////////////////////////////////////////////////////////////
 // return the nIndex key is signed in multiple signature
 // static bool IsSigned(const uint8* pIndex, const size_t nLen, const size_t nIndex)
