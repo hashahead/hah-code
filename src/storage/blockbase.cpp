@@ -1357,43 +1357,32 @@ bool CBlockBase::GetBlockHashByHeightSlot(const uint256& hashFork, const uint256
     {
         if (CBlock::GetBlockHeightByHash(hashRefBlock) < nHeight)
         {
-            stateTvOwner.SetNull();
-            stateTvOwner.SetType(nDestType, nTemplateType);
+            return false;
         }
-        stateTvOwner.IncBalance(nTvGasFee);
-        SetDestState(destTimeVaultToAddress, stateTvOwner);
-
-        mapBlockPayTvFee[tx.GetFromAddress()] += nTvGasFee;
-
-        CContractTransfer ctrTransfer(CContractTransfer::CT_TIMEVAULT, tx.GetFromAddress(), destTimeVaultToAddress, nTvGasFee);
-        mapBlockContractTransfer[txid].push_back(ctrTransfer);
-        receipt.vTransfer.push_back(ctrTransfer);
+        if (IsLongchainBlock(hashFork, hashRefBlock))
+        {
+            fLongchainBlock = true;
+        }
     }
-
-    receipt.CalcLogsBloom();
-    //nBlockBloom |= receipt.nLogsBloom;
-    receipt.GetBloomDataSet(setBlockBloomData);
-    mapBlockTxReceipts.insert(std::make_pair(txid, receipt));
-    hnbase::CBufStream ss;
-    ss << receipt;
-    vReceiptHash.push_back(hashahead::crypto::CryptoHash(ss.GetData(), ss.GetSize()));
-    return true;
-}
-
-bool CBlockState::DoBlockState(uint256& hashReceiptRoot, uint256& nBlockGasUsed, bytes& btBlockBloomDataOut, uint256& nTotalMintRewardOut)
-{
-    nBlockGasUsed = uint256(nOriBlockGasLimit - nSurplusBlockGasLimit);
-    hashReceiptRoot = CReceiptMerkleTree::BuildMerkleTree(vReceiptHash);
-
-    if (nOriginalBlockMintReward < nBlockFeeLeft)
+    if (!fLongchainBlock && hashRefBlock != 0)
     {
-        StdLog("TEST", "Do block state: Original block mint reward error, nOriginalBlockMintReward: %s, nBlockFeeLeft: %s",
-               nOriginalBlockMintReward.GetValueHex().c_str(), nBlockFeeLeft.GetValueHex().c_str());
-        return false;
+        BlockIndexPtr pIndex = GetIndex(hashRefBlock);
+        while (pIndex && pIndex->GetOriginHash() == hashFork && pIndex->GetBlockHeight() >= nHeight)
+        {
+            if (IsLongchainBlock(hashFork, pIndex->GetBlockHash()))
+            {
+                fLongchainBlock = true;
+                break;
+            }
+            if (pIndex->GetBlockHeight() == nHeight && pIndex->GetBlockSlot() == nSlot)
+            {
+                hashBlock = pIndex->GetBlockHash();
+                return true;
+            }
+            pIndex = GetPrevBlockIndex(pIndex);
+        }
     }
-    nTotalMintRewardOut = nOriginalBlockMintReward - nBlockFeeLeft;
-
-    if (nBlockType == CBlock::BLOCK_GENESIS || nBlockType == CBlock::BLOCK_ORIGIN)
+    if (fLongchainBlock)
     {
         auto nt = mapBlockState.find(destMint);
         if (nt == mapBlockState.end())
