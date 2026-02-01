@@ -40,6 +40,44 @@ bool CConsKey::Verify(const uint256& hash, const bytes& btSig)
     return CryptoBlsVerify(pubkey, hash.GetBytes(), btSig);
 }
 
+/////////////////////////////////
+// CConsBlock
+
+bool CConsBlock::SetCandidateNodeList(const vector<uint384>& vCandidateNodePubkeyIn)
+{
+    if (vCandidateNodePubkeyIn.empty())
+    {
+        StdLog("CConsBlock", "Set candidate node list: Candidate node is empty");
+        return false;
+    }
+
+    mapCandidateNodeIndex.clear();
+    vPreVoteCandidateNodePubkey.clear();
+    vCommitVoteCandidateNodePubkey.clear();
+    bmBlockPreVoteBitmap.Initialize(vCandidateNodePubkeyIn.size());
+    bmBlockCommitVoteBitmap.Initialize(vCandidateNodePubkeyIn.size());
+
+    for (uint32 i = 0; i < (uint32)(vCandidateNodePubkeyIn.size()); i++)
+    {
+        auto& pubkey = vCandidateNodePubkeyIn[i];
+        auto it = mapCandidateNodeIndex.find(pubkey);
+        if (it != mapCandidateNodeIndex.end())
+        {
+            StdLog("CConsBlock", "Set candidate node list: Candidate node index existed");
+            mapCandidateNodeIndex.clear();
+            vPreVoteCandidateNodePubkey.clear();
+            vCommitVoteCandidateNodePubkey.clear();
+            bmBlockPreVoteBitmap.Clear();
+            bmBlockCommitVoteBitmap.Clear();
+            return false;
+        }
+        mapCandidateNodeIndex.insert(make_pair(pubkey, i));
+        vPreVoteCandidateNodePubkey.push_back(CNodePubkey(i, pubkey));
+        vCommitVoteCandidateNodePubkey.push_back(CNodePubkey(i, pubkey));
+    }
+    return true;
+}
+
 
 /////////////////////////////////
 // CConsBlockVote

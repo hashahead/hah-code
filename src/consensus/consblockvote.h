@@ -150,11 +150,15 @@ public:
     CConsBlock(const uint256& hashBlockIn, const uint32 nBlockEpochIn, const int64 nVoteBeginTimeIn, const uint64 nAddTimeIn)
       : hashBlock(hashBlockIn), nBlockEpoch(nBlockEpochIn), nVoteBeginTime(nVoteBeginTimeIn), nBeginTimeMillis(GetTimeMillis()), nAddTime(nAddTimeIn) {}
 
+    bool SetCandidateNodeList(const vector<uint384>& vCandidateNodePubkeyIn);
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;
     const int64 nVoteBeginTime;
     map<uint384, uint32> mapCandidateNodeIndex; // key: node pubkey, value: index
+
+    vector<CNodePubkey> vPreVoteCandidateNodePubkey;
+    vector<CNodePubkey> vCommitVoteCandidateNodePubkey;
 };
 
 /////////////////////////////////
