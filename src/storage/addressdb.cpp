@@ -1025,29 +1025,60 @@ bool CForkAddressDB::ListContractCreateCodeContext(const uint256& hashBlock, std
     return true;
 }
 
+bool CForkAddressDB::VerifyCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
+{
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashBlock, hashRoot))
+    {
+        return false;
+    }
+
+    if (fVerifyAllNode)
+    {
+        std::map<uint256, CTrieValue> mapCacheNode;
+        if (!dbTrie.CheckTrieNode(hashRoot, mapCacheNode))
+        {
+            return false;
+        }
+    }
+
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
     {
-        if (!ReadTrieRoot(hashPrevBlock, hashPrevRoot))
+        if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashPrevBlock, hashPrevRoot))
         {
-            StdLog("CForkAddressDB", "Verify address context: Read prev trie root fail, prev block: %s", hashPrevBlock.GetHex().c_str());
             return false;
         }
     }
 
     uint256 hashRootPrevDb;
     uint256 hashBlockLocalDb;
-    if (!GetPrevRoot(hashRoot, hashRootPrevDb, hashBlockLocalDb))
+    if (!GetPrevRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_CODE, hashRoot, hashRootPrevDb, hashBlockLocalDb))
     {
-        StdLog("CForkAddressDB", "Verify address context: Get prev root fail, hashRoot: %s, hashPrevRoot: %s, hashBlock: %s",
-               hashRoot.GetHex().c_str(), hashPrevRoot.GetHex().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
     if (hashRootPrevDb != hashPrevRoot || hashBlockLocalDb != hashBlock)
     {
-        StdLog("CForkAddressDB", "Verify address context: Root error, hashRootPrevDb: %s, hashPrevRoot: %s, hashBlockLocalDb: %s, hashBlock: %s",
-               hashRootPrevDb.GetHex().c_str(), hashPrevRoot.GetHex().c_str(),
-               hashBlockLocalDb.GetHex().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
+/////////////////////////////
+bool CForkAddressDB::ClearAddressUnavailableNode(const uint32 nClearRefHeight)
+{
+    if (!fPrune)
+    {
+        return false;
+    }
+
+    uint64 nRemoveNodeCount = 0;
+    uint64 nTotalNodeCount = 0;
+    uint64 nReserveNodeCount = 0;
+    uint64 nReserveRootCount = 0;
+
+    if (!ClearHeightAuxiliaryData(nClearRefHeight))
+    {
+        StdLog("CForkAddressDB", "Clear address unavailable node: Clear height auxiliary data failed, height: %d", nClearRefHeight);
         return false;
     }
     return true;
