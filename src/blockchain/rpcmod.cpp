@@ -1461,6 +1461,12 @@ bool CRPCMod::HandleEvent(CEventHttpReq& eventHttpReq)
         else
         {
             // no result means no return
+            throw CRPCException(RPC_INTERNAL_ERROR, "Not result");
+        }
+        size_t pos = strResult.find("transactiondetails");
+        if (pos != string::npos)
+        {
+            strResult.replace(pos, strlen("transactiondetails"), "transactions");
         }
     }
     catch (CRPCException& e)
@@ -1485,7 +1491,7 @@ bool CRPCMod::HandleEvent(CEventHttpReq& eventHttpReq)
     // no result means no return
     if (!strResult.empty())
     {
-        JsonReply(nNonce, strResult);
+        JsonReply(eventHttpReq.data.nSourceType, eventHttpReq.data.nReqChainId, nNonce, strResult);
     }
 
     return true;
