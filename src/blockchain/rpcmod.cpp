@@ -1553,11 +1553,22 @@ bool CRPCMod::GetForkHashOfDef(const CRPCString& hex, const uint256& hashDefFork
             CChainId nChainId;
             if (hex.size() >= 2 && ((string)hex).substr(0, 2) == string("0x"))
             {
-                nChainId = ParseNumericHexString(hex);
+                if (hex.size() <= 10)
+                {
+                    nChainId = ParseNumericHexString(hex);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else if (hex.size() <= 10)
+            {
+                nChainId = atoi(hex.c_str());
             }
             else
             {
-                nChainId = atoi(hex.c_str());
+                return false;
             }
             if (!pService->GetForkHashByChainId(nChainId, hashFork))
             {
