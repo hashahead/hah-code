@@ -1676,7 +1676,7 @@ bool CBlockChain::VerifyBlockCertTx(const uint256& hashBlock, const CBlock& bloc
     return true;
 }
 
-bool CBlockChain::c(const uint256& hashBlock, const CBlock& block)
+bool CBlockChain::VerifyBlockVoteResult(const uint256& hashBlock, const CBlock& block)
 {
     CBlockVoteSig proofVote;
     if (block.GetBlockVoteSig(proofVote) && !proofVote.IsNull())
@@ -1769,6 +1769,19 @@ bool CBlockChain::c(const uint256& hashBlock, const CBlock& block)
                 return false;
             }
         }
+    }
+    return true;
+}
+
+bool CBlockChain::VerifyBlockCrosschainProve(const uint256& hashBlock, const CBlock& block)
+{
+    const CChainId nLocalChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+    const CChainId nGenesisChainId = CBlock::GetBlockChainIdByHash(pCoreProtocol->GetGenesisBlockHash());
+
+    for (const auto& kv : block.mapProve)
+    {
+        const CChainId nPeerChainId = kv.first;
+        const CBlockProve& blockProve = kv.second;
     }
     return true;
 }
