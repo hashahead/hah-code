@@ -1250,76 +1250,82 @@ BlockIndexPtr CBlockBase::GetPrevBlockIndex(const BlockIndexPtr pIndex)
     return (pIndex ? GetIndex(pIndex->GetPrevHash()) : nullptr);
 }
 
-    CTransactionReceipt receipt;
-    if (fToContract)
+BlockIndexPtr CBlockBase::GetNextBlockIndex(const BlockIndexPtr pIndex)
+{
+    if (pIndex)
     {
-        bool fCallResult = true;
-        if (!AddContractState(txid, tx, nTxIndex, nLeftGas.Get64(), nTvGas, fCallResult, receipt))
+        uint256 hashNextBlock;
+        if (GetBlockIndexHashByNumberNoLock(pIndex->GetOriginHash(), 0, pIndex->GetBlockNumber() + 1, hashNextBlock))
         {
-            StdLog("CBlockState", "Add tx state: Add contract state fail, txid: %s", txid.GetHex().c_str());
-            return false;
-        }
-        if (fCallResult)
-        {
-            if (tx.GetAmount() != 0 && !destTo.IsNull() && tx.GetToAddress().IsNull())
+            BlockIndexPtr pNextIndex = GetIndex(hashNextBlock);
+            if (pNextIndex && pNextIndex->GetPrevHash() == pIndex->GetBlockHash())
             {
-                // Create contract and trans amount.
-                CContractTransfer ctrTransfer(CContractTransfer::CT_CONTRACT, tx.GetFromAddress(), destTo, tx.GetAmount());
-                mapBlockContractTransfer[txid].push_back(ctrTransfer);
-                receipt.vTransfer.push_back(ctrTransfer);
-            }
-        }
-        else
-        {
-            if (tx.GetAmount() != 0 && !tx.IsRewardTx())
-            {
-                // Call contract fail to rollback.
-                // Reward transaction special transaction, when execution fails, also makes the transfer successful.
-                if (!destTo.IsNull())
-                {
-                    auto it = mapBlockState.find(destTo);
-                    if (it == mapBlockState.end())
-                    {
-                        StdLog("CBlockState", "Add tx state: Find to address fail, to: %s, txid: %s", destTo.ToString().c_str(), txid.GetHex().c_str());
-                        return false;
-                    }
-                    it->second.DecBalance(tx.GetAmount());
-                }
-                if (!tx.GetFromAddress().IsNull())
-                {
-                    auto mt = mapBlockState.find(tx.GetFromAddress());
-                    if (mt == mapBlockState.end())
-                    {
-                        StdLog("CBlockState", "Add tx state: Find from address fail, from: %s, txid: %s", tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-                        return false;
-                    }
-                    mt->second.IncBalance(tx.GetAmount());
-                }
+                return pNextIndex;
             }
         }
     }
-    else
+    return nullptr;
+}
+
+BlockIndexPtr CBlockBase::GetParentBlockIndex(const BlockIndexPtr pIndex)
+{
+    if (!pIndex || pIndex->IsPrimary())
     {
-        uint256 nUsedGas;
-        if (tx.GetGasLimit() > nLeftGas)
+        return nullptr;
+    }
+    BlockIndexPtr pOriginIndex = GetOriginBlockIndex(pIndex);
+    if (!pOriginIndex)
+    {
+        return nullptr;
+    }
+    BlockIndexPtr pOriPrevIndex = GetPrevBlockIndex(pOriginIndex);
+    if (!pOriPrevIndex)
+    {
+        return nullptr;
+    }
+    return GetOriginBlockIndex(pOriPrevIndex);
+}
+
+bool CBlockBase::IsBlockIndexEquivalent(const BlockIndexPtr pIndex, const BlockIndexPtr pIndexCompare)
+{
+    if (pIndex && pIndexCompare)
+    {
+        BlockIndexPtr pCurIndex = pIndex;
+        while (pCurIndex)
         {
-            nUsedGas = tx.GetGasLimit() - nLeftGas;
-        }
-        uint256 nLeftFee = tx.GetGasPrice() * nLeftGas;
-        uint256 nUsedFee = tx.GetGasPrice() * nUsedGas;
-        if (nLeftFee > 0 && !tx.GetFromAddress().IsNull())
-        {
-            auto mt = mapBlockState.find(tx.GetFromAddress());
-            if (mt == mapBlockState.end())
+            if (pCurIndex->GetBlockHash() == pIndexCompare->GetBlockHash())
             {
-                StdLog("CBlockState", "Add tx state: Get from state fail, from: %s, txid: %s", tx.GetFromAddress().ToString().c_str(), txid.GetHex().c_str());
-                return false;
+                return true;
             }
-            mt->second.IncBalance(nLeftFee);
+            if (pCurIndex->nType != CBlock::BLOCK_VACANT
+                || pCurIndex->GetBlockHeight() <= pIndexCompare->GetBlockHeight())
+            {
+                break;
+            }
+            pCurIndex = GetPrevBlockIndex(pCurIndex);
         }
-        mapBlockTxFeeUsed[txid] = nUsedFee;
-        nSurplusBlockGasLimit -= nUsedGas.Get64();
-        nBlockFeeLeft += nLeftFee;
+    }
+    return false;
+}
+
+bool CBlockBase::GetForkBlockMintListByHeight(const uint256& hashFork, const uint32 nHeight, std::map<uint256, CBlockHeightIndex>& mapBlockMint)
+{
+    std::vector<uint256> vBlockHash;
+    if (!dbBlock.RetrieveBlockHashByHeight(hashFork, nHeight, vBlockHash))
+    {
+        return false;
+    }
+    for (auto& hashBlock : vBlockHash)
+    {
+        BlockIndexPtr pIndex = GetIndex(hashBlock);
+        if (!pIndex)
+        {
+            return false;
+        }
+        mapBlockMint.insert(std::make_pair(hashBlock, CBlockHeightIndex(pIndex->GetBlockTime(), pIndex->destMint, pIndex->GetRefBlock())));
+    }
+    return true;
+}
 
         // Common tx receipt
         receipt.nReceiptType = CTransactionReceipt::RECEIPT_TYPE_COMMON;
