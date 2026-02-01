@@ -1,0 +1,29 @@
+// Copyright (c) 2021-2025 The HashAhead developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#ifndef __MTHBASE_H
+#define __MTHBASE_H
+
+#include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+#include <queue>
+
+#include "type.h"
+#include "util.h"
+
+namespace hnbase
+{
+
+inline unsigned long GetCurThreadId()
+{
+    std::string threadId = boost::lexical_cast<std::string>(boost::this_thread::get_id());
+    unsigned long threadNumber = 0;
+    threadNumber = std::stoul(threadId, nullptr, 16);
+    return threadNumber;
+}
+
+} // namespace hnbase
+
+#endif // __HSM_MTHBASE_H
