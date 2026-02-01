@@ -373,6 +373,24 @@ bytes MakeEthTxCallData(const std::string& strFunction, const std::vector<bytes>
     return btData;
 }
 
+bytes MakeEthErrorResultData(const std::string& strErrInfo)
+{
+    const bytes btFuncSign = CryptoKeccakSign("Error(string)");
+    const bytes btOffset = uint256((uint64)0x20).ToBigEndian();
+    const bytes btSize = uint256((uint64)strErrInfo.size()).ToBigEndian();
+
+    bytes btErrInfoData;
+    btErrInfoData.resize(((strErrInfo.size() + 31) / 32) * 32);
+    std::copy(strErrInfo.begin(), strErrInfo.end(), btErrInfoData.data());
+
+    bytes btData;
+    btData.insert(btData.end(), btFuncSign.begin(), btFuncSign.end());
+    btData.insert(btData.end(), btOffset.begin(), btOffset.end());
+    btData.insert(btData.end(), btSize.begin(), btSize.end());
+    btData.insert(btData.end(), btErrInfoData.begin(), btErrInfoData.end());
+    return btData;
+}
+
 ///////////////////////////////////////////////////////////////
 // return the nIndex key is signed in multiple signature
 // static bool IsSigned(const uint8* pIndex, const size_t nLen, const size_t nIndex)
