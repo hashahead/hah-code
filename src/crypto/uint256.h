@@ -391,9 +391,17 @@ public:
         {
             while (begin >= end)
             {
-                sprintf(p, "%02x", *begin);
+                if (p == psz + 2)
+                {
+                    sprintf(p, "%x", *begin);
+                    p += strlen(p);
+                }
+                else
+                {
+                    sprintf(p, "%02x", *begin);
+                    p += 2;
+                }
                 begin--;
-                p += 2;
             }
         }
         return std::string(psz);
