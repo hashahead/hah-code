@@ -39,6 +39,31 @@ private:
     uint64 ui64UniqueId;
 };
 
+class CMthWait;
+
+class CMthEvent
+{
+public:
+    CMthEvent(const bool bManualResetIn = false, const bool bInitSigStateIn = false)
+      : fManualReset(bManualResetIn), fSingleFlag(bInitSigStateIn)
+    {
+        ui64EventId = CBaseUniqueId::CreateUniqueId(0, 0, 0xEF);
+    }
+    ~CMthEvent()
+    {
+        mapWait.clear();
+    }
+
+    uint64 GetEventId() const
+    {
+        return ui64EventId;
+    }
+
+private:
+    boost::mutex lockEvent;
+    boost::condition_variable_any condEvent;
+};
+
 } // namespace hnbase
 
 #endif // __HSM_MTHBASE_H
