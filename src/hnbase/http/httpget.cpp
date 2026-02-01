@@ -231,9 +231,16 @@ void CHttpGet::HandleClientCompleted(CHttpGetClient* pGetClient)
             CloseConn(pGetClient);
             delete pEventGetRsp;
         }
-        else if (strcasecmp(rsp.mapHeader["connection"].c_str(), "Close") == 0)
+        else
         {
-            CloseConn(pGetClient);
+            auto it = rsp.mapHeader.find("connection");
+            if (it != rsp.mapHeader.end())
+            {
+                if (strcasecmp(it->second.c_str(), "Close") == 0)
+                {
+                    CloseConn(pGetClient);
+                }
+            }
         }
     }
     else
