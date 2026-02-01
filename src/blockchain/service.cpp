@@ -629,6 +629,11 @@ bool CService::RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDes
     return pBlockChain->RetrieveDelegateRewardApy(hashBlock, mapDelegateRewardApy);
 }
 
+bool CService::RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount)
+{
+    return pBlockChain->RetrieveDestDelegateVote(hashBlock, destDelegate, nVoteAmount);
+}
+
 bool CService::GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight)
 {
     return pBlockChain->GetUserVotes(hashRefBlock, destVote, nTemplateType, nVotes, nUnlockHeight);
