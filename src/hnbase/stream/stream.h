@@ -121,6 +121,7 @@ protected:
     CStream& Serialize(std::string& t, ObjectType&, SaveType&);
     CStream& Serialize(std::string& t, ObjectType&, LoadType&);
     CStream& Serialize(std::string& t, ObjectType&, std::size_t& serSize);
+    CStream& Serialize(const std::string& t, ObjectType&, SaveType&);
 
     /* std::vector */
     template <typename T, typename A>

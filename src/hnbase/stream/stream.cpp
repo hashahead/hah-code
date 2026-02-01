@@ -32,6 +32,20 @@ CStream& CStream::Serialize(std::string& t, ObjectType&, std::size_t& serSize)
     return (*this);
 }
 
+CStream& CStream::Serialize(const std::string& t, ObjectType&, SaveType&)
+{
+    *this << CVarInt(t.size());
+    return Write((const char*)&t[0], t.size());
+}
+
+CStream& CStream::Serialize(const std::string& t, ObjectType&, std::size_t& serSize)
+{
+    CVarInt var(t.size());
+    serSize += GetSerializeSize(var);
+    serSize += t.size();
+    return (*this);
+}
+
 ///////////////////////////////
 // CVarInt
 
