@@ -6,12 +6,21 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 # ------------------------------------------------------------------------------
 
+# sub directories
+add_subdirectory(blss)
+
 set(curve25519
     curve25519/base25519.cpp curve25519/base25519.h
     curve25519/fp25519.cpp curve25519/fp25519.h
     curve25519/sc25519.cpp curve25519/sc25519.h
     curve25519/ed25519.cpp curve25519/ed25519.h
     curve25519/curve25519.h
+)
+
+set(Keccak
+    keccak/Keccak.cpp keccak/Keccak.h
+    keccak/Endian.h
+    keccak/Rotation.h
 )
 
 set(sources
@@ -22,6 +31,7 @@ set(sources
     key.cpp key.h
     keystore.cpp keystore.h
     ${curve25519}
+    ${Keccak}
 )
 
 if(ARM_CRYPTO)
@@ -30,7 +40,7 @@ endif()
 
 add_library(crypto ${sources})
 
-include_directories(crypto ../hnbase ../common ../heth ../wvm/utils ./ ${sodium_INCLUDE_DIR})
+include_directories(crypto ../hnbase ../common ./blss/src ../heth ./ ${sodium_INCLUDE_DIR})
 link_directories()
 
 if(MSVC)
@@ -51,9 +61,7 @@ target_link_libraries(crypto
     ${sodium_LIBRARY_RELEASE}
     hnbase
     common
-    ssvmCommon
-    ssvmEVMCUtilEVMCLoader
-    ssvm-evmc
+    bls
     devcore
     devcrypto
     devcommon
