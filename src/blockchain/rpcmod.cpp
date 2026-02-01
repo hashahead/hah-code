@@ -1123,8 +1123,12 @@ CRPCMod::CRPCMod()
         ("listmintmingasprice", &CRPCMod::RPCListMintMinGasPrice)
         //
         ("checkatbloomfilter", &CRPCMod::RPCCheckAtBloomFilter)
-        /* tool */
+        //
         ("querystat", &CRPCMod::RPCQueryStat)
+        //
+        ("createsnapshot", &CRPCMod::RPCCreateSnapshot)
+        //
+        ("getsnapshotstatus", &CRPCMod::RPCGetSnapshotStatus)
         /* eth rpc */
         ("web3_clientVersion", &CRPCMod::RPCEthGetWebClientVersion)
         //
@@ -1215,6 +1219,46 @@ CRPCMod::CRPCMod()
         ("eth_getFilterLogs", &CRPCMod::RPCEthGetFilterLogs)
         //
         ("eth_getLogs", &CRPCMod::RPCEthGetLogs)
+        //
+        ("eth_subscribe", &CRPCMod::RPCEthSubscribe)
+        //
+        ("eth_unsubscribe", &CRPCMod::RPCEthUnsubscribe)
+        //
+        ("eth_blobBaseFee", &CRPCMod::RPCEthBlobBaseFee)
+        //
+        ("eth_feeHistory", &CRPCMod::RPCEthFeeHistory)
+        //
+        ("eth_getAccount", &CRPCMod::RPCEthGetAccount)
+        //
+        ("eth_getBlockReceipts", &CRPCMod::RPCEthGetBlockReceipts)
+        //
+        ("eth_maxPriorityFeePerGas", &CRPCMod::RPCEthMaxPriorityFeePerGas)
+        //
+        // ("trace_block", &CRPCMod::RPCEthTraceBlock)
+        //
+        ("debug_getBadBlocks", &CRPCMod::RPCEthDebugGetBadBlocks)
+        //
+        ("debug_storageRangeAt", &CRPCMod::RPCEthDebugStorageRangeAt)
+        //
+        ("debug_getTrieFlushInterval", &CRPCMod::RPCEthDebugGetTrieFlushInterval)
+        //
+        ("debug_traceBlock", &CRPCMod::RPCEthDebugTraceBlock)
+        //
+        ("debug_traceBlockByHash", &CRPCMod::RPCEthDebugTraceBlockByHash)
+        //
+        ("debug_traceBlockByNumber", &CRPCMod::RPCEthDebugTraceBlockByNumber)
+        //
+        ("debug_traceCall", &CRPCMod::RPCEthDebugTraceCall)
+        //
+        ("debug_traceTransaction", &CRPCMod::RPCEthDebugTraceTransaction)
+        //
+        ("txpool_content", &CRPCMod::RPCEthTxpoolContent)
+        //
+        ("txpool_inspect", &CRPCMod::RPCEthTxpoolInspect)
+        //
+        ("txpool_contentFrom", &CRPCMod::RPCEthTxpoolContentFrom)
+        //
+        ("txpool_status", &CRPCMod::RPCEthTxpoolStatus)
         //
         ;
     mapRPCFunc = temp_map;
