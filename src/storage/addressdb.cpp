@@ -1084,6 +1084,16 @@ bool CForkAddressDB::ClearAddressUnavailableNode(const uint32 nClearRefHeight)
     return true;
 }
 
+bool CForkAddressDB::GetSnapshotAddressData(const std::vector<uint256>& vBlockHash, CForkAddressRootKv& addressRootKv)
+{
+    return true;
+}
+
+bool CForkAddressDB::RecoveryAddressData(const CForkAddressRootKv& addressRootKv)
+{
+    return true;
+}
+
 ///////////////////////////////////
 bool CForkAddressDB::WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot)
 {
