@@ -634,6 +634,11 @@ bool CService::RetrieveDestDelegateVote(const uint256& hashBlock, const CDestina
     return pBlockChain->RetrieveDestDelegateVote(hashBlock, destDelegate, nVoteAmount);
 }
 
+bool CService::RetrieveDestVoteContext(const uint256& hashBlock, const CDestination& destVote, CVoteContext& ctxtVote)
+{
+    return pBlockChain->RetrieveDestVoteContext(hashBlock, destVote, ctxtVote);
+}
+
 bool CService::GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight)
 {
     return pBlockChain->GetUserVotes(hashRefBlock, destVote, nTemplateType, nVotes, nUnlockHeight);
