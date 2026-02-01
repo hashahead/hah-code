@@ -22,6 +22,9 @@ protected:
     bool HandleInvoke() override;
     void HandleHalt() override;
 
+    void PruneDbThreadFunc();
+    bool WaitExitEvent(const int64 nSeconds);
+
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;

@@ -117,4 +117,30 @@ void CPruneDb::PruneDbThreadFunc()
     }
 }
 
+bool CPruneDb::WaitExitEvent(const int64 nSeconds)
+{
+    if (nSeconds > 0 && !fExit)
+    {
+        try
+        {
+            boost::system_time const timeout = boost::get_system_time() + boost::posix_time::seconds(nSeconds);
+            boost::unique_lock<boost::mutex> lock(mutex);
+            condExit.timed_wait(lock, timeout);
+        }
+        catch (const boost::thread_interrupted&)
+        {
+            return !fExit;
+        }
+        catch (const boost::thread_resource_error&)
+        {
+            return !fExit;
+        }
+        catch (...)
+        {
+            return !fExit;
+        }
+    }
+    return !fExit;
+}
+
 } // namespace hashahead
