@@ -1916,11 +1916,10 @@ bool CBlockChain::FindPreviousCheckPointBlock(const uint256& hashFork, CBlock& b
         const CCheckPoint& point = points[i];
 
         uint256 hashBlock;
-        if (!GetBlockHashByHeightSlot(hashFork, point.nHeight, 0, hashBlock))
+        if (!cntrBlock.GetBlockHashByHeightSlot(hashFork, 0, point.nHeight, 0, hashBlock))
         {
             StdTrace("BlockChain", "HashFork %s CheckPoint(%d, %s) doest not exists and continuely try to get previous checkpoint",
                      hashFork.ToString().c_str(), point.nHeight, point.nBlockHash.ToString().c_str());
-
             continue;
         }
 
@@ -1956,6 +1955,11 @@ int64 CBlockChain::GetAddressTxList(const uint256& hashFork, const CDestination&
 bool CBlockChain::RetrieveAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress)
 {
     return cntrBlock.RetrieveAddressContext(hashFork, hashBlock, dest, ctxAddress);
+}
+
+bool CBlockChain::RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress)
+{
+    return cntrBlock.RetrieveTokenContractAddressContext(hashFork, hashBlock, dest, ctxAddress);
 }
 
 bool CBlockChain::GetTxToAddressContext(const uint256& hashFork, const uint256& hashBlock, const CTransaction& tx, CAddressContext& ctxAddress)
