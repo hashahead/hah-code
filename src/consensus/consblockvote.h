@@ -141,6 +141,23 @@ public:
     time_t tmStatusTime;
 };
 
+/////////////////////////////////
+// CConsBlock
+
+class CConsBlock
+{
+public:
+    CConsBlock(const uint256& hashBlockIn, const uint32 nBlockEpochIn, const int64 nVoteBeginTimeIn, const uint64 nAddTimeIn)
+      : hashBlock(hashBlockIn), nBlockEpoch(nBlockEpochIn), nVoteBeginTime(nVoteBeginTimeIn), nBeginTimeMillis(GetTimeMillis()), nAddTime(nAddTimeIn) {}
+
+public:
+    const uint256 hashBlock;
+    const uint32 nBlockEpoch;
+    const int64 nVoteBeginTime;
+    map<uint384, uint32> mapCandidateNodeIndex; // key: node pubkey, value: index
+};
+
+/////////////////////////////////
 // CConsBlockVote
 
 class CConsBlockVote
@@ -150,6 +167,7 @@ public:
       : nTunnelId(nTunnelIdIn), nEpochDuration(nEpochDurationIn), sendNetData(sendNetDataIn), getVoteBlockCandidatePubkey(getVoteBlockCandidatePubkeyIn), addBlockLocalSignFlag(addBlockLocalSignFlagIn), commitVoteResult(commitVoteResultIn), nPrevCheckPreVoteBitmapTime(0) {}
 
     bool AddConsKey(const uint256& prikey, const uint384& pubkey);
+
 private:
     const uint8 nTunnelId;
     const int64 nEpochDuration; //Unit: milliseconds

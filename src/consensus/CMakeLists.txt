@@ -1,5 +1,6 @@
 
 set(sources
+    conscommon.h
     consblockvote.cpp consblockvote.h
 )
 
