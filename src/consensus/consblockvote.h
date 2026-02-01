@@ -151,6 +151,7 @@ public:
       : hashBlock(hashBlockIn), nBlockEpoch(nBlockEpochIn), nVoteBeginTime(nVoteBeginTimeIn), nBeginTimeMillis(GetTimeMillis()), nAddTime(nAddTimeIn) {}
 
     bool SetCandidateNodeList(const vector<uint384>& vCandidateNodePubkeyIn);
+    bool IsExistCandidateNodePubkey(const uint384& pubkeyNode) const;
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;

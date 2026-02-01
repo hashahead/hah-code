@@ -78,6 +78,11 @@ bool CConsBlock::SetCandidateNodeList(const vector<uint384>& vCandidateNodePubke
     return true;
 }
 
+bool CConsBlock::IsExistCandidateNodePubkey(const uint384& pubkeyNode) const
+{
+    return (mapCandidateNodeIndex.find(pubkeyNode) != mapCandidateNodeIndex.end());
+}
+
 
 /////////////////////////////////
 // CConsBlockVote
