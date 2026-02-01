@@ -1212,22 +1212,21 @@ bool CBlockBase::GetForkBlockInv(const uint256& hashFork, const CBlockLocator& l
         return false;
     }
 
-                if (tx.GetAmount() != 0 && !destTo.IsNull())
-                {
-                    auto it = mapBlockState.find(destTo);
-                    if (it == mapBlockState.end())
-                    {
-                        StdLog("CBlockState", "Add tx state: Get address state fail, txid: %s, destTo: %s",
-                               txid.GetHex().c_str(), destTo.ToString().c_str());
-                        return false;
-                    }
-                    it->second.DecBalance(tx.GetAmount());
-                }
-                stateFrom.IncBalance(nLeftFee + tx.GetAmount());
-
-                mapBlockTxFeeUsed[txid] = nUsedFee;
-                nSurplusBlockGasLimit -= nTxBaseGas.Get64();
-                nBlockFeeLeft += nLeftFee;
+    BlockIndexPtr pIndex;
+    for (const uint256& hash : locator.vBlockHash)
+    {
+        pIndex = GetIndex(hash);
+        if (pIndex && (pIndex->GetBlockHash() == pIndexLast->GetBlockHash() || GetNextBlockIndex(pIndex)))
+        {
+            if (pIndex->GetOriginHash() != hashFork)
+            {
+                StdTrace("BlockBase", "GetForkBlockInv GetOriginHash error, fork: %s", hashFork.ToString().c_str());
+                return false;
+            }
+            break;
+        }
+        pIndex = nullptr;
+    }
 
                 // Fail receipt
                 CTransactionReceipt receipt;
