@@ -1020,6 +1020,30 @@ CRPCMod::CRPCMod()
         //
         ("signmessage", &CRPCMod::RPCSignMessage)
         //
+        ("addusercoin", &CRPCMod::RPCAddUserCoin)
+        //
+        ("addcontractcoin", &CRPCMod::RPCAddContractCoin)
+        //
+        ("getcoininfo", &CRPCMod::RPCGetCoinInfo)
+        //
+        ("listcoininfo", &CRPCMod::RPCListCoinInfo)
+        //
+        ("getdexcoinpair", &CRPCMod::RPCGetDexCoinPair)
+        //
+        ("listdexcoinpair", &CRPCMod::RPCListDexCoinPair)
+        //
+        ("senddexordertx", &CRPCMod::RPCSendDexOrderTx)
+        //
+        ("listdexorder", &CRPCMod::RPCListDexOrder)
+        //
+        ("getdexsymboltype", &CRPCMod::RPCGetDexSymbolType)
+        //
+        ("listrealtimedexorder", &CRPCMod::RPCListRealtimeDexOrder)
+        //
+        ("sendcrosstransfertx", &CRPCMod::RPCSendCrossTransferTx)
+        //
+        ("getcrosstransferamount", &CRPCMod::RPCGetCrossTransferAmount)
+        //
         ("listaddress", &CRPCMod::RPCListAddress)
         //
         ("exportwallet", &CRPCMod::RPCExportWallet)
