@@ -123,9 +123,9 @@ public:
     bool GetAddressCount(const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount);
     bool ListFunctionAddress(const uint256& hashBlock, std::map<uint32, CFunctionAddressContext>& mapFunctionAddress);
     bool RetrieveFunctionAddress(const uint256& hashBlock, const uint32 nFuncId, CFunctionAddressContext& ctxFuncAddress);
-
-    bool CheckAddressContext(const std::vector<uint256>& vCheckBlock);
-    bool CheckAddressContext(const uint256& hashLastBlock, const uint256& hashLastRoot);
+    bool RetrieveBlsPubkeyContext(const uint256& hashBlock, const CDestination& dest, uint384& blsPubkey);
+    bool GetOwnerLinkTemplateAddress(const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress);
+    bool GetDelegateLinkTemplateAddress(const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress);
     bool VerifyAddressContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
     bool AddCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock,

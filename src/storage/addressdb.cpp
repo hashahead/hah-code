@@ -1095,15 +1095,15 @@ bool CForkAddressDB::RecoveryAddressData(const CForkAddressRootKv& addressRootKv
 }
 
 ///////////////////////////////////
-bool CForkAddressDB::WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot)
+bool CForkAddressDB::WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot)
 {
     hnbase::CBufStream ssKey, ssValue;
-    ssKey << DB_ADDRESS_KEY_TYPE_TRIEROOT << hashBlock;
+    ssKey << DB_ADDRESS_KEY_TYPE_TRIEROOT << nRootType << hashBlock;
     ssValue << hashTrieRoot;
     return dbTrie.WriteExtKv(ssKey, ssValue);
 }
 
-bool CForkAddressDB::ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot)
+bool CForkAddressDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot)
 {
     if (hashBlock == 0)
     {
@@ -1112,7 +1112,7 @@ bool CForkAddressDB::ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoo
     }
 
     hnbase::CBufStream ssKey, ssValue;
-    ssKey << DB_ADDRESS_KEY_TYPE_TRIEROOT << hashBlock;
+    ssKey << DB_ADDRESS_KEY_TYPE_TRIEROOT << nRootType << hashBlock;
     if (!dbTrie.ReadExtKv(ssKey, ssValue))
     {
         return false;
