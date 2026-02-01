@@ -1503,16 +1503,23 @@ bool CRPCMod::HandleEvent(CEventHttpBroken& eventHttpBroken)
     return true;
 }
 
-void CRPCMod::JsonReply(uint64 nNonce, const std::string& result)
+void CRPCMod::JsonReply(const uint8 nReqSourceType, const CChainId nChainId, const uint64 nNonce, const std::string& result)
 {
-    CEventHttpRsp eventHttpRsp(nNonce);
-    eventHttpRsp.data.nStatusCode = 200;
-    eventHttpRsp.data.mapHeader["content-type"] = "application/json";
-    eventHttpRsp.data.mapHeader["connection"] = "Keep-Alive";
-    eventHttpRsp.data.mapHeader["server"] = "hashahead-rpc";
-    eventHttpRsp.data.strContent = result + "\n";
+    if (nReqSourceType == REQ_SOURCE_TYPE_HTTP)
+    {
+        CEventHttpRsp eventHttpRsp(nNonce);
+        eventHttpRsp.data.nStatusCode = 200;
+        eventHttpRsp.data.mapHeader["content-type"] = "application/json";
+        eventHttpRsp.data.mapHeader["connection"] = "Keep-Alive";
+        eventHttpRsp.data.mapHeader["server"] = "hashahead-rpc";
+        eventHttpRsp.data.strContent = result + "\n";
 
-    pHttpServer->DispatchEvent(&eventHttpRsp);
+        pHttpServer->DispatchEvent(&eventHttpRsp);
+    }
+    else if (nReqSourceType == REQ_SOURCE_TYPE_WS)
+    {
+        pWsService->SendWsMsg(nChainId, nNonce, result);
+    }
 }
 
 int CRPCMod::GetInt(const CRPCInt64& i, int valDefault)
