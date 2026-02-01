@@ -1347,14 +1347,18 @@ bool CRPCMod::HandleEvent(CEventHttpReq& eventHttpReq)
     try
     {
         // check version
-        string strVersion = eventHttpReq.data.mapHeader["url"].substr(1);
-        if (!strVersion.empty())
+        auto nt = eventHttpReq.data.mapHeader.find("url");
+        if (nt != eventHttpReq.data.mapHeader.end() && !nt->second.empty())
         {
-            if (!CheckVersion(strVersion))
+            string strVersion = nt->second.substr(1);
+            if (!strVersion.empty())
             {
-                throw CRPCException(RPC_VERSION_OUT_OF_DATE,
-                                    string("Out of date version. Server version is v") + VERSION_STR
-                                        + ", but client version is v" + strVersion);
+                if (!CheckVersion(strVersion))
+                {
+                    throw CRPCException(RPC_VERSION_OUT_OF_DATE,
+                                        string("Out of date version. Server version is v") + VERSION_STR
+                                            + ", but client version is v" + strVersion);
+                }
             }
         }
 
