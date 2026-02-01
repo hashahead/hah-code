@@ -1782,6 +1782,53 @@ bool CBlockChain::VerifyBlockCrosschainProve(const uint256& hashBlock, const CBl
     {
         const CChainId nPeerChainId = kv.first;
         const CBlockProve& blockProve = kv.second;
+
+        if (nPeerChainId == nLocalChainId)
+        {
+            StdLog("BlockChain", "Verify block crosschain prove: Peer chainid iequal to local chainid, peer chainid: %u, block: %s", nPeerChainId, hashBlock.ToString().c_str());
+            return false;
+        }
+        if (blockProve.hashBlock == 0)
+        {
+            StdLog("BlockChain", "Verify block crosschain prove: Prove block is empty, local chainid: %d, peer chainid: %d, block: %s", nLocalChainId, nPeerChainId, hashBlock.ToString().c_str());
+            return false;
+        }
+        if (blockProve.btAggSigBitmap.empty())
+        {
+            StdLog("BlockChain", "Verify block crosschain prove: Prove agg bitmap is empty, block: %s", hashBlock.ToString().c_str());
+            return false;
+        }
+        if (blockProve.btAggSigData.empty())
+        {
+            StdLog("BlockChain", "Verify block crosschain prove: Prove agg sig is empty, block: %s", hashBlock.ToString().c_str());
+            return false;
+        }
+
+        uint256 hashRefBlock;
+        if (nPeerChainId == nGenesisChainId)
+        {
+            // if (blockProve.hashRefBlock != 0 || !blockProve.vRefBlockMerkleProve.empty())
+            // {
+            //     return false;
+            // }
+            hashRefBlock = blockProve.hashBlock;
+        }
+        else
+        {
+            if (blockProve.hashRefBlock == 0 || blockProve.vRefBlockMerkleProve.empty())
+            {
+                StdLog("BlockChain", "Verify block crosschain prove: Prove ref block or merkle prove is empty, block: %s", hashBlock.ToString().c_str());
+                return false;
+            }
+            if (!CBlock::VerifyBlockMerkleProve(blockProve.hashBlock, blockProve.vRefBlockMerkleProve, blockProve.hashRefBlock))
+            {
+                StdLog("BlockChain", "Verify block crosschain prove: Verify ref block merkle prove fail, verify block: %s, ref block: %s, block: %s",
+                       blockProve.hashBlock.ToString().c_str(), blockProve.hashRefBlock.ToString().c_str(), hashBlock.ToString().c_str());
+                return false;
+            }
+            hashRefBlock = blockProve.hashRefBlock;
+        }
+
     }
     return true;
 }
