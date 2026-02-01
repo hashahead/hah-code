@@ -24,6 +24,21 @@ inline unsigned long GetCurThreadId()
     return threadNumber;
 }
 
+class CBaseUniqueId : public boost::noncopyable
+{
+public:
+    CBaseUniqueId(const uint64 ui64Id)
+      : ui64UniqueId(ui64Id) {}
+    CBaseUniqueId(CBaseUniqueId& uid)
+      : ui64UniqueId(uid.ui64UniqueId) {}
+
+private:
+    static uint32 uiIdCreate;
+    static boost::mutex lockCreate;
+
+    uint64 ui64UniqueId;
+};
+
 } // namespace hnbase
 
 #endif // __HSM_MTHBASE_H
