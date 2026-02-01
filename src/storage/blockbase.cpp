@@ -1384,11 +1384,10 @@ bool CBlockBase::GetBlockHashByHeightSlot(const uint256& hashFork, const uint256
     }
     if (fLongchainBlock)
     {
-        auto nt = mapBlockState.find(destMint);
-        if (nt == mapBlockState.end())
+        std::vector<uint256> vBlockHash;
+        if (dbBlock.RetrieveBlockHashByHeight(hashFork, nHeight, vBlockHash))
         {
-            CDestState state;
-            if (!dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, destMint, state))
+            for (const uint256& hashHeightBlock : vBlockHash)
             {
                 CAddressContext ctxAddress;
                 if (!GetAddressContext(destMint, ctxAddress))
