@@ -1327,65 +1327,35 @@ bool CBlockBase::GetForkBlockMintListByHeight(const uint256& hashFork, const uin
     return true;
 }
 
-        // Common tx receipt
-        receipt.nReceiptType = CTransactionReceipt::RECEIPT_TYPE_COMMON;
+bool CBlockBase::GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight)
+{
+    return dbBlock.GetForkMaxHeight(hashFork, nMaxHeight);
+}
 
-        receipt.nTxIndex = nTxIndex;
-        receipt.txid = txid;
-        receipt.nBlockNumber = nBlockNumber;
-        receipt.from = tx.GetFromAddress();
-        receipt.to = tx.GetToAddress();
-        receipt.nTxGasUsed = nUsedGas;
-        receipt.nTvGasUsed = nTvGas;
-        receipt.nEffectiveGasPrice = tx.GetGasPrice();
-    }
-
-    if (nTvGasFee > 0)
+bool CBlockBase::IsLongchainBlock(const uint256& hashFork, const uint256& hashBlock)
+{
+    BlockIndexPtr pIndex = GetIndex(hashBlock);
+    if (pIndex)
     {
-        nBlockFeeLeft += nTvGasFee;
-
-        uint8 nDestType = CDestination::PREFIX_PUBKEY;
-        uint8 nTemplateType = 0;
-        CDestination destTimeVaultToAddress;
-        CFunctionAddressContext ctxPrevFuncAddress;
-        if (dbBlockBase.RetrieveFunctionAddress(hashPrevBlock, FUNCTION_ID_TIME_VAULT_TO_ADDRESS, ctxPrevFuncAddress))
+        uint256 hashNumberBlock;
+        if (GetBlockIndexHashByNumberNoLock(hashFork, 0, pIndex->GetBlockNumber(), hashNumberBlock) && hashBlock == hashNumberBlock)
         {
-            destTimeVaultToAddress = ctxPrevFuncAddress.GetFunctionAddress();
-            CAddressContext ctxTvAddress;
-            if (GetAddressContext(destTimeVaultToAddress, ctxTvAddress))
-            {
-                // if (ctxTvAddress.IsContract())
-                // {
-                //     CTransaction txTv;
-                //     txTv.SetTxType(CTransaction::TX_INTERNAL);
-                //     txTv.SetChainId(CBlock::GetBlockChainIdByHash(hashFork));
-                //     txTv.SetNonce((nBlockNumber << 32) | nTxIndex);
-                //     txTv.SetToAddress(destTimeVaultToAddress);
-                //     txTv.SetAmount(nTvGasFee);
-
-                //     bool fCallResult = true;
-                //     CTransactionReceipt receiptTv;
-                //     if (!AddContractState(txTv.GetHash(), txTv, 0, DEF_TX_GAS_LIMIT.Get64(), 0, fCallResult, receiptTv))
-                //     {
-                //         // Execution failure does not affect the process.
-                //         StdLog("CBlockState", "Add tx state: Add tv contract state fail, txid: %s", txid.GetHex().c_str());
-                //     }
-                //     else
-                //     {
-                //         StdDebug("CBlockState", "Add tx state: Add tv contract state success, call result: %s, txid: %s", (fCallResult ? "true" : "false"), txid.GetHex().c_str());
-                //     }
-                // }
-                nDestType = ctxTvAddress.GetDestType();
-                nTemplateType = ctxTvAddress.GetTemplateType();
-            }
+            return true;
         }
-        else
-        {
-            destTimeVaultToAddress = TIME_VAULT_TO_ADDRESS;
-        }
+    }
+    return false;
+}
 
-        CDestState stateTvOwner;
-        if (!GetDestState(destTimeVaultToAddress, stateTvOwner))
+bool CBlockBase::GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock)
+{
+    bool fLongchainBlock = false;
+    if (hashRefBlock == 0)
+    {
+        fLongchainBlock = true;
+    }
+    else
+    {
+        if (CBlock::GetBlockHeightByHash(hashRefBlock) < nHeight)
         {
             stateTvOwner.SetNull();
             stateTvOwner.SetType(nDestType, nTemplateType);
