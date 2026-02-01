@@ -1382,15 +1382,27 @@ bool CRPCMod::HandleEvent(CEventHttpReq& eventHttpReq)
                 throw CRPCException(RPC_REQUEST_FUNC_OBSOLETE, string("chain id error, chain id is ") + to_string(eventHttpReq.data.nReqChainId));
             }
         }
-        CReqContext ctxReq(hashReqFork, eventHttpReq.data.nReqChainId, eventHttpReq.data.nListenPort, eventHttpReq.data.strPeerIp, eventHttpReq.data.nPeerPort);
+        CReqContext ctxReq(nNonce, hashReqFork, eventHttpReq.data.nSourceType, eventHttpReq.data.nReqChainId,
+                           eventHttpReq.data.nListenPort, eventHttpReq.data.strPeerIp, eventHttpReq.data.nPeerPort);
 
-        const std::set<std::string> setNoParserMethod = { "eth_getBlockByHash", "eth_getBlockByNumber", "eth_call", "eth_estimateGas", "eth_newFilter", "eth_getLogs" };
+        const std::set<std::string> setNoParserMethod = { "eth_getBlockByHash", "eth_getBlockByNumber", "eth_call", "eth_estimateGas", "eth_newFilter", "eth_getLogs", "eth_subscribe", "eth_feeHistory",
+                                                          "debug_getBadBlocks", "debug_storageRangeAt", "debug_getTrieFlushInterval", "debug_traceBlock", "debug_traceBlockByHash", "debug_traceBlockByNumber", "debug_traceCall", "debug_traceTransaction" };
+
+        std::string strContent = eventHttpReq.data.strContent;
+        if (strContent.find("\"params\"") == std::string::npos)
+        {
+            std::size_t pos = strContent.find("}");
+            if (pos != std::string::npos)
+            {
+                strContent.insert(pos, ",\"params\":[]");
+            }
+        }
 
         bool fArray = false;
         CRPCReqVec vecReq;
         {
             boost::unique_lock<boost::mutex> lock(mutexDec);
-            vecReq = DeserializeCRPCReq(eventHttpReq.data.strContent, setNoParserMethod, fArray);
+            vecReq = DeserializeCRPCReq(strContent, setNoParserMethod, fArray);
         }
         CRPCRespVec vecResp;
         for (auto& spReq : vecReq)
