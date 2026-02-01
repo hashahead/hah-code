@@ -1723,6 +1723,8 @@ bool CRPCMod::VerifyClientOrder(const CReqContext& ctxReq)
 
 CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::string& strJsonValue)
 {
+    boost::unique_lock<boost::mutex> lock(mutexDec);
+
     CLogsFilter logFilter;
 
     json_spirit::Value valParam;
@@ -1737,16 +1739,27 @@ CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::st
 
     const json_spirit::Object& item = valParam.get_array()[0].get_obj();
 
-    json_spirit::Value from_block = find_value(item, "fromBlock");
+    int nLastHeight;
+    uint256 hashLastBlock;
+    if (!pService->GetForkLastBlock(hashFork, nLastHeight, hashLastBlock))
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "last block error");
+    }
+
+    json_spirit::Value from_block = find_value(item, "fromBlock"); // default: latest
     if (!from_block.is_null())
     {
         if (from_block.type() != json_spirit::str_type)
         {
-            throw CRPCException(RPC_INVALID_REQUEST, "fromBlock type error");
+            throw CRPCException(RPC_INVALID_REQUEST, "invalid fromBlock");
         }
-        if (from_block.get_str() == std::string("earliest") || from_block.get_str() == std::string("pending"))
+        if (from_block.get_str() == std::string("earliest"))
         {
-            logFilter.withFromBlock(0);
+            logFilter.withFromBlock(hashFork);
+        }
+        else if (from_block.get_str() == std::string("latest") || from_block.get_str() == std::string("pending"))
+        {
+            logFilter.withFromBlock(hashLastBlock);
         }
         else
         {
