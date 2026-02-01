@@ -1304,6 +1304,12 @@ bool CRPCMod::HandleInitialize()
         Error("Failed to request blockmaker");
         return false;
     }
+    if (!GetObject("wsservice", pWsService))
+    {
+        Error("Failed to request wsservice");
+        return false;
+    }
+
     fWriteRPCLog = RPCServerConfig()->fRPCLogEnable;
 
     if (BasicConfig()->nModRpcThreads > 1)
@@ -1321,6 +1327,7 @@ void CRPCMod::HandleDeinitialize()
     pDataStat = nullptr;
     pForkManager = nullptr;
     pBlockMaker = nullptr;
+    pWsService = nullptr;
 }
 
 bool CRPCMod::HandleEvent(CEventHttpReq& eventHttpReq)
