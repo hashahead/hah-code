@@ -1228,36 +1228,27 @@ bool CBlockBase::GetForkBlockInv(const uint256& hashFork, const CBlockLocator& l
         pIndex = nullptr;
     }
 
-                // Fail receipt
-                CTransactionReceipt receipt;
-
-                receipt.nReceiptType = CTransactionReceipt::RECEIPT_TYPE_COMMON;
-
-                receipt.nContractStatus = 1; // 0: success, 1: fail
-
-                receipt.nTxIndex = nTxIndex;
-                receipt.txid = txid;
-                receipt.nBlockNumber = nBlockNumber;
-                receipt.from = tx.GetFromAddress();
-                receipt.to = tx.GetToAddress();
-                receipt.nTxGasUsed = nTxBaseGas;
-                receipt.nTvGasUsed = 0;
-                receipt.nEffectiveGasPrice = tx.GetGasPrice();
-
-                receipt.CalcLogsBloom();
-
-                //nBlockBloom |= receipt.nLogsBloom;
-                receipt.GetBloomDataSet(setBlockBloomData);
-                mapBlockTxReceipts.insert(std::make_pair(txid, receipt));
-
-                hnbase::CBufStream ss;
-                ss << receipt;
-                vReceiptHash.push_back(hashahead::crypto::CryptoHash(ss.GetData(), ss.GetSize()));
-                return true;
-            }
+    if (pIndex)
+    {
+        pIndex = GetNextBlockIndex(pIndex);
+        while (pIndex && vBlockHash.size() < nMaxCount)
+        {
+            vBlockHash.push_back(pIndex->GetBlockHash());
+            pIndex = GetNextBlockIndex(pIndex);
         }
-        nLeftGas = tx.GetGasLimit() - (tx.GetTxBaseGas() + nTvGas);
     }
+    return true;
+}
+
+BlockIndexPtr CBlockBase::GetOriginBlockIndex(const BlockIndexPtr pIndex)
+{
+    return (pIndex ? GetIndex(pIndex->GetOriginHash()) : nullptr);
+}
+
+BlockIndexPtr CBlockBase::GetPrevBlockIndex(const BlockIndexPtr pIndex)
+{
+    return (pIndex ? GetIndex(pIndex->GetPrevHash()) : nullptr);
+}
 
     CTransactionReceipt receipt;
     if (fToContract)
