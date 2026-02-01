@@ -65,7 +65,7 @@ std::string GetThreadName()
 
 void PrintTrace()
 {
-#ifndef _WIN32
+#if defined(__linux__) || defined(__APPLE__)
     void* stack_trace[DUMP_STACK_DEPTH_MAX] = { 0 };
     char** stack_strings = nullptr;
     int stack_depth = 0;
@@ -217,6 +217,28 @@ public:
 
 static CBoostLog g_log;
 static bool volatile g_log_init = false;
+static bool volatile g_log_out_show = false;
+
+void NointOutLog(const severity_level level, const char* pszName, const std::string& outInfo)
+{
+    std::string strLevel;
+    switch (level)
+    {
+    case debug:
+        strLevel = "debug";
+        break;
+    case info:
+        strLevel = "info";
+        break;
+    case warn:
+        strLevel = "warn";
+        break;
+    case error:
+        strLevel = "error";
+        break;
+    }
+    std::cout << GetLocalTime() << " : [" << std::string(pszName) << "] <" << strLevel << "> {" << GetThreadName() << "} - " << outInfo << std::endl;
+}
 
 void StdTrace(const char* pszName, const char* pszFormat, ...)
 {
