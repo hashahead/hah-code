@@ -591,7 +591,7 @@ bool CForkDB::GetForkHashByForkName(const std::string& strForkName, uint256& has
         hashLastBlock = hashMainChainRefBlock;
     }
 
-    const CCacheFork* ptr = GetCacheForkContext(hashMainChainRefBlock);
+    const SHP_CACHE_FORK_DATA ptr = GetCacheForkContext(hashLastBlock);
     if (ptr)
     {
         hashFork = ptr->GetForkHashByName(strForkName);
@@ -599,6 +599,7 @@ bool CForkDB::GetForkHashByForkName(const std::string& strForkName, uint256& has
         {
             return true;
         }
+        return false;
     }
 
     uint256 hashRoot;
@@ -646,7 +647,7 @@ bool CForkDB::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, c
         hashLastBlock = hashMainChainRefBlock;
     }
 
-    const CCacheFork* ptr = GetCacheForkContext(hashMainChainRefBlock);
+    const SHP_CACHE_FORK_DATA ptr = GetCacheForkContext(hashLastBlock);
     if (ptr)
     {
         hashFork = ptr->GetForkHashByChainId(nChainId);
@@ -654,12 +655,13 @@ bool CForkDB::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, c
         {
             return true;
         }
+        return false;
     }
 
     uint256 hashRoot;
     if (!ReadTrieRoot(hashLastBlock, hashRoot))
     {
-        StdLog("CForkDB", "Get fork hash by fork chainid: Read trie root fail, fork: %s", hashFork.GetHex().c_str());
+        StdLog("CForkDB", "Get fork hash by fork chainid: Read trie root fail, chainid: %d", nChainId);
         return false;
     }
 
@@ -669,7 +671,7 @@ bool CForkDB::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, c
     ssKey.GetData(btKey);
     if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
     {
-        StdLog("CForkDB", "Get fork hash by fork chainid: Retrieve fail, fork: %s", hashFork.GetHex().c_str());
+        StdLog("CForkDB", "Get fork hash by fork chainid: Retrieve fail, chainid: %d", nChainId);
         return false;
     }
     try
