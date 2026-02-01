@@ -1003,13 +1003,13 @@ void CTxPool::ListTx(const uint256& hashFork, vector<uint256>& vTxPool)
     }
 }
 
-bool CTxPool::ListTx(const uint256& hashFork, const CDestination& dest, vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount)
+bool CTxPool::ListTx(const uint256& hashFork, const CDestination& dest, vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount, const bool fContainCertTx)
 {
     boost::shared_lock<boost::shared_mutex> rlock(rwAccess);
     auto it = mapForkPool.find(hashFork);
     if (it != mapForkPool.end())
     {
-        return it->second.ListTx(dest, vTxPool, nGetOffset, nGetCount);
+        return it->second.ListTx(dest, vTxPool, nGetOffset, nGetCount, fContainCertTx);
     }
     return false;
 }

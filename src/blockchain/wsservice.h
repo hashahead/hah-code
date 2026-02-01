@@ -16,6 +16,9 @@ namespace hashahead
 {
 
 /////////////////////////////
+
+typedef websocketpp::server<websocketpp::config::asio> WSSERVER;
+
 // CWsService
 
 class CWsService : public IWsService, virtual public CWsServiceEventListener

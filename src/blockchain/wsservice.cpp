@@ -45,6 +45,17 @@ void CClientSubscribe::matchesLogs(CTransactionReceipt const& _m, MatchLogsVec& 
     }
 }
 
+/////////////////////////////
+// CWsSubscribeFork
+
+uint128 CWsSubscribeFork::AddSubscribe(const uint64 nClientConnId, const uint8 nSubsType, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics)
+{
+    return 0;
+}
+
+void CWsSubscribeFork::RemoveClientAllSubscribe(const uint64 nClientConnId)
+{
+}
 //////////////////////////////
 // CWsService
 

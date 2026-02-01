@@ -624,6 +624,11 @@ bool CService::RetrieveDelegateEnrollStatus(const uint256& hashBlock, std::map<C
     return pBlockChain->RetrieveDelegateEnrollStatus(hashBlock, mapDelegateEnrollStatus);
 }
 
+bool CService::RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDestination, std::pair<uint256, double>>& mapDelegateRewardApy)
+{
+    return pBlockChain->RetrieveDelegateRewardApy(hashBlock, mapDelegateRewardApy);
+}
+
 bool CService::GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight)
 {
     return pBlockChain->GetUserVotes(hashRefBlock, destVote, nTemplateType, nVotes, nUnlockHeight);
@@ -662,7 +667,7 @@ uint256 CService::AddLogsFilter(const uint256& hashClient, const uint256& hashFo
 
 void CService::RemoveFilter(const uint256& nFilterId)
 {
-    pBlockChain->RemoveFilter(nFilterId);
+    pBlockFilter->RemoveFilter(nFilterId);
 }
 
 bool CService::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs)
