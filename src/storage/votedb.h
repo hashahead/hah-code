@@ -142,7 +142,8 @@ public:
     bool RetrieveDelegateEnrollStatus(const std::vector<uint256>& vBlockRange, std::map<CDestination, uint32>& mapDelegateEnrollStatus);
     bool VerifyDelegateVote(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
-    bool AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight, const std::map<CDestination, uint256>& mapVoteReward, uint256& hashNewRoot);
+    bool AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight,
+                       const std::map<CDestination, uint256>& mapVoteReward, const CDestination& destMint, const uint8 nMintTemplateType, const uint256& nMintReward, uint256& hashNewRoot);
     bool ListVoteReward(const uint32 nChainId, const uint256& hashBlock, const CDestination& dest, const uint32 nGetCount, std::vector<std::pair<uint32, uint256>>& vVoteReward);
     bool VerifyVoteReward(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 

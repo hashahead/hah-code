@@ -1033,8 +1033,7 @@ bool CVoteDB::VerifyDelegateVote(const uint256& hashPrevBlock, const uint256& ha
     uint256 hashPrevRoot;
     if (hashPrevBlock != 0)
     {
-        uint64 nDelegateVoteCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashPrevBlock, hashPrevRoot, nDelegateVoteCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_DELEGATE_VOTE, hashPrevBlock, hashPrevRoot))
         {
             StdLog("CVoteDB", "Verify delegate vote: Read trie root fail, hashPrevBlock: %s, hashBlock: %s",
                    hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
@@ -1063,13 +1062,13 @@ bool CVoteDB::VerifyDelegateVote(const uint256& hashPrevBlock, const uint256& ha
 ///////////////////////////////////////////////////////////////////////////////////
 // vote reward db
 
-bool CVoteDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight, const std::map<CDestination, uint256>& mapVoteReward, uint256& hashNewRoot)
+bool CVoteDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight,
+                            const std::map<CDestination, uint256>& mapVoteReward, const CDestination& destMint, const uint8 nMintTemplateType, const uint256& nMintReward, uint256& hashNewRoot)
 {
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
     {
-        uint64 nRewardCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashPrevBlock, hashPrevRoot, nRewardCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashPrevBlock, hashPrevRoot))
         {
             StdLog("CVoteDB", "Add vote reward: Read trie root fail, hashPrevBlock: %s, hashBlock: %s",
                    hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
@@ -1078,6 +1077,21 @@ bool CVoteDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, cons
     }
 
     bytesmap mapKv;
+
+    if (!destMint.IsNull() && nMintReward > 0)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_VOTE_KEY_TYPE_MINT_REWARD_ADDRESS << nChainId << destMint;
+        ssKey.GetData(btKey);
+
+        ssValue << nMintTemplateType << nMintReward;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+
     for (const auto& kv : mapVoteReward)
     {
         hnbase::CBufStream ssKey, ssValue;
@@ -1091,7 +1105,11 @@ bool CVoteDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, cons
 
         mapKv.insert(make_pair(btKey, btValue));
     }
-    AddPrevRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashPrevRoot, hashBlock, mapKv);
+
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddPrevRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashPrevRoot, hashBlock, mapKv);
+    }
 
     if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
     {
@@ -1100,7 +1118,7 @@ bool CVoteDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, cons
         return false;
     }
 
-    if (!WriteTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashBlock, hashNewRoot, mapVoteReward.size()))
+    if (!WriteTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashBlock, hashNewRoot))
     {
         StdLog("CVoteDB", "Add vote reward: Write trie root fail, hashPrevBlock: %s, hashBlock: %s",
                hashPrevBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
