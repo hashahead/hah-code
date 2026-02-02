@@ -2083,7 +2083,21 @@ CRPCResultPtr CRPCMod::RPCListFork(const CReqContext& ctxReq, CRPCParamPtr param
         }
 
         CBlockStatus lastStatus;
-        pService->GetLastBlockStatus(hashFork, lastStatus);
+        if (!pService->GetLastBlockStatus(hashFork, lastStatus))
+        {
+            StdError("CRPCMod", "RPCListFork: Get last block status fail, fork: %s", hashFork.GetHex().c_str());
+            continue;
+        }
+
+        CForkCtxStatus forkStatus;
+        if (forkContext.IsUserFork())
+        {
+            pService->GetForkCtxStatus(hashFork, forkStatus);
+        }
+        else
+        {
+            forkStatus = CForkCtxStatus(CForkCtxStatus::FORK_STATUS_RUNNING);
+        }
 
         uint64 nAddressCount = 0;
         uint64 nNewAddressCount = 0;
