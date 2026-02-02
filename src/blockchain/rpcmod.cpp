@@ -2109,8 +2109,16 @@ CRPCResultPtr CRPCMod::RPCListFork(const CReqContext& ctxReq, CRPCParamPtr param
         displayProfile.nChainid = profile.nChainId;
         displayProfile.strName = profile.strName;
         displayProfile.strSymbol = profile.strSymbol;
+        displayProfile.strCoinsymbol = (forkContext.IsClonemapFork() ? strMainSymbol : profile.strSymbol);
         displayProfile.strAmount = CoinToTokenBigFloat(profile.nAmount);
-        displayProfile.strReward = CoinToTokenBigFloat(profile.nMintReward);
+        if (SET_OLD_BBCP_REWARD_INIT && hashFork == pCoreProtocol->GetGenesisBlockHash())
+        {
+            displayProfile.strReward = CoinToTokenBigFloat(BBCP_REWARD_INIT);
+        }
+        else
+        {
+            displayProfile.strReward = CoinToTokenBigFloat(profile.nMintReward);
+        }
         displayProfile.nHalvecycle = (uint64)(profile.nHalveCycle);
         displayProfile.strOwner = profile.destOwner.ToString();
         displayProfile.strCreatetxid = forkContext.txidEmbedded.GetHex();
@@ -2121,12 +2129,14 @@ CRPCResultPtr CRPCMod::RPCListFork(const CReqContext& ctxReq, CRPCParamPtr param
         displayProfile.nLastnumber = lastStatus.nBlockNumber;
         displayProfile.nLastslot = lastStatus.nBlockSlot;
         displayProfile.strLastblock = lastStatus.hashBlock.ToString();
+        displayProfile.fLastconfirm = pService->IsBlockConfirm(lastStatus.hashBlock);
         displayProfile.nTotaltxcount = lastStatus.nTotalTxCount;
         displayProfile.nRewardtxcount = lastStatus.nRewardTxCount;
         displayProfile.nUsertxcount = lastStatus.nUserTxCount;
         displayProfile.nAddresscount = nAddressCount;
         displayProfile.strMoneysupply = CoinToTokenBigFloat(lastStatus.nMoneySupply);
         displayProfile.strMoneydestroy = CoinToTokenBigFloat(lastStatus.nMoneyDestroy);
+        displayProfile.strStatus = forkStatus.GetForkStatusString();
 
         spResult->vecProfile.push_back(displayProfile);
     }
