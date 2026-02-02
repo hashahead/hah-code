@@ -107,6 +107,7 @@ protected:
     bool HandleInvoke() override;
     void HandleHalt() override;
 
+    bool HandleEvent(network::CEventPeerActive& eventActive) override;
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;

@@ -175,4 +175,14 @@ bool CBlockVoteChannel::HandleEvent(network::CEventPeerDeactive& eventDeactive)
     return true;
 }
 
+bool CBlockVoteChannel::HandleEvent(network::CEventPeerBlockVoteProtoData& eventBvp)
+{
+    auto it = mapChnFork.find(eventBvp.hashFork);
+    if (it != mapChnFork.end())
+    {
+        it->second.OnNetData(eventBvp.nNonce, eventBvp.data);
+    }
+    return true;
+}
+
 } // namespace hashahead
