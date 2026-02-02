@@ -418,5 +418,29 @@ bool CTxIndexDB::VerifyTxIndex(const uint256& hashFork, const uint256& hashPrevB
     return false;
 }
 
+bool CTxIndexDB::WalkThroughSnapshotTxIndex(const uint256& hashFork, const uint256& hashLastBlock, WalkerTxIndexKvFunc fnWalker)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTxIndexDB.find(hashFork);
+    if (it != mapTxIndexDB.end())
+    {
+        return it->second->WalkThroughSnapshotTxIndex(hashLastBlock, fnWalker);
+    }
+    return false;
+}
+
+bool CTxIndexDB::WriteTxIndexKvData(const uint256& hashFork, const bytes& btKey, const bytes& btValue)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTxIndexDB.find(hashFork);
+    if (it != mapTxIndexDB.end())
+    {
+        return it->second->WriteTxIndexKvData(btKey, btValue);
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead

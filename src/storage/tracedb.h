@@ -64,6 +64,7 @@ public:
 protected:
     boost::filesystem::path pathTrace;
     hnbase::CRWAccess rwAccess;
+    std::map<uint256, std::shared_ptr<CForkTraceDB>> mapTraceDB;
     bool fUseCacheData;
     bool fPrune;
 };

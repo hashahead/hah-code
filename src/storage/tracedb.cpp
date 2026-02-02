@@ -16,6 +16,18 @@ namespace hashahead
 namespace storage
 {
 
+const uint8 DB_TRACE_KEY_TYPE_PREVROOT = 0x01;
+const uint8 DB_TRACE_KEY_TYPE_TRIEROOT = 0x02;
+
+const uint8 DB_TRACE_KEY_TYPE_TRIEROOT_CONTRACT_KV = 0x11;
+
+// const uint8 DB_TRACE_KEY_NAME_TXPOS = 0x21;
+const uint8 DB_TRACE_KEY_NAME_CONTRACT_RECEIPT = 0x22;
+const uint8 DB_TRACE_KEY_NAME_CONTRACT_PREV_STATE = 0x23;
+const uint8 DB_TRACE_KEY_NAME_CONTRACT_ADDRESS_KV_PAIR = 0x24;
+
+#define DB_TRACE_KEY_ID_PREVROOT string("prevroot")
+
 //////////////////////////////
 // CCacheBlockContractReceipts
 
