@@ -75,6 +75,35 @@ bool CCacheBlockContractPrevState::GetTxContractPrevState(const uint256& txid, M
 }
 
 //////////////////////////////
+// CCacheTraceData
+
+void CCacheTraceData::AddCacheBlockContractTraceData(const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState)
+{
+    bool fAdd = false;
+    if (mapBlockContractReceipts.find(hashBlock) == mapBlockContractReceipts.end())
+    {
+        mapBlockContractReceipts.insert(std::make_pair(hashBlock, CCacheBlockContractReceipts(vContractReceipts)));
+        fAdd = true;
+    }
+    if (mapBlockContractPrevState.find(hashBlock) == mapBlockContractPrevState.end())
+    {
+        mapBlockContractPrevState.insert(std::make_pair(hashBlock, CCacheBlockContractPrevState(vContractPrevAddressState)));
+        fAdd = true;
+    }
+    if (fAdd)
+    {
+        qBlockHash.push(hashBlock);
+        if (qBlockHash.size() > MAX_CACHE_BLOCK_COUNT)
+        {
+            const uint256 hash = qBlockHash.front();
+            qBlockHash.pop();
+            mapBlockContractReceipts.erase(hash);
+            mapBlockContractPrevState.erase(hash);
+        }
+    }
+}
+
+//////////////////////////////
 // CTraceDB
 
 bool CTraceDB::Initialize(const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn)

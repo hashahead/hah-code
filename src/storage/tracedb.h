@@ -53,6 +53,19 @@ protected:
     std::map<uint256, uint32> mapTxPs; // key: txid, value: index
 };
 
+class CCacheTraceData
+{
+public:
+    CCacheTraceData() {}
+
+    void AddCacheBlockContractTraceData(const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState);
+
+protected:
+    std::map<uint256, CCacheBlockContractReceipts> mapBlockContractReceipts;   // key: block hash
+    std::map<uint256, CCacheBlockContractPrevState> mapBlockContractPrevState; // key: block hash
+    std::queue<uint256> qBlockHash;
+};
+
 class CTraceDB
 {
 public:
