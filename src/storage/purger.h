@@ -19,9 +19,9 @@ class CPurger
 public:
     bool ResetDB(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn, const bool fCacheTraceIn) const;
     bool RemoveBlockFile(const boost::filesystem::path& pathDataLocation) const;
-    bool operator()(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn) const
+    bool operator()(const boost::filesystem::path& pathDataLocation, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn, const bool fCacheTraceIn) const
     {
-        return (ResetDB(pathDataLocation, hashGenesisBlockIn, fFullDbIn) && RemoveBlockFile(pathDataLocation));
+        return (ResetDB(pathDataLocation, hashGenesisBlockIn, fFullDbIn, fTraceDbIn, fCacheTraceIn) && RemoveBlockFile(pathDataLocation));
     }
 };
 
