@@ -28,10 +28,9 @@ public:
     virtual Errno VerifyTransaction(const uint256& txid, const CTransaction& tx, const uint256& hashFork, const uint256& hashPrevBlock, const int nAtHeight, const CDestState& stateFrom, const std::map<CDestination, CAddressContext>& mapBlockAddress) override;
 
     virtual Errno VerifyProofOfPoa(const CBlock& block, const BlockIndexPtr pIndexPrev) override;
-    virtual Errno VerifyDelegatedProofOfStake(const CBlock& block, const CBlockIndex* pIndexPrev, const CDelegateAgreement& agreement) override;
-    virtual Errno VerifySubsidiary(const CBlock& block, const CBlockIndex* pIndexPrev, const CBlockIndex* pIndexRef, const CDelegateAgreement& agreement) override;
-    virtual bool GetBlockTrust(const CBlock& block, uint256& nChainTrust, const CBlockIndex* pIndexPrev = nullptr, const CDelegateAgreement& agreement = CDelegateAgreement(), const CBlockIndex* pIndexRef = nullptr, const uint256& nEnrollTrust = uint256()) override;
-    virtual bool GetProofOfWorkTarget(const CBlockIndex* pIndexPrev, int nAlgo, int& nBits) override;
+    virtual Errno VerifyDelegatedProofOfStake(const CBlock& block, const BlockIndexPtr pIndexPrev, const CDelegateAgreement& agreement) override;
+    virtual Errno VerifySubsidiary(const CBlock& block, const BlockIndexPtr pIndexPrev, const BlockIndexPtr pIndexRef, const CDelegateAgreement& agreement) override;
+    virtual bool GetProofOfWorkTarget(const BlockIndexPtr pIndexPrev, int nAlgo, int& nBits) override;
     virtual uint256 GetDelegatedBallot(const int nBlockHeight, const uint256& nAgreement, const std::size_t& nWeight, const std::map<CDestination, std::size_t>& mapBallot,
                                        const std::vector<std::pair<CDestination, uint256>>& vecAmount, const uint256& nMoneySupply, std::vector<CDestination>& vBallot) override;
     virtual uint64 GetNextBlockTimestamp(const uint64 nPrevTimeStamp) override;

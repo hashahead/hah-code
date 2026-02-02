@@ -769,11 +769,32 @@ Errno CCoreProtocol::VerifyTransaction(const uint256& txid, const CTransaction& 
     }
     if (tx.GetTxType() != CTransaction::TX_CERT && !tx.GetFromAddress().IsNull())
     {
-        if (!stateFrom.VerifyTxNonce(tx.GetNonce()))
+        if (tx.GetNonce() == 0)
         {
-            return DEBUG(ERR_MISSING_PREV, "invalid nonce, tx nonce: %ld, state nonce: %ld, from: %s, to: %s, txid: %s",
-                         tx.GetNonce(), stateFrom.GetTxNonce(), tx.GetFromAddress().ToString().c_str(),
-                         tx.GetToAddress().ToString().c_str(), txid.ToString().c_str());
+            if (VERIFY_FHX_HEIGHT_BRANCH_002(nAtHeight))
+            {
+                if (tx.GetFromAddress() != FUNCTION_DEPLOYMENT_SIGNER_ADDRESS)
+                {
+                    return DEBUG(ERR_MISSING_PREV, "invalid nonce, tx nonce: %ld, state nonce: %ld, from: %s, to: %s, txid: %s",
+                                 tx.GetNonce(), stateFrom.GetTxNonce(), tx.GetFromAddress().ToString().c_str(),
+                                 tx.GetToAddress().ToString().c_str(), txid.ToString().c_str());
+                }
+            }
+            else
+            {
+                return DEBUG(ERR_MISSING_PREV, "invalid nonce, tx nonce: %ld, state nonce: %ld, from: %s, to: %s, txid: %s",
+                             tx.GetNonce(), stateFrom.GetTxNonce(), tx.GetFromAddress().ToString().c_str(),
+                             tx.GetToAddress().ToString().c_str(), txid.ToString().c_str());
+            }
+        }
+        else
+        {
+            if (!stateFrom.VerifyTxNonce(tx.GetNonce()))
+            {
+                return DEBUG(ERR_MISSING_PREV, "invalid nonce, tx nonce: %ld, state nonce: %ld, from: %s, to: %s, txid: %s",
+                             tx.GetNonce(), stateFrom.GetTxNonce(), tx.GetFromAddress().ToString().c_str(),
+                             tx.GetToAddress().ToString().c_str(), txid.ToString().c_str());
+            }
         }
     }
 
