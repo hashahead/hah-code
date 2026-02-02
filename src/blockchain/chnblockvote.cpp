@@ -185,4 +185,15 @@ bool CBlockVoteChannel::HandleEvent(network::CEventPeerBlockVoteProtoData& event
     return true;
 }
 
+//------------------------------------------
+bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteTimer& eventTimer)
+{
+    for (auto& kv : mapChnFork)
+    {
+        kv.second.OnTimer();
+    }
+    OnWaitNewBlock();
+    return true;
+}
+
 } // namespace hashahead

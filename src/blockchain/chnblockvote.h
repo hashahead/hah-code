@@ -95,6 +95,20 @@ public:
     uint64 nNonce;
 };
 
+class CBlockVoteChnFork
+{
+public:
+    CBlockVoteChnFork(const uint256& hashForkIn, const int64 nEpochDurationIn, funcSendNetData sendNetDataIn, funcGetVoteBlockCandidatePubkey getVoteBlockCandidatePubkeyIn, funcAddBlockLocalSignFlag addBlockLocalSignFlagIn, funcCommitVoteResult commitVoteResultIn)
+      : hashFork(hashForkIn), consBlockVote(network::PROTO_CHN_BLOCK_VOTE, nEpochDurationIn, sendNetDataIn, getVoteBlockCandidatePubkeyIn, addBlockLocalSignFlagIn, commitVoteResultIn) {}
+
+    bool AddLocalConsKey(const uint256& prikey, const uint384& pubkey);
+
+protected:
+    const uint256 hashFork;
+    CConsBlockVote consBlockVote;
+    std::map<uint256, CBlockVoteResult, CustomBlockHashCompare> mapVoteResult;
+};
+
 class CBlockVoteChannel : public network::IBlockVoteChannel
 {
 public:
