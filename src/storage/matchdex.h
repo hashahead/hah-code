@@ -108,6 +108,44 @@ public:
 };
 
 ///////////////////////////////////
+// CDexOrderValue
+
+class CDexOrderValue
+{
+public:
+    CDexOrderValue()
+      : nOrderNumber(0), nCompleteCount(0) {}
+    CDexOrderValue(const CDestination& destOrderIn, const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nCompleteAmountIn,
+                   const uint64 nCompleteCountIn, const CChainId nOrderAtChainIdIn, const uint256& hashOrderAtBlockIn)
+      : destOrder(destOrderIn), nOrderNumber(nOrderNumberIn), nOrderAmount(nOrderAmountIn), nCompleteAmount(nCompleteAmountIn),
+        nCompleteCount(nCompleteCountIn), nOrderAtChainId(nOrderAtChainIdIn), hashOrderAtBlock(hashOrderAtBlockIn) {}
+
+    uint256 GetSurplusAmount() const
+    {
+        if (nOrderAmount > nCompleteAmount)
+        {
+            return nOrderAmount - nCompleteAmount;
+        }
+        return 0;
+    }
+
+    friend bool operator==(const CDexOrderValue& a, const CDexOrderValue& b);
+    friend inline bool operator!=(const CDexOrderValue& a, const CDexOrderValue& b)
+    {
+        return (!(a == b));
+    }
+
+public:
+    CDestination destOrder;
+    uint64 nOrderNumber;
+    uint256 nOrderAmount;
+    uint256 nCompleteAmount;
+    uint64 nCompleteCount;
+    CChainId nOrderAtChainId;
+    uint256 hashOrderAtBlock;
+};
+
+///////////////////////////////////
 // CMatchDex
 
 class CMatchDex

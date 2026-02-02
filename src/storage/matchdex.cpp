@@ -43,5 +43,48 @@ bool operator==(const CDexOrderKey& a, const CDexOrderKey& b)
     return true;
 }
 
+///////////////////////////////////
+// CDexOrderValue
+
+bool operator==(const CDexOrderValue& a, const CDexOrderValue& b)
+{
+    if (a.destOrder != b.destOrder)
+    {
+        StdLog("CDexOrderValue", "Compare: destOrder error, a.destOrder: %s, b.destOrder: %s", a.destOrder.ToString().c_str(), b.destOrder.ToString().c_str());
+        return false;
+    }
+    if (a.nOrderNumber != b.nOrderNumber)
+    {
+        StdLog("CDexOrderValue", "Compare: nOrderNumber error, a.nOrderNumber: %lu, b.nOrderNumber: %lu", a.nOrderNumber, b.nOrderNumber);
+        return false;
+    }
+    if (a.nOrderAmount != b.nOrderAmount)
+    {
+        StdLog("CDexOrderKey", "Compare: nOrderAmount error, a.nOrderAmount: %s, b.nOrderAmount: %s", CoinToTokenBigFloat(a.nOrderAmount).c_str(), CoinToTokenBigFloat(b.nOrderAmount).c_str());
+        return false;
+    }
+    if (a.nCompleteAmount != b.nCompleteAmount)
+    {
+        StdLog("CDexOrderKey", "Compare: nOrderAmount error, a.nOrderAmount: %s, b.nOrderAmount: %s", CoinToTokenBigFloat(a.nOrderAmount).c_str(), CoinToTokenBigFloat(b.nOrderAmount).c_str());
+        return false;
+    }
+    if (a.nCompleteCount != b.nCompleteCount)
+    {
+        StdLog("CDexOrderValue", "Compare: nCompleteCount error, a.nCompleteCount: %lu, b.nCompleteCount: %lu", a.nCompleteCount, b.nCompleteCount);
+        return false;
+    }
+    if (a.nOrderAtChainId != b.nOrderAtChainId)
+    {
+        StdLog("CDexOrderValue", "Compare: nOrderAtChainId error, a.nOrderAtChainId: %u, b.nOrderAtChainId: %u", a.nOrderAtChainId, b.nOrderAtChainId);
+        return false;
+    }
+    if (a.hashOrderAtBlock != b.hashOrderAtBlock)
+    {
+        StdLog("CDexOrderValue", "Compare: hashOrderAtBlock error, a.hashOrderAtBlock: %s, b.hashOrderAtBlock: %s", a.hashOrderAtBlock.GetBhString().c_str(), b.hashOrderAtBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
