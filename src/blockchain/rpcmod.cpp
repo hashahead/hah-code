@@ -1870,11 +1870,18 @@ CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::st
                     {
                         uint256 hash;
                         hash.SetHex(next_topics.get_str());
-                        logFilter.addTopic(i, hash);
+                        if (hash != 0)
+                        {
+                            logFilter.addTopic(i, hash);
+                        }
                     }
                 }
             }
             else if (item_topics.type() == json_spirit::null_type)
+            {
+                logFilter.addTopic(i, uint256());
+            }
+            if (logFilter.isTopicEmpty(i))
             {
                 logFilter.addTopic(i, uint256());
             }
@@ -2054,6 +2061,14 @@ CRPCResultPtr CRPCMod::RPCListFork(const CReqContext& ctxReq, CRPCParamPtr param
     auto spParam = CastParamPtr<CListForkParam>(param);
     vector<pair<uint256, CProfile>> vFork;
     pService->ListFork(vFork, spParam->fAll);
+
+    string strMainSymbol;
+    CForkContext forkMainContext;
+    if (pService->GetForkContext(pCoreProtocol->GetGenesisBlockHash(), forkMainContext))
+    {
+        strMainSymbol = forkMainContext.strSymbol;
+    }
+
     auto spResult = MakeCListForkResultPtr();
     for (size_t i = 0; i < vFork.size(); i++)
     {
