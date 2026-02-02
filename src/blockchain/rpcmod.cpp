@@ -2225,7 +2225,7 @@ CRPCResultPtr CRPCMod::RPCGetBlockHash(const CReqContext& ctxReq, CRPCParamPtr p
     }
 
     vector<uint256> vBlockHash;
-    if (!pService->GetBlockHashList(hashFork, nHeight, vBlockHash))
+    if (!pService->GetBlockHashListByHeight(hashFork, nHeight, vBlockHash))
     {
         throw CRPCException(RPC_INVALID_PARAMETER, "Block number out of range.");
     }
@@ -2263,6 +2263,26 @@ CRPCResultPtr CRPCMod::RPCGetBlockNumberHash(const CReqContext& ctxReq, CRPCPara
     }
 
     return MakeCGetBlockNumberHashResultPtr(hashBlock.GetHex());
+}
+
+CRPCResultPtr CRPCMod::RPCGetBlockHeader(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetBlockHeaderParam>(param);
+
+    //getblock <"block">
+    uint256 hashBlock;
+    hashBlock.SetHex(spParam->strBlock);
+
+    CBlock block;
+    CChainId nChainId;
+    uint256 fork;
+    int height;
+    if (!pService->GetBlock(hashBlock, block, nChainId, fork, height))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown block");
+    }
+
+    return MakeCGetBlockHeaderResultPtr(BlockHeaderToJSON(hashBlock, block, nChainId, fork, height, block.GetBlockTotalReward(), pService->IsBlockConfirm(hashBlock)));
 }
 
 CRPCResultPtr CRPCMod::RPCGetBlock(const CReqContext& ctxReq, CRPCParamPtr param)
