@@ -2312,7 +2312,7 @@ CRPCResultPtr CRPCMod::RPCGetBlock(const CReqContext& ctxReq, CRPCParamPtr param
         throw CRPCException(RPC_INVALID_PARAMETER, "Unknown block");
     }
 
-    return MakeCGetBlockResultPtr(BlockToJSON(hashBlock, block, nChainId, fork, height, block.GetBlockTotalReward()));
+    return MakeCGetBlockResultPtr(BlockToJSON(hashBlock, block, nChainId, fork, height, block.GetBlockTotalReward(), pService->IsBlockConfirm(hashBlock), true));
 }
 
 CRPCResultPtr CRPCMod::RPCGetBlockDetail(const CReqContext& ctxReq, CRPCParamPtr param)
@@ -2424,6 +2424,12 @@ CRPCResultPtr CRPCMod::RPCGetBlockData(const CReqContext& ctxReq, CRPCParamPtr p
     if (hashBlock == 0)
     {
         throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+
+    bool fOnlyBlockHeader = false;
+    if (spParam->fOnlyblockheader.IsValid())
+    {
+        fOnlyBlockHeader = spParam->fOnlyblockheader;
     }
 
     CBlock block;
