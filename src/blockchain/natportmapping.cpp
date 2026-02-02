@@ -408,4 +408,67 @@ static void handlenatpmpbadreplytype(natpmp_t* pnatpmp, const natpmpresp_t* pres
     }
 }
 
+bool CNatPortMapping::GetPmpPublicAddress(std::string& strExtIp, bool* bRunFlag)
+{
+    natpmp_t natpmp;
+    natpmpresp_t response;
+    int r;
+    struct timeval timeout;
+    fd_set fds;
+    int forcegw = 0;
+    in_addr_t gateway = 0;
+    bool ret = true;
+
+    do
+    {
+        r = initnatpmp(&natpmp, forcegw, gateway);
+        if (r < 0)
+        {
+            ret = false;
+            break;
+        }
+        r = sendpublicaddressrequest(&natpmp);
+        if (r < 0)
+        {
+            ret = false;
+            break;
+        }
+        do
+        {
+            if (bRunFlag && !(*bRunFlag))
+            {
+                r = -1;
+                break;
+            }
+            FD_ZERO(&fds);
+            FD_SET(natpmp.s, &fds);
+            getnatpmprequesttimeout(&natpmp, &timeout);
+            if (timeout.tv_sec > 2)
+            {
+                timeout.tv_sec = 2;
+                timeout.tv_usec = 0;
+            }
+            r = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+            if (r < 0)
+            {
+                break;
+            }
+            r = readnatpmpresponseorretry(&natpmp, &response);
+            if (r >= 0 && response.type != 0)
+            {
+                handlenatpmpbadreplytype(&natpmp, &response, &r);
+            }
+        } while (r == NATPMP_TRYAGAIN);
+        if (r < 0 || response.type != NATPMP_RESPTYPE_PUBLICADDRESS)
+        {
+            ret = false;
+            break;
+        }
+        strExtIp = inet_ntoa(response.pnu.publicaddress.addr);
+    } while (0);
+
+    closenatpmp(&natpmp);
+    return ret;
+}
+
 } // namespace hashahead

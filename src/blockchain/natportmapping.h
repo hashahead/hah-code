@@ -34,6 +34,11 @@ protected:
     bool GetLocalIp(std::string& strLocalIp);
     bool GetNetLocalIp(std::string& strLocalIp);
     bool SetGatewayAddress(const std::string& strExtIp, const uint16 nExtPort);
+
+public:
+    static bool GetPmpPublicAddress(std::string& strExtIp, bool* bRunFlag = nullptr);
+    static bool PmpPortMapping(const std::string& strLocalIp, const uint16 nExtPort, const uint16 nIntPort, bool* bRunFlag = nullptr);
+
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
