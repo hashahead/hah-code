@@ -1136,18 +1136,47 @@ void CBlockMaker::BlockMakerThreadFunc()
     StdLog("blockmaker", "Block maker exited");
 }
 
-void CBlockMaker::PowThreadFunc()
+bool CBlockMaker::CreateProofOfPoa()
 {
-    if (!WaitExit(5))
+    auto it = mapWorkProfile.find(CM_CRYPTONIGHT);
+    if (it == mapWorkProfile.end())
     {
-        StdLog("blockmaker", "Pow exited non");
-        return;
+        StdError("blockmaker", "did not find Work profile");
+        return false;
     }
+    CBlockMakerProfile& profile = it->second;
+
+    if (!pService->SubmitPoaBlock(profile.templMint, profile.keyMint))
+    {
+        return false;
+    }
+    return true;
+}
+
+void CBlockMaker::PoaThreadFunc()
+{
+    while (pRecovery->IsRecoverying())
+    {
+        if (!WaitExit(1))
+        {
+            break;
+        }
+    }
+
     int64 nPrevBlockTime = 0;
     int64 nSynBeginTime = 0;
-    while (WaitExit(1))
+    int64 nWaitTime = 5;
+    while (WaitExit(nWaitTime))
     {
         bool fWork = false;
+        nWaitTime = 1;
+
+        if (Config()->fFastPoa)
+        {
+            fWork = true;
+            nWaitTime = 0;
+        }
+        else
         {
             boost::unique_lock<boost::mutex> lock(mutex);
             if (lastStatus.nBlockHeight == 0)
@@ -1173,12 +1202,19 @@ void CBlockMaker::PowThreadFunc()
                 }
             }
         }
+
         if (fWork)
         {
-            CreateProofOfWork();
+            if (!CreateProofOfPoa())
+            {
+                if (Config()->fFastPoa)
+                {
+                    nWaitTime = 1;
+                }
+            }
         }
     }
-    StdLog("blockmaker", "Pow exited");
+    StdLog("blockmaker", "Poa exited");
 }
 
 } // namespace hashahead
