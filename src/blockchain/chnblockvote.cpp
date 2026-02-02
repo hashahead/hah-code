@@ -196,4 +196,84 @@ bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteTimer& eventTim
     return true;
 }
 
+bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteSubscribeFork& eventSubsFork)
+{
+    for (auto& hashFork : eventSubsFork.data)
+    {
+        CBlockStatus status;
+        if (!pBlockChain->GetLastBlockStatus(hashFork, status))
+        {
+            StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Fork is not enabled, fork: %s", hashFork.GetHex().c_str());
+            continue;
+        }
+        StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Subscribe fork, last block: %s, ref block: %s, fork: %s",
+               status.hashBlock.ToString().c_str(), status.hashRefBlock.ToString().c_str(), hashFork.GetHex().c_str());
+
+        if (mapChnFork.count(hashFork) == 0)
+        {
+            int64 nEpochDuration = 0;
+            if (hashFork == pCoreProtocol->GetGenesisBlockHash())
+            {
+                nEpochDuration = BLOCK_TARGET_SPACING * 1000;
+            }
+            else
+            {
+                nEpochDuration = EXTENDED_BLOCK_SPACING * 1000;
+            }
+
+            auto it = mapChnFork.insert(std::make_pair(hashFork, CBlockVoteChnFork(hashFork, nEpochDuration,
+                                                                                   boost::bind(&CBlockVoteChannel::SendNetData, this, _1, _2, _3, hashFork),
+                                                                                   boost::bind(&CBlockVoteChannel::GetVoteBlockCandidatePubkey, this, _1, _2, _3, _4, _5, _6, hashFork),
+                                                                                   boost::bind(&CBlockVoteChannel::AddBlockLocalVoteSignFlag, this, _1, hashFork),
+                                                                                   boost::bind(&CBlockVoteChannel::CommitBlockVoteResult, this, _1, _2, _3, hashFork))))
+                          .first;
+            if (it != mapChnFork.end())
+            {
+                for (auto& kv : MintConfig()->mapMint)
+                {
+                    const uint256& keyMint = kv.first;
+                    CCryptoBlsKey blskey;
+                    if (!crypto::CryptoBlsMakeNewKey(blskey, keyMint))
+                    {
+                        StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Make new key fail, fork: %s", hashFork.GetHex().c_str());
+                        continue;
+                    }
+                    if (!it->second.AddLocalConsKey(blskey.secret, blskey.pubkey))
+                    {
+                        StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Add local cons key fail, fork: %s", hashFork.GetHex().c_str());
+                        continue;
+                    }
+                }
+                for (auto& kv : mapChnPeer)
+                {
+                    if (it->second.AddPeerNode(kv.first))
+                    {
+                        StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Add peer node success, peer: [0x%lx] %s", kv.first, GetPeerAddressInfo(kv.first).c_str());
+                    }
+                    else
+                    {
+                        StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Add peer node fail, peer: [0x%lx] %s", kv.first, GetPeerAddressInfo(kv.first).c_str());
+                    }
+                }
+
+                if (!AddBlockVoteCandidatePubkey(status.hashBlock, status.nBlockHeight, status.nBlockTime, it->second))
+                {
+                    StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Update block vote fail, last block: %s, fork: %s", status.hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
+                    continue;
+                }
+                StdDebug("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Update block vote success, last block: %s, fork: %s", status.hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
+            }
+            else
+            {
+                StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Add fork fail, last block: %s, fork: %s", status.hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
+            }
+        }
+        else
+        {
+            StdLog("CBlockVoteChannel", "CEvent Local Blockvote Subscribe Fork: Fork existed, last block: %s, fork: %s", status.hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
+        }
+    }
+    return true;
+}
+
 } // namespace hashahead
