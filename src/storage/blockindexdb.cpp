@@ -553,6 +553,37 @@ bool CBlockIndexDB::GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockH
     return true;
 }
 
+bool CBlockIndexDB::RecoverySnapshotBlockVoteData(bytes& btSnapData)
+{
+    std::vector<CSnapBlockVoteData> vBlockVoteData;
+    try
+    {
+        CBufStream ss(btSnapData);
+        ss >> vBlockVoteData;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+
+    for (std::size_t i = 0; i < vBlockVoteData.size(); i++)
+    {
+        bool fLongChain = false;
+        if (i == vBlockVoteData.size() - 1)
+        {
+            fLongChain = true;
+        }
+        CSnapBlockVoteData& snapVoteData = vBlockVoteData[i];
+        if (!AddBlockVoteResult(snapVoteData.hashBlock, fLongChain, snapVoteData.btBitmap, snapVoteData.btAggSig, snapVoteData.fAtChain, snapVoteData.hashAtBlock))
+        {
+            StdLog("CBlockIndexDB", "Recovery snapshot block vote data: Add block vote result failed, block: %s", snapVoteData.hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
     mapKv.insert(make_pair(btKey, btValue));
 }
 
