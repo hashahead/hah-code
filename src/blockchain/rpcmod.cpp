@@ -1768,17 +1768,17 @@ CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::st
     }
     else
     {
-        logFilter.withFromBlock(0);
+        logFilter.withFromBlock(hashLastBlock);
     }
 
-    json_spirit::Value to_block = find_value(item, "toBlock");
+    json_spirit::Value to_block = find_value(item, "toBlock"); // default: latest
     if (!to_block.is_null())
     {
         if (to_block.type() != json_spirit::str_type)
         {
-            throw CRPCException(RPC_INVALID_REQUEST, "toBlock type error");
+            throw CRPCException(RPC_INVALID_PARAMS, "invalid toBlock");
         }
-        if (from_block.get_str() == std::string("latest") || from_block.get_str() == std::string("pending"))
+        if (to_block.get_str() == std::string("latest") || to_block.get_str() == std::string("pending"))
         {
             logFilter.withToBlock(0);
         }
@@ -1789,7 +1789,22 @@ CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::st
     }
     else
     {
-        logFilter.withToBlock(0);
+        logFilter.withToBlock(0); // 0 is do not detect the last block
+    }
+
+    uint32 nFromHeight = CBlock::GetBlockHeightByHash(logFilter.hashFromBlock);
+    uint32 nToHeight = CBlock::GetBlockHeightByHash(logFilter.hashToBlock);
+    if (logFilter.hashFromBlock == 0)
+    {
+        nFromHeight = CBlock::GetBlockHeightByHash(hashFork); // 0 is fork begin height
+    }
+    if (logFilter.hashToBlock == 0)
+    {
+        nToHeight = nLastHeight; // 0 is last block height
+    }
+    if (nFromHeight > nToHeight || nToHeight - nFromHeight > MAX_FILTER_BLOCK_HEIGHT)
+    {
+        throw CRPCException(RPC_ETH_ERROR_TRACE_REQUESTS_LIMITED, "invalid fromBlock or toBlock");
     }
 
     json_spirit::Value value_address = find_value(item, "address");
@@ -1831,7 +1846,7 @@ CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::st
         {
             throw CRPCException(RPC_INVALID_REQUEST, "topics type error");
         }
-        for (size_t i = 0; i < value_topics.get_array().size(); ++i)
+        for (size_t i = 0; i < value_topics.get_array().size() && i < CLogsFilter::MAX_LOGS_FILTER_TOPIC_COUNT; ++i)
         {
             const json_spirit::Value item_topics = value_topics.get_array()[i];
             if (item_topics.type() == json_spirit::str_type)
@@ -1840,7 +1855,10 @@ CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::st
                 {
                     uint256 hash;
                     hash.SetHex(item_topics.get_str());
-                    logFilter.addTopic(i, hash);
+                    if (hash != 0)
+                    {
+                        logFilter.addTopic(i, hash);
+                    }
                 }
             }
             else if (item_topics.type() == json_spirit::array_type)
@@ -1864,6 +1882,19 @@ CLogsFilter CRPCMod::GetLogFilterFromJson(const uint256& hashFork, const std::st
     }
 
     return logFilter;
+}
+
+bool CRPCMod::GetVmExecResultInfo(const int nStatus, const bytes& btResult, string& strError)
+{
+    if (nStatus == 2)
+    {
+        strError = ParserEthErrorResult(btResult);
+        if (!strError.empty())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
