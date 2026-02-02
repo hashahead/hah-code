@@ -80,6 +80,7 @@ public:
     bool RetrieveDestState(const uint256& hashFork, const uint256& hashBlockRoot, const CDestination& dest, CDestState& state);
     bool ListDestState(const uint256& hashFork, const uint256& hashBlockRoot, std::map<CDestination, CDestState>& mapBlockState);
     bool VerifyState(const uint256& hashFork, const uint256& hashRoot, const bool fVerifyAllNode = true);
+    bool ClearStateUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight);
 
     static bool CreateStaticStateRoot(const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashStateRoot);
 
