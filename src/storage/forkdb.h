@@ -71,6 +71,7 @@ public:
     bool RemoveFork(const uint256& hashFork);
     bool RetrieveForkLast(const uint256& hashFork, uint256& hashLastBlock);
 
+    bool GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock = uint256());
     bool GetForkHashByForkName(const std::string& strForkName, uint256& hashFork, const uint256& hashMainChainRefBlock = uint256());
     bool GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, const uint256& hashMainChainRefBlock = uint256());
 

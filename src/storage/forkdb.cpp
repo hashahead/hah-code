@@ -687,6 +687,33 @@ bool CForkDB::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, c
     return true;
 }
 
+bool CForkDB::ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashMainChainRefBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashLastBlock;
+    if (hashMainChainRefBlock == 0)
+    {
+        if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+        {
+            hashLastBlock = 0;
+        }
+    }
+    else
+    {
+        hashLastBlock = hashMainChainRefBlock;
+    }
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(hashLastBlock, hashRoot))
+    {
+        StdLog("CForkDB", "List coin context: Read trie root fail, block: %s", hashLastBlock.GetHex().c_str());
+        return false;
+    }
+
+    return ListDbCoinContext(mapSymbolCoin, hashRoot);
+}
+
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);
