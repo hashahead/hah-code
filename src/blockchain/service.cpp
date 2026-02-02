@@ -644,6 +644,11 @@ bool CService::GetUserVotes(const uint256& hashRefBlock, const CDestination& des
     return pBlockChain->GetUserVotes(hashRefBlock, destVote, nTemplateType, nVotes, nUnlockHeight);
 }
 
+bool CService::GetPledgeVotes(const uint256& hashRefBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote)
+{
+    return pBlockChain->GetPledgeVotes(hashRefBlock, destVote, ctxPledgeVote);
+}
+
 bool CService::GetTransactionReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceiptEx& receiptex)
 {
     return pBlockChain->GetTransactionReceipt(hashFork, txid, receiptex);
