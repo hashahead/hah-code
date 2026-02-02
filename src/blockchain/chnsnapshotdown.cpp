@@ -121,6 +121,65 @@ bool CSnapshotDownChannel::HandleEvent(network::CEventPeerDeactive& eventDeactiv
 
 bool CSnapshotDownChannel::HandleEvent(network::CEventPeerSnapshotDownData& event)
 {
+    const uint64 nNetId = event.nNonce;
+    const uint256& hashFork = event.hashFork;
+
+    try
+    {
+        uint8 nMsgId = 0;
+
+        CBufStream ss(event.data);
+        ss >> nMsgId;
+
+        switch (nMsgId)
+        {
+        case SNAP_DOWN_MSGID_FILELIST_REQ:
+        {
+            uint256 hashSnapBlock;
+            ss >> hashSnapBlock;
+            if (!HandleMsgFilelistReq(nNetId, hashFork, hashSnapBlock))
+            {
+                return false;
+            }
+            break;
+        }
+        case SNAP_DOWN_MSGID_FILELIST_RSP:
+        {
+            CSnapDownMsgFilelistRsp body;
+            ss >> body;
+            if (!HandleMsgFilelistRsp(nNetId, hashFork, body))
+            {
+                return false;
+            }
+            break;
+        }
+        case SNAP_DOWN_MSGID_DOWNDATA_REQ:
+        {
+            CSnapDownMsgDownDataReq body;
+            ss >> body;
+            if (!HandleMsgDownDataReq(nNetId, hashFork, body))
+            {
+                return false;
+            }
+            break;
+        }
+        case SNAP_DOWN_MSGID_DOWNDATA_RSP:
+        {
+            CSnapDownMsgDownDataRsp body;
+            ss >> body;
+            if (!HandleMsgDownDataRsp(nNetId, hashFork, body))
+            {
+                return false;
+            }
+            break;
+        }
+        }
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
     return true;
 }
 }; // namespace hashahead
