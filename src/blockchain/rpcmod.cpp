@@ -2444,6 +2444,35 @@ CRPCResultPtr CRPCMod::RPCGetBlockData(const CReqContext& ctxReq, CRPCParamPtr p
     return MakeCGetBlockDataResultPtr(BlockToJSON(hashBlock, block, nChainId, fork, height, block.GetBlockTotalReward()));
 }
 
+CRPCResultPtr CRPCMod::RPCGetBlockEncode(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetBlockEncodeParam>(param);
+
+    uint256 hashBlock;
+    if (spParam->strBlockhash.IsValid())
+    {
+        hashBlock.SetHex(spParam->strBlockhash);
+    }
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+
+    CBlock block;
+    CChainId nChainId;
+    uint256 fork;
+    int height;
+    if (!pService->GetBlock(hashBlock, block, nChainId, fork, height))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown block");
+    }
+
+    CBufStream ss;
+    ss << block;
+
+    return MakeCGetBlockEncodeResultPtr(ToHexString((const unsigned char*)ss.GetData(), ss.GetSize()));
+}
+
 CRPCResultPtr CRPCMod::RPCGetTxPool(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CGetTxPoolParam>(param);
