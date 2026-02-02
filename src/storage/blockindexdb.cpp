@@ -536,11 +536,22 @@ bool CBlockIndexDB::GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockH
         return false;
     }
 
-    ssKey << nRootType << DB_BLOCKINDEX_KEY_ID_PREVROOT;
-    ssKey.GetData(btKey);
+    std::vector<CSnapBlockVoteData> vBlockVoteData;
+    auto& hashBlock = vBlockHash[vBlockHash.size() - 1];
+    CSnapBlockVoteData voteData(hashBlock);
+    if (!RetrieveBlockVoteResult(hashBlock, voteData.btBitmap, voteData.btAggSig, voteData.fAtChain, voteData.hashAtBlock))
+    {
+        StdLog("CBlockIndexDB", "Get snapshot block vote data: Retrieve block vote result failed, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    voteData.fAtChain = false;
+    vBlockVoteData.push_back(voteData);
 
-    ssValue << hashPrevRoot << hashBlock;
-    ssValue.GetData(btValue);
+    CBufStream ss;
+    ss << vBlockVoteData;
+    ss.GetData(btSnapData);
+    return true;
+}
 
     mapKv.insert(make_pair(btKey, btValue));
 }
