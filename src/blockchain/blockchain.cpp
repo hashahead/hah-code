@@ -1829,6 +1829,13 @@ bool CBlockChain::VerifyBlockCrosschainProve(const uint256& hashBlock, const CBl
             hashRefBlock = blockProve.hashRefBlock;
         }
 
+        if (!VerifyBlockCommitVoteAggSig(blockProve.hashBlock, hashRefBlock, blockProve.btAggSigBitmap, blockProve.btAggSigData))
+        {
+            StdLog("BlockChain", "Verify block crosschain prove: Verify commit vote fail, vote block: %s, ref block: %s, block: %s",
+                   blockProve.hashBlock.ToString().c_str(), hashRefBlock.ToString().c_str(), hashBlock.ToString().c_str());
+            return false;
+        }
+
     }
     return true;
 }
@@ -2045,7 +2052,12 @@ bool CBlockChain::ListContractAddress(const uint256& hashFork, const uint256& ha
     return cntrBlock.ListContractAddress(hashFork, hashBlock, mapContractAddress);
 }
 
-bool CBlockChain::RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv)
+bool CBlockChain::ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
+{
+    return cntrBlock.ListTokenContractAddress(hashFork, hashBlock, mapTokenContractAddress);
+}
+
+bool CBlockChain::RetrieveBlsPubkeyContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint384& blsPubkey)
 {
     return cntrBlock.RetrieveTimeVault(hashFork, hashBlock, dest, tv);
 }

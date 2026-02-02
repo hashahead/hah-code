@@ -81,6 +81,7 @@ public:
     bool GetTxToAddressContext(const uint256& hashFork, const uint256& hashBlock, const CTransaction& tx, CAddressContext& ctxAddress) override;
     CTemplatePtr GetTxToAddressTemplatePtr(const uint256& hashFork, const uint256& hashBlock, const CTransaction& tx) override;
     bool ListContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress) override;
+    bool ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress) override;
     bool RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv) override;
     bool GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount) override;
     bool RetrieveForkContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode) override;
@@ -107,7 +108,6 @@ public:
     void AddPendingTx(const uint256& hashFork, const uint256& txid) override;
     bool GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid) override;
 
-    /////////////    CheckPoints    /////////////////////
     typedef std::map<int, CCheckPoint> MapCheckPointsType;
 
     bool HasCheckPoints(const uint256& hashFork) const override;
@@ -187,7 +187,7 @@ protected:
     uint32 nMaxBlockRewardTxCount;
 
     boost::shared_mutex rwCvrAccess;
-    std::map<uint256, std::map<uint256, std::vector<std::vector<CTransaction>>>> mapCacheDistributeVoteReward;
+    std::map<uint256, std::map<uint256, std::vector<std::vector<CTransaction>>, CustomBlockHashCompare>> mapCacheDistributeVoteReward;
 };
 
 } // namespace hashahead
