@@ -137,6 +137,12 @@ public:
     bool RetrieveSourceCodeContext(const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode);
     bool RetrieveContractCreateCodeContext(const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode);
     bool ListContractCreateCodeContext(const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode);
+    bool VerifyCodeContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+
+    bool ClearAddressUnavailableNode(const uint32 nClearRefHeight);
+    bool GetSnapshotAddressData(const std::vector<uint256>& vBlockHash, CForkAddressRootKv& addressRootKv);
+    bool RecoveryAddressData(const CForkAddressRootKv& addressRootKv);
+
 protected:
     bool WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot);
     bool ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot);

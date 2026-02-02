@@ -1130,6 +1130,13 @@ bool CForkAddressDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBloc
     return true;
 }
 
+bool CForkAddressDB::RemoveTrieRoot(const uint8 nRootType, const uint256& hashBlock)
+{
+    hnbase::CBufStream ssKey;
+    ssKey << DB_ADDRESS_KEY_TYPE_TRIEROOT << nRootType << hashBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
+
 void CForkAddressDB::AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
 {
     hnbase::CBufStream ssKey, ssValue;

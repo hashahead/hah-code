@@ -584,7 +584,17 @@ bool CBlockIndexDB::RecoverySnapshotBlockVoteData(bytes& btSnapData)
     return true;
 }
 
-    mapKv.insert(make_pair(btKey, btValue));
+///////////////////////////////////
+bool CBlockIndexDB::AddBlockLocalSignFlagDb(const uint256& hashBlock)
+{
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+    const uint32 nHeight = CBlock::GetBlockHeightByHash(hashBlock);
+    const uint16 nSlot = CBlock::GetBlockSlotByHash(hashBlock);
+
+    CBufStream ssKey, ssValue;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_LOCAL_SIGN_FLAG << nChainId << nHeight << nSlot;
+    ssValue << hashBlock;
+    return Write(ssKey, ssValue);
 }
 
 bool CBlockIndexDB::GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock)
