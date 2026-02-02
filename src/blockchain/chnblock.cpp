@@ -119,12 +119,13 @@ bool CBlockChnFork::CheckPrevExist(const uint256& hashBlock)
 // CBlockChannel
 
 CBlockChannel::CBlockChannel()
-  : nPrevCheckCacheTimeoutTime(0), nCacheBlockByteCount(0)
+  : nPrevCheckCacheTimeoutTime(0), nCacheBlockByteCount(0), nBlockSyncTimerId(0)
 {
     pPeerNet = nullptr;
     pDispatcher = nullptr;
     pCoreProtocol = nullptr;
     pBlockChain = nullptr;
+    pBlockFilter = nullptr;
 }
 
 CBlockChannel::~CBlockChannel()
@@ -156,6 +157,12 @@ bool CBlockChannel::HandleInitialize()
         Error("Failed to request blockchain");
         return false;
     }
+
+    if (!GetObject("blockfilter", pBlockFilter))
+    {
+        Error("Failed to request blockfilter");
+        return false;
+    }
     return true;
 }
 
@@ -165,6 +172,7 @@ void CBlockChannel::HandleDeinitialize()
     pDispatcher = nullptr;
     pCoreProtocol = nullptr;
     pBlockChain = nullptr;
+    pBlockFilter = nullptr;
 }
 
 bool CBlockChannel::HandleInvoke()
@@ -271,13 +279,8 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockBks& eventBks)
     const uint256& hashFork = eventBks.hashFork;
     const uint64 nRecvPeerNonce = eventBks.nNonce;
 
-    StdDebug("CBlockChannel", "CEvent Peer Block Bks: Recv block, block: [%d] %s, fork: %s",
-             CBlock::GetBlockHeightByHash(eventBks.data.hashBlock), eventBks.data.hashBlock.GetHex().c_str(), hashFork.ToString().c_str());
-
-    if (!pBlockChain->Exists(eventBks.data.hashPrev))
-    {
-        StdDebug("CBlockChannel", "CEvent Peer Block Bks: Prev block not exist, block: [%d] %s, prev: %s",
-                 CBlock::GetBlockHeightByHash(eventBks.data.hashBlock), eventBks.data.hashBlock.GetHex().c_str(), eventBks.data.hashPrev.GetHex().c_str());
+    StdDebug("CBlockChannel", "CEvent peer block bks: Recv block, block: %s, fork: %s",
+             eventBks.data.hashBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
 
         CBlock block;
         try
