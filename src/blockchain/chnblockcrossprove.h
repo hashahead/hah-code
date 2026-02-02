@@ -102,6 +102,10 @@ protected:
     }
     const string GetPeerAddressInfo(uint64 nNonce);
     void BlockCrossProveTimerFunc(uint32 nTimerId);
+    void AddBroadcastProveData(const uint256& hashRecvFork, const uint256& hashSrcBlock, const bytes& btProveData);
+    bool GetBroadcastProveData(const uint256& hashRecvFork, const uint256& hashSrcBlock, bytes& btProveData);
+
+protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;

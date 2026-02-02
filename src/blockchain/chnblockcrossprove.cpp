@@ -287,4 +287,30 @@ void CBlockCrossProveChannel::BlockCrossProveTimerFunc(uint32 nTimerId)
     }
 }
 
+void CBlockCrossProveChannel::AddBroadcastProveData(const uint256& hashRecvFork, const uint256& hashSrcBlock, const bytes& btProveData)
+{
+    auto& mapForkProve = mapBroadcastProve[hashRecvFork];
+    mapForkProve[hashSrcBlock] = btProveData;
+
+    while (mapForkProve.size() > BLOCK_CROSS_PROVE_CACHE_BROADCAST_PROVE_COUNT)
+    {
+        mapForkProve.erase(mapForkProve.begin());
+    }
+}
+
+bool CBlockCrossProveChannel::GetBroadcastProveData(const uint256& hashRecvFork, const uint256& hashSrcBlock, bytes& btProveData)
+{
+    auto it = mapBroadcastProve.find(hashRecvFork);
+    if (it != mapBroadcastProve.end())
+    {
+        auto mt = it->second.find(hashSrcBlock);
+        if (mt != it->second.end())
+        {
+            btProveData = mt->second;
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace hashahead
