@@ -277,4 +277,40 @@ uint256 CBlockFilter::AddPendingTxFilter(const uint256& hashClient, const uint25
     return nFilterId;
 }
 
+void CBlockFilter::AddPendingTx(const uint256& hashFork, const uint256& txid)
+{
+    {
+        boost::unique_lock<boost::shared_mutex> lock(mutexFilter);
+        for (auto it = mapTxFilter.begin(); it != mapTxFilter.end();)
+        {
+            if (it->second.isTimeout())
+            {
+                mapTxFilter.erase(it++);
+            }
+            else
+            {
+                if (!it->second.AddPendingTx(hashFork, txid))
+                {
+                    mapTxFilter.erase(it++);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        }
+    }
+
+    {
+        CEventWsServicePushNewPendingTx* pPushEvent = new CEventWsServicePushNewPendingTx(0);
+        if (pPushEvent != nullptr)
+        {
+            pPushEvent->data.hashFork = hashFork;
+            pPushEvent->data.txid = txid;
+
+            pWsService->PostEvent(pPushEvent);
+        }
+    }
+}
+
 } // namespace hashahead
