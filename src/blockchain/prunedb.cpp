@@ -159,4 +159,78 @@ void CPruneDb::PruneStateWork()
     }
 }
 
+void CPruneDb::PruneForkData(const uint256& hashFork, const uint32 nRefLastHeight)
+{
+    uint32& nPrevHeight = mapPrevPruneHeight[hashFork];
+    // if (nPrevHeight == 0)
+    // {
+    //     nPrevHeight = nRefLastHeight;
+    // }
+    if (nRefLastHeight > nPrevHeight + DAY_HEIGHT && nRefLastHeight > nCfgPruneReserveHeight + CBlock::GetBlockHeightByHash(hashFork) + DAY_HEIGHT)
+    {
+        const uint32 nPruneLastHeight = nRefLastHeight - nCfgPruneReserveHeight;
+
+        StdDebug("CPruneDb", "Prune fork data: Prune state begin, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+        if (!pBlockChain->PruneForkStateData(hashFork, nPruneLastHeight))
+        {
+            StdLog("CPruneDb", "Prune fork data: Prune state fail, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+        }
+        else
+        {
+            StdDebug("CPruneDb", "Prune fork data: Prune state success, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+        }
+
+        if (hashFork != pCoreProtocol->GetGenesisBlockHash())
+        {
+            StdDebug("CPruneDb", "Prune fork data: Prune address begin, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+            if (!pBlockChain->PruneForkAddressData(hashFork, nPruneLastHeight))
+            {
+                StdLog("CPruneDb", "Prune fork data: Prune address fail, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+            }
+            else
+            {
+                StdDebug("CPruneDb", "Prune fork data: Prune address success, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+            }
+        }
+
+        if (hashFork == pCoreProtocol->GetGenesisBlockHash())
+        {
+            StdDebug("CPruneDb", "Prune fork data: Prune hdex begin, prune last height: %d, last height: %d", nPruneLastHeight, nRefLastHeight);
+            if (!pBlockChain->PruneHdexData(nPruneLastHeight))
+            {
+                StdLog("CPruneDb", "Prune fork data: Prune hdex fail, prune last height: %d, last height: %d", nPruneLastHeight, nRefLastHeight);
+            }
+            else
+            {
+                StdDebug("CPruneDb", "Prune fork data: Prune hdex success, prune last height: %d, last height: %d", nPruneLastHeight, nRefLastHeight);
+            }
+
+            StdDebug("CPruneDb", "Prune fork data: Prune vote begin, prune last height: %d, last height: %d", nPruneLastHeight, nRefLastHeight);
+            if (!pBlockChain->PruneVoteData(nPruneLastHeight))
+            {
+                StdLog("CPruneDb", "Prune fork data: Prune vote fail, prune last height: %d, last height: %d", nPruneLastHeight, nRefLastHeight);
+            }
+            else
+            {
+                StdDebug("CPruneDb", "Prune fork data: Prune vote success, prune last height: %d, last height: %d", nPruneLastHeight, nRefLastHeight);
+            }
+        }
+
+        if (fCfgTraceDb)
+        {
+            StdDebug("CPruneDb", "Prune fork data: Prune trace begin, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+            if (!pBlockChain->PruneTraceData(hashFork, nPruneLastHeight))
+            {
+                StdLog("CPruneDb", "Prune fork data: Prune trace fail, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+            }
+            else
+            {
+                StdDebug("CPruneDb", "Prune fork data: Prune trace success, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+            }
+        }
+
+        nPrevHeight = nRefLastHeight;
+    }
+}
+
 } // namespace hashahead

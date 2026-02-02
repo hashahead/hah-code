@@ -26,6 +26,7 @@ protected:
     bool WaitExitEvent(const int64 nSeconds);
 
     void PruneStateWork();
+    void PruneForkData(const uint256& hashFork, const uint32 nRefLastHeight);
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
