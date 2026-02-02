@@ -61,7 +61,7 @@ void CTimeSeriesBase::Deinitialize()
 bool CTimeSeriesBase::CheckDiskSpace()
 {
     // 15M
-    return (space(pathLocation).available > 15000000);
+    return (fs::space(pathLocation).available > 15000000);
 }
 
 const std::string CTimeSeriesBase::FileName(uint32 nFile)
@@ -73,8 +73,8 @@ const std::string CTimeSeriesBase::FileName(uint32 nFile)
 
 bool CTimeSeriesBase::GetFilePath(uint32 nFile, string& strPath)
 {
-    path current = pathLocation / FileName(nFile);
-    if (exists(current) && is_regular_file(current))
+    fs::path current = pathLocation / FileName(nFile);
+    if (fs::exists(current) && fs::is_regular_file(current))
     {
         strPath = current.string();
         return true;
@@ -86,8 +86,8 @@ bool CTimeSeriesBase::GetLastFilePath(uint32& nFile, std::string& strPath, const
 {
     for (;;)
     {
-        path last = pathLocation / FileName(nLastFile);
-        if (!exists(last))
+        fs::path last = pathLocation / FileName(nLastFile);
+        if (!fs::exists(last))
         {
             FILE* fp = fopen(last.string().c_str(), "w+");
             if (fp == nullptr)
@@ -96,7 +96,7 @@ bool CTimeSeriesBase::GetLastFilePath(uint32& nFile, std::string& strPath, const
             }
             fclose(fp);
         }
-        if (is_regular_file(last) && file_size(last) + nWriteDataSize + 8 <= MAX_FILE_SIZE)
+        if (fs::is_regular_file(last) && fs::file_size(last) + nWriteDataSize + 8 <= MAX_FILE_SIZE)
         {
             nFile = nLastFile;
             strPath = last.string();

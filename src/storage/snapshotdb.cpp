@@ -110,5 +110,24 @@ bool CSnapshotDB::SaveBlockFile(const uint256& hashLastBlock, const uint32 nFile
     return true;
 }
 
+bool CSnapshotDB::SaveSnapshotData(const uint256& hashLastBlock, const uint8 nDataType, const char* pSnapData, const uint32 nSnapDataSize)
+{
+    CTimeSeriesSnapshot tss;
+    if (!tss.Initialize(pathSnapshot / hashLastBlock.ToString(), SNAPSHOTFILE_PREFIX))
+    {
+        StdLog("CSnapshotDB", "Save snapshot data: Initialize failed, last block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+    CDiskPos pos;
+    if (!tss.Write(nDataType, pSnapData, nSnapDataSize, pos))
+    {
+        StdLog("CSnapshotDB", "Save snapshot data: Write data failed, data size: %u, last block: %s", nSnapDataSize, hashLastBlock.GetBhString().c_str());
+        tss.Deinitialize();
+        return false;
+    }
+    tss.Deinitialize();
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
