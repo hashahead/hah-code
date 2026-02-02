@@ -74,6 +74,41 @@ protected:
     }
 };
 
+//////////////////////////////
+// CVoteRootKv
+
+class CVoteRootKv
+{
+    friend class hnbase::CStream;
+
+public:
+    CVoteRootKv() {}
+    CVoteRootKv(const uint256& hashForkIn, const bool fPrimaryChainIn, const std::vector<uint256>& vBlockHashIn)
+      : hashFork(hashForkIn), fPrimaryChain(fPrimaryChainIn), vBlockHash(vBlockHashIn) {}
+
+public:
+    uint256 hashFork;
+    bool fPrimaryChain = false;
+    std::vector<uint256> vBlockHash;
+    std::vector<std::pair<uint256, bytesmap>> vUserVoteKv;     // v1: root, v2: inc kv
+    std::vector<std::pair<uint256, bytesmap>> vDelegateVoteKv; // v1: root, v2: inc kv
+    std::vector<std::pair<uint256, bytesmap>> vVoteRewardKv;   // v1: root, v2: inc kv
+    std::vector<std::map<int, std::map<CDestination, CDiskPos>>> vDelegateEnroll;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(fPrimaryChain, opt);
+        s.Serialize(vBlockHash, opt);
+        s.Serialize(vUserVoteKv, opt);
+        s.Serialize(vDelegateVoteKv, opt);
+        s.Serialize(vVoteRewardKv, opt);
+        s.Serialize(vDelegateEnroll, opt);
+    }
+};
+
 } // namespace storage
 } // namespace hashahead
 
