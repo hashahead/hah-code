@@ -3180,13 +3180,13 @@ CRPCResultPtr CRPCMod::RPCGetTimeVault(const CReqContext& ctxReq, CRPCParamPtr p
         throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
     }
 
-    uint256 hashRefBlock = GetRefBlock(hashFork, spParam->strBlock);
-    if (hashRefBlock == 0)
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+    if (hashBlock == 0)
     {
         throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
     }
     CBlockStatus status;
-    if (!pService->GetBlockStatus(hashRefBlock, status))
+    if (!pService->GetBlockStatus(hashBlock, status))
     {
         throw CRPCException(RPC_INVALID_PARAMETER, "Block status error");
     }
@@ -3195,8 +3195,17 @@ CRPCResultPtr CRPCMod::RPCGetTimeVault(const CReqContext& ctxReq, CRPCParamPtr p
         throw CRPCException(RPC_INVALID_PARAMETER, "Block is not on chain");
     }
 
-    CTimeVault tv;
-    if (!pService->RetrieveTimeVault(hashFork, hashRefBlock, address, tv))
+    CForkContext ctxFork;
+    if (!pService->GetForkContext(ctxReq.hashFork, ctxFork))
+    {
+        throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "Get fork context fail");
+    }
+
+    CAddressContext ctxAddress;
+    pService->RetrieveAddressContext(ctxReq.hashFork, address, ctxAddress);
+
+    auto spResult = MakeCGetTimeVaultResultPtr();
+    if (ctxFork.IsUserFork() || pService->IsTimeVaultWhitelistAddressExist(address, status.hashRefBlock) || !ctxAddress.IsPubkey())
     {
         tv.SetNull();
     }
