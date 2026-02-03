@@ -1884,6 +1884,77 @@ bool CBlockChain::VerifyBlockCrosschainProve(const uint256& hashBlock, const CBl
     return true;
 }
 
+bool CBlockChain::GetBlockTrust(const CBlock& block, uint256& nChainTrust, const BlockIndexPtr pIndexPrev, const CDelegateAgreement& agreement, const BlockIndexPtr pIndexRef, const uint256& nEnrollTrust)
+{
+    if (block.IsGenesis())
+    {
+        nChainTrust = uint64(0);
+    }
+    else if (block.IsVacant())
+    {
+        nChainTrust = uint64(0);
+    }
+    else if (block.IsPrimary())
+    {
+        if (block.IsProofOfPoa())
+        {
+            // uint256 v(1);
+            // nChainTrust = (v << 8);
+            CBufStream ss;
+            ss << block.GetBlockHeight() << block.txMint.GetToAddress();
+            uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
+            nChainTrust = hash.GetUint16Index();
+            if (nChainTrust == 0)
+            {
+                StdLog("BlockChain", "Get Block Trust: Proof of work, nChainTrust is 0");
+                CBufStream ss;
+                ss << (block.GetBlockHeight() - 1) << block.txMint.GetToAddress();
+                uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
+                nChainTrust = hash.GetUint16Index();
+                if (nChainTrust == 0)
+                {
+                    nChainTrust = 1;
+                    StdLog("BlockChain", "Get Block Trust: Proof of work, nChainTrust is 0, set nChainTrust is 1");
+                }
+            }
+        }
+        else if (pIndexPrev != nullptr)
+        {
+            nChainTrust = nEnrollTrust;
+        }
+        else
+        {
+            StdError("BlockChain", "Get Block Trust: Primary pIndexPrev is null");
+            return false;
+        }
+    }
+    else if (block.IsOrigin())
+    {
+        nChainTrust = uint64(0);
+    }
+    else if (block.IsSubsidiary() || block.IsExtended())
+    {
+        if (!pIndexRef)
+        {
+            StdError("BlockChain", "Get Block Trust: pIndexRef is null, block: %s", block.GetHash().GetHex().c_str());
+            return false;
+        }
+        BlockIndexPtr pRefPrevIndex = cntrBlock.GetPrevBlockIndex(pIndexRef);
+        if (!pRefPrevIndex)
+        {
+            StdError("BlockChain", "Get Block Trust: Subsidiary or Extended block prev is null, block: %s", block.GetHash().GetHex().c_str());
+            return false;
+        }
+        nChainTrust = pIndexRef->nChainTrust - pRefPrevIndex->nChainTrust;
+    }
+    else
+    {
+        StdError("BlockChain", "Get Block Trust: block type error");
+        return false;
+    }
+    return true;
+}
+
 void CBlockChain::InitCheckPoints(const uint256& hashFork, const map<int, uint256>& mapCheckPointsIn)
 {
     MapCheckPointsType& mapCheckPoints = mapForkCheckPoints[hashFork];
