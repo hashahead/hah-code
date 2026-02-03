@@ -11,11 +11,12 @@
 #include <set>
 
 #include "block.h"
-#include "blockbase.h"
+#include "cmstruct.h"
 #include "config.h"
 #include "crypto.h"
 #include "destination.h"
 #include "error.h"
+#include "forkcontext.h"
 #include "key.h"
 #include "param.h"
 #include "peer.h"
@@ -23,6 +24,7 @@
 #include "struct.h"
 #include "template/mint.h"
 #include "template/template.h"
+#include "timeseries.h"
 #include "transaction.h"
 #include "uint256.h"
 
@@ -38,19 +40,17 @@ public:
     virtual const uint256& GetGenesisBlockHash() = 0;
     virtual CChainId GetGenesisChainId() const = 0;
     virtual void GetGenesisBlock(CBlock& block) = 0;
-    virtual Errno ValidateTransaction(const uint256& hashTxAtFork, const uint256& hashMainChainRefBlock, const CTransaction& tx) = 0;
+    virtual Errno ValidateTransaction(const uint256& hashTxAtFork, const uint256& hashMainChainRefBlock, const uint32 nRefHeight, const CTransaction& tx) = 0;
     virtual Errno ValidateBlock(const uint256& hashFork, const uint256& hashMainChainRefBlock, const CBlock& block) = 0;
     virtual Errno ValidateOrigin(const CBlock& block, const CProfile& parentProfile, CProfile& forkProfile) = 0;
-    virtual Errno VerifyProofOfWork(const CBlock& block, const CBlockIndex* pIndexPrev) = 0;
-    virtual Errno VerifyDelegatedProofOfStake(const CBlock& block, const CBlockIndex* pIndexPrev,
+    virtual Errno VerifyProofOfPoa(const CBlock& block, const BlockIndexPtr pIndexPrev) = 0;
+    virtual Errno VerifyDelegatedProofOfStake(const CBlock& block, const BlockIndexPtr pIndexPrev,
                                               const CDelegateAgreement& agreement)
         = 0;
-    virtual Errno VerifySubsidiary(const CBlock& block, const CBlockIndex* pIndexPrev, const CBlockIndex* pIndexRef,
-                                   const CDelegateAgreement& agreement)
+    virtual Errno VerifySubsidiary(const CBlock& block, const BlockIndexPtr pIndexPrev, const BlockIndexPtr pIndexRef, const CDelegateAgreement& agreement)
         = 0;
     virtual Errno VerifyTransaction(const uint256& txid, const CTransaction& tx, const uint256& hashFork, const uint256& hashPrevBlock, const int nAtHeight, const CDestState& stateFrom, const std::map<CDestination, CAddressContext>& mapBlockAddress) = 0;
-    virtual bool GetBlockTrust(const CBlock& block, uint256& nChainTrust, const CBlockIndex* pIndexPrev = nullptr, const CDelegateAgreement& agreement = CDelegateAgreement(), const CBlockIndex* pIndexRef = nullptr, const uint256& nEnrollTrust = uint256()) = 0;
-    virtual bool GetProofOfWorkTarget(const CBlockIndex* pIndexPrev, int nAlgo, int& nBits) = 0;
+    virtual bool GetProofOfWorkTarget(const BlockIndexPtr pIndexPrev, int nAlgo, int& nBits) = 0;
     virtual uint256 GetDelegatedBallot(const int nBlockHeight, const uint256& nAgreement, const std::size_t& nWeight, const std::map<CDestination, std::size_t>& mapBallot,
                                        const std::vector<std::pair<CDestination, uint256>>& vecAmount, const uint256& nMoneySupply, std::vector<CDestination>& vBallot)
         = 0;
