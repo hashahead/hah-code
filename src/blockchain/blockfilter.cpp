@@ -313,4 +313,16 @@ void CBlockFilter::AddPendingTx(const uint256& hashFork, const uint256& txid)
     }
 }
 
+bool CBlockFilter::GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid)
+{
+    boost::shared_lock<boost::shared_mutex> lock(mutexFilter);
+    auto it = mapTxFilter.find(nFilterId);
+    if (it == mapTxFilter.end())
+    {
+        return false;
+    }
+    it->second.GetFilterTxids(hashFork, fAll, vTxid);
+    return true;
+}
+
 } // namespace hashahead

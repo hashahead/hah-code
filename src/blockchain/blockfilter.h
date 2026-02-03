@@ -52,6 +52,7 @@ public:
 
     uint256 AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork) override;
     void AddPendingTx(const uint256& hashFork, const uint256& txid) override;
+    bool GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid) override;
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;
