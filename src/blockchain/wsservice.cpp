@@ -50,7 +50,29 @@ void CClientSubscribe::matchesLogs(CTransactionReceipt const& _m, MatchLogsVec& 
 
 uint128 CWsSubscribeFork::AddSubscribe(const uint64 nClientConnId, const uint8 nSubsType, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics)
 {
-    return 0;
+    auto& mapTypeSubs = mapClientSubscribe[nSubsType];
+
+    auto it = mapClientConnect.find(nClientConnId);
+    if (it != mapClientConnect.end())
+    {
+        auto mt = it->second.find(nSubsType);
+        if (mt != it->second.end())
+        {
+            const uint128& nSubsId = mt->second;
+            mapTypeSubs[nSubsId] = CClientSubscribe(nClientConnId, nSubsType, setSubsAddress, setSubsTopics);
+            return nSubsId;
+        }
+    }
+
+    uint128 nSubsId;
+    do
+    {
+        nSubsId = CreateSubsId(nSubsType, nClientConnId);
+    } while (mapTypeSubs.find(nSubsId) != mapTypeSubs.end());
+
+    mapTypeSubs.insert(std::make_pair(nSubsId, CClientSubscribe(nClientConnId, nSubsType, setSubsAddress, setSubsTopics)));
+    mapClientConnect[nClientConnId][nSubsType] = nSubsId;
+    return nSubsId;
 }
 
 void CWsSubscribeFork::RemoveClientAllSubscribe(const uint64 nClientConnId)
