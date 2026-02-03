@@ -77,6 +77,22 @@ uint128 CWsSubscribeFork::AddSubscribe(const uint64 nClientConnId, const uint8 n
 
 void CWsSubscribeFork::RemoveClientAllSubscribe(const uint64 nClientConnId)
 {
+    auto it = mapClientConnect.find(nClientConnId);
+    if (it != mapClientConnect.end())
+    {
+        for (const auto& kv : it->second)
+        {
+            const uint8 nSubsType = kv.first;
+            const uint128& nSubsId = kv.second;
+
+            auto mt = mapClientSubscribe.find(nSubsType);
+            if (mt != mapClientSubscribe.end())
+            {
+                mt->second.erase(nSubsId);
+            }
+        }
+        mapClientConnect.erase(it);
+    }
 }
 //////////////////////////////
 // CWsService
