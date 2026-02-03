@@ -2795,11 +2795,82 @@ CRPCResultPtr CRPCMod::RPCListDelegate(const CReqContext& ctxReq, CRPCParamPtr p
     const int64 nPrecision = 10000000000;
 
     auto spResult = MakeCListDelegateResultPtr();
-    for (const auto& d : boost::adaptors::reverse(mapVotes))
+    for (const auto& kv : boost::adaptors::reverse(mapVotes))
     {
+        const uint256& nVoteAmount = kv.first;
+        const CDestination& destDelegate = kv.second;
+
+        if (fValidDelegate)
+        {
+            if (nVoteAmount < DELEGATE_PROOF_OF_STAKE_ENROLL_MINIMUM_AMOUNT)
+            {
+                continue;
+            }
+            if (spResult->vecDelegate.size() >= MAX_DELEGATE_THRESH)
+            {
+                break;
+            }
+        }
+        if (!destDelegateAddress.IsNull() && destDelegateAddress != destDelegate)
+        {
+            continue;
+        }
+
+        const uint256 nScale = nVoteAmount * uint256(nPrecision) / nTotalVoteAmount;
+        double dScale = (double)(nScale.Get64()) / nPrecision;
+
+        char strScaleBuf[32] = { 0 };
+        snprintf(strScaleBuf, sizeof(strScaleBuf), "%.10f", dScale);
+        for (int64 i = strlen(strScaleBuf) - 1; i >= 0 && i < sizeof(strScaleBuf) && strScaleBuf[i] == '0'; i--)
+        {
+            strScaleBuf[i] = 0;
+        }
+
+        uint64 nLastEnrollTime = 0;
+        auto it = mapDelegateEnrollStatus.find(destDelegate);
+        if (it != mapDelegateEnrollStatus.end())
+        {
+            nLastEnrollTime = it->second.second;
+        }
+
+        uint256 nDelegateReward;
+        double dApy = 0.0;
+        auto mt = mapDelegateRewardApy.find(destDelegate);
+        if (mt != mapDelegateRewardApy.end())
+        {
+            nDelegateReward = mt->second.first;
+            dApy = mt->second.second;
+        }
+
+        char strApyBuf[32] = { 0 };
+        snprintf(strApyBuf, sizeof(strApyBuf), "%.10f", dApy);
+        for (int64 i = strlen(strApyBuf) - 1; i >= 0 && i < sizeof(strApyBuf) && strApyBuf[i] == '0'; i--)
+        {
+            strApyBuf[i] = 0;
+        }
+
+        string strAddressName;
+        CAddressContext ctxAddress;
+        if (pService->RetrieveAddressContext(pCoreProtocol->GetGenesisBlockHash(), destDelegate, ctxAddress) && ctxAddress.IsTemplate())
+        {
+            CTemplateAddressContext ctxTemplate;
+            if (ctxAddress.GetTemplateAddressContext(ctxTemplate))
+            {
+                strAddressName = ctxTemplate.strName;
+            }
+        }
+
         CListDelegateResult::CDelegate delegateData;
-        delegateData.strAddress = d.second.ToString();
-        delegateData.strVotes = CoinToTokenBigFloat(d.first);
+
+        delegateData.strAddress = destDelegate.ToString();
+        delegateData.strName = strAddressName;
+        delegateData.strVotes = CoinToTokenBigFloat(nVoteAmount);
+        delegateData.strScale = strScaleBuf;
+        delegateData.strReward = CoinToTokenBigFloat(nDelegateReward);
+        delegateData.strApy = strApyBuf;
+        delegateData.nState = (nLastEnrollTime > 0 ? 1 : 0);
+        delegateData.nUptime = nLastEnrollTime;
+
         spResult->vecDelegate.push_back(delegateData);
     }
     return spResult;
