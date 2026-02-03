@@ -3922,10 +3922,8 @@ CRPCResultPtr CRPCMod::RPCListTransaction(const CReqContext& ctxReq, CRPCParamPt
         throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
     }
 
-    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
-
     vector<CDestTxInfo> vTx;
-    if (!pService->ListTransaction(hashFork, hashBlock, dest, spParam->nOffset, spParam->nCount, spParam->fReverse, vTx))
+    if (!pService->ListAddressTxInfo(hashFork, dest, spParam->nOffset, spParam->nCount, spParam->fReverse, vTx))
     {
         throw CRPCException(RPC_WALLET_ERROR, "Failed list transactions");
     }
