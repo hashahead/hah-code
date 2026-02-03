@@ -118,7 +118,7 @@ public:
 
     void ListTx(std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true);
     void ListTx(std::vector<uint256>& vTxPool);
-    bool ListTx(const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount);
+    bool ListTx(const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount, const bool fContainCertTx = true);
     void GetDestBalance(const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
                         uint256& nUnconfirmedIn, uint256& nUnconfirmedOut, CAddressContext& ctxAddress, const uint256& hashBlock = uint256());
 

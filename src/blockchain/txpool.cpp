@@ -1094,15 +1094,16 @@ bool CTxPool::PushUserTx(const uint64 nRecvNetNonce, const uint256& hashFork, co
     return true;
 }
 
-void CTxPool::GetDestBalance(const uint256& hashFork, const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
+bool CTxPool::GetDestBalance(const uint256& hashFork, const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
                              uint256& nUnconfirmedIn, uint256& nUnconfirmedOut, CAddressContext& ctxAddress, const uint256& hashBlock)
 {
     boost::shared_lock<boost::shared_mutex> rlock(rwAccess);
     CForkTxPool* pFork = GetForkTxPool(hashFork);
     if (pFork)
     {
-        pFork->GetDestBalance(dest, nDestType, nTemplateType, nTxNonce, nAvail, nUnconfirmedIn, nUnconfirmedOut, ctxAddress, hashBlock);
+        return pFork->GetDestBalance(dest, nDestType, nTemplateType, nTxNonce, nAvail, nUnconfirmedIn, nUnconfirmedOut, ctxAddress, hashBlock);
     }
+    return false;
 }
 
 uint64 CTxPool::GetDestNextTxNonce(const uint256& hashFork, const CDestination& dest)
