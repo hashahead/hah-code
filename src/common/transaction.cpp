@@ -1236,9 +1236,10 @@ void CLogsFilter::matchesLogs(CTransactionReceipt const& _m, MatchLogsVec& vLogs
             continue;
         }
         bool m = true;
-        for (unsigned i = 0; i < 4; ++i)
+        for (unsigned i = 0; i < MAX_LOGS_FILTER_TOPIC_COUNT; ++i)
         {
-            if (!arrayTopics[i].empty() && (logs.topics.size() < i || !arrayTopics[i].count(logs.topics[i])))
+            const std::set<uint256>& setTopics = arrayTopics[i];
+            if (!setTopics.empty() && *setTopics.begin() != 0 && (logs.topics.size() <= i || !setTopics.count(logs.topics[i])))
             {
                 m = false;
                 break;
