@@ -86,5 +86,52 @@ bool operator==(const CDexOrderValue& a, const CDexOrderValue& b)
     return true;
 }
 
+///////////////////////////////////
+// CCoinDexPair
+
+bool CCoinDexPair::AddOrder(const uint256& hashDexOrder, const std::string& strCoinSymbolOwner, const CDestination& destOrder, const uint64 nOrderNumber, const uint256& nOrderAmount, const uint256& nOrderPrice, const uint256& nCompleteAmount,
+                            const uint64 nCompleteCount, const CChainId nOrderAtChainId, const uint256& hashOrderAtBlock, const uint32 nHeight, const uint16 nSlot, const uint256& hashOrderRandom)
+{
+    CDexOrderKey keyOrder(nOrderPrice, nHeight, nSlot, hashOrderRandom);
+    CDexOrderValue* pOrderValue = nullptr;
+    uint8 nOrderType = 0;
+    if (strCoinSymbolOwner == strCoinSymbolSell)
+    {
+        pOrderValue = &mapSellOrder[keyOrder];
+        nOrderType = CDP_ORDER_TYPE_SELL;
+    }
+    else if (strCoinSymbolOwner == strCoinSymbolBuy)
+    {
+        pOrderValue = &mapBuyOrder[keyOrder];
+        nOrderType = CDP_ORDER_TYPE_BUY;
+    }
+    else
+    {
+        StdLog("CCoinDexPair", "Add Order: Coin symbol owner error, Coin symbol owner: %s, symbol sell: %s, symbol buy: %s",
+               strCoinSymbolOwner.c_str(), strCoinSymbolSell.c_str(), strCoinSymbolBuy.c_str());
+        return false;
+    }
+
+    pOrderValue->destOrder = destOrder;
+    pOrderValue->nOrderNumber = nOrderNumber;
+    pOrderValue->nOrderAmount = nOrderAmount;
+    pOrderValue->nCompleteAmount = nCompleteAmount;
+    pOrderValue->nCompleteCount = nCompleteCount;
+    pOrderValue->nOrderAtChainId = nOrderAtChainId;
+    pOrderValue->hashOrderAtBlock = hashOrderAtBlock;
+
+    mapDexOrderIndex[hashDexOrder] = std::make_pair(keyOrder, nOrderType); // key: dex order hash, value: 1: order key, 2: order type
+
+    if (nSellChainId != 0 && nSellChainId == nBuyChainId && hashOrderAtBlock != 0)
+    {
+        uint64 nHeightSlot = CDexOrderKey::GetHeightSlotStatic(CBlock::GetBlockHeightByHash(hashOrderAtBlock), CBlock::GetBlockSlotByHash(hashOrderAtBlock));
+        if (nHeightSlot > nMatchHeightSlot)
+        {
+            nMatchHeightSlot = nHeightSlot;
+        }
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
