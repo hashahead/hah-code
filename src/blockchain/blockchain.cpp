@@ -1854,6 +1854,32 @@ bool CBlockChain::VerifyBlockCrosschainProve(const uint256& hashBlock, const CBl
             }
         }
 
+        if (blockProve.hashPrevBlock != 0 && !blockProve.vPrevBlockCcProve.empty())
+        {
+            uint256 hashAtBlock = blockProve.hashPrevBlock;
+            for (const CBlockPrevProve& prevProve : blockProve.vPrevBlockCcProve)
+            {
+                if (prevProve.hashPrevBlock != 0 && !prevProve.vPrevBlockMerkleProve.empty())
+                {
+                    if (!CBlock::VerifyBlockMerkleProve(hashAtBlock, prevProve.vPrevBlockMerkleProve, prevProve.hashPrevBlock))
+                    {
+                        StdLog("BlockChain", "Verify block crosschain prove: Verify prev block merkle prove fail, at block: %s, merkle prove size: %lu, prev block: %s, block: %s",
+                               hashAtBlock.GetBhString().c_str(), prevProve.vPrevBlockMerkleProve.size(), prevProve.hashPrevBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+                        return false;
+                    }
+                }
+                if (!prevProve.proveCrosschain.IsNull() && !prevProve.vCrosschainMerkleProve.empty())
+                {
+                    if (!CBlock::VerifyBlockMerkleProve(hashAtBlock, prevProve.vCrosschainMerkleProve, prevProve.proveCrosschain.GetHash()))
+                    {
+                        StdLog("BlockChain", "Verify block crosschain prove: Verify crosschain merkle prove fail, at block: %s, block: %s",
+                               hashAtBlock.ToString().c_str(), hashBlock.ToString().c_str());
+                        return false;
+                    }
+                }
+                hashAtBlock = prevProve.hashPrevBlock;
+            }
+        }
     }
     return true;
 }
