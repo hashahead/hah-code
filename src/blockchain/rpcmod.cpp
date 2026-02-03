@@ -2960,7 +2960,7 @@ CRPCResultPtr CRPCMod::RPCGetUserVotes(const CReqContext& ctxReq, CRPCParamPtr p
     uint32 nUnlockHeight = 0;
     if (!pService->GetUserVotes(hashRefBlock, destVote, nTemplateType, nVotes, nUnlockHeight))
     {
-        throw CRPCException(RPC_INTERNAL_ERROR, "Get votes fail");
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown vote address");
     }
 
     auto spResult = MakeCGetUserVotesResultPtr();
