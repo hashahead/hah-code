@@ -282,18 +282,52 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockBks& eventBks)
     StdDebug("CBlockChannel", "CEvent peer block bks: Recv block, block: %s, fork: %s",
              eventBks.data.hashBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
 
-        CBlock block;
-        try
+    CBlock block;
+    try
+    {
+        CBufStream ss(eventBks.data.btBlockData);
+        ss >> block;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    uint256 hashBlock = block.GetHash();
+    if (eventBks.data.hashBlock != hashBlock)
+    {
+        StdLog("CBlockChannel", "CEvent peer block bks: Block hash error, block hash: %s, data block: %s, prev: %s",
+               eventBks.data.hashBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str(), eventBks.data.hashPrev.GetBhString().c_str());
+        return false;
+    }
+
+    pBlockFilter->AddMaxPeerBlockNumber(hashFork, block.GetBlockNumber());
+
+    if (!pBlockChain->Exists(eventBks.data.hashPrev))
+    {
+        StdDebug("CBlockChannel", "CEvent peer block bks: Prev block not exist, block: %s, prev: %s",
+                 eventBks.data.hashBlock.GetBhString().c_str(), eventBks.data.hashPrev.GetBhString().c_str());
+
+        uint256 hashForkLastBlock;
+        if (pBlockChain->RetrieveForkLast(hashFork, hashForkLastBlock)
+            && CBlock::GetBlockChainIdByHash(hashBlock) > CBlock::GetBlockChainIdByHash(hashForkLastBlock) + 256)
         {
-            CBufStream ss(eventBks.data.btBlockData);
-            ss >> block;
+            StdDebug("CBlockChannel", "CEvent peer block bks: Block height is too recent, block: %s, last block: %s",
+                     eventBks.data.hashBlock.GetBhString().c_str(), hashForkLastBlock.GetBhString().c_str());
+            return true;
         }
-        catch (std::exception& e)
+
+        AddCacheBlock(hashBlock, block, eventBks.data.btBlockData.size(), nRecvPeerNonce);
+
+        auto it = mapChnFork.find(hashFork);
+        if (it != mapChnFork.end())
         {
-            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
-            return false;
+            it->second.AddPrevBlockHash(block.hashPrev, hashBlock);
+            if (!it->second.CheckPrevExist(hashBlock))
+            {
+                SendNextPrevBlockReq(hashFork, hashBlock, nRecvPeerNonce);
+            }
         }
-        AddCacheBlock(block, eventBks.data.btBlockData.size(), nRecvPeerNonce);
     }
     else if (pBlockChain->Exists(eventBks.data.hashBlock))
     {
