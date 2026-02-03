@@ -124,6 +124,9 @@ protected:
     bool HandleEvent(network::CEventPeerActive& eventActive) override;
     bool HandleEvent(network::CEventPeerDeactive& eventDeactive) override;
     bool HandleEvent(network::CEventPeerSnapshotDownData& event) override;
+
+    bool HandleMsgFilelistReq(const uint64 nNetId, const uint256& hashFork, const uint256& hashSnapBlock);
+
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;

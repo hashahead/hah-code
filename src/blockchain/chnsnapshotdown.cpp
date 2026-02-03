@@ -182,4 +182,29 @@ bool CSnapshotDownChannel::HandleEvent(network::CEventPeerSnapshotDownData& even
     }
     return true;
 }
+
+//-----------------------------------------------------------------------
+bool CSnapshotDownChannel::HandleMsgFilelistReq(const uint64 nNetId, const uint256& hashFork, const uint256& hashSnapBlock)
+{
+    CSnapDownMsgFilelistRsp bodyRsp(hashSnapBlock);
+
+    if (!pBlockChain->GetSnapshotFileList(hashSnapBlock, bodyRsp.vFilelist))
+    {
+        bodyRsp.vFilelist.clear();
+        StdLog("CSnapshotDownChannel", "Handle msg filelist req: Get snapshot file list failed, snap block: %s", hashSnapBlock.ToString().c_str());
+    }
+
+    CBufStream ss;
+    ss << SNAP_DOWN_MSGID_FILELIST_RSP << bodyRsp;
+
+    network::CEventPeerSnapshotDownData event(nNetId, hashFork);
+    ss.GetData(event.data);
+    if (!pPeerNet->DispatchEvent(&event))
+    {
+        StdLog("CSnapshotDownChannel", "Handle msg filelist req: Dispatch event failed, snap block: %s", hashSnapBlock.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
 }; // namespace hashahead
