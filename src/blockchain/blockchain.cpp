@@ -1836,6 +1836,24 @@ bool CBlockChain::VerifyBlockCrosschainProve(const uint256& hashBlock, const CBl
             return false;
         }
 
+        if (blockProve.hashPrevBlock != 0 && !blockProve.vPrevBlockMerkleProve.empty())
+        {
+            if (!CBlock::VerifyBlockMerkleProve(blockProve.hashBlock, blockProve.vPrevBlockMerkleProve, blockProve.hashPrevBlock))
+            {
+                StdLog("BlockChain", "Verify block crosschain prove: Verify prev block merkle prove fail, prev block: %s, block: %s",
+                       blockProve.hashPrevBlock.ToString().c_str(), hashBlock.ToString().c_str());
+                return false;
+            }
+        }
+        if (!blockProve.proveCrosschain.IsNull() && !blockProve.vCrosschainMerkleProve.empty())
+        {
+            if (!CBlock::VerifyBlockMerkleProve(blockProve.hashBlock, blockProve.vCrosschainMerkleProve, blockProve.proveCrosschain.GetHash()))
+            {
+                StdLog("BlockChain", "Verify block crosschain prove: Verify crosschain merkle prove fail, block: %s", hashBlock.ToString().c_str());
+                return false;
+            }
+        }
+
     }
     return true;
 }
