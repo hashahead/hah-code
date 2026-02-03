@@ -1137,7 +1137,44 @@ bool CForkAddressDB::RemoveTrieRoot(const uint8 nRootType, const uint256& hashBl
     return dbTrie.RemoveExtKv(ssKey);
 }
 
-void CForkAddressDB::AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
+void CForkAddressDB::AddPrevRoot(const uint8 nRootType, const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
+{
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+
+    ssKey << nRootType << DB_ADDRESS_KEY_ID_PREVROOT;
+    ssKey.GetData(btKey);
+
+    ssValue << hashPrevRoot << hashBlock;
+    ssValue.GetData(btValue);
+
+    mapKv.insert(make_pair(btKey, btValue));
+}
+
+bool CForkAddressDB::GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock)
+{
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+    ssKey << nRootType << DB_ADDRESS_KEY_ID_PREVROOT;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        ssValue.Write((char*)(btValue.data()), btValue.size());
+        ssValue >> hashPrevRoot >> hashBlock;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+void CForkAddressDB::AddTokenPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
 {
     hnbase::CBufStream ssKey, ssValue;
     bytes btKey, btValue;
