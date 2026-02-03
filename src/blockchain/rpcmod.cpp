@@ -3047,6 +3047,118 @@ CRPCResultPtr CRPCMod::RPCGetPledgeVotes(const CReqContext& ctxReq, CRPCParamPtr
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCListPledgeVotes(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListPledgeVotesParam>(param);
+
+    CDestination destOwnerAddress;
+    destOwnerAddress.ParseString(spParam->strOwneraddress);
+    if (destOwnerAddress.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+
+    CDestination destDelegateAddress;
+    if (spParam->strDelegateaddress.IsValid())
+    {
+        destDelegateAddress.ParseString(spParam->strDelegateaddress);
+        if (destDelegateAddress.IsNull())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid delegateaddress");
+        }
+    }
+
+    const uint32 nStatus = spParam->nStatus;
+    if (nStatus != 0 && nStatus != 1 && nStatus != 2 && nStatus != 9)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid status");
+    }
+
+    const uint32 nPledgetype = spParam->nPledgetype;
+    if (!(nPledgetype >= 0 && nPledgetype <= 5))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid pledgetype");
+    }
+
+    uint256 hashRefBlock = GetRefBlock(pCoreProtocol->GetGenesisBlockHash(), spParam->strBlock);
+    if (hashRefBlock != 0)
+    {
+        CChainId nChainId;
+        uint256 hashRefFork;
+        int nHeight;
+        if (!pService->GetBlockLocation(hashRefBlock, nChainId, hashRefFork, nHeight))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+        }
+        if (hashRefFork != pCoreProtocol->GetGenesisBlockHash())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+        }
+    }
+    else
+    {
+        int nLastHeight;
+        if (!pService->GetForkLastBlock(pCoreProtocol->GetGenesisBlockHash(), nLastHeight, hashRefBlock))
+        {
+            hashRefBlock = pCoreProtocol->GetGenesisBlockHash();
+        }
+    }
+
+    std::map<CDestination, uint8> mapTemplateAddress;
+    if (!pService->GetOwnerLinkTemplateAddress(pCoreProtocol->GetGenesisBlockHash(), hashRefBlock, destOwnerAddress, mapTemplateAddress))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "No such owner address");
+    }
+
+    auto spResult = MakeCListPledgeVotesResultPtr();
+
+    for (auto& kv : mapTemplateAddress)
+    {
+        const CDestination& destVote = kv.first;
+        if (kv.second == TEMPLATE_PLEDGE)
+        {
+            CPledgeVoteContext ctxPledgeVote;
+            if (pService->GetPledgeVotes(hashRefBlock, destVote, ctxPledgeVote))
+            {
+                if (!destDelegateAddress.IsNull() && destDelegateAddress != ctxPledgeVote.destDelegate)
+                {
+                    continue;
+                }
+                if (!(nStatus == 9 || nStatus == ctxPledgeVote.nStatus))
+                {
+                    continue;
+                }
+                if (!(nPledgetype == 0 || nPledgetype == ctxPledgeVote.nPledgeType))
+                {
+                    continue;
+                }
+
+                CListPledgeVotesResult::CPledgevotelist pledgeVote;
+
+                pledgeVote.strVoteaddress = destVote.ToString();
+                pledgeVote.strDelegateaddress = ctxPledgeVote.destDelegate.ToString();
+                pledgeVote.strOwneraddress = ctxPledgeVote.destOwner.ToString();
+                pledgeVote.nPledgetype = ctxPledgeVote.nPledgeType;
+                pledgeVote.nCycles = ctxPledgeVote.nCycles;
+                pledgeVote.nNonce = ctxPledgeVote.nNonce;
+                pledgeVote.strVoteamount = CoinToTokenBigFloat(ctxPledgeVote.nVoteAmount);
+                pledgeVote.nVotetime = ctxPledgeVote.nVoteTime;
+                pledgeVote.nVoteheight = ctxPledgeVote.nVoteHeight;
+                pledgeVote.nStopheight = ctxPledgeVote.nStopHeight;
+                pledgeVote.nRedeemheight = ctxPledgeVote.nRedeemHeight;
+                pledgeVote.nStatus = ctxPledgeVote.nStatus;
+                pledgeVote.strRevoterewardamount = CoinToTokenBigFloat(ctxPledgeVote.nReVoteRewardAmount);
+                pledgeVote.strStopedrewardamount = CoinToTokenBigFloat(ctxPledgeVote.nStopedRewardAmount);
+                pledgeVote.strTotalrewardamount = CoinToTokenBigFloat(ctxPledgeVote.nTotalRewardAmount);
+
+                spResult->vecPledgevotelist.push_back(pledgeVote);
+            }
+        }
+    }
+
+    return spResult;
+}
+
 CRPCResultPtr CRPCMod::RPCGetTimeVault(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CGetTimeVaultParam>(param);
