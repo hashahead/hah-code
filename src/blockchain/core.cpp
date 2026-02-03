@@ -947,116 +947,7 @@ Errno CCoreProtocol::VerifyTransaction(const uint256& txid, const CTransaction& 
     return OK;
 }
 
-bool CCoreProtocol::GetBlockTrust(const CBlock& block, uint256& nChainTrust, const CBlockIndex* pIndexPrev, const CDelegateAgreement& agreement, const CBlockIndex* pIndexRef, const uint256& nEnrollTrust)
-{
-    //int32 nHeight = block.GetBlockHeight();
-    if (block.IsGenesis())
-    {
-        nChainTrust = uint64(0);
-    }
-    else if (block.IsVacant())
-    {
-        nChainTrust = uint64(0);
-    }
-    else if (block.IsPrimary())
-    {
-        if (block.IsProofOfWork())
-        {
-            // uint256 v(1);
-            // nChainTrust = (v << 8);
-            CBufStream ss;
-            ss << block.GetBlockHeight() << block.txMint.GetToAddress();
-            uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
-            nChainTrust = hash.GetUint16Index();
-            if (nChainTrust == 0)
-            {
-                StdLog("CoreProtocol", "Get Block Trust: Proof of work, nChainTrust is 0");
-                CBufStream ss;
-                ss << (block.GetBlockHeight() - 1) << block.txMint.GetToAddress();
-                uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
-                nChainTrust = hash.GetUint16Index();
-                if (nChainTrust == 0)
-                {
-                    nChainTrust = 1;
-                    StdLog("CoreProtocol", "Get Block Trust: Proof of work, nChainTrust is 0, set nChainTrust is 0");
-                }
-            }
-        }
-        else if (pIndexPrev != nullptr)
-        {
-            // Get the last PoW block nAlgo
-            int nAlgo;
-            const CBlockIndex* pIndex = pIndexPrev;
-            while (!pIndex->IsProofOfWork() && (pIndex->pPrev != nullptr))
-            {
-                pIndex = pIndex->pPrev;
-            }
-            if (!pIndex->IsProofOfWork())
-            {
-                nAlgo = CM_CRYPTONIGHT;
-            }
-            else
-            {
-                nAlgo = pIndex->nProofAlgo;
-            }
-
-            int nBits;
-            if (GetProofOfWorkTarget(pIndexPrev, nAlgo, nBits))
-            {
-                if (agreement.nWeight == 0 || nBits <= 0)
-                {
-                    StdError("CoreProtocol", "Get Block Trust: nWeight or nBits error, nWeight: %lu, nBits: %d", agreement.nWeight, nBits);
-                    return false;
-                }
-                // if (nEnrollTrust <= 0)
-                // {
-                //     StdError("CoreProtocol", "Get Block Trust: nEnrollTrust error, nEnrollTrust: %lu", nEnrollTrust);
-                //     return false;
-                // }
-
-                // PoS difficulty = 2 ^ (nBits + weight)
-                //nChainTrust = uint256(1) << (int(nEnrollTrust) + nBits + 20);
-                nChainTrust = nEnrollTrust;
-            }
-            else
-            {
-                StdError("CoreProtocol", "Get Block Trust: Get ProofOfWork Target fail");
-                return false;
-            }
-        }
-        else
-        {
-            StdError("CoreProtocol", "Get Block Trust: Primary pIndexPrev is null");
-            return false;
-        }
-    }
-    else if (block.IsOrigin())
-    {
-        nChainTrust = uint64(0);
-    }
-    else if (block.IsSubsidiary() || block.IsExtended())
-    {
-        if (pIndexRef == nullptr)
-        {
-            StdError("CoreProtocol", "Get Block Trust: pIndexRef is null, block: %s", block.GetHash().GetHex().c_str());
-            return false;
-        }
-        if (pIndexRef->pPrev == nullptr)
-        {
-            StdError("CoreProtocol", "Get Block Trust: Subsidiary or Extended block pPrev is null, block: %s", block.GetHash().GetHex().c_str());
-            return false;
-        }
-        nChainTrust = pIndexRef->nChainTrust - pIndexRef->pPrev->nChainTrust;
-    }
-    else
-    {
-        StdError("CoreProtocol", "Get Block Trust: block type error");
-        return false;
-    }
-    return true;
-}
-
-bool CCoreProtocol::GetProofOfWorkTarget(const CBlockIndex* pIndexPrev, int nAlgo, int& nBits)
+bool CCoreProtocol::GetProofOfWorkTarget(const BlockIndexPtr pIndexPrev, int nAlgo, int& nBits)
 {
     nBits = 8;
     return true;
@@ -1149,21 +1040,22 @@ uint64 CCoreProtocol::GetNextBlockTimestamp(const uint64 nPrevTimeStamp)
 
 bool CCoreProtocol::CheckBlockSignature(const uint256& hashFork, const CBlock& block)
 {
-    if (block.GetHash() != GetGenesisBlockHash())
+    const uint256 hashBlock = block.GetHash();
+    if (hashBlock != GetGenesisBlockHash())
     {
         // if (!block.txMint.GetToAddress().IsTemplate())
         // {
-        //     StdLog("CoreProtocol", "Check Block Signature: txMint not template address, block: %s", block.GetHash().GetHex().c_str());
+        //     StdLog("CoreProtocol", "Check Block Signature: txMint not template address, block: %s", hashBlock.GetHex().c_str());
         //     return false;
         // }
 
         if (block.txMint.GetTxType() == CTransaction::TX_GENESIS)
         {
-            if (!block.VerifyBlockSignature(block.txMint.GetToAddress()))
-            {
-                StdLog("CoreProtocol", "Check Block Signature: Verify block sign fail, block: %s", block.GetHash().GetHex().c_str());
-                return false;
-            }
+            // if (!block.VerifyBlockSignature(block.txMint.GetToAddress()))
+            // {
+            //     StdLog("CoreProtocol", "Check Block Signature: Verify block sign fail, block: %s", hashBlock.GetHex().c_str());
+            //     return false;
+            // }
         }
         else
         {
