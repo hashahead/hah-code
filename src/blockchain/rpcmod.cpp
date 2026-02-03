@@ -2441,7 +2441,7 @@ CRPCResultPtr CRPCMod::RPCGetBlockData(const CReqContext& ctxReq, CRPCParamPtr p
         throw CRPCException(RPC_INVALID_PARAMETER, "Unknown block");
     }
 
-    return MakeCGetBlockDataResultPtr(BlockToJSON(hashBlock, block, nChainId, fork, height, block.GetBlockTotalReward()));
+    return MakeCGetBlockDataResultPtr(BlockToJSON(hashBlock, block, nChainId, fork, height, block.GetBlockTotalReward(), pService->IsBlockConfirm(hashBlock), !fOnlyBlockHeader));
 }
 
 CRPCResultPtr CRPCMod::RPCGetBlockEncode(const CReqContext& ctxReq, CRPCParamPtr param)
@@ -2471,6 +2471,43 @@ CRPCResultPtr CRPCMod::RPCGetBlockEncode(const CReqContext& ctxReq, CRPCParamPtr
     ss << block;
 
     return MakeCGetBlockEncodeResultPtr(ToHexString((const unsigned char*)ss.GetData(), ss.GetSize()));
+}
+
+CRPCResultPtr CRPCMod::RPCGetBlockDecode(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetBlockDecodeParam>(param);
+
+    if (!spParam->strBlockcode.IsValid())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid blockcode");
+    }
+    bytes btBlockData = ParseHexString(spParam->strBlockcode);
+    if (btBlockData.empty())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid blockcode");
+    }
+
+    CBlock block;
+    try
+    {
+        CBufStream ss(btBlockData);
+        ss >> block;
+    }
+    catch (std::exception& e)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid blockcode");
+    }
+
+    uint256 hashBlock = block.GetHash();
+    uint256 hashFork;
+
+    CBlockStatus status;
+    if (pService->GetBlockStatus(hashBlock, status))
+    {
+        hashFork = status.hashFork;
+    }
+
+    return MakeCGetBlockDecodeResultPtr(BlockToJSON(hashBlock, block, block.GetChainId(), hashFork, block.GetBlockHeight(), block.GetBlockTotalReward(), pService->IsBlockConfirm(hashBlock), true));
 }
 
 CRPCResultPtr CRPCMod::RPCGetTxPool(const CReqContext& ctxReq, CRPCParamPtr param)
