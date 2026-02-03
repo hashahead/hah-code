@@ -2174,7 +2174,7 @@ bool CBlockChain::ListTokenContractAddress(const uint256& hashFork, const uint25
 
 bool CBlockChain::RetrieveBlsPubkeyContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint384& blsPubkey)
 {
-    return cntrBlock.RetrieveTimeVault(hashFork, hashBlock, dest, tv);
+    return cntrBlock.RetrieveBlsPubkeyContext(hashFork, hashBlock, dest, blsPubkey);
 }
 
 bool CBlockChain::GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount)
