@@ -387,17 +387,28 @@ public:
     }
 
 protected:
-    template <typename O>
-    void Serialize(hnbase::CStream& s, O& opt)
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const
     {
-        s.Serialize(nDirection, opt);
-        s.Serialize(nBlockNumber, opt);
-        s.Serialize(txid, opt);
-        s.Serialize(nTxType, opt);
-        s.Serialize(nTimeStamp, opt);
-        s.Serialize(destPeer, opt);
-        s.Serialize(nAmount, opt);
-        s.Serialize(nTxFee, opt);
+        s << nDirection << hnbase::CVarInt(nBlockNumber) << txid << nTxType << hnbase::CVarInt(nTimeStamp) << destPeer << nAmount.ToValidBigEndianData() << nTxFee.ToValidBigEndianData();
+    }
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&)
+    {
+        hnbase::CVarInt varBlockNumber;
+        hnbase::CVarInt varTimeStamp;
+        bytes btAmount;
+        bytes btTxFee;
+        s >> nDirection >> varBlockNumber >> txid >> nTxType >> varTimeStamp >> destPeer >> btAmount >> btTxFee;
+        nBlockNumber = varBlockNumber.GetValue();
+        nTimeStamp = varTimeStamp.GetValue();
+        nAmount.FromValidBigEndianData(btAmount);
+        nTxFee.FromValidBigEndianData(btTxFee);
+    }
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const
+    {
+        (void)s;
+        hnbase::CBufStream ss;
+        ss << nDirection << hnbase::CVarInt(nBlockNumber) << txid << nTxType << hnbase::CVarInt(nTimeStamp) << destPeer << nAmount.ToValidBigEndianData() << nTxFee.ToValidBigEndianData();
+        serSize = ss.GetSize();
     }
 };
 
