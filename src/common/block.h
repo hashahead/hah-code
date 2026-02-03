@@ -130,6 +130,10 @@ public:
     static CChainId GetBlockChainIdByHash(const uint256& hash);
     static uint32 GetBlockHeightByHash(const uint256& hash);
     static uint16 GetBlockSlotByHash(const uint256& hash);
+    static uint256 CreateBlockHash(const CChainId nChainId, const uint32 nHeight, const uint16 nSlot, const uint256& hash);
+
+    static bool BlockHashCompare(const uint256& a, const uint256& b); // return true: a < b, false: a >= b
+    static bool VerifyBlockMerkleProve(const uint256& hashBlock, const hnbase::MERKLE_PROVE_DATA& merkleProve, const uint256& hashVerify);
 
 protected:
     void Serialize(hnbase::CStream& s, hnbase::SaveType&) const;

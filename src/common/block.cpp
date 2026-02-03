@@ -531,6 +531,49 @@ uint16 CBlock::GetBlockSlotByHash(const uint256& hash)
     return hash.GetB3();
 }
 
+uint256 CBlock::CreateBlockHash(const CChainId nChainId, const uint32 nHeight, const uint16 nSlot, const uint256& hash)
+{
+    return uint256(nChainId, nHeight, nSlot, hash);
+}
+
+bool CBlock::BlockHashCompare(const uint256& a, const uint256& b) // return true: a < b, false: a >= b
+{
+    CChainId nChainIdA = CBlock::GetBlockChainIdByHash(a);
+    CChainId nChainIdB = CBlock::GetBlockChainIdByHash(b);
+    if (nChainIdA < nChainIdB)
+    {
+        return true;
+    }
+    else if (nChainIdA == nChainIdB)
+    {
+        uint32 nHeightA = CBlock::GetBlockHeightByHash(a);
+        uint32 nHeightB = CBlock::GetBlockHeightByHash(b);
+        if (nHeightA < nHeightB)
+        {
+            return true;
+        }
+        else if (nHeightA == nHeightB)
+        {
+            uint16 nSlotA = CBlock::GetBlockSlotByHash(a);
+            uint16 nSlotB = CBlock::GetBlockSlotByHash(b);
+            if (nSlotA < nSlotB)
+            {
+                return true;
+            }
+            else if (nSlotA == nSlotB && a < b)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool CBlock::VerifyBlockMerkleProve(const uint256& hashBlock, const hnbase::MERKLE_PROVE_DATA& merkleProve, const uint256& hashVerify)
+{
+    return (hashBlock == uint256(GetBlockChainIdByHash(hashBlock), GetBlockHeightByHash(hashBlock), GetBlockSlotByHash(hashBlock), CMerkleTree::GetMerkleRootByProve(merkleProve, hashVerify)));
+}
+
 //-------------------------------------------------------
 void CBlock::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
 {
