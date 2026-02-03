@@ -3810,6 +3810,8 @@ CRPCResultPtr CRPCMod::RPCGetBalance(const CReqContext& ctxReq, CRPCParamPtr par
         throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
     }
 
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock, true);
+
     vector<tuple<CDestination, uint8, uint512>> vDes;
     if (spParam->strAddress.IsValid())
     {
@@ -3819,7 +3821,12 @@ CRPCResultPtr CRPCMod::RPCGetBalance(const CReqContext& ctxReq, CRPCParamPtr par
         {
             throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
         }
-        vDes.push_back(make_tuple(address, 0, uint512()));
+        CAddressContext ctxAddress;
+        if (!pService->RetrieveAddressContext(hashFork, address, ctxAddress, hashBlock))
+        {
+            ctxAddress.SetType(CDestination::PREFIX_PUBKEY, 0);
+        }
+        vDes.push_back(make_tuple(address, ctxAddress.nType, uint512()));
     }
     else
     {
