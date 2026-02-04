@@ -2531,8 +2531,8 @@ bool CBlockChain::CreateBlockStateRoot(const uint256& hashFork, const CBlock& bl
 
 bool CBlockChain::RetrieveDestState(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CDestState& state)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashBlock, &pIndex))
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashBlock);
+    if (!pIndex)
     {
         StdLog("BlockChain", "Retrieve dest state: Retrieve index fail, block: %s", hashBlock.GetHex().c_str());
         return false;
