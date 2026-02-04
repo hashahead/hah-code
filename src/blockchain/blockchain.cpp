@@ -2348,27 +2348,36 @@ bool CBlockChain::CalcBlockVoteRewardTx(const uint256& hashPrev, const uint16 nB
         return true;
     }
 
-    CBlockIndex* pPrevIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashPrev, &pPrevIndex) || pPrevIndex == nullptr)
+    BlockIndexPtr pPrevIndex = cntrBlock.RetrieveIndex(hashPrev);
+    if (!pPrevIndex)
     {
-        StdError("BlockChain", "Get distribute vote reward tx: Retrieve prev index fail, hashPrev: %s", hashPrev.GetHex().c_str());
+        StdError("BlockChain", "Get distribute vote reward tx: Retrieve prev index fail, prev block: %s", hashPrev.GetHex().c_str());
         return false;
     }
+    if ((pPrevIndex->GetBlockHeight() % nDistributeHeight) > (MAX_SNAPSHOT_STATE_HEIGHT / 2))
+    {
+        BlockIndexPtr pPrevPrevIndex = cntrBlock.RetrieveIndex(pPrevIndex->GetPrevHash());
+        if (pPrevPrevIndex && pPrevPrevIndex->GetRewardTxCount() == pPrevIndex->GetRewardTxCount())
+        {
+            // StdDebug("BlockChain", "Get distribute vote reward tx: Not reward tx, block height: %d, prev block: %s", nBlockHeight, hashPrev.GetBhString().c_str());
+            return true;
+        }
+    }
     uint256 hashFork = pPrevIndex->GetOriginHash();
-    CBlockIndex* pIndex = pPrevIndex;
+    BlockIndexPtr pIndex = pPrevIndex;
     while (pIndex && (pIndex->GetBlockHeight() % nDistributeHeight) > 0)
     {
-        pIndex = pIndex->pPrev;
+        pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
     }
-    if (pIndex == nullptr)
+    if (!pIndex)
     {
-        StdError("BlockChain", "Get distribute vote reward tx: Find calc index fail, hashPrev: %s", hashPrev.GetHex().c_str());
+        StdError("BlockChain", "Get distribute vote reward tx: Find calc index fail, prev block: %s", hashPrev.GetHex().c_str());
         return false;
     }
     if (pIndex->GetOriginHash() != hashFork)
     {
-        StdLog("BlockChain", "Get distribute vote reward tx: Fork error, calc fork: %s, prev fork: %s, hashPrev: %s",
-               pIndex->GetOriginHash().GetHex().c_str(), hashFork.GetHex().c_str(), hashPrev.GetHex().c_str());
+        StdDebug("BlockChain", "Get distribute vote reward tx: Fork error, calc fork: %s, prev fork: %s, prev block: %s",
+                 pIndex->GetOriginHash().GetHex().c_str(), hashFork.GetHex().c_str(), hashPrev.GetHex().c_str());
         return true;
     }
     const uint256 hashCalcEndBlock = pIndex->GetBlockHash();
@@ -2396,7 +2405,7 @@ bool CBlockChain::CalcBlockVoteRewardTx(const uint256& hashPrev, const uint16 nB
     vector<vector<CTransaction>>& vRewardList = mapCacheForkVoteReward[hashCalcEndBlock];
     if (fCalcReward)
     {
-        StdLog("BlockChain", "Get distribute vote reward tx: Calc vote reward start, calc block: [%d] %s, hashPrev: [%d] %s, fork: %s",
+        StdLog("BlockChain", "Get distribute vote reward tx: Calc vote reward start, calc block: [%d] %s, prev block: [%d] %s, fork: %s",
                CBlock::GetBlockHeightByHash(hashCalcEndBlock), hashCalcEndBlock.GetHex().c_str(),
                CBlock::GetBlockHeightByHash(hashPrev), hashPrev.GetHex().c_str(), hashFork.GetHex().c_str());
         if (!CalcEndVoteReward(hashPrev, nBlockType, nBlockHeight, nBlockTime,
@@ -2411,7 +2420,7 @@ bool CBlockChain::CalcBlockVoteRewardTx(const uint256& hashPrev, const uint16 nB
         {
             nRewardTxCount += vd.size();
         }
-        StdLog("BlockChain", "Get distribute vote reward tx: Calc vote reward end, reward tx count: %ld, calc block: [%d] %s, hashPrev: [%d] %s, fork: %s",
+        StdLog("BlockChain", "Get distribute vote reward tx: Calc vote reward end, reward tx count: %ld, calc block: [%d] %s, prev block: [%d] %s, fork: %s",
                nRewardTxCount, CBlock::GetBlockHeightByHash(hashCalcEndBlock), hashCalcEndBlock.GetHex().c_str(),
                CBlock::GetBlockHeightByHash(hashPrev), hashPrev.GetHex().c_str(), hashFork.GetHex().c_str());
     }
@@ -2427,14 +2436,14 @@ bool CBlockChain::CalcBlockVoteRewardTx(const uint256& hashPrev, const uint16 nB
     else
     {
         int nDisCount = 0;
-        CBlockIndex* pSubIndex = pPrevIndex;
+        BlockIndexPtr pSubIndex = pPrevIndex;
         while (pSubIndex && (pSubIndex->GetBlockHeight() % nDistributeHeight) > 0)
         {
             if (!pSubIndex->IsVacant())
             {
                 nDisCount++;
             }
-            pSubIndex = pSubIndex->pPrev;
+            pSubIndex = cntrBlock.GetPrevBlockIndex(pSubIndex);
         }
         if (nDisCount < vRewardList.size())
         {
