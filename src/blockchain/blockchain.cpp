@@ -2852,7 +2852,28 @@ bool CBlockChain::CalcEndVoteReward(const uint256& hashPrev, const uint16 nBlock
         return false;
     }
 
-    map<CDestination, pair<uint256, bool>> mapReward; // key: reward address, value first: reward amount, value second: is pubkey address?
+    uint256 hashPrevRefBlock;
+    bool fIsPrimaryFork = false;
+    {
+        BlockIndexPtr pPrevIndex = cntrBlock.RetrieveIndex(hashPrev);
+        if (!pPrevIndex)
+        {
+            StdError("BlockChain", "Calc end vote reward tx: Retrieve prev index fail, hashPrev: %s", hashPrev.GetHex().c_str());
+            return false;
+        }
+        if (pPrevIndex->IsPrimary())
+        {
+            hashPrevRefBlock = hashPrev;
+            fIsPrimaryFork = true;
+        }
+        else
+        {
+            hashPrevRefBlock = pPrevIndex->GetRefBlock();
+        }
+    }
+
+    map<CDestination, pair<uint256, bool>> mapReward;                                // key: reward address, value first: reward amount, value second: is novote address?
+    map<CDestination, map<CDestination, pair<uint256, uint8>>> mapRewardVoteAddress; // key1: reward address, key2: vote address, value1: reward amount, value2: vote address template type
     for (const auto& kv : mapVoteReward)
     {
         uint32 nFuncId = 0;
