@@ -2496,16 +2496,18 @@ bool CBlockChain::CreateBlockStateRoot(const uint256& hashFork, const CBlock& bl
 {
     uint256 hashPrevStateRoot;
     uint32 nPrevBlockTime = 0;
+    uint256 hashPrevRefBlock;
     if (block.hashPrev != 0)
     {
-        CBlockIndex* pIndexPrev = nullptr;
-        if (!cntrBlock.RetrieveIndex(block.hashPrev, &pIndexPrev) || pIndexPrev == nullptr)
+        BlockIndexPtr pIndexPrev = cntrBlock.RetrieveIndex(block.hashPrev);
+        if (!pIndexPrev)
         {
             StdLog("CBlockChain", "Create Block State Root: Retrieve index fail, hashPrev: %s", block.hashPrev.GetHex().c_str());
             return false;
         }
         hashPrevStateRoot = pIndexPrev->GetStateRoot();
         nPrevBlockTime = pIndexPrev->GetBlockTime();
+        hashPrevRefBlock = pIndexPrev->GetRefBlock();
     }
 
     std::map<CDestination, CAddressContext> mapAddressContext;
@@ -2515,8 +2517,15 @@ bool CBlockChain::CreateBlockStateRoot(const uint256& hashFork, const CBlock& bl
         return false;
     }
 
-    return (cntrBlock.CreateBlockStateRoot(hashFork, block, hashPrevStateRoot, nPrevBlockTime, hashStateRoot, hashReceiptRoot,
-                                           nBlockGasUsed, btBloomDataOut, nTotalMintRewardOut, mapAddressContext)
+    CForkContext ctxFork;
+    if (!cntrBlock.RetrieveForkContext(hashFork, ctxFork, hashPrevRefBlock))
+    {
+        StdLog("CBlockChain", "Create Block State Root: Retrieve fork context fail, hashFork: %s", hashFork.GetHex().c_str());
+        return false;
+    }
+
+    return (cntrBlock.CreateBlockStateRoot(hashFork, ctxFork, block, hashPrevStateRoot, nPrevBlockTime, hashStateRoot, hashReceiptRoot,
+                                           hashCrosschainMerkleRoot, nBlockGasUsed, btBloomDataOut, nTotalMintRewardOut, fMoStatus, mapAddressContext)
             != nullptr);
 }
 
