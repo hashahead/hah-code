@@ -5089,7 +5089,7 @@ CRPCResultPtr CRPCMod::RPCGetTransactionReceipt(const CReqContext& ctxReq, CRPCP
     {
         auto& txLogs = receipt.vLogs[i];
         if (!txLogs.address.IsNull()
-            || !txLogs.data.IsNull()
+            || !txLogs.data.empty()
             || !txLogs.topics.empty())
         {
             CGetTransactionReceiptResult::CLogs logs;
@@ -5102,7 +5102,7 @@ CRPCResultPtr CRPCMod::RPCGetTransactionReceipt(const CReqContext& ctxReq, CRPCP
             logs.nBlocknumber = receipt.nBlockNumber;
 
             logs.strAddress = txLogs.address.ToString();
-            logs.strData = txLogs.data.ToString();
+            logs.strData = ToHexString(txLogs.data);
             for (auto& d : txLogs.topics)
             {
                 logs.vecTopics.push_back(d.ToString());
@@ -5118,17 +5118,13 @@ CRPCResultPtr CRPCMod::RPCGetTransactionReceipt(const CReqContext& ctxReq, CRPCP
             spResult->vecLogs.push_back(logs);
         }
     }
-    if (receipt.vLogs.size() == 0)
-    {
-        CGetTransactionReceiptResult::CLogs logs;
-        spResult->vecLogs.push_back(logs);
-    }
+    // if (receipt.vLogs.size() == 0)
+    // {
+    //     CGetTransactionReceiptResult::CLogs logs;
+    //     spResult->vecLogs.push_back(logs);
+    // }
 
-    if (receipt.nLogsBloom.IsNull())
-    {
-        spResult->strLogsbloom = "";
-    }
-    else
+    if (!receipt.nLogsBloom.IsNull())
     {
         spResult->strLogsbloom = receipt.nLogsBloom.ToString();
     }
@@ -5147,11 +5143,11 @@ CRPCResultPtr CRPCMod::RPCGetTransactionReceipt(const CReqContext& ctxReq, CRPCP
         itx.strAmount = CoinToTokenBigFloat(vd.nAmount);
         spResult->vecInternaltx.push_back(itx);
     }
-    if (receipt.vTransfer.size() == 0)
-    {
-        CGetTransactionReceiptResult::CInternaltx itx;
-        spResult->vecInternaltx.push_back(itx);
-    }
+    // if (receipt.vTransfer.size() == 0)
+    // {
+    //     CGetTransactionReceiptResult::CInternaltx itx;
+    //     spResult->vecInternaltx.push_back(itx);
+    // }
 
     return spResult;
 }
