@@ -3981,7 +3981,45 @@ CRPCResultPtr CRPCMod::RPCGetBalance(const CReqContext& ctxReq, CRPCParamPtr par
         ListDestination(vDes, nPage, nCount);
     }
 
-    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock, true);
+    CCoinContext ctxCoin;
+    std::string strCoinSymbol;
+    if (spParam->strCoinsymbol.IsValid() && !spParam->strCoinsymbol.empty())
+    {
+        strCoinSymbol = spParam->strCoinsymbol;
+        StringToUpper(strCoinSymbol);
+
+        if (!pService->GetCoinContext(strCoinSymbol, ctxCoin, hashBlock))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbol");
+        }
+    }
+    else if (spParam->strCoinaddress.IsValid() && !spParam->strCoinaddress.empty())
+    {
+        CDestination destCoinAddress;
+        destCoinAddress.ParseString(spParam->strCoinaddress);
+        if (destCoinAddress.IsNull())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinaddress");
+        }
+
+        ctxCoin.hashAtFork = hashFork;
+        ctxCoin.nCoinType = CCoinContext::CT_COIN_TYPE_CONTRACT;
+        ctxCoin.destContract = destCoinAddress;
+
+        if (!pService->GetContractCoinSymbol(hashFork, hashBlock, destCoinAddress, strCoinSymbol))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinaddress");
+        }
+    }
+    else
+    {
+        CForkContext ctxFork;
+        if (!pService->GetForkContext(hashFork, ctxFork))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+        }
+        strCoinSymbol = ctxFork.strSymbol;
+    }
 
     auto spResult = MakeCGetBalanceResultPtr();
     for (const auto& vd : vDes)
