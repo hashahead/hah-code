@@ -272,16 +272,11 @@ protected:
 class CBlockMakerUpdate
 {
 public:
-    uint256 hashParent;
-    int nOriginHeight;
-
     uint256 hashPrevBlock;
     uint256 hashBlock;
     uint64 nBlockTime;
     int nBlockHeight;
     uint64 nBlockNumber;
-    // uint256 nAgreement;
-    // std::size_t nWeight;
     uint16 nMintType;
 };
 

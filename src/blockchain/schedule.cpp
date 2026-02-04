@@ -675,7 +675,7 @@ void CSchedule::RemoveCacheLocalPoaBlock(const uint256& hash)
     }
 }
 
-bool CSchedule::GetCachePowBlock(const uint256& hash, CBlock& block)
+bool CSchedule::GetCachePoaBlock(const uint256& hash, CBlock& block)
 {
     auto it = mapHeightBlock.find(CBlock::GetBlockHeightByHash(hash));
     if (it != mapHeightBlock.end())
@@ -698,14 +698,14 @@ bool CSchedule::GetCachePowBlock(const uint256& hash, CBlock& block)
             }
             else
             {
-                return GetCacheLocalPowBlock(hash, block);
+                return GetCacheLocalPoaBlock(hash, block);
             }
         }
     }
     return false;
 }
 
-bool CSchedule::CheckCachePowBlockState(const uint256& hash)
+bool CSchedule::CheckCachePoaBlockState(const uint256& hash)
 {
     auto it = mapHeightBlock.find(CBlock::GetBlockHeightByHash(hash));
     if (it != mapHeightBlock.end())
@@ -755,23 +755,23 @@ void CSchedule::RemoveHeightBlock(int nHeight, const uint256& hash)
     }
 }
 
-bool CSchedule::GetPowBlockState(const uint256& hash, bool& fVerifyPowBlockOut)
+bool CSchedule::GetPoaBlockState(const uint256& hash, bool& fVerifyPoaBlockOut)
 {
     map<network::CInv, CInvState>::iterator it = mapState.find(network::CInv(network::CInv::MSG_BLOCK, hash));
     if (it != mapState.end() && it->second.IsReceived())
     {
-        fVerifyPowBlockOut = it->second.fVerifyPowBlock;
+        fVerifyPoaBlockOut = it->second.fVerifyPoaBlock;
         return true;
     }
     return false;
 }
 
-void CSchedule::SetPowBlockVerifyState(const uint256& hash, bool fVerifyPowBlockIn)
+void CSchedule::SetPoaBlockVerifyState(const uint256& hash, bool fVerifyPoaBlockIn)
 {
     map<network::CInv, CInvState>::iterator it = mapState.find(network::CInv(network::CInv::MSG_BLOCK, hash));
     if (it != mapState.end() && it->second.IsReceived())
     {
-        it->second.fVerifyPowBlock = fVerifyPowBlockIn;
+        it->second.fVerifyPoaBlock = fVerifyPoaBlockIn;
     }
 }
 
