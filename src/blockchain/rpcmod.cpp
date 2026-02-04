@@ -3207,22 +3207,27 @@ CRPCResultPtr CRPCMod::RPCGetTimeVault(const CReqContext& ctxReq, CRPCParamPtr p
     auto spResult = MakeCGetTimeVaultResultPtr();
     if (ctxFork.IsUserFork() || pService->IsTimeVaultWhitelistAddressExist(address, status.hashRefBlock) || !ctxAddress.IsPubkey())
     {
-        tv.SetNull();
-    }
-    uint32 nPrevSettlementTime = tv.nPrevSettlementTime;
-    tv.SettlementTimeVault(status.nBlockTime);
-
-    auto spResult = MakeCGetTimeVaultResultPtr();
-    if (tv.fSurplus || tv.nTvAmount == 0)
-    {
-        spResult->strTimevault = CoinToTokenBigFloat(tv.nTvAmount);
+        spResult->strTimevault = "0.0";
+        spResult->strBalance = "0.0";
+        spResult->nPrevsettlementtime = 0;
     }
     else
     {
-        spResult->strTimevault = (std::string("-") + CoinToTokenBigFloat(tv.nTvAmount));
+        CTimeVault tv;
+        uint32 nPrevSettlementTime = tv.nPrevSettlementTime;
+        tv.SettlementTimeVault(CBlock::GetBlockHeightByHash(hashBlock), status.nBlockTime, true);
+
+        if (tv.fSurplus || tv.nTvAmount == 0)
+        {
+            spResult->strTimevault = CoinToTokenBigFloat(tv.nTvAmount);
+        }
+        else
+        {
+            spResult->strTimevault = (std::string("-") + CoinToTokenBigFloat(tv.nTvAmount));
+        }
+        spResult->nPrevsettlementtime = nPrevSettlementTime;
+        spResult->strBalance = CoinToTokenBigFloat(tv.nBalanceAmount);
     }
-    spResult->strBalance = CoinToTokenBigFloat(tv.nBalanceAmount);
-    spResult->nPrevsettlementtime = nPrevSettlementTime;
 
     return spResult;
 }
