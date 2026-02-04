@@ -3232,6 +3232,85 @@ CRPCResultPtr CRPCMod::RPCGetTimeVault(const CReqContext& ctxReq, CRPCParamPtr p
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCEstimateTimeVaultGas(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CEstimateTimeVaultGasParam>(param);
+
+    CDestination address;
+    address.ParseString(spParam->strAddress);
+    if (address.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+
+    uint256 nAmount;
+    if (!TokenBigFloatToCoin(spParam->strAmount, nAmount))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid amount");
+    }
+
+    uint64 nTime = spParam->nTime;
+    if (nTime == 0)
+    {
+        nTime = GetNetTime();
+    }
+
+    uint256 hashFork;
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+    CBlockStatus status;
+    if (!pService->GetBlockStatus(hashBlock, status))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block status error");
+    }
+    if (hashFork != status.hashFork)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block is not on chain");
+    }
+
+    uint256 nGasPrice;
+    if (spParam->strGasprice.IsValid())
+    {
+        if (!TokenBigFloatToCoin(spParam->strGasprice, nGasPrice))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid gasprice");
+        }
+    }
+    if (nGasPrice == 0)
+    {
+        nGasPrice = pService->GetForkMintMinGasPrice(hashFork);
+    }
+
+    CForkContext ctxFork;
+    if (!pService->GetForkContext(ctxReq.hashFork, ctxFork))
+    {
+        throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "Get fork context fail");
+    }
+
+    CAddressContext ctxAddress;
+    pService->RetrieveAddressContext(ctxReq.hashFork, address, ctxAddress);
+
+    uint256 nTvGas;
+    if (ctxFork.IsUserFork() || pService->IsTimeVaultWhitelistAddressExist(address, status.hashRefBlock) || !ctxAddress.IsPubkey())
+    {
+        nTvGas = 0;
+    }
+
+    return MakeCEstimateTimeVaultGasResultPtr(nTvGas.Get64());
+}
+
 CRPCResultPtr CRPCMod::RPCGetAddressCount(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CGetAddressCountParam>(param);
