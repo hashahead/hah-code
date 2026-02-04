@@ -2484,6 +2484,10 @@ uint256 CBlockChain::GetPrimaryBlockReward(const uint256& hashPrev)
     {
         return 0;
     }
+    if (!TESTNET_FLAG && !TESTMAINNET_FLAG && SET_OLD_BBCP_REWARD_INIT && CBlock::GetBlockHeightByHash(hashPrev) < SET_NEW_BBCP_REWARD_INIT_HEIGHT)
+    {
+        return (BBCP_REWARD_INIT_OLD / uint256(u));
+    }
     return (BBCP_REWARD_INIT / uint256(u));
 }
 
