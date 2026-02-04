@@ -3350,6 +3350,60 @@ CRPCResultPtr CRPCMod::RPCGetAddressCount(const CReqContext& ctxReq, CRPCParamPt
     return MakeCGetAddressCountResultPtr(hashRefBlock.ToString(), nAddressCount, nNewAddressCount);
 }
 
+CRPCResultPtr CRPCMod::RPCListOwnerTemplate(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListOwnerTemplateParam>(param);
+
+    CDestination destOwner;
+    destOwner.ParseString(spParam->strOwner);
+    if (destOwner.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid owner");
+    }
+
+    uint256 hashFork;
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+    CBlockStatus status;
+    if (!pService->GetBlockStatus(hashBlock, status))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block status error");
+    }
+    if (hashFork != status.hashFork)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block is not on chain");
+    }
+
+    std::map<CDestination, uint8> mapTemplateAddress;
+    if (!pService->GetOwnerLinkTemplateAddress(hashFork, hashBlock, destOwner, mapTemplateAddress))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "No such owner address");
+    }
+
+    auto spResult = MakeCListOwnerTemplateResultPtr();
+    for (auto& kv : mapTemplateAddress)
+    {
+        CListOwnerTemplateResult::CTemplateaddress item;
+        item.strType = CTemplate::GetTypeName(kv.second);
+        item.strAddress = kv.first.ToString();
+        spResult->vecTemplateaddress.push_back(item);
+    }
+
+    return spResult;
+}
+
 /* Wallet */
 CRPCResultPtr CRPCMod::RPCListKey(const CReqContext& ctxReq, CRPCParamPtr param)
 {
