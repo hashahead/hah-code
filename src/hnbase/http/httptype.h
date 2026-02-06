@@ -17,6 +17,12 @@ namespace hnbase
 
 #define MAX_HTTP_CONTENT_LENGTH 2000000
 
+enum
+{
+    REQ_SOURCE_TYPE_HTTP = 0,
+    REQ_SOURCE_TYPE_WS = 1,
+};
+
 class _iless
 {
 public:
@@ -37,13 +43,19 @@ class CHttpContent
 protected:
     void Serialize(CStream& s, SaveType&)
     {
-        s.Write(&strContent[0], strContent.size());
+        if (strContent.size() > 0)
+        {
+            s.Write(&strContent[0], strContent.size());
+        }
     }
     void Serialize(CStream& s, LoadType&)
     {
         std::size_t size = s.GetSize();
-        strContent.resize(size);
-        s.Read(&strContent[0], size);
+        if (size > 0)
+        {
+            strContent.resize(size);
+            s.Read(&strContent[0], size);
+        }
     }
     void Serialize(CStream& s, std::size_t& serSize)
     {
@@ -59,6 +71,7 @@ public:
 class CHttpReq : public CHttpContent
 {
 public:
+    uint8 nSourceType; // 0: HTTP, 1: WS
     uint32 nReqChainId;
     uint16 nListenPort;
     std::string strPeerIp;
