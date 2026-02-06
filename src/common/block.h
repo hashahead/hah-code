@@ -136,9 +136,51 @@ public:
     static bool VerifyBlockMerkleProve(const uint256& hashBlock, const hnbase::MERKLE_PROVE_DATA& merkleProve, const uint256& hashVerify);
 
 protected:
+    uint256 CalcMerkleTreeRoot() const;
+    uint256 CalcMerkleTreeRootAndProve(hnbase::SHP_MERKLE_PROVE_DATA ptrMerkleProvePrevBlock, hnbase::SHP_MERKLE_PROVE_DATA ptrMerkleProveRefBlock, hnbase::SHP_MERKLE_PROVE_DATA ptrCrossMerkleProve) const;
+    uint256 CalcBlockBaseMerkleTreeRoot(hnbase::SHP_MERKLE_PROVE_DATA ptrMerkleProvePrevBlock, hnbase::SHP_MERKLE_PROVE_DATA ptrMerkleProveRefBlock) const;
+    uint256 CalcTxMerkleTreeRoot() const;
+
+protected:
     void Serialize(hnbase::CStream& s, hnbase::SaveType&) const;
     void Serialize(hnbase::CStream& s, hnbase::LoadType&);
     void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
+};
+
+struct CustomBlockHashCompare
+{
+    bool operator()(const uint256& a, const uint256& b) const
+    {
+        uint32 nHeightA = CBlock::GetBlockHeightByHash(a);
+        uint32 nHeightB = CBlock::GetBlockHeightByHash(b);
+        if (nHeightA < nHeightB)
+        {
+            return true;
+        }
+        else if (nHeightA == nHeightB)
+        {
+            uint16 nSlotA = CBlock::GetBlockSlotByHash(a);
+            uint16 nSlotB = CBlock::GetBlockSlotByHash(b);
+            if (nSlotA < nSlotB)
+            {
+                return true;
+            }
+            else if (nSlotA == nSlotB)
+            {
+                CChainId nChainIdA = CBlock::GetBlockChainIdByHash(a);
+                CChainId nChainIdB = CBlock::GetBlockChainIdByHash(b);
+                if (nChainIdA < nChainIdB)
+                {
+                    return true;
+                }
+                else if (nChainIdA == nChainIdB && a < b)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 };
 
 class CBlockEx : public CBlock

@@ -575,6 +575,131 @@ bool CBlock::VerifyBlockMerkleProve(const uint256& hashBlock, const hnbase::MERK
 }
 
 //-------------------------------------------------------
+uint256 CBlock::CalcMerkleTreeRoot() const
+{
+    return CalcMerkleTreeRootAndProve(nullptr, nullptr, nullptr);
+}
+
+uint256 CBlock::CalcMerkleTreeRootAndProve(SHP_MERKLE_PROVE_DATA ptrMerkleProvePrevBlock, SHP_MERKLE_PROVE_DATA ptrMerkleProveRefBlock, SHP_MERKLE_PROVE_DATA ptrCrossMerkleProve) const
+{
+    const uint256 hashBaseMerkleRoot = CalcBlockBaseMerkleTreeRoot(ptrMerkleProvePrevBlock, ptrMerkleProveRefBlock);
+    const uint256 hashTxMerkleRoot = CalcTxMerkleTreeRoot();
+
+    std::vector<uint256> vMerkleTree;
+
+    vMerkleTree.push_back(hashBaseMerkleRoot);
+    vMerkleTree.push_back(hashStateRoot);
+    vMerkleTree.push_back(hashCrosschainMerkleRoot);
+    vMerkleTree.push_back(hashTxMerkleRoot);
+
+    const std::size_t nLeafCount = vMerkleTree.size();
+
+    uint256 hashMerkleRoot = CMerkleTree::BuildMerkleTree(vMerkleTree);
+
+    if (ptrMerkleProvePrevBlock || ptrMerkleProveRefBlock)
+    {
+        SHP_MERKLE_PROVE_DATA ptrMerkleProveBase = MAKE_SHARED_MERKLE_PROVE_DATA();
+        if (!ptrMerkleProveBase || !CMerkleTree::BuildMerkleProve(hashBaseMerkleRoot, vMerkleTree, nLeafCount, *ptrMerkleProveBase))
+        {
+            return 0;
+        }
+        if (ptrMerkleProvePrevBlock)
+        {
+            (*ptrMerkleProvePrevBlock).insert((*ptrMerkleProvePrevBlock).end(), (*ptrMerkleProveBase).begin(), (*ptrMerkleProveBase).end());
+        }
+        if (ptrMerkleProveRefBlock)
+        {
+            (*ptrMerkleProveRefBlock).insert((*ptrMerkleProveRefBlock).end(), (*ptrMerkleProveBase).begin(), (*ptrMerkleProveBase).end());
+        }
+    }
+
+    if (ptrCrossMerkleProve)
+    {
+        if (!CMerkleTree::BuildMerkleProve(hashCrosschainMerkleRoot, vMerkleTree, nLeafCount, *ptrCrossMerkleProve))
+        {
+            return 0;
+        }
+    }
+    return hashMerkleRoot;
+}
+
+uint256 CBlock::CalcBlockBaseMerkleTreeRoot(SHP_MERKLE_PROVE_DATA ptrMerkleProvePrevBlock, SHP_MERKLE_PROVE_DATA ptrMerkleProveRefBlock) const
+{
+    // hnbase::CBufStream ss;
+    // ss << nVersion << nType << nTimeStamp << nNumber << nHeight << nSlot << hashPrev << hashMerkleRoot << hashStateRoot << hashReceiptsRoot << hashCrosschainMerkleRoot << nGasLimit << nGasUsed << mapProof << txMint;
+    // return uint256(GetChainId(), GetBlockHeight(), nSlot, crypto::CryptoHash(ss.GetData(), ss.GetSize()));
+
+    uint256 hashBase;
+    uint256 hashProof;
+    uint256 hashRefBlock;
+    uint256 hashBloom;
+
+    {
+        hnbase::CBufStream ss;
+        ss << nVersion << nType << nTimeStamp << nNumber << nHeight << nSlot << nGasLimit << nGasUsed;
+        hashBase = crypto::CryptoHash(ss.GetData(), ss.GetSize());
+    }
+
+    if (!mapProof.empty())
+    {
+        hnbase::CBufStream ss;
+        ss << mapProof;
+        hashProof = crypto::CryptoHash(ss.GetData(), ss.GetSize());
+    }
+
+    hashRefBlock = GetRefBlock();
+
+    if (!btBloomData.empty())
+    {
+        hashBloom = crypto::CryptoHash(btBloomData.data(), btBloomData.size());
+    }
+
+    std::vector<uint256> vMerkleTree;
+
+    vMerkleTree.push_back(hashBase);
+    vMerkleTree.push_back(hashProof);
+    vMerkleTree.push_back(hashRefBlock);
+    vMerkleTree.push_back(hashPrev);
+    vMerkleTree.push_back(hashReceiptsRoot);
+    vMerkleTree.push_back(hashBloom);
+
+    const std::size_t nLeafCount = vMerkleTree.size();
+
+    uint256 hashMerkleRoot = CMerkleTree::BuildMerkleTree(vMerkleTree);
+    if (hashMerkleRoot == 0)
+    {
+        return 0;
+    }
+
+    if (ptrMerkleProvePrevBlock)
+    {
+        if (!CMerkleTree::BuildMerkleProve(hashPrev, vMerkleTree, nLeafCount, *ptrMerkleProvePrevBlock))
+        {
+            return 0;
+        }
+    }
+    if (ptrMerkleProveRefBlock)
+    {
+        if (!CMerkleTree::BuildMerkleProve(hashRefBlock, vMerkleTree, nLeafCount, *ptrMerkleProveRefBlock))
+        {
+            return 0;
+        }
+    }
+    return hashMerkleRoot;
+}
+
+uint256 CBlock::CalcTxMerkleTreeRoot() const
+{
+    std::vector<uint256> vMerkleTree;
+    vMerkleTree.push_back(txMint.GetHash());
+    for (const CTransaction& tx : vtx)
+    {
+        vMerkleTree.push_back(tx.GetHash());
+    }
+    return CMerkleTree::BuildMerkleTree(vMerkleTree);
+}
+
+//-------------------------------------------------------
 void CBlock::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
 {
     bytes btMerkleRoot;
