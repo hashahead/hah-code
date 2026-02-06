@@ -207,4 +207,49 @@ bool CSnapshotDownChannel::HandleMsgFilelistReq(const uint64 nNetId, const uint2
     return true;
 }
 
+bool CSnapshotDownChannel::HandleMsgFilelistRsp(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgFilelistRsp& body)
+{
+    if (nNetId != nSnapshotDownNetId)
+    {
+        return true;
+    }
+
+    if (body.vFilelist.empty())
+    {
+        StdLog("CSnapshotDownChannel", "Handle msg file list rsp: File list is empty, snap block: %s", body.hashSnapBlock.ToString().c_str());
+    }
+    else if (body.hashSnapBlock != hashCfgSnapshotDownBlock)
+    {
+        StdLog("CSnapshotDownChannel", "Handle msg file list rsp: Snapshot block error, config block: %s, snap block: %s", hashCfgSnapshotDownBlock.ToString().c_str(), body.hashSnapBlock.ToString().c_str());
+    }
+    else
+    {
+        std::vector<CSnapshotFileInfo> vLocalFilelist;
+        if (!pBlockChain->GetSnapshotDownFileList(body.hashSnapBlock, vLocalFilelist))
+        {
+            vLocalFilelist.clear();
+        }
+        for (auto& vd : body.vFilelist)
+        {
+            auto it = std::find_if(vLocalFilelist.begin(), vLocalFilelist.end(), [&](const CSnapshotFileInfo& fileInfo) -> bool { return (fileInfo.strFileName == vd.strFileName); });
+            if (it == vLocalFilelist.end() || it->nFileSize != vd.nFileSize)
+            {
+                vRemoteSnapFilelist.push_back(vd);
+                StdLog("CSnapshotDownChannel", "Handle msg file list rsp: need download file name: %s, file size: %lu, snap block: %s", vd.strFileName.c_str(), vd.nFileSize, body.hashSnapBlock.ToString().c_str());
+            }
+        }
+        if (!vRemoteSnapFilelist.empty())
+        {
+            hashSnapshotBlock = body.hashSnapBlock;
+
+            if (!RequstNextFile(nNetId, hashFork, body.hashSnapBlock))
+            {
+                StdLog("CSnapshotDownChannel", "Handle msg file list rsp: Requst next file failed, snap block: %s", body.hashSnapBlock.ToString().c_str());
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 }; // namespace hashahead
