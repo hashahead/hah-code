@@ -19,6 +19,7 @@ enum
 {
     EVENT_PEERNET_IDLE = EVENT_PEER_BASE,
     EVENT_PEERNET_GETIP,
+    EVENT_PEERNET_SETGATEWAY,
     EVENT_PEERNET_GETCOUNT,
     EVENT_PEERNET_GETPEERS,
     EVENT_PEERNET_ADDNODE,
@@ -38,6 +39,7 @@ class CPeerEventListener;
 typedef std::pair<std::vector<std::string>, int64> ADDRESSES_TO_BAN;
 
 typedef TYPE_PEERNETEVENT(EVENT_PEERNET_GETIP, int, std::string) CEventPeerNetGetIP;
+typedef TYPE_PEERNETEVENT(EVENT_PEERNET_SETGATEWAY, CNetHost, bool) CEventPeerNetSetGateway;
 typedef TYPE_PEERNETEVENT(EVENT_PEERNET_GETCOUNT, int, std::size_t) CEventPeerNetGetCount;
 typedef TYPE_PEERNETEVENT(EVENT_PEERNET_GETPEERS, int, boost::ptr_vector<CPeerInfo>) CEventPeerNetGetPeers;
 typedef TYPE_PEERNETEVENT(EVENT_PEERNET_ADDNODE, CNetHost, bool) CEventPeerNetAddNode;
@@ -53,6 +55,7 @@ class CPeerEventListener : virtual public CEventListener
 public:
     virtual ~CPeerEventListener() {}
     DECLARE_EVENTHANDLER(CEventPeerNetGetIP);
+    DECLARE_EVENTHANDLER(CEventPeerNetSetGateway);
     DECLARE_EVENTHANDLER(CEventPeerNetGetCount);
     DECLARE_EVENTHANDLER(CEventPeerNetGetPeers);
     DECLARE_EVENTHANDLER(CEventPeerNetAddNode);

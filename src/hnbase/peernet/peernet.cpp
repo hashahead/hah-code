@@ -455,6 +455,13 @@ bool CPeerNet::HandleEvent(CEventPeerNetGetIP& eventGetIP)
     return true;
 }
 
+bool CPeerNet::HandleEvent(CEventPeerNetSetGateway& eventSetGateway)
+{
+    confNetwork.gateWayAddr = eventSetGateway.data;
+    eventSetGateway.result = true;
+    return true;
+}
+
 bool CPeerNet::HandleEvent(CEventPeerNetGetCount& eventGetCount)
 {
     eventGetCount.result = mapPeer.size();

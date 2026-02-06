@@ -87,6 +87,7 @@ protected:
     virtual void DestroyPeer(CPeer* pPeer);
     virtual CPeerInfo* GetPeerInfo(CPeer* pPeer, CPeerInfo* pInfo = nullptr);
     bool HandleEvent(CEventPeerNetGetIP& eventGetIP) override;
+    bool HandleEvent(CEventPeerNetSetGateway& eventSetGateway) override;
     bool HandleEvent(CEventPeerNetGetCount& eventGetCount) override;
     bool HandleEvent(CEventPeerNetGetPeers& eventGetPeers) override;
     bool HandleEvent(CEventPeerNetAddNode& eventAddNode) override;
