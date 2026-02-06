@@ -345,8 +345,12 @@ string CHttpUtil::BuildRequestHeader(MAPIKeyValue& mapHeader, MAPKeyValue& mapQu
                                      MAPIKeyValue& mapCookie, size_t nContentLength)
 {
     ostringstream oss;
-    oss << mapHeader["method"] << " " << BuildUrl(mapHeader, mapQuery) << " HTTP/1.1\r\n"
-        << "HOST: " << mapHeader["host"] << "\r\n";
+    oss << mapHeader["method"] << " " << BuildUrl(mapHeader, mapQuery) << " HTTP/1.1\r\n";
+
+    if (mapHeader.count("host"))
+    {
+        oss << "HOST: " << mapHeader["host"] << "\r\n";
+    }
 
     if (mapHeader.count("user-agent"))
     {
@@ -376,8 +380,15 @@ string CHttpUtil::BuildRequestHeader(MAPIKeyValue& mapHeader, MAPKeyValue& mapQu
         }
         oss << "Content-Length: " << nContentLength << "\r\n";
     }
-    oss << "Accept: " << mapHeader["accept"] << "\r\n"
-        << "Connection: " << mapHeader["connection"] << "\r\n\r\n";
+    if (mapHeader.count("accept"))
+    {
+        oss << "Accept: " << mapHeader["accept"] << "\r\n";
+    }
+    if (mapHeader.count("connection"))
+    {
+        oss << "Connection: " << mapHeader["connection"] << "\r\n";
+    }
+    oss << "\r\n";
 
     return oss.str();
 }
