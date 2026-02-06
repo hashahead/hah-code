@@ -434,6 +434,10 @@ public:
             return "redeem";
         case CT_TIMEVAULT:
             return "timevault";
+        case CT_CROSSCHAIN_TRANSFER:
+            return "crosschain-transfer";
+        case CT_CROSSCHAIN_DEX:
+            return "crosschain-dex";
         }
         return "non";
     }
@@ -444,7 +448,9 @@ public:
         CT_CONTRACT = 1,
         CT_VOTE = 2,
         CT_REDEEM = 3,
-        CT_TIMEVAULT = 4
+        CT_TIMEVAULT = 4,
+        CT_CROSSCHAIN_TRANSFER = 5,
+        CT_CROSSCHAIN_DEX = 6
     };
 
     uint8 nType;
@@ -482,7 +488,7 @@ public:
 
 public:
     CDestination address;
-    uint256 data;
+    bytes data;
     std::vector<uint256> topics;
 
 protected:
@@ -498,6 +504,8 @@ using TransactionLogsVec = std::vector<CTransactionLogs>;
 
 class CMatchLogs : public CTransactionLogs
 {
+    friend class hnbase::CStream;
+
 public:
     CMatchLogs() {}
     CMatchLogs(const uint32 nLogIndexIn, const CTransactionLogs& logs)
@@ -506,6 +514,15 @@ public:
 public:
     bool fRemoved = false;
     uint32 nLogIndex = 0;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        CTransactionLogs::Serialize(s, opt);
+        s.Serialize(fRemoved, opt);
+        s.Serialize(nLogIndex, opt);
+    }
 };
 using MatchLogsVec = std::vector<CMatchLogs>;
 
