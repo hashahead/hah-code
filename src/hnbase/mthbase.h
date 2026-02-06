@@ -105,9 +105,28 @@ public:
         return ui64EventId;
     }
 
+    void SetEvent();
+    void ResetEvent();
+
+    bool AddWait(CMthWait* pWait);
+    void DelWait(CMthWait* pWait);
+
+    bool Wait(const uint32 ui32Timeout); /* ui32Timeout is milliseconds */
+
+    bool QuerySetWaitObj(void* pWaitObj);
+    void ClearWaitObj(void* pWaitObj);
+    void ClearAllWaitObj();
+
 private:
     boost::mutex lockEvent;
     boost::condition_variable_any condEvent;
+
+    bool fSingleFlag;
+    bool fManualReset;
+
+    uint64 ui64EventId;
+
+    std::map<uint64, CMthWait*> mapWait;
 };
 
 } // namespace hnbase
