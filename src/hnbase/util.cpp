@@ -242,7 +242,7 @@ void NointOutLog(const severity_level level, const char* pszName, const std::str
 
 void StdTrace(const char* pszName, const char* pszFormat, ...)
 {
-    if (g_log_init && STD_DEBUG)
+    if (STD_DEBUG)
     {
         std::stringstream ss;
         char arg_buffer[2048] = { 0 };
@@ -251,10 +251,19 @@ void StdTrace(const char* pszName, const char* pszFormat, ...)
         vsnprintf(arg_buffer, sizeof(arg_buffer), pszFormat, ap);
         va_end(ap);
         ss << arg_buffer;
-        std::string str = ss.str();
 
-        BOOST_LOG_SCOPED_THREAD_TAG("ThreadName", GetThreadName().c_str());
-        BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, debug) << str;
+        if (g_log_init)
+        {
+            BOOST_LOG_SCOPED_THREAD_TAG("ThreadName", GetThreadName().c_str());
+            BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, debug) << ss.str();
+        }
+        else
+        {
+            if (g_log_out_show)
+            {
+                NointOutLog(debug, pszName, ss.str());
+            }
+        }
     }
 }
 
