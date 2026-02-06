@@ -25,9 +25,9 @@ public:
     virtual void BroadcastTxInv(const uint256& hashFork) = 0;
     virtual void SubscribeFork(const uint256& hashFork, const uint64& nNonce) = 0;
     virtual void UnsubscribeFork(const uint256& hashFork) = 0;
-    virtual bool SubmitCachePowBlock(const CConsensusParam& consParam) = 0;
-    virtual bool IsLocalCachePowBlock(int nHeight, bool& fIsDpos) = 0;
-    virtual bool AddCacheLocalPowBlock(const CBlock& block) = 0;
+    virtual bool SubmitCachePoaBlock(const CConsensusParam& consParam) = 0;
+    virtual bool IsLocalCachePoaBlock(int nHeight, bool& fIsPos) = 0;
+    virtual bool AddCacheLocalPoaBlock(const CBlock& block) = 0;
 };
 
 class IBlockChannel : public hnbase::IIOModule, virtual public CBbPeerEventListener
@@ -54,6 +54,31 @@ public:
       : IIOModule("usertxchannel", nThreadCount) {}
     virtual void SubscribeFork(const uint256& hashFork, const uint64 nNonce) = 0;
     virtual void BroadcastUserTx(const uint64 nRecvNetNonce, const uint256& hashFork, const std::vector<CTransaction>& vtx) = 0;
+};
+
+class IBlockVoteChannel : public hnbase::IIOModule, virtual public CBbPeerEventListener
+{
+public:
+    IBlockVoteChannel(const uint32 nThreadCount = 1)
+      : IIOModule("blockvotechannel", nThreadCount) {}
+    virtual void SubscribeFork(const uint256& hashFork, const uint64 nNonce) = 0;
+    virtual void UpdateNewBlock(const uint256& hashFork, const uint256& hashBlock, const uint256& hashRefBlock, const int64 nBlockTime, const uint64 nNonce) = 0;
+};
+
+class IBlockCrossProveChannel : public hnbase::IIOModule, virtual public CBbPeerEventListener
+{
+public:
+    IBlockCrossProveChannel(const uint32 nThreadCount = 1)
+      : IIOModule("blockcrossprovechannel", nThreadCount) {}
+    virtual void SubscribeFork(const uint256& hashFork, const uint64 nNonce) = 0;
+    virtual void BroadcastBlockProve(const uint256& hashFork, const uint256& hashBlock, const uint64 nNonce, const std::map<CChainId, CBlockProve>& mapBlockProve) = 0;
+};
+
+class ISnapshotDownChannel : public hnbase::IIOModule, virtual public CBbPeerEventListener
+{
+public:
+    ISnapshotDownChannel()
+      : IIOModule("snapshotdownchannel") {}
 };
 
 class IDelegatedChannel : public hnbase::IIOModule, virtual public CBbPeerEventListener

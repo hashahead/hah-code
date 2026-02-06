@@ -452,7 +452,7 @@ bool CBbPeerNet::SendChannelMessage(int nChannel, uint64 nNonce, int nCommand, C
     CBbPeer* pBbPeer = static_cast<CBbPeer*>(GetPeer(nNonce));
     if (pBbPeer == nullptr)
     {
-        StdLog("CBbPeerNet", "Send Channel Message: pBbPeer is null");
+        StdLog("CBbPeerNet", "Send Channel Message: Get peer fail, peer nonce: 0x%lx, command: %d", nNonce, nCommand);
         return false;
     }
     return pBbPeer->SendMessage(nChannel, nCommand, ssPayload);
@@ -589,6 +589,9 @@ bool CBbPeerNet::HandlePeerHandshaked(CPeer* pPeer, uint32 nTimerId)
         CEventPeerActive* pEventActiveBlock = new CEventPeerActive(*pEventActive);
         CEventPeerActive* pEventActiveCertTx = new CEventPeerActive(*pEventActive);
         CEventPeerActive* pEventActiveUserTx = new CEventPeerActive(*pEventActive);
+        CEventPeerActive* pEventActiveBlockVote = new CEventPeerActive(*pEventActive);
+        CEventPeerActive* pEventActiveBlockCrossProve = new CEventPeerActive(*pEventActive);
+        CEventPeerActive* pEventActiveSnapshotDown = new CEventPeerActive(*pEventActive);
 
         pNetChannel->PostEvent(pEventActive);
         if (pEventActiveDelegated)
@@ -606,6 +609,18 @@ bool CBbPeerNet::HandlePeerHandshaked(CPeer* pPeer, uint32 nTimerId)
         if (pEventActiveUserTx)
         {
             pUserTxChannel->PostEvent(pEventActiveUserTx);
+        }
+        if (pEventActiveBlockVote)
+        {
+            pBlockVoteChannel->PostEvent(pEventActiveBlockVote);
+        }
+        if (pEventActiveBlockCrossProve)
+        {
+            pBlockCrossProveChannel->PostEvent(pEventActiveBlockCrossProve);
+        }
+        if (pEventActiveSnapshotDown)
+        {
+            pSnapshotDownChannel->PostEvent(pEventActiveSnapshotDown);
         }
 
         pBbPeer->nPingTimerId = SetPingTimer(0, pBbPeer->GetNonce(), PING_TIMER_DURATION);
