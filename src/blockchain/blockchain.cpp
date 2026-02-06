@@ -2177,6 +2177,16 @@ bool CBlockChain::RetrieveBlsPubkeyContext(const uint256& hashFork, const uint25
     return cntrBlock.RetrieveBlsPubkeyContext(hashFork, hashBlock, dest, blsPubkey);
 }
 
+bool CBlockChain::GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress)
+{
+    return cntrBlock.GetOwnerLinkTemplateAddress(hashFork, hashBlock, destOwner, mapTemplateAddress);
+}
+
+bool CBlockChain::GetDelegateLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress)
+{
+    return cntrBlock.GetDelegateLinkTemplateAddress(hashFork, hashBlock, destDelegate, nTemplateType, nBegin, nCount, vTemplateAddress);
+}
+
 bool CBlockChain::GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount)
 {
     return cntrBlock.GetAddressCount(hashFork, hashBlock, nAddressCount, nNewAddressCount);
@@ -2212,17 +2222,15 @@ bool CBlockChain::ListContractCreateCodeContext(const uint256& hashFork, const u
     return cntrBlock.ListContractCreateCodeContext(hashFork, hashBlock, txid, mapCreateCode);
 }
 
-bool CBlockChain::ListAddressTxInfo(const uint256& hashFork, const uint256& hashRefBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
+bool CBlockChain::ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
 {
-    uint256 hashLastBlock = hashRefBlock;
-    if (hashRefBlock == 0)
-    {
-        if (!cntrBlock.RetrieveForkLast(hashFork, hashLastBlock))
-        {
-            return false;
-        }
-    }
-    return cntrBlock.ListAddressTxInfo(hashFork, hashLastBlock, dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
+    return cntrBlock.ListAddressTxInfo(hashFork, dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
+}
+
+bool CBlockChain::ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                              const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord)
+{
+    return cntrBlock.ListTokenTx(hashFork, destContractAddress, destUserAddress, nPageNumber, nPageSize, fReverse, nTotalRecordCount, nPageCount, vTokenTxRecord);
 }
 
 bool CBlockChain::GetCreateForkLockedAmount(const CDestination& dest, const uint256& hashPrevBlock, const bytes& btAddressData, uint256& nLockedAmount)
