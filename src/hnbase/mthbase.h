@@ -32,9 +32,55 @@ public:
     CBaseUniqueId(CBaseUniqueId& uid)
       : ui64UniqueId(uid.ui64UniqueId) {}
 
+    uint8 GetPortType() const
+    {
+        return ((PBASE_UNIQUE_ID)&ui64UniqueId)->ucPortType;
+    }
+    uint8 GetDirection() const
+    {
+        return ((PBASE_UNIQUE_ID)&ui64UniqueId)->ucDirection;
+    }
+    uint8 GetType() const
+    {
+        return ((PBASE_UNIQUE_ID)&ui64UniqueId)->ucType;
+    }
+    uint8 GetSubType() const
+    {
+        return ((PBASE_UNIQUE_ID)&ui64UniqueId)->ucSubType;
+    }
+    uint32 GetId() const
+    {
+        return ((PBASE_UNIQUE_ID)&ui64UniqueId)->uiId;
+    }
+    uint64 GetUniqueId() const
+    {
+        return ui64UniqueId;
+    }
+
+    CBaseUniqueId& operator=(const CBaseUniqueId& uid)
+    {
+        ui64UniqueId = uid.ui64UniqueId;
+        return *this;
+    }
+
+    static uint64 CreateUniqueId(const uint8 ucPortType, const uint8 ucDirection, const uint8 ucType, const uint8 ucSubType = 0);
+
 private:
     static uint32 uiIdCreate;
     static boost::mutex lockCreate;
+
+#pragma pack(1)
+    typedef struct _BASE_UNIQUE_ID
+    {
+        uint32 uiId;
+        uint8 ucPortType : 1;  //0: tcp, 1: udp
+        uint8 ucDirection : 1; //0: in, 1: out
+        uint8 ucReserve : 6;
+        uint8 ucType;
+        uint8 ucSubType;
+        uint8 ucRand;
+    } BASE_UNIQUE_ID, *PBASE_UNIQUE_ID;
+#pragma pack()
 
     uint64 ui64UniqueId;
 };
