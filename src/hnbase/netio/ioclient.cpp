@@ -394,11 +394,12 @@ bool CSSLClient::VerifyCertificate(const string& strVerifyHost, bool fPreverifie
     //X509* cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
     int cts_error;
 
-#ifdef USE_SSL_110
     cts_error = X509_STORE_CTX_get_error(cts);
-#else
-    cts_error = cts->error;
-#endif
+    // #ifdef USE_SSL_110
+    //     cts_error = X509_STORE_CTX_get_error(cts);
+    // #else
+    //     cts_error = cts->error;
+    // #endif
     //std::cout << "CTX ERROR : " << cts_error << std::endl;
 
     int32_t depth = X509_STORE_CTX_get_error_depth(cts);
