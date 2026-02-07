@@ -1219,6 +1219,13 @@ bool CForkAddressDB::AddAddressCount(const uint256& hashBlock, const uint64 nAdd
     return dbTrie.WriteExtKv(ssKey, ssValue);
 }
 
+bool CForkAddressDB::RemoveAddressCount(const uint256& hashBlock)
+{
+    hnbase::CBufStream ssKey;
+    ssKey << DB_ADDRESS_KEY_TYPE_ADDRESSCOUNT << hashBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
+
 //////////////////////////////
 // CAddressDB
 
