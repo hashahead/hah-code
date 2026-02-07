@@ -44,6 +44,15 @@ bool CRPCBasicConfig::PostLoad()
         nRPCPort = (unsigned short)nRPCPortInt;
     }
 
+    if (nWsPortInt <= 0 || nWsPortInt > 0xFFFF)
+    {
+        nWsPort = (fTestNet ? DEFAULT_TESTNET_WSPORT : DEFAULT_WSPORT);
+    }
+    else
+    {
+        nWsPort = (unsigned short)nWsPortInt;
+    }
+
     if (!strRPCCAFile.empty())
     {
         if (!fs::path(strRPCCAFile).is_complete())
@@ -76,6 +85,7 @@ std::string CRPCBasicConfig::ListConfig() const
     std::ostringstream oss;
     oss << CRPCBasicConfigOption::ListConfigImpl();
     oss << "RPCPort: " << nRPCPort << "\n";
+    oss << "WsPort: " << nWsPort << "\n";
     return oss.str();
 }
 
@@ -125,16 +135,30 @@ bool CRPCServerConfig::PostLoad()
 
     for (const string& strChainIdRpcPort : vChainIdRpcPort)
     {
-        auto pos = strChainIdRpcPort.find(":");
-        if (pos != string::npos)
+        string strChainId;
+        string strRpcPort;
+        string strWsPort;
+
+        try
         {
-            string strChainId = strChainIdRpcPort.substr(0, pos);
-            string strRpcPort = strChainIdRpcPort.substr(pos + 1);
-            uint32 nTempChainId = (uint32)std::stol(strChainId);
-            uint16 nTempRpcPort = (uint16)std::stol(strRpcPort);
-            if (nTempChainId != 0 && nTempRpcPort != 0)
+            std::regex pattern(R"((\d+):(\d+):(\d+))");
+            std::smatch match;
+            if (std::regex_match(strChainIdRpcPort, match, pattern))
             {
-                if (nTempChainId == nChainId)
+                strChainId = match[1].str();
+                strRpcPort = match[2].str();
+                strWsPort = match[3].str();
+            }
+            else
+            {
+                std::regex pattern(R"((\d+):(\d+))");
+                std::smatch match;
+                if (std::regex_match(strChainIdRpcPort, match, pattern))
+                {
+                    strChainId = match[1].str();
+                    strRpcPort = match[2].str();
+                }
+                else
                 {
                     continue;
                 }
