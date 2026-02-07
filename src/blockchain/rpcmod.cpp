@@ -3344,7 +3344,7 @@ CRPCResultPtr CRPCMod::RPCGetAddressCount(const CReqContext& ctxReq, CRPCParamPt
     uint64 nNewAddressCount = 0;
     if (!pService->GetAddressCount(hashFork, hashRefBlock, nAddressCount, nNewAddressCount))
     {
-        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Get address count fail");
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "No such address");
     }
 
     return MakeCGetAddressCountResultPtr(hashRefBlock.ToString(), nAddressCount, nNewAddressCount);
@@ -3398,6 +3398,69 @@ CRPCResultPtr CRPCMod::RPCListOwnerTemplate(const CReqContext& ctxReq, CRPCParam
         CListOwnerTemplateResult::CTemplateaddress item;
         item.strType = CTemplate::GetTypeName(kv.second);
         item.strAddress = kv.first.ToString();
+        spResult->vecTemplateaddress.push_back(item);
+    }
+
+    return spResult;
+}
+
+CRPCResultPtr CRPCMod::RPCListDelegateLinkAddress(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListDelegateLinkAddressParam>(param);
+
+    CDestination destDelegate;
+    uint64 nBegin = 0;
+    uint64 nCount = 0;
+
+    destDelegate.ParseString(spParam->strDelegate);
+    if (destDelegate.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid delegate");
+    }
+    nBegin = spParam->nBegin;
+    nCount = spParam->nCount;
+
+    uint256 hashFork;
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+    if (hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+    CBlockStatus status;
+    if (!pService->GetBlockStatus(hashBlock, status))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block status error");
+    }
+    if (hashFork != status.hashFork)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block is not on chain");
+    }
+
+    std::vector<std::pair<CDestination, uint8>> vTemplateAddress;
+    if (!pService->GetDelegateLinkTemplateAddress(hashFork, hashBlock, destDelegate, 0, nBegin, nCount, vTemplateAddress))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "No such delegate address");
+    }
+
+    auto spResult = MakeCListDelegateLinkAddressResultPtr();
+    for (auto& vd : vTemplateAddress)
+    {
+        CListDelegateLinkAddressResult::CTemplateaddress item;
+        item.strType = CTemplate::GetTypeName(vd.second);
+        item.strAddress = vd.first.ToString();
         spResult->vecTemplateaddress.push_back(item);
     }
 
