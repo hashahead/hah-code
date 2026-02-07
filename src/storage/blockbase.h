@@ -142,7 +142,7 @@ public:
     bool RetrieveProfile(const uint256& hashFork, CProfile& profile, const uint256& hashMainChainRefBlock);
     bool RetrieveAncestry(const uint256& hashFork, std::vector<std::pair<uint256, uint256>> vAncestry);
     bool RetrieveOrigin(const uint256& hashFork, CBlock& block);
-    bool RetrieveTxAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, CTxIndex& txIndex);
+    bool RetrieveTxAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashTxAtBlock, CTxIndex& txIndex);
     bool RetrieveAvailDelegate(const uint256& hash, int height, const std::vector<uint256>& vBlockRange,
                                const uint256& nMinEnrollAmount,
                                std::map<CDestination, std::size_t>& mapWeight,

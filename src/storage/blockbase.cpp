@@ -1389,25 +1389,19 @@ bool CBlockBase::GetBlockHashByHeightSlot(const uint256& hashFork, const uint256
         {
             for (const uint256& hashHeightBlock : vBlockHash)
             {
-                CAddressContext ctxAddress;
-                if (!GetAddressContext(destMint, ctxAddress))
+                if (CBlock::GetBlockSlotByHash(hashHeightBlock) == nSlot)
                 {
-                    StdLog("CBlockState", "Do block state: Retrieve mint address context fail, mint address: %s",
-                           destMint.ToString().c_str());
-                    return false;
+                    if (IsLongchainBlock(hashFork, hashHeightBlock))
+                    {
+                        hashBlock = hashHeightBlock;
+                        return true;
+                    }
                 }
-                state.SetNull();
-                state.SetType(ctxAddress.GetDestType(), ctxAddress.GetTemplateType());
             }
-            nt = mapBlockState.insert(make_pair(destMint, state)).first;
         }
-        nt->second.IncBalance(nOriginalBlockMintReward);
     }
-
-    if (nBlockType == CBlock::BLOCK_GENESIS || nBlockType == CBlock::BLOCK_ORIGIN)
-    {
-        CreateFunctionContractData();
-    }
+    return false;
+}
 
     if (fPrimaryBlock)
     {
