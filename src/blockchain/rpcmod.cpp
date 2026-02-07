@@ -3467,6 +3467,177 @@ CRPCResultPtr CRPCMod::RPCListDelegateLinkAddress(const CReqContext& ctxReq, CRP
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCListUserVoteByDelegate(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListUserVoteByDelegateParam>(param);
+
+    CDestination destDelegate;
+    uint32 nType = 0;
+    uint64 nPageNumber = 0;
+    uint64 nPageSize = 0;
+
+    destDelegate.ParseString(spParam->strDelegate);
+    if (destDelegate.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid delegate");
+    }
+    if (spParam->nType != 0 && spParam->nType != TEMPLATE_VOTE && spParam->nType != TEMPLATE_PLEDGE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid type");
+    }
+    nType = spParam->nType;
+    nPageNumber = spParam->nPagenumber;
+    nPageSize = spParam->nPagesize;
+
+    uint256 hashFork;
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+    if (hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+    CBlockStatus status;
+    if (!pService->GetBlockStatus(hashBlock, status))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block status error");
+    }
+    if (hashFork != status.hashFork)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Block is not on chain");
+    }
+
+    std::vector<std::pair<CDestination, uint8>> vTemplateAddress;
+    if (!pService->GetDelegateLinkTemplateAddress(hashFork, hashBlock, destDelegate, nType, 0, 0, vTemplateAddress))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "No such delegate address");
+    }
+
+    std::vector<std::tuple<CDestination, uint8, uint256>> vVoteList;
+    for (auto& vd : vTemplateAddress)
+    {
+        const CDestination& destTemplateAddress = vd.first;
+        const uint8 nTemplateType = vd.second;
+
+        CVoteContext ctxVote;
+        if (pService->RetrieveDestVoteContext(hashBlock, destTemplateAddress, ctxVote) && ctxVote.nVoteAmount > 0)
+        {
+            vVoteList.push_back(std::make_tuple(destTemplateAddress, nTemplateType, ctxVote.nVoteAmount));
+        }
+    }
+
+    uint64 nBeginIndex = nPageNumber * nPageSize;
+    uint64 nRecordCount = vVoteList.size();
+    uint64 nPageCount = 1;
+    if (nPageSize != 0)
+    {
+        nPageCount = (nRecordCount % nPageSize > 0) ? (nRecordCount / nPageSize + 1) : (nRecordCount / nPageSize);
+    }
+
+    string strDelegateAddressName;
+    CAddressContext ctxDelegateAddress;
+    if (pService->RetrieveAddressContext(hashFork, destDelegate, ctxDelegateAddress, hashBlock) && ctxDelegateAddress.IsTemplate())
+    {
+        CTemplateAddressContext ctxTemplate;
+        if (ctxDelegateAddress.GetTemplateAddressContext(ctxTemplate))
+        {
+            strDelegateAddressName = ctxTemplate.strName;
+        }
+    }
+
+    uint256 nDelegateTotalVotes;
+    if (!pService->RetrieveDestDelegateVote(hashBlock, destDelegate, nDelegateTotalVotes))
+    {
+        nDelegateTotalVotes = 0;
+    }
+
+    uint256 nDelegateSelfVotes;
+    CVoteContext ctxDelegateVote;
+    if (pService->RetrieveDestVoteContext(hashBlock, destDelegate, ctxDelegateVote))
+    {
+        nDelegateSelfVotes = ctxDelegateVote.nVoteAmount;
+    }
+
+    auto spResult = MakeCListUserVoteByDelegateResultPtr();
+
+    spResult->strDelegateaddress = destDelegate.ToString();
+    spResult->strDelegatename = strDelegateAddressName;
+    spResult->strDelegatetotalvotes = CoinToTokenBigFloat(nDelegateTotalVotes);
+    spResult->strDelegateselfvotes = CoinToTokenBigFloat(nDelegateSelfVotes);
+    spResult->nTotalrecordcount = nRecordCount;
+    spResult->nTotalpagecount = nPageCount;
+    spResult->nPagenumber = nPageNumber;
+    spResult->nPagesize = nPageSize;
+
+    uint64 nIndex = 0;
+    for (auto& vd : vVoteList)
+    {
+        if (nIndex++ < nBeginIndex)
+        {
+            continue;
+        }
+
+        const CDestination destTemplateAddress = std::get<0>(vd);
+        const uint8 nTemplateType = std::get<1>(vd);
+        const uint256 nVotes = std::get<2>(vd);
+
+        CDestination destUserAddress;
+        uint32 nPledgeType = 0;
+
+        CAddressContext ctxAddress;
+        if (pService->RetrieveAddressContext(hashFork, destTemplateAddress, ctxAddress, hashBlock) && ctxAddress.IsTemplate())
+        {
+            CTemplateAddressContext ctxTemplate;
+            if (ctxAddress.GetTemplateAddressContext(ctxTemplate))
+            {
+                CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+                if (ptr)
+                {
+                    if (ptr->GetTemplateType() == TEMPLATE_VOTE)
+                    {
+                        auto objVote = boost::dynamic_pointer_cast<CTemplateVote>(ptr);
+                        destUserAddress = objVote->destOwner;
+                    }
+                    else if (ptr->GetTemplateType() == TEMPLATE_PLEDGE)
+                    {
+                        auto objPledge = boost::dynamic_pointer_cast<CTemplatePledge>(ptr);
+                        destUserAddress = objPledge->destOwner;
+                        nPledgeType = objPledge->nPledgeType;
+                    }
+                }
+            }
+        }
+
+        CListUserVoteByDelegateResult::CDatalist item;
+
+        item.nType = nTemplateType;
+        item.strVoteflagaddress = destTemplateAddress.ToString();
+        item.strUseraddress = destUserAddress.ToString();
+        item.nPledgetype = nPledgeType;
+        item.strVotes = CoinToTokenBigFloat(nVotes);
+
+        spResult->vecDatalist.push_back(item);
+
+        if (nPageSize != 0 && spResult->vecDatalist.size() >= nPageSize)
+        {
+            break;
+        }
+    }
+
+    return spResult;
+}
+
 /* Wallet */
 CRPCResultPtr CRPCMod::RPCListKey(const CReqContext& ctxReq, CRPCParamPtr param)
 {
