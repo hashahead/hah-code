@@ -109,6 +109,38 @@ protected:
     }
 };
 
+//////////////////////////////
+// CSnapBlockVoteData
+
+class CSnapBlockVoteData
+{
+    friend class hnbase::CStream;
+
+public:
+    CSnapBlockVoteData()
+      : fAtChain(false) {}
+    CSnapBlockVoteData(const uint256& hashBlockIn)
+      : hashBlock(hashBlockIn), fAtChain(false) {}
+
+public:
+    uint256 hashBlock;
+    bytes btBitmap;
+    bytes btAggSig;
+    bool fAtChain;
+    uint256 hashAtBlock;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashBlock, opt);
+        s.Serialize(btBitmap, opt);
+        s.Serialize(btAggSig, opt);
+        s.Serialize(fAtChain, opt);
+        s.Serialize(hashAtBlock, opt);
+    }
+};
+
 } // namespace storage
 } // namespace hashahead
 
