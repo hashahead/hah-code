@@ -216,10 +216,11 @@ inline std::string GetBlockTypeStr(uint16 nType, uint16 nMintType)
     case CBlock::BLOCK_GENESIS:
         return std::string("genesis");
     case CBlock::BLOCK_PRIMARY:
-        if (nMintType == CTransaction::TX_WORK)
+        if (nMintType == CTransaction::TX_POA)
             return std::string("primary-poa");
         else if (nMintType == CTransaction::TX_STAKE)
             return std::string("primary-stake");
+        break;
     case CBlock::BLOCK_ORIGIN:
         return std::string("origin");
     case CBlock::BLOCK_SUBSIDIARY:
@@ -259,20 +260,18 @@ protected:
 
 class CBlockIndex
 {
+    friend class hnbase::CStream;
+
 public:
-    const uint256* phashBlock;
-    CBlockIndex* pOrigin;
-    CBlockIndex* pPrev;
-    CBlockIndex* pNext;
-    CChainId nChainId;
+    uint256 hashBlock;
+    uint256 hashPrev;
+    uint256 hashOrigin;
     uint256 txidMint;
     uint16 nMintType;
     CDestination destMint;
     uint16 nVersion;
     uint16 nType;
     uint64 nTimeStamp;
-    uint32 nHeight;
-    uint16 nSlot;
     uint64 nNumber;
     uint64 nTxCount;
     uint64 nRewardTxCount;

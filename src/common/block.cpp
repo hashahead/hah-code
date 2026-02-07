@@ -704,6 +704,7 @@ void CBlock::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
 {
     bytes btMerkleRoot;
     bytes btReceiptsRoot;
+    bytes btCrosschainMerkleRoot;
     bytes btGasLimit = nGasLimit.ToValidBigEndianData();
     bytes btGasUsed = nGasUsed.ToValidBigEndianData();
     if (!hashMerkleRoot.IsNull())
@@ -714,7 +715,11 @@ void CBlock::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
     {
         btReceiptsRoot = hashReceiptsRoot.GetBytes();
     }
-    s << nVersion << nType << CVarInt(nTimeStamp) << CVarInt(nNumber) << nSlot << hashPrev << btMerkleRoot << hashStateRoot << btReceiptsRoot << btBloomData << btGasLimit << btGasUsed << mapProof << txMint << vtx << vchSig;
+    if (!hashCrosschainMerkleRoot.IsNull())
+    {
+        btCrosschainMerkleRoot = hashCrosschainMerkleRoot.GetBytes();
+    }
+    s << nVersion << nType << CVarInt(nTimeStamp) << CVarInt(nNumber) << nHeight << nSlot << hashPrev << btMerkleRoot << hashStateRoot << btReceiptsRoot << btCrosschainMerkleRoot << btBloomData << btGasLimit << btGasUsed << mapProof << txMint << vtx << mapProve << vchSig;
 }
 
 void CBlock::Serialize(hnbase::CStream& s, hnbase::LoadType&)
@@ -723,15 +728,17 @@ void CBlock::Serialize(hnbase::CStream& s, hnbase::LoadType&)
     CVarInt varNumber;
     bytes btMerkleRoot;
     bytes btReceiptsRoot;
+    bytes btCrosschainMerkleRoot;
     bytes btGasLimit;
     bytes btGasUsed;
-    s >> nVersion >> nType >> varTimeStamp >> varNumber >> nSlot >> hashPrev >> btMerkleRoot >> hashStateRoot >> btReceiptsRoot >> btBloomData >> btGasLimit >> btGasUsed >> mapProof >> txMint >> vtx >> vchSig;
+    s >> nVersion >> nType >> varTimeStamp >> varNumber >> nHeight >> nSlot >> hashPrev >> btMerkleRoot >> hashStateRoot >> btReceiptsRoot >> btCrosschainMerkleRoot >> btBloomData >> btGasLimit >> btGasUsed >> mapProof >> txMint >> vtx >> mapProve >> vchSig;
     nTimeStamp = varTimeStamp.nValue;
     nNumber = varNumber.nValue;
     nGasLimit.FromValidBigEndianData(btGasLimit);
     nGasUsed.FromValidBigEndianData(btGasUsed);
     hashMerkleRoot.SetBytes(btMerkleRoot);
     hashReceiptsRoot.SetBytes(btReceiptsRoot);
+    hashCrosschainMerkleRoot.SetBytes(btCrosschainMerkleRoot);
 }
 
 void CBlock::Serialize(hnbase::CStream& s, std::size_t& serSize) const
@@ -739,6 +746,7 @@ void CBlock::Serialize(hnbase::CStream& s, std::size_t& serSize) const
     (void)s;
     bytes btMerkleRoot;
     bytes btReceiptsRoot;
+    bytes btCrosschainMerkleRoot;
     bytes btGasLimit = nGasLimit.ToValidBigEndianData();
     bytes btGasUsed = nGasUsed.ToValidBigEndianData();
     if (!hashMerkleRoot.IsNull())
@@ -749,8 +757,12 @@ void CBlock::Serialize(hnbase::CStream& s, std::size_t& serSize) const
     {
         btReceiptsRoot = hashReceiptsRoot.GetBytes();
     }
+    if (!hashCrosschainMerkleRoot.IsNull())
+    {
+        btCrosschainMerkleRoot = hashCrosschainMerkleRoot.GetBytes();
+    }
     hnbase::CBufStream ss;
-    ss << nVersion << nType << CVarInt(nTimeStamp) << CVarInt(nNumber) << nSlot << hashPrev << btMerkleRoot << hashStateRoot << btReceiptsRoot << btBloomData << btGasLimit << btGasUsed << mapProof << txMint << vtx << vchSig;
+    ss << nVersion << nType << CVarInt(nTimeStamp) << CVarInt(nNumber) << nHeight << nSlot << hashPrev << btMerkleRoot << hashStateRoot << btReceiptsRoot << btCrosschainMerkleRoot << btBloomData << btGasLimit << btGasUsed << mapProof << txMint << vtx << mapProve << vchSig;
     serSize = ss.GetSize();
 }
 
@@ -759,19 +771,15 @@ void CBlock::Serialize(hnbase::CStream& s, std::size_t& serSize) const
 
 CBlockIndex::CBlockIndex()
 {
-    phashBlock = nullptr;
-    pOrigin = this;
-    pPrev = nullptr;
-    pNext = nullptr;
-    nChainId = 0;
+    hashOrigin = 0;
+    hashBlock = 0;
+    hashPrev = 0;
     txidMint = 0;
     nMintType = 0;
     destMint.SetNull();
     nVersion = 0;
     nType = 0;
     nTimeStamp = 0;
-    nHeight = 0;
-    nSlot = 0;
     nNumber = 0;
     nTxCount = 0;
     nRewardTxCount = 0;
@@ -779,15 +787,12 @@ CBlockIndex::CBlockIndex()
     nAgreement = 0;
     hashRefBlock = 0;
     hashStateRoot = 0;
-    nRandBeacon = 0;
     nGasLimit = 0;
     nGasUsed = 0;
     nChainTrust = uint64(0);
     nBlockReward = 0;
     nMoneySupply = 0;
     nMoneyDestroy = 0;
-    nProofAlgo = 0;
-    nProofBits = 0;
     nFile = 0;
     nOffset = 0;
     nBlockCrc = 0;
