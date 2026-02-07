@@ -282,5 +282,55 @@ bool CBlockState::GetContractRunCode(const CDestination& destContractIn, uint256
     return true;
 }
 
+bool CBlockState::GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd)
+{
+    bytes btDestCodeData;
+    if (!GetDestKvData(destContractIn, destContractIn.ToHash(), btDestCodeData))
+    {
+        StdLog("CBlockState", "Get contract create code: Get contract code fail, contract address: %s", destContractIn.ToString().c_str());
+        return false;
+    }
+
+    CContractDestCodeContext ctxDestCode;
+    try
+    {
+        CBufStream ss(btDestCodeData);
+        ss >> ctxDestCode;
+    }
+    catch (std::exception& e)
+    {
+        StdLog("CBlockState", "Get contract create code: Parse contract code fail, contract address: %s", destContractIn.ToString().c_str());
+        return false;
+    }
+
+    if (VERIFY_FHX_HEIGHT_BRANCH_001(CBlock::GetBlockHeightByHash(hashPrevBlock)))
+    {
+        CContractCreateCodeContext ctxtCode;
+        auto it = mapCacheContractCreateCodeContext.find(ctxDestCode.hashContractCreateCode);
+        if (it != mapCacheContractCreateCodeContext.end())
+        {
+            txcd.nMuxType = 1;
+            txcd.strType = ctxtCode.strType;
+            txcd.strName = ctxtCode.strName;
+            txcd.destCodeOwner = ctxtCode.destCodeOwner;
+            txcd.nCompressDescribe = 0;
+            txcd.btDescribe.assign(ctxtCode.strDescribe.begin(), ctxtCode.strDescribe.end());
+            txcd.nCompressCode = 0;
+            txcd.btCode = ctxtCode.btCreateCode; // contract create code
+            txcd.nCompressSource = 0;
+            txcd.btSource.clear(); // source code
+            return true;
+        }
+    }
+
+    if (!dbBlockBase.GetBlockContractCreateCodeData(hashFork, hashPrevBlock, ctxDestCode.hashContractCreateCode, txcd))
+    {
+        StdLog("CBlockState", "Get contract create code: Get contract create code fail, hashContractCreateCode: %s, contract address: %s, prev block: %s",
+               ctxDestCode.hashContractCreateCode.GetHex().c_str(), destContractIn.ToString().c_str(), hashPrevBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
