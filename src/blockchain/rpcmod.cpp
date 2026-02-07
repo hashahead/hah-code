@@ -4255,20 +4255,35 @@ CRPCResultPtr CRPCMod::RPCGetBalance(const CReqContext& ctxReq, CRPCParamPtr par
         strCoinSymbol = ctxFork.strSymbol;
     }
 
+    uint8 nDecimals = 0;
+    if (ctxCoin.nCoinType == CCoinContext::CT_COIN_TYPE_CONTRACT)
+    {
+        if (!pService->GetContractCoinDecimals(hashFork, hashBlock, ctxCoin.destContract, nDecimals))
+        {
+            nDecimals = 0;
+        }
+    }
+
     auto spResult = MakeCGetBalanceResultPtr();
     for (const auto& vd : vDes)
     {
         const CDestination dest = std::get<0>(vd);
+        const uint8 nType = std::get<1>(vd);
+        const uint8 nDestType = (nType >> 5);
+
+        if (ctxCoin.nCoinType == CCoinContext::CT_COIN_TYPE_CONTRACT && nDestType != CDestination::PREFIX_PUBKEY)
+        {
+            continue;
+        }
+
         CWalletBalance balance;
-        if (!pService->GetBalance(hashFork, hashBlock, dest, balance))
+        if (!pService->GetBalance(hashFork, hashBlock, dest, ctxCoin, balance))
         {
             balance.SetNull();
         }
-
         if (balance.nDestType == 0)
         {
-            const uint8 nType = std::get<1>(vd);
-            balance.nDestType = (nType >> 5);
+            balance.nDestType = nDestType;
             balance.nTemplateType = (nType & 0x1F);
         }
 
@@ -4279,11 +4294,8 @@ CRPCResultPtr CRPCMod::RPCGetBalance(const CReqContext& ctxReq, CRPCParamPtr par
             strDestType = "pubkey";
             break;
         case CDestination::PREFIX_TEMPLATE:
-        {
-            strDestType = "template-";
-            strDestType += CTemplate::GetTypeName(balance.nTemplateType);
+            strDestType = std::string("template-") + CTemplate::GetTypeName(balance.nTemplateType);
             break;
-        }
         case CDestination::PREFIX_CONTRACT:
             strDestType = "contract";
             break;
@@ -4293,13 +4305,16 @@ CRPCResultPtr CRPCMod::RPCGetBalance(const CReqContext& ctxReq, CRPCParamPtr par
         }
 
         CGetBalanceResult::CBalance b;
+
         b.strAddress = dest.ToString();
         b.strType = strDestType;
+        b.strCoinsymbol = strCoinSymbol;
         b.nNonce = balance.nTxNonce;
-        b.strAvail = CoinToTokenBigFloat(balance.nAvailable);
-        b.strLocked = CoinToTokenBigFloat(balance.nLocked);
-        b.strUnconfirmedin = CoinToTokenBigFloat(balance.nUnconfirmedIn);
-        b.strUnconfirmedout = CoinToTokenBigFloat(balance.nUnconfirmedOut);
+        b.strAvail = CoinToTokenBigFloat(balance.nAvailable, nDecimals);
+        b.strLocked = CoinToTokenBigFloat(balance.nLocked, nDecimals);
+        b.strUnconfirmedin = CoinToTokenBigFloat(balance.nUnconfirmedIn, nDecimals);
+        b.strUnconfirmedout = CoinToTokenBigFloat(balance.nUnconfirmedOut, nDecimals);
+
         spResult->vecBalance.push_back(b);
     }
 
