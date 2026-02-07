@@ -6,6 +6,10 @@
 
 #include <boost/filesystem.hpp>
 
+// #if !defined(WIN32) && !defined(__APPLE__)
+// #include <malloc.h>
+// #endif
+
 #include "block.h"
 #include "core.h"
 #include "purger.h"

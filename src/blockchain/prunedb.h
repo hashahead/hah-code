@@ -27,6 +27,8 @@ protected:
 
     void PruneStateWork();
     void PruneForkData(const uint256& hashFork, const uint32 nRefLastHeight);
+    void PruneForkKvData(const uint256& hashFork, const uint32 nRefLastHeight);
+
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;

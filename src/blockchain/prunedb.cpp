@@ -233,4 +233,29 @@ void CPruneDb::PruneForkData(const uint256& hashFork, const uint32 nRefLastHeigh
     }
 }
 
+void CPruneDb::PruneForkKvData(const uint256& hashFork, const uint32 nRefLastHeight)
+{
+    uint32& nPrevHeight = mapPrevKvPruneHeight[hashFork];
+    // if (nPrevHeight == 0)
+    // {
+    //     nPrevHeight = nRefLastHeight;
+    // }
+    if (nRefLastHeight > nPrevHeight && nRefLastHeight > nCfgPruneReserveHeight + CBlock::GetBlockHeightByHash(hashFork) + 2)
+    {
+        const uint32 nPruneLastHeight = nRefLastHeight - nCfgPruneReserveHeight;
+
+        StdDebug("CPruneDb", "Prune fork kv data: Prune contractkv begin, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+        if (!pBlockChain->PruneForkContractKvData(hashFork, nPruneLastHeight, fExit))
+        {
+            StdLog("CPruneDb", "Prune fork data: Prune contractkv fail, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+        }
+        else
+        {
+            StdDebug("CPruneDb", "Prune fork kv data: Prune contractkv success, prune last height: %d, last height: %d, fork chainid: %d", nPruneLastHeight, nRefLastHeight, CBlock::GetBlockChainIdByHash(hashFork));
+        }
+
+        nPrevHeight = nRefLastHeight;
+    }
+}
+
 } // namespace hashahead
