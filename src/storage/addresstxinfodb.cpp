@@ -618,21 +618,53 @@ void CForkAddressTxInfoDB::ClearOldBlockData()
     }
     for (auto& hashBlock : vRemoveHash)
     {
-        StdLog("CForkAddressTxInfoDB", "List address tx info: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        RemoveOldBlockData(hashBlock);
+    }
+}
+
+bool CForkAddressTxInfoDB::AddLongChainBlock(const uint256& hashBlock)
+{
+    map<CDestination, vector<CDestTxInfo>> mapAddressTxInfo;
+    map<CDestination, vector<CTokenTransRecord>> mapTokenRecord;
+    if (!GetBlockAddressTxInfo(hashBlock, mapAddressTxInfo, mapTokenRecord))
+    {
+        StdLog("CForkAddressTxInfoDB", "Add longchain block: Get block address tx info fail, block: %s", hashBlock.GetBhString().c_str());
         return false;
     }
 
-    hnbase::CBufStream ssKeyPrefix;
-    ssKeyPrefix << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS << dest;
-    bytes btKeyPrefix;
-    ssKeyPrefix.GetData(btKeyPrefix);
-
-    bytes btBeginKeyTail;
-    if (nBeginTxIndex > 0)
+    map<CDestination, pair<uint64, uint64>> mapBlockAddressTxIndex; // key: address, value1: begin index, value2: end index
+    for (auto& kv : mapAddressTxInfo)
     {
-        hnbase::CBufStream ss;
-        ss << BSwap64(nBeginTxIndex);
-        ss.GetData(btBeginKeyTail);
+        if (kv.second.size() > 0)
+        {
+            const CDestination& address = kv.first;
+
+            uint64 nTxCount = 0;
+            if (!ReadAddressTxCount(address, nTxCount))
+            {
+                nTxCount = 0;
+            }
+            const uint64 nBeginIndex = nTxCount;
+            for (const CDestTxInfo& dti : kv.second)
+            {
+                hnbase::CBufStream ssKey, ssValue;
+                ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO << address << BSwap64(nTxCount);
+                ssValue << dti;
+                if (!Write(ssKey, ssValue))
+                {
+                    StdLog("CForkAddressTxInfoDB", "Add longchain block: Write address tx fail, address: %s, block: %s", address.ToString().c_str(), hashBlock.GetBhString().c_str());
+                    return false;
+                }
+                nTxCount++;
+            }
+            if (!WriteAddressTxCount(address, nTxCount))
+            {
+                StdLog("CForkAddressTxInfoDB", "Add longchain block: Write address tx count fail, address: %s, block: %s", address.ToString().c_str(), hashBlock.GetBhString().c_str());
+                return false;
+            }
+
+            mapBlockAddressTxIndex.insert(make_pair(address, make_pair(nBeginIndex, nTxCount - 1)));
+        }
     }
     uint64 nGetCountInner = 0;
     if (nGetTxCount == 0 || nGetTxCount > MAX_FETCH_ADDRESS_TX_COUNT)
