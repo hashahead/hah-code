@@ -17,10 +17,13 @@ enum class EModuleType
     HTTPGET,          // CHttpGet
     HTTPSERVER,       // CHttpServer
     NETCHANNEL,       // CNetChannel
+    DELEGATEDCHANNEL, // CDelegatedChannel
     BLOCKCHANNEL,     // CBlockChannel
     CERTTXCHANNEL,    // CCertTxChannel
-    USERTXCHANNEL,    // CCertTxChannel
-    DELEGATEDCHANNEL, // CDelegatedChannel
+    USERTXCHANNEL,    // CUserTxChannel
+    BLOCKVOTECHANNEL, // CBlockVoteChannel
+    BLOCKCROSSPROVE,  // CBlockCrossProveChannel
+    SNAPSHOTDOWN,     // CSnapshotDownChannel
     NETWORK,          // CNetwork
     RPCCLIENT,        // CRPCClient
     RPCMODE,          // CRPCMod
@@ -32,6 +35,11 @@ enum class EModuleType
     FORKMANAGER,      // CForkManager
     DATASTAT,         // CDataStat
     RECOVERY,         // CRecovery
+    WSSERVICE,        // CWsService
+    BLOCKFILTER,      // CBlockFilter
+    PRUNEDB,          // CPruneDb
+    CHAINSNAPSHOT,    // CChainSnapshot
+    NATPORTMAPPING,   // CNatPortMapping
 };
 
 } // namespace hashahead
