@@ -117,7 +117,7 @@ public:
     virtual bool GetBlockNumberHash(const uint256& hashFork, const uint64 nNumber, uint256& hashBlock) = 0;
     virtual bool GetBlockStatus(const uint256& hashBlock, CBlockStatus& status) = 0;
     virtual bool GetLastBlockOfHeight(const uint256& hashFork, const int nHeight, uint256& hashBlock, uint64& nTime) = 0;
-    virtual bool GetBlockHashOfRefBlock(const uint256& hashRefBlock, const int nHeight, uint256& hashBlock) = 0;
+    virtual bool GetPrimaryBlockHashOfRefBlock(const uint256& hashRefBlock, const int nHeight, uint256& hashBlock) = 0;
     virtual bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) = 0;
     virtual bool GetLastBlockTime(const uint256& hashFork, int nDepth, std::vector<uint64>& vTime) = 0;
     virtual bool GetBlock(const uint256& hashBlock, CBlock& block) = 0;

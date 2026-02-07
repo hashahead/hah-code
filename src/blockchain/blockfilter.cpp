@@ -325,4 +325,15 @@ bool CBlockFilter::GetFilterTxids(const uint256& hashFork, const uint256& nFilte
     return true;
 }
 
+void CBlockFilter::AddMaxPeerBlockNumber(const uint256& hashFork, const uint64 nMaxPeerBlockNumber)
+{
+    boost::shared_lock<boost::shared_mutex> lock(mutexFilter);
+
+    CForkBlockStat& stat = mapForkBlockStat[hashFork];
+    if (stat.nMaxPeerBlockNumber < nMaxPeerBlockNumber)
+    {
+        stat.nMaxPeerBlockNumber = nMaxPeerBlockNumber;
+    }
+}
+
 } // namespace hashahead
