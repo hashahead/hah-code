@@ -714,6 +714,55 @@ bool CForkDB::ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin
     return ListDbCoinContext(mapSymbolCoin, hashRoot);
 }
 
+bool CForkDB::GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashLastBlock;
+    if (hashMainChainRefBlock == 0)
+    {
+        if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+        {
+            hashLastBlock = 0;
+        }
+    }
+    else
+    {
+        hashLastBlock = hashMainChainRefBlock;
+    }
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(hashLastBlock, hashRoot))
+    {
+        StdLog("CForkDB", "Get dex coin pair by symbol pair: Read trie root fail, last block: %s", hashLastBlock.GetHex().c_str());
+        return false;
+    }
+
+    std::string strSymbolMin = std::min(strSymbol1, strSymbol2);
+    std::string strSymbolMax = std::max(strSymbol1, strSymbol2);
+
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+    ssKey << DB_FORK_KEY_TYPE_DEX_SYMBOLPAIR << strSymbolMin << strSymbolMax;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        StdLog("CForkDB", "Get dex coin pair by symbol pair: Retrieve fail, last block: %s", hashLastBlock.GetHex().c_str());
+        return false;
+    }
+    try
+    {
+        ssValue.Write((char*)(btValue.data()), btValue.size());
+        ssValue >> nCoinPair;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);
