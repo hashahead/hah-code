@@ -2258,26 +2258,49 @@ bool CBlockChain::GetAddressLockedAmount(const uint256& hashFork, const uint256&
     return cntrBlock.GetAddressLockedAmount(hashFork, hashPrevBlock, dest, ctxAddress, nBalance, nLockedAmount);
 }
 
-bool CBlockChain::VerifyForkNameAndChainId(const uint256& hashFork, const CChainId nChainIdIn, const std::string& strForkName, const uint256& hashBlock)
+bool CBlockChain::VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainIdIn, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashBlock)
 {
-    CForkContext ctxt;
-    if (!cntrBlock.RetrieveForkContext(hashFork, ctxt, hashBlock))
-    {
-        StdLog("BlockChain", "Verify fork name: Fork id existed, fork: %s", hashFork.GetHex().c_str());
-        return false;
-    }
-    uint256 hashTempFork;
-    if (cntrBlock.GetForkHashByForkName(strForkName, hashTempFork, hashBlock))
-    {
-        StdLog("BlockChain", "Verify fork name: Fork name existed, name: %s", strForkName.c_str());
-        return false;
-    }
-    if (cntrBlock.GetForkHashByChainId(nChainIdIn, hashTempFork, hashBlock))
-    {
-        StdLog("BlockChain", "Verify fork name: Chainid existed, chainid: %d", nChainIdIn);
-        return false;
-    }
-    return true;
+    return cntrBlock.VerifyForkFlag(hashNewFork, nChainIdIn, strForkSymbol, strForkName, hashBlock);
+}
+
+bool CBlockChain::GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.GetForkCoinCtxByForkSymbol(strForkSymbol, ctxCoin, hashMainChainRefBlock);
+}
+
+bool CBlockChain::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.GetForkHashByChainId(nChainId, hashFork, hashMainChainRefBlock);
+}
+
+bool CBlockChain::ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.ListCoinContext(mapSymbolCoin, hashMainChainRefBlock);
+}
+
+bool CBlockChain::GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.GetDexCoinPairBySymbolPair(strSymbol1, strSymbol2, nCoinPair, hashMainChainRefBlock);
+}
+
+bool CBlockChain::GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& strSymbol1, std::string& strSymbol2, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.GetSymbolPairByDexCoinPair(nCoinPair, strSymbol1, strSymbol2, hashMainChainRefBlock);
+}
+
+bool CBlockChain::ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.ListDexCoinPair(nCoinPair, strCoinSymbol, mapDexCoinPair, hashMainChainRefBlock);
+}
+
+bool CBlockChain::IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.IsTimeVaultWhitelistAddressExist(address, hashMainChainRefBlock);
+}
+
+bool CBlockChain::ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock)
+{
+    return cntrBlock.ListTimeVaultWhitelist(setTimeVaultWhitelist, hashMainChainRefBlock);
 }
 
 bool CBlockChain::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, const uint256& hashBlock)
