@@ -19,6 +19,9 @@ public:
     virtual bool PostLoad();
     virtual std::string ListConfig() const;
     virtual std::string Help() const;
+
+public:
+    bool fIsRecoveryBlock;
 };
 
 } // namespace hashahead
