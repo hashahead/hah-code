@@ -12,9 +12,13 @@
 #include "blockindexdb.h"
 #include "cfgmintmingasprice.h"
 #include "contractdb.h"
+#include "dbstruct.h"
 #include "forkcontext.h"
 #include "forkdb.h"
+#include "hdexdb.h"
+#include "snapshotdb.h"
 #include "statedb.h"
+#include "tracedb.h"
 #include "transaction.h"
 #include "txindexdb.h"
 #include "verifydb.h"
@@ -33,7 +37,8 @@ public:
     bool BdInitialize(const boost::filesystem::path& pathData, const uint256& hashGenesisBlockIn, const bool fFullDbIn, const bool fTraceDbIn, const bool fCacheTraceIn, const bool fPruneIn);
     void BdDeinitialize();
     void RemoveAll();
-    bool AddForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxt, uint256& hashNewRoot);
+    bool AddForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxt, const std::map<std::string, CCoinContext>& mapSymbolCoin,
+                        const std::set<CDestination>& setTimeVaultWhitelist, const std::set<uint256>& setStopFork, const bool fTraceDb, uint256& hashNewRoot);
     bool ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, const uint256& hashBlock = uint256());
     bool RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt, const uint256& hashMainChainRefBlock = uint256());
     bool UpdateForkLast(const uint256& hashFork, const uint256& hashLastBlock);

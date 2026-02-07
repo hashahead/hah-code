@@ -72,7 +72,7 @@ bool CBlockDB::BdInitialize(const boost::filesystem::path& pathData, const uint2
         StdLog("CBlockDB", "Initialize: dbAddress initialize fail");
         return false;
     }
-    if (!dbContract.Initialize(pathData))
+    if (!dbContract.Initialize(pathData, fPruneIn))
     {
         StdLog("CBlockDB", "Initialize: dbContract initialize fail");
         return false;
@@ -87,11 +87,24 @@ bool CBlockDB::BdInitialize(const boost::filesystem::path& pathData, const uint2
         StdLog("CBlockDB", "Initialize: dbMintMinGasPrice initialize fail");
         return false;
     }
+    if (!dbSnapshot.Initialize(pathData))
+    {
+        StdLog("CBlockDB", "Initialize: dbSnapshot initialize fail");
+        return false;
+    }
     if (fCfgFullDb)
     {
         if (!dbAddressTxInfo.Initialize(pathData))
         {
             StdLog("CBlockDB", "Initialize: dbAddressTxInfo initialize fail");
+            return false;
+        }
+    }
+    if (fCfgTraceDb)
+    {
+        if (!dbTrace.Initialize(pathData, fCfgCacheTrace, fPruneIn))
+        {
+            StdLog("CBlockDB", "Initialize: dbTrace initialize fail");
             return false;
         }
     }
