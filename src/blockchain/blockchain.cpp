@@ -2238,6 +2238,11 @@ bool CBlockChain::GetCreateForkLockedAmount(const CDestination& dest, const uint
     return cntrBlock.GetCreateForkLockedAmount(dest, hashPrevBlock, btAddressData, nLockedAmount);
 }
 
+bool CBlockChain::VerifyAddressPledgeVote(const CDestination& dest, const uint256& hashPrevBlock)
+{
+    return cntrBlock.VerifyAddressPledgeVote(dest, hashPrevBlock);
+}
+
 bool CBlockChain::VerifyAddressVoteRedeem(const CDestination& dest, const uint256& hashPrevBlock)
 {
     return cntrBlock.VerifyAddressVoteRedeem(dest, hashPrevBlock);

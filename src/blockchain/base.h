@@ -94,15 +94,26 @@ public:
 public:
     IBlockChain()
       : IBase("blockchain") {}
+
+    const CBasicConfig* Config()
+    {
+        return dynamic_cast<const CBasicConfig*>(hnbase::IBase::Config());
+    }
+    const CStorageConfig* StorageConfig()
+    {
+        return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
+    }
+
     virtual void GetForkStatus(std::map<uint256, CForkStatus>& mapForkStatus) = 0;
     virtual bool GetForkProfile(const uint256& hashFork, CProfile& profile, const uint256& hashMainChainRefBlock = uint256()) = 0;
     virtual bool GetForkContext(const uint256& hashFork, CForkContext& ctxt, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock = uint256()) = 0;
     virtual bool GetForkAncestry(const uint256& hashFork, std::vector<std::pair<uint256, uint256>> vAncestry) = 0;
     virtual int GetBlockCount(const uint256& hashFork) = 0;
     virtual bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight) = 0;
     virtual bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight, uint256& hashNext) = 0;
-    virtual bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) = 0;
-    virtual bool GetBlockHashList(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) = 0;
+    virtual bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) = 0;
+    virtual bool GetBlockHashListByHeight(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) = 0;
     virtual bool GetBlockNumberHash(const uint256& hashFork, const uint64 nNumber, uint256& hashBlock) = 0;
     virtual bool GetBlockStatus(const uint256& hashBlock, CBlockStatus& status) = 0;
     virtual bool GetLastBlockOfHeight(const uint256& hashFork, const int nHeight, uint256& hashBlock, uint64& nTime) = 0;
