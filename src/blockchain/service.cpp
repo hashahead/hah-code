@@ -659,6 +659,11 @@ bool CService::GetTransactionReceipt(const uint256& hashFork, const uint256& txi
     return pBlockChain->GetTransactionReceipt(hashFork, txid, receiptex);
 }
 
+bool CService::RetrieveTxContractReceipt(const uint256& hashFork, const uint256& txid, TxContractReceipts& tcrReceipt)
+{
+    return pBlockChain->RetrieveTxContractReceipt(hashFork, txid, tcrReceipt);
+}
+
 bool CService::CallContract(const bool fEthCall, const uint256& hashFork, const uint256& hashBlock, const CDestination& from, const CDestination& to, const uint256& nAmount, const uint256& nGasPrice,
                             const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult)
 {
