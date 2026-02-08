@@ -2341,14 +2341,14 @@ bool CBlockChain::GetBlockRewardList(const uint256& hashLastBlock, const uint32 
     return true;
 }
 
-uint256 CBlockChain::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
+bool CBlockChain::GetBlockReceiptsByBlock(const uint256& hashFork, const uint256& hashFromBlock, const uint256& hashToBlock, std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapBlockReceipts)
 {
-    return cntrBlock.AddBlockFilter(hashClient, hashFork);
+    return cntrBlock.GetBlockReceiptsByBlock(hashFork, hashFromBlock, hashToBlock, mapBlockReceipts);
 }
 
-bool CBlockChain::GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash)
+bool CBlockChain::VerifySameChain(const uint256& hashPrevBlock, const uint256& hashAfterBlock)
 {
-    return cntrBlock.GetFilterBlockHashs(hashFork, nFilterId, fAll, vBlockHash);
+    return cntrBlock.VerifySameChain(hashPrevBlock, hashAfterBlock);
 }
 
 uint256 CBlockChain::AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork)

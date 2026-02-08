@@ -96,6 +96,7 @@ public:
     bool ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
                      const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord) override;
     bool GetCreateForkLockedAmount(const CDestination& dest, const uint256& hashPrevBlock, const bytes& btAddressData, uint256& nLockedAmount) override;
+    bool VerifyAddressPledgeVote(const CDestination& dest, const uint256& hashPrevBlock) override;
     bool VerifyAddressVoteRedeem(const CDestination& dest, const uint256& hashPrevBlock) override;
     bool GetVoteRewardLockedAmount(const uint256& hashFork, const uint256& hashPrevBlock, const CDestination& dest, uint256& nLockedAmount) override;
     bool GetAddressLockedAmount(const uint256& hashFork, const uint256& hashPrevBlock, const CDestination& dest, const CAddressContext& ctxAddress, const uint256& nBalance, uint256& nLockedAmount) override;
