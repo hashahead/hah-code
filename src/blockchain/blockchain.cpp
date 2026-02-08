@@ -2303,9 +2303,9 @@ bool CBlockChain::ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhi
     return cntrBlock.ListTimeVaultWhitelist(setTimeVaultWhitelist, hashMainChainRefBlock);
 }
 
-bool CBlockChain::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, const uint256& hashBlock)
+bool CBlockChain::GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock)
 {
-    return cntrBlock.GetForkHashByChainId(nChainId, hashFork, hashBlock);
+    return cntrBlock.GetPrimaryForkOwnerAddress(destForkOwner, hashRefBlock);
 }
 
 bool CBlockChain::RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value)
