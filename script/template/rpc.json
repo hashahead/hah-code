@@ -409,7 +409,15 @@
             },
             "gasPrice": {
                 "type": "string",
-                "desc": "gas price(hex), unit: wei"
+                "desc": "The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei"
+            },
+            "maxFeePerGas": {
+                "type": "string",
+                "desc": "The maximum fee per gas set in the transaction(hex), unit: wei"
+            },
+            "maxPriorityFeePerGas": {
+                "type": "string",
+                "desc": "The maximum priority gas fee set in the transaction(hex), unit: wei"
             },
             "gas": {
                 "type": "string",
@@ -418,6 +426,31 @@
             "input": {
                 "type": "string",
                 "desc": "input data"
+            },
+            "accessList": {
+                "type": "array",
+                "desc": "access list",
+                "content": {
+                    "access": {
+                        "type": "object",
+                        "content": {
+                            "address": {
+                                "type": "string",
+                                "desc": "address"
+                            },
+                            "storageKeys": {
+                                "type": "array",
+                                "desc": "storage keys list",
+                                "content": {
+                                    "key": {
+                                        "type": "string",
+                                        "desc": "key"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     },

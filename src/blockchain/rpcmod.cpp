@@ -4444,6 +4444,10 @@ CRPCResultPtr CRPCMod::RPCSendFrom(const CReqContext& ctxReq, CRPCParamPtr param
             throw CRPCException(RPC_INVALID_PARAMETER, "Invalid gasprice");
         }
     }
+    if (nGasPrice == 0)
+    {
+        nGasPrice = pService->GetForkMintMinGasPrice(hashFork);
+    }
     uint256 nGas = uint256(spParam->nGas);
 
     vector<uint8> vchToData;
@@ -4478,6 +4482,98 @@ CRPCResultPtr CRPCMod::RPCSendFrom(const CReqContext& ctxReq, CRPCParamPtr param
     if (spParam->strContractparam.IsValid())
     {
         btContractParam = ParseHexString(spParam->strContractparam);
+    }
+
+    if ((spParam->strCoinsymbol.IsValid() && !spParam->strCoinsymbol.empty())
+        || (spParam->strCoinaddress.IsValid() && !spParam->strCoinaddress.empty()))
+    {
+        CDestination destCoinContractAddress;
+        if (spParam->strCoinsymbol.IsValid() && !spParam->strCoinsymbol.empty())
+        {
+            std::string strCoinSymbol = spParam->strCoinsymbol;
+            StringToUpper(strCoinSymbol);
+
+            CCoinContext ctxCoin;
+            if (!pService->GetCoinContext(strCoinSymbol, ctxCoin))
+            {
+                throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbol");
+            }
+
+            if (ctxCoin.nCoinType == CCoinContext::CT_COIN_TYPE_CONTRACT)
+            {
+                destCoinContractAddress = ctxCoin.destContract;
+            }
+        }
+        if (destCoinContractAddress.IsNull() && spParam->strCoinaddress.IsValid() && !spParam->strCoinaddress.empty())
+        {
+            if (!destCoinContractAddress.ParseString(spParam->strCoinaddress))
+            {
+                throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinaddress");
+            }
+        }
+
+        if (!destCoinContractAddress.IsNull())
+        {
+            uint8 nDecimals = 0;
+            if (!pService->GetContractCoinDecimals(hashFork, {}, destCoinContractAddress, nDecimals))
+            {
+                throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinaddress");
+            }
+            if (!TokenBigFloatToCoin(spParam->strAmount, nAmount, nDecimals))
+            {
+                throw CRPCException(RPC_INVALID_PARAMETER, "Invalid amount");
+            }
+
+            //function transfer(address to, uint tokens) external returns (bool);
+
+            std::vector<bytes> vParamList;
+            vParamList.push_back(to.ToHash().GetBytes());
+            vParamList.push_back(nAmount.ToBigEndian());
+
+            bytes btData = MakeEthTxCallData("transfer(address,uint256)", vParamList);
+
+            if (nGas == 0)
+            {
+                CVmCallTx vmCallTx;
+                CVmCallResult vmCallResult;
+
+                vmCallTx.fEthCall = true;
+                vmCallTx.destFrom = from;
+                vmCallTx.destTo = destCoinContractAddress;
+                vmCallTx.nTxNonce = 0;
+                vmCallTx.nGasPrice = nGasPrice;
+                vmCallTx.nGasLimit = 0;
+                vmCallTx.nAmount = 0;
+                vmCallTx.btData = btData;
+
+                if (!pService->CallContract(hashFork, {}, vmCallTx, vmCallResult))
+                {
+                    nGas = DEF_TX_GAS_LIMIT;
+                }
+                else
+                {
+                    nGas = vmCallResult.nGasUsed;
+                }
+            }
+
+            uint256 txid;
+            if (!pService->SendEthTransaction(hashFork, from, destCoinContractAddress, 0, 0, nGasPrice, nGas, btData, 0, txid))
+            {
+                throw CRPCException(RPC_TRANSACTION_ERROR, "Send tx fail");
+            }
+            StdDebug("CRPCMod", "Sendfrom coin transfer tx success, txid: %s, from: %s, contract: %s", txid.GetHex().c_str(), from.ToString().c_str(), destCoinContractAddress.ToString().c_str());
+            return MakeCSendFromResultPtr(txid.GetHex());
+        }
+    }
+    if (spParam->fEthtx.IsValid() && spParam->fEthtx)
+    {
+        uint256 txid;
+        if (!pService->SendEthTransaction(hashFork, from, to, nAmount, nNonce, nGasPrice, nGas, vchData, 0, txid))
+        {
+            throw CRPCException(RPC_TRANSACTION_ERROR, "Send eth tx fail");
+        }
+        StdDebug("CRPCMod", "Sendfrom eth tx success, txid: %s, from: %s, to: %s", txid.GetHex().c_str(), from.ToString().c_str(), to.ToString().c_str());
+        return MakeCSendFromResultPtr(txid.GetHex());
     }
 
     CTransaction txNew;
