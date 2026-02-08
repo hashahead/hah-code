@@ -5023,6 +5023,43 @@ CRPCResultPtr CRPCMod::RPCAddContractCoin(const CReqContext& ctxReq, CRPCParamPt
     return MakeCAddContractCoinResultPtr(txid.ToString());
 }
 
+CRPCResultPtr CRPCMod::RPCGetCoinInfo(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetCoinInfoParam>(param);
+
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    if (!spParam->strSymbol.IsValid() || spParam->strSymbol.empty() || spParam->strSymbol.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol");
+    }
+    std::string strSymbol = spParam->strSymbol;
+    StringToUpper(strSymbol);
+    uint256 hashBlock = GetRefBlock(ctxReq.hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+
+    CCoinContext ctxCoin;
+    if (!pService->GetForkCoinCtxByForkSymbol(strSymbol, ctxCoin, hashBlock))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown symbol");
+    }
+
+    auto spResult = MakeCGetCoinInfoResultPtr();
+
+    spResult->strCoinsymbol = strSymbol;
+    spResult->strCointype = ctxCoin.GetCoinTypeStr();
+    spResult->strFork = ctxCoin.hashAtFork.ToString();
+    spResult->nChainid = CBlock::GetBlockChainIdByHash(ctxCoin.hashAtFork);
+
+    return spResult;
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
