@@ -4,6 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "base_tests.h"
 #include "crypto.h"
 #include "ctsdb.h"
 #include "hnbase.h"
@@ -43,7 +44,7 @@ BOOST_AUTO_TEST_CASE(ctsdb)
 {
     CMetaDB db;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/dbpath";
+    std::string fullpath = GetOutPath("dbpath_tests");
     std::cout << "init path: " << fullpath << std::endl;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
 

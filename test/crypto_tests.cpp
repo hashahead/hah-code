@@ -143,4 +143,16 @@ BOOST_AUTO_TEST_CASE(makekey)
 //     std::cout << "multisign verify2 count : " << count << "; time per count : " << verifyTime2 / count << "us.; time per key: " << verifyTime2 / signCount << "us." << std::endl;
 // }
 
+BOOST_AUTO_TEST_CASE(crpptohashtest)
+{
+    uint256 s1 = 1;
+    uint256 s2 = 2;
+    uint256 h1 = crypto::CryptoHash(s1.begin(), s1.size());
+    uint256 h2 = crypto::CryptoHash(s2.begin(), s2.size());
+    uint256 r1 = crypto::CryptoHash(h1, h2);
+    uint256 r2 = crypto::CryptoHash(h2, h1);
+    std::cout << "r1: " << r1.ToString() << std::endl;
+    std::cout << "r2: " << r2.ToString() << std::endl;
+}
+
 BOOST_AUTO_TEST_SUITE_END()

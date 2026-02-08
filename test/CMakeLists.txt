@@ -8,9 +8,9 @@
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src/blockchain)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src/jsonrpc ../src/jsonrpc)
-include_directories(../src/wvm/wasm-edge/include)
 
 set(sources
+    base_tests.h
     test_big_main.cpp
     test_big.h test_big.cpp
     uint256_tests.cpp
