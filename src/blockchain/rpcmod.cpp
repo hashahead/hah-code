@@ -4940,6 +4940,89 @@ CRPCResultPtr CRPCMod::RPCAddUserCoin(const CReqContext& ctxReq, CRPCParamPtr pa
     return MakeCAddUserCoinResultPtr(txid.ToString());
 }
 
+CRPCResultPtr CRPCMod::RPCAddContractCoin(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    auto spParam = CastParamPtr<CAddContractCoinParam>(param);
+
+    CDestination from;
+    std::string strSymbol;
+    uint32 nChainId;
+    CDestination destContract;
+
+    from.ParseString(spParam->strFrom);
+    if (from.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
+    }
+
+    if (!spParam->strSymbol.IsValid() || spParam->strSymbol.empty() || spParam->strSymbol.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol");
+    }
+    strSymbol = spParam->strSymbol;
+    StringToUpper(strSymbol);
+    if (spParam->nChainid == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid chainid");
+    }
+    nChainId = spParam->nChainid;
+
+    destContract.ParseString(spParam->strContractaddress);
+    if (destContract.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid contractaddress");
+    }
+
+    uint256 hashAtFork;
+    if (!pService->GetForkHashByChainId(nChainId, hashAtFork))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown chainid");
+    }
+
+    CCoinContext ctxCoin;
+    if (pService->GetForkCoinCtxByForkSymbol(strSymbol, ctxCoin))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Symbol existed");
+    }
+
+    CAddressContext ctxContractAddress;
+    if (!pService->RetrieveAddressContext(hashAtFork, destContract, ctxContractAddress, {}))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown contractaddress");
+    }
+    if (!ctxContractAddress.IsContract())
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown contractaddress");
+    }
+
+    bytes btSymbolData;
+    btSymbolData.resize(32);
+    std::copy(strSymbol.begin(), strSymbol.end(), btSymbolData.data());
+
+    std::vector<bytes> vParamList;
+    vParamList.push_back(uint256((uint64)0x60).ToBigEndian()); // var pos
+    vParamList.push_back(uint256(nChainId).ToBigEndian());
+    vParamList.push_back(destContract.ToHash().GetBytes());
+    vParamList.push_back(uint256(strSymbol.size()).ToBigEndian()); // var size
+    vParamList.push_back(btSymbolData);                            // string
+    bytes btData = MakeEthTxCallData("addContractCoin(string,uint32,address)", vParamList);
+
+    uint256 txid;
+    if (!pService->SendEthTransaction(ctxReq.hashFork, from, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
+    {
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Verify tx fail");
+    }
+
+    StdDebug("CRPCMod", "Send add contract coin tx success, txid: %s", txid.ToString().c_str());
+
+    return MakeCAddContractCoinResultPtr(txid.ToString());
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
