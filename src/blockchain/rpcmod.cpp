@@ -4597,7 +4597,7 @@ CRPCResultPtr CRPCMod::RPCSendFrom(const CReqContext& ctxReq, CRPCParamPtr param
 
     uint256 txid = txNew.GetHash();
 
-    StdDebug("CRPCMod", "Sendfrom success, txid: %s, to: %s", txid.GetHex().c_str(), to.ToString().c_str());
+    StdDebug("CRPCMod", "Sendfrom success, txid: %s, from: %s, to: %s", txid.GetHex().c_str(), from.ToString().c_str(), to.ToString().c_str());
 
     return MakeCSendFromResultPtr(txid.GetHex());
 }
@@ -4874,6 +4874,70 @@ CRPCResultPtr CRPCMod::RPCSignMessage(const CReqContext& ctxReq, CRPCParamPtr pa
         }
     }
     return MakeCSignMessageResultPtr(ToHexString(vchSig));
+}
+
+CRPCResultPtr CRPCMod::RPCAddUserCoin(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    auto spParam = CastParamPtr<CAddUserCoinParam>(param);
+
+    CDestination from;
+    std::string strSymbol;
+    uint32 nChainId;
+
+    from.ParseString(spParam->strFrom);
+    if (from.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
+    }
+    if (!spParam->strSymbol.IsValid() || spParam->strSymbol.empty() || spParam->strSymbol.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol");
+    }
+    strSymbol = spParam->strSymbol;
+    StringToUpper(strSymbol);
+    if (spParam->nChainid == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid chainid");
+    }
+    nChainId = spParam->nChainid;
+
+    uint256 hashAtFork;
+    if (!pService->GetForkHashByChainId(nChainId, hashAtFork))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown chainid");
+    }
+
+    CCoinContext ctxCoin;
+    if (pService->GetForkCoinCtxByForkSymbol(strSymbol, ctxCoin))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Symbol existed");
+    }
+
+    bytes btSymbolData;
+    btSymbolData.resize(32);
+    std::copy(strSymbol.begin(), strSymbol.end(), btSymbolData.data());
+
+    std::vector<bytes> vParamList;
+    vParamList.push_back(uint256((uint64)0x40).ToBigEndian()); // var pos
+    vParamList.push_back(uint256(nChainId).ToBigEndian());
+    vParamList.push_back(uint256(strSymbol.size()).ToBigEndian()); // var size
+    vParamList.push_back(btSymbolData);                            // string
+    bytes btData = MakeEthTxCallData("addUserCoin(string,uint32)", vParamList);
+
+    uint256 txid;
+    if (!pService->SendEthTransaction(ctxReq.hashFork, from, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
+    {
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Verify tx fail");
+    }
+
+    StdDebug("CRPCMod", "Send add user coin tx success, txid: %s", txid.ToString().c_str());
+
+    return MakeCAddUserCoinResultPtr(txid.ToString());
 }
 
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)

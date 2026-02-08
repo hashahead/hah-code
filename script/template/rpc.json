@@ -492,6 +492,11 @@
                 "type": "string",
                 "desc": "input data",
                 "required": false
+            },
+            "fork": {
+                "type": "string",
+                "desc": "fork",
+                "required": false
             }
         }
     },
@@ -592,8 +597,15 @@
             },
             "gasPrice": {
                 "type": "string",
-                "desc": "tx gas price",
-                "required": false
+                "desc": "The gas price provided by the sender in wei encoded as hexadecimal(hex), unit: wei"
+            },
+            "maxFeePerGas": {
+                "type": "string",
+                "desc": "The maximum fee per gas set in the transaction(hex), unit: wei"
+            },
+            "maxPriorityFeePerGas": {
+                "type": "string",
+                "desc": "The maximum priority gas fee set in the transaction(hex), unit: wei"
             },
             "gas": {
                 "type": "string",
