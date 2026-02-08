@@ -507,6 +507,14 @@
             "opt": "dnseed",
             "format": "-dnseed=<address>:<port>",
             "desc": "DNSeed address list(<address> can be IPv4 or IPv6 or domain name, default <port>: 8816, IPv6 format: [ip]:port)"
+        },
+        {
+            "name": "fSyncForkHeight",
+            "type": "bool",
+            "opt": "syncforkheight",
+            "default": false,
+            "format": "-syncforkheight",
+            "desc": "Each FORK has blocks that are synchronized at the same height"
         }
     ]
 }

@@ -268,6 +268,8 @@ else()
         set_target_properties(sodium PROPERTIES
             IMPORTED_LOCATION "${sodium_LIBRARY_RELEASE}"
             IMPORTED_LOCATION_DEBUG "${sodium_LIBRARY_DEBUG}"
+            IMPORTED_IMPLIB_RELEASE "${sodium_LIBRARY_RELEASE}"
+            IMPORTED_LOCATION_RELEASE "${sodium_LIBRARY_RELEASE}"
         )
     elseif (WIN32)
         set_target_properties(sodium PROPERTIES
