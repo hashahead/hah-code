@@ -2325,24 +2325,20 @@ bool CBlockChain::RetrieveContractKvValue(const uint256& hashFork, const uint256
     return cntrBlock.RetrieveContractKvValue(hashFork, state.GetStorageRoot(), hash, value);
 }
 
-uint256 CBlockChain::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter)
+bool CBlockChain::GetBlockRewardList(const uint256& hashLastBlock, const uint32 nBlockCount, std::vector<uint256>& vBlockRewardList, std::vector<std::pair<uint256, uint256>>& vBlockGasUsedList)
 {
-    return cntrBlock.AddLogsFilter(hashClient, hashFork, logsFilter);
-}
-
-void CBlockChain::RemoveFilter(const uint256& nFilterId)
-{
-    cntrBlock.RemoveFilter(nFilterId);
-}
-
-bool CBlockChain::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs)
-{
-    return cntrBlock.GetTxReceiptLogsByFilterId(nFilterId, fAll, receiptLogs);
-}
-
-bool CBlockChain::GetTxReceiptsByLogsFilter(const uint256& hashFork, const CLogsFilter& logsFilter, ReceiptLogsVec& vReceiptLogs)
-{
-    return cntrBlock.GetTxReceiptsByLogsFilter(hashFork, logsFilter, vReceiptLogs);
+    BlockIndexPtr pIndex = cntrBlock.RetrieveIndex(hashLastBlock);
+    if (!pIndex)
+    {
+        return false;
+    }
+    for (int i = 0; i < nBlockCount && pIndex; i++)
+    {
+        vBlockRewardList.insert(vBlockRewardList.begin(), pIndex->GetBlockReward());
+        vBlockGasUsedList.insert(vBlockGasUsedList.begin(), std::make_pair(pIndex->nGasLimit, pIndex->nGasUsed));
+        pIndex = cntrBlock.GetPrevBlockIndex(pIndex);
+    }
+    return true;
 }
 
 uint256 CBlockChain::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
