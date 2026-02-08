@@ -5060,6 +5060,51 @@ CRPCResultPtr CRPCMod::RPCGetCoinInfo(const CReqContext& ctxReq, CRPCParamPtr pa
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCListCoinInfo(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListCoinInfoParam>(param);
+
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    uint256 hashBlock = GetRefBlock(ctxReq.hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+
+    std::map<std::string, CCoinContext> mapSymbolCoin;
+    if (!pService->ListCoinContext(mapSymbolCoin, hashBlock))
+    {
+        throw CRPCException(RPC_DATABASE_ERROR, "Get coin fail");
+    }
+
+    auto spResult = MakeCListCoinInfoResultPtr();
+    for (auto& kv : mapSymbolCoin)
+    {
+        CListCoinInfoResult::CCoindata item;
+
+        item.strCoinsymbol = kv.first;
+        item.strCointype = kv.second.GetCoinTypeStr();
+        item.strFork = kv.second.hashAtFork.ToString();
+        item.nChainid = CBlock::GetBlockChainIdByHash(kv.second.hashAtFork);
+        if (kv.second.destContract.IsNull())
+        {
+            item.strContractaddress = "";
+        }
+        else
+        {
+            item.strContractaddress = kv.second.destContract.ToString();
+        }
+
+        spResult->vecCoindata.push_back(item);
+    }
+
+    return spResult;
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
