@@ -1403,15 +1403,13 @@ bool CBlockBase::GetBlockHashByHeightSlot(const uint256& hashFork, const uint256
     return false;
 }
 
-    if (fPrimaryBlock)
+bool CBlockBase::GetBlockHashListByHeight(const uint256& hashFork, const uint32 nHeight, vector<uint256>& vBlockHash)
+{
+    std::vector<uint256> vHeightBlockHash;
+    if (dbBlock.RetrieveBlockHashByHeight(hashFork, nHeight, vHeightBlockHash))
     {
-        std::map<CDestination, std::pair<uint32, uint32>> mapPledgeFinalHeight;
-        if (!dbBlockBase.ListPledgeFinalHeight(hashPrevBlock, nBlockHeight, mapPledgeFinalHeight))
-        {
-            StdError("CBlockState", "Do block state: List pledge final height failed, block height: %d, prev block: %s", nBlockHeight, hashPrevBlock.ToString().c_str());
-            return false;
-        }
-        for (auto& kv : mapPledgeFinalHeight)
+        set<uint256, CustomBlockHashCompare> setBlockHash;
+        for (const uint256& hashHeightBlock : vHeightBlockHash)
         {
             const CDestination& destPledge = kv.first;
 

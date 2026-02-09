@@ -1322,6 +1322,18 @@ bool CForkAddressDB::AddDelegateAddressLinkTemplate(const uint256& hashBlock, co
     return true;
 }
 
+bool CForkAddressDB::ListAddressDb(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress)
+{
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
+    {
+        StdLog("CForkAddressDB", "List address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
+
 //////////////////////////////
 // CAddressDB
 

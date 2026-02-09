@@ -149,8 +149,8 @@ public:
                                std::map<CDestination, std::vector<unsigned char>>& mapEnrollData,
                                std::vector<std::pair<CDestination, uint256>>& vecAmount);
     bool RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount);
-    void ListForkIndex(std::map<uint256, CBlockIndex*>& mapForkIndex);
-    void ListForkIndex(std::multimap<int, CBlockIndex*>& mapForkIndex);
+    void ListForkIndex(std::map<uint256, BlockIndexPtr>& mapForkIndex);
+    void ListForkIndex(std::multimap<int, BlockIndexPtr>& mapForkIndex);
     bool GetBlockBranchList(const uint256& hashBlock, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder);
     bool GetBlockBranchListNolock(const uint256& hashBlock, const uint256& hashForkLastBlock, const CBlockEx* pBlockex, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder);
     bool LoadIndex(CBlockOutline& diskIndex);
