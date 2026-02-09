@@ -3250,39 +3250,34 @@ bool CBlockState::DoFuncTxPledgeVote(const CDestination& destFrom, const CDestin
     }
     if (!ctxFromAddress.IsPubkey() && !ctxFromAddress.IsContract())
     {
-        StdLog("CBlockState", "Do func tx pledge vote: From address not pubkey or contract address, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
-
-    auto ptr = CTemplate::CreateTemplatePtr(new CTemplatePledge(destDelegate, destFrom, nPledgeType, nCycles, nNonce));
-    if (!ptr)
-    {
-        StdLog("CBlockState", "Do func tx pledge vote: Create template fail, destDelegate: %s, from: %s, pledge type: %d, cycles: %d, nonce: %d",
-               destDelegate.ToString().c_str(), destFrom.ToString().c_str(), nPledgeType, nCycles, nNonce);
-        return false;
-    }
-    auto objPledge = boost::dynamic_pointer_cast<CTemplatePledge>(ptr);
-    uint32 nFinalHeight;
-    if (!objPledge->GetPledgeFinalHeight(nBlockHeight, nFinalHeight))
-    {
-        StdLog("CBlockState", "Do func tx pledge vote: Pledge parameter error, delegate: %s, from: %s, pledge type: %d, cycles: %d, nonce: %d, block height: %d",
-               destDelegate.ToString().c_str(), destFrom.ToString().c_str(), nPledgeType, nCycles, nNonce, nBlockHeight);
-        return false;
-    }
-
-    CDestination destPledge(ptr->GetTemplateId());
-    CAddressContext ctxToAddress(CTemplateAddressContext({}, {}, TEMPLATE_PLEDGE, ptr->Export()));
-
-    if (!ContractTransfer(destFrom, destPledge, nAmount, nGasLimit, nGasLeft, ctxToAddress, CContractTransfer::CT_VOTE))
-    {
-        StdLog("CBlockState", "Do func tx pledge vote: Contract transfer fail, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
-
-    logs.topics.push_back(destFrom.ToHash());
-    logs.topics.push_back(destPledge.ToHash());
-    logs.topics.push_back(uint256(nAmount.ToBigEndian()));
-    logs.topics.push_back(destDelegate.ToHash());
+        auto funcAddPledgeVoteReward = [&](const CDestination& destVote, const bool fReVote, const uint256& nRewardAmount) -> bool {
+            CPledgeVoteContext ctxPledgeVote;
+            auto mt = mapPledgeVote.find(destVote);
+            if (mt != mapPledgeVote.end())
+            {
+                ctxPledgeVote = mt->second;
+            }
+            else
+            {
+                if (!dbBlock.RetrieveDestPledgeVoteContext(block.hashPrev, destVote, ctxPledgeVote))
+                {
+                    StdLog("BlockBase", "Update vote: Retrieve vote address context fail, vote address: %s, block: %s",
+                           destVote.ToString().c_str(), hashBlock.GetHex().c_str());
+                    return false;
+                }
+            }
+            if (fReVote)
+            {
+                ctxPledgeVote.nReVoteRewardAmount += nRewardAmount;
+            }
+            else
+            {
+                if (ctxPledgeVote.nStatus != CPledgeVoteContext::PLEDGE_STATUS_VOTING)
+                {
+                    ctxPledgeVote.nStopedRewardAmount += nRewardAmount;
+                }
+            }
+            ctxPledgeVote.nTotalRewardAmount += nRewardAmount;
 
     btResult = uint256(1).ToBigEndian();
     return true;

@@ -342,5 +342,18 @@ bool CBlockState::GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& has
     return dbBlockBase.GetBlockIndexHashByNumberNoLock(hashFork, hashLastBlock, nBlockNumberIn, hashBlockOut);
 }
 
+void CBlockState::GetBlockBloomData(bytes& btBloomDataOut)
+{
+    if (!setBlockBloomData.empty())
+    {
+        CNhBloomFilter bf(setBlockBloomData.size() * 4);
+        for (auto& bt : setBlockBloomData)
+        {
+            bf.Add(bt);
+        }
+        bf.GetData(btBloomDataOut);
+    }
+}
+
 } // namespace storage
 } // namespace hashahead
