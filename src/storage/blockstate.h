@@ -105,6 +105,7 @@ public:
     bool GetAddressContext(const CDestination& dest, CAddressContext& ctxAddress);
     bool IsContractAddress(const CDestination& addr);
     bool GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy);
+    bool GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd);
 
 protected:
     CBlockBase& dbBlockBase;

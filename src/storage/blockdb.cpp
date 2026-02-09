@@ -111,21 +111,27 @@ bool CBlockDB::BdInitialize(const boost::filesystem::path& pathData, const uint2
     return LoadAllFork();
 }
 
-void CBlockDB::Deinitialize()
+void CBlockDB::BdDeinitialize()
 {
     dbContract.Deinitialize();
     dbAddress.Deinitialize();
     dbState.Deinitialize();
     dbVote.Deinitialize();
+    dbHdex.Deinitialize();
     dbTxIndex.Deinitialize();
     dbBlockIndex.Deinitialize();
     dbFork.Deinitialize();
     dbVerify.Deinitialize();
     dbAddressBlacklist.Deinitialize();
     dbMintMinGasPrice.Deinitialize();
+    dbSnapshot.Deinitialize();
     if (fCfgFullDb)
     {
         dbAddressTxInfo.Deinitialize();
+    }
+    if (fCfgTraceDb)
+    {
+        dbTrace.Deinitialize();
     }
 }
 

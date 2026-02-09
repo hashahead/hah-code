@@ -332,5 +332,15 @@ bool CBlockState::GetContractCreateCode(const CDestination& destContractIn, CTxC
     return true;
 }
 
+bool CBlockState::GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut)
+{
+    uint256 hashLastBlock;
+    if (VERIFY_FHX_HEIGHT_BRANCH_003(CBlock::GetBlockHeightByHash(hashPrevBlock)))
+    {
+        hashLastBlock = hashPrevBlock;
+    }
+    return dbBlockBase.GetBlockIndexHashByNumberNoLock(hashFork, hashLastBlock, nBlockNumberIn, hashBlockOut);
+}
+
 } // namespace storage
 } // namespace hashahead
