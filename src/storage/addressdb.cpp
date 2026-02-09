@@ -1226,6 +1226,102 @@ bool CForkAddressDB::RemoveAddressCount(const uint256& hashBlock)
     return dbTrie.RemoveExtKv(ssKey);
 }
 
+bool CForkAddressDB::AddOwnerAddressLinkTemplate(const uint256& hashBlock, const CDestination& destTemplate, const CAddressContext& ctxAddress, std::map<CDestination, std::map<CDestination, uint8>>& mapOwnerLinkTemplate, bytesmap& mapKv)
+{
+    CTemplateAddressContext ctxTemplate;
+    if (!ctxAddress.GetTemplateAddressContext(ctxTemplate))
+    {
+        return false;
+    }
+
+    CDestination destOwner;
+    switch (ctxTemplate.nTemplateType)
+    {
+    case TEMPLATE_FORK:
+    {
+        CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+        if (!!ptr && ptr->GetTemplateType() == TEMPLATE_FORK)
+        {
+            destOwner = boost::dynamic_pointer_cast<CTemplateFork>(ptr)->destRedeem;
+        }
+        break;
+    }
+    case TEMPLATE_POA:
+    {
+        CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+        if (!!ptr && ptr->GetTemplateType() == TEMPLATE_POA)
+        {
+            destOwner = boost::dynamic_pointer_cast<CTemplatePoa>(ptr)->destSpend;
+        }
+        break;
+    }
+    case TEMPLATE_DELEGATE:
+    {
+        CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+        if (!!ptr && ptr->GetTemplateType() == TEMPLATE_DELEGATE)
+        {
+            destOwner = boost::dynamic_pointer_cast<CTemplateDelegate>(ptr)->destOwner;
+        }
+        break;
+    }
+    case TEMPLATE_VOTE:
+    {
+        CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+        if (!!ptr && ptr->GetTemplateType() == TEMPLATE_VOTE)
+        {
+            destOwner = boost::dynamic_pointer_cast<CTemplateVote>(ptr)->destOwner;
+        }
+        break;
+    }
+    case TEMPLATE_PLEDGE:
+    {
+        CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+        if (!!ptr && ptr->GetTemplateType() == TEMPLATE_PLEDGE)
+        {
+            destOwner = boost::dynamic_pointer_cast<CTemplatePledge>(ptr)->destOwner;
+        }
+        break;
+    }
+    }
+    if (destOwner.IsNull())
+    {
+        return false;
+    }
+
+    auto& mapTemplateAddress = mapOwnerLinkTemplate[destOwner];
+    if (mapTemplateAddress.empty())
+    {
+        GetOwnerLinkTemplateAddress(hashBlock, destOwner, mapTemplateAddress);
+    }
+    if (mapTemplateAddress.find(destTemplate) != mapTemplateAddress.end())
+    {
+        return false;
+    }
+    mapTemplateAddress.insert(std::make_pair(destTemplate, ctxTemplate.nTemplateType));
+
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+
+    ssKey << DB_ADDRESS_KEY_TYPE_OWNER_LINK_ADDRESS << destOwner << destTemplate;
+    ssKey.GetData(btKey);
+
+    ssValue << ctxTemplate.nTemplateType;
+    ssValue.GetData(btValue);
+
+    mapKv[btKey] = btValue;
+    return true;
+}
+
+bool CForkAddressDB::AddDelegateAddressLinkTemplate(const uint256& hashBlock, const CDestination& destTemplate, const CAddressContext& ctxAddress, std::map<CDestination, std::map<CDestination, uint8>>& mapDelegateLinkTemplate, bytesmap& mapKv)
+{
+    CTemplateAddressContext ctxTemplate;
+    if (!ctxAddress.GetTemplateAddressContext(ctxTemplate))
+    {
+        return false;
+    }
+    return true;
+}
+
 //////////////////////////////
 // CAddressDB
 

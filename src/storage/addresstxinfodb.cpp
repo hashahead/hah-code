@@ -666,10 +666,10 @@ bool CForkAddressTxInfoDB::AddLongChainBlock(const uint256& hashBlock)
             mapBlockAddressTxIndex.insert(make_pair(address, make_pair(nBeginIndex, nTxCount - 1)));
         }
     }
-    uint64 nGetCountInner = 0;
-    if (nGetTxCount == 0 || nGetTxCount > MAX_FETCH_ADDRESS_TX_COUNT)
+    if (!WriteBlockAddressTxIndex(hashBlock, mapBlockAddressTxIndex))
     {
-        nGetCountInner = MAX_FETCH_ADDRESS_TX_COUNT;
+        StdLog("CForkAddressTxInfoDB", "Add longchain block: Write block address tx index fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
     }
     else
     {

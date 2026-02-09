@@ -48,7 +48,7 @@ public:
 
 protected:
     bool GetBlockAddressTxInfo(const uint256& hashBlock, std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord);
-    bool WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot);
+    bool GetBlockPrevBlock(const uint256& hashBlock, uint256& hashPrevBlock);
     bool ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot);
     void AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
     bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
