@@ -5142,6 +5142,78 @@ CRPCResultPtr CRPCMod::RPCGetDexCoinPair(const CReqContext& ctxReq, CRPCParamPtr
     return MakeCGetDexCoinPairResultPtr(nCoinPair);
 }
 
+CRPCResultPtr CRPCMod::RPCListDexCoinPair(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListDexCoinPairParam>(param);
+
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    uint32 nCoinPair = 0;
+    std::string strCoinSymbol;
+    if (spParam->nCoinpair != 0)
+    {
+        nCoinPair = spParam->nCoinpair;
+    }
+    else
+    {
+        if (spParam->strCoinsymbol.IsValid() && !spParam->strCoinsymbol.empty() && spParam->strCoinsymbol.size() <= MAX_COIN_SYMBOL_SIZE)
+        {
+            strCoinSymbol = spParam->strCoinsymbol;
+        }
+    }
+
+    uint256 hashBlock = GetRefBlock(ctxReq.hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+
+    std::map<uint32, std::pair<std::string, std::string>> mapDexCoinPair;
+    if (!pService->ListDexCoinPair(nCoinPair, strCoinSymbol, mapDexCoinPair, hashBlock))
+    {
+        throw CRPCException(RPC_DATABASE_ERROR, "Get coin pair fail");
+    }
+
+    std::map<std::string, CCoinContext> mapSymbolCoin;
+    if (!pService->ListCoinContext(mapSymbolCoin, hashBlock))
+    {
+        throw CRPCException(RPC_DATABASE_ERROR, "Get coin context fail");
+    }
+
+    auto spResult = MakeCListDexCoinPairResultPtr();
+    for (const auto& kv : mapDexCoinPair)
+    {
+        CListDexCoinPairResult::CCoinpairdata item;
+
+        item.nCoinpair = kv.first;
+
+        item.coin1.strCoinsymbol = kv.second.first;
+        auto it = mapSymbolCoin.find(kv.second.first);
+        if (it != mapSymbolCoin.end())
+        {
+            item.coin1.strCointype = it->second.GetCoinTypeStr();
+            item.coin1.strFork = it->second.hashAtFork.ToString();
+            item.coin1.nChainid = CBlock::GetBlockChainIdByHash(it->second.hashAtFork);
+        }
+
+        item.coin2.strCoinsymbol = kv.second.second;
+        auto mt = mapSymbolCoin.find(kv.second.second);
+        if (mt != mapSymbolCoin.end())
+        {
+            item.coin2.strCointype = mt->second.GetCoinTypeStr();
+            item.coin2.strFork = mt->second.hashAtFork.ToString();
+            item.coin2.nChainid = CBlock::GetBlockChainIdByHash(mt->second.hashAtFork);
+        }
+
+        spResult->vecCoinpairdata.push_back(item);
+    }
+
+    return spResult;
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
