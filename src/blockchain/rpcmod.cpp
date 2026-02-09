@@ -5214,6 +5214,91 @@ CRPCResultPtr CRPCMod::RPCListDexCoinPair(const CReqContext& ctxReq, CRPCParamPt
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCSendDexOrderTx(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CSendDexOrderTxParam>(param);
+
+    CDestination from;
+    std::string strCoinSymbolOwner;
+    std::string strCoinSymbolPeer;
+    uint64 nOrderNumber;
+    uint256 nOrderAmount;
+    uint256 nOrderPrice;
+    uint256 hashFork;
+
+    from.ParseString(spParam->strFrom);
+    if (from.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
+    }
+
+    if (!spParam->strCoinsymbolowner.IsValid() || spParam->strCoinsymbolowner.empty() || spParam->strCoinsymbolowner.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbolowner");
+    }
+    strCoinSymbolOwner = spParam->strCoinsymbolowner;
+    StringToUpper(strCoinSymbolOwner);
+
+    if (!spParam->strCoinsymbolpeer.IsValid() || spParam->strCoinsymbolpeer.empty() || spParam->strCoinsymbolpeer.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbolpeer");
+    }
+    strCoinSymbolPeer = spParam->strCoinsymbolpeer;
+    StringToUpper(strCoinSymbolPeer);
+
+    if (strCoinSymbolOwner == strCoinSymbolPeer)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Coinsymbolowner and coinsymbolpeer are same");
+    }
+
+    nOrderNumber = spParam->nOrdernumber;
+    if (!TokenBigFloatToCoin(spParam->strAmount, nOrderAmount))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid amount");
+    }
+    if (!TokenBigFloatToCoin(spParam->strPrice, nOrderPrice))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid price");
+    }
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    bytes btCoinSymbolDataOwner, btCoinSymbolDataPeer;
+    btCoinSymbolDataOwner.resize(32);
+    std::copy(strCoinSymbolOwner.begin(), strCoinSymbolOwner.end(), btCoinSymbolDataOwner.data());
+    btCoinSymbolDataPeer.resize(32);
+    std::copy(strCoinSymbolPeer.begin(), strCoinSymbolPeer.end(), btCoinSymbolDataPeer.data());
+
+    std::vector<bytes> vParamList;
+    vParamList.push_back(uint256((uint64)0xA0).ToBigEndian()); // first var pos
+    vParamList.push_back(uint256((uint64)0xE0).ToBigEndian()); // second var pos
+    vParamList.push_back(uint256(nOrderNumber).ToBigEndian());
+    vParamList.push_back(nOrderAmount.ToBigEndian());
+    vParamList.push_back(nOrderPrice.ToBigEndian());
+    vParamList.push_back(uint256((uint64)strCoinSymbolOwner.size()).ToBigEndian()); // first var size
+    vParamList.push_back(btCoinSymbolDataOwner);
+    vParamList.push_back(uint256((uint64)strCoinSymbolPeer.size()).ToBigEndian()); // second var size
+    vParamList.push_back(btCoinSymbolDataPeer);
+
+    bytes btData = MakeEthTxCallData("addDexOrder(string,string,uint64,uint256,uint256)", vParamList);
+
+    uint256 txid;
+    if (!pService->SendEthTransaction(hashFork, from, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
+    {
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Verify tx fail");
+    }
+
+    StdDebug("CRPCMod", "Send dexorder tx success, txid: %s", txid.ToString().c_str());
+
+    return MakeCSendDexOrderTxResultPtr(txid.ToString());
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
