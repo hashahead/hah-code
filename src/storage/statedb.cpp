@@ -427,6 +427,18 @@ bool CStateDB::ListStateRootKv(const uint256& hashFork, std::vector<std::pair<ui
     return false;
 }
 
+bool CStateDB::AddStateKvTrie(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapStateDB.find(hashFork);
+    if (it != mapStateDB.end())
+    {
+        return it->second->AddStateKvTrie(nBlockHeight, hashPrevRoot, mapKv, hashNewRoot);
+    }
+    return false;
+}
+
 bool CStateDB::CreateStaticStateRoot(const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashStateRoot)
 {
     bytesmap mapKv;

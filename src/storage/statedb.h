@@ -82,13 +82,16 @@ public:
     bool VerifyState(const uint256& hashFork, const uint256& hashRoot, const bool fVerifyAllNode = true);
     bool ClearStateUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight);
 
+    bool ListStateRootKv(const uint256& hashFork, std::vector<std::pair<uint256, bytesmap>>& vRootKv);
+    bool AddStateKvTrie(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot);
+
     static bool CreateStaticStateRoot(const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashStateRoot);
 
 protected:
-    bool fCache;
     boost::filesystem::path pathState;
     hnbase::CRWAccess rwAccess;
     std::map<uint256, std::shared_ptr<CForkStateDB>> mapStateDB;
+    bool fPruneState;
 };
 
 } // namespace storage
