@@ -39,6 +39,7 @@ public:
     bool GetForkHashByChainId(const CChainId nChainIdIn, uint256& hashFork) override;
     bool GetCoinContext(const std::string& strCoinSymbol, CCoinContext& ctxCoin, const uint256& hashLastBlock = uint256()) override;
     bool ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashLastBlock = uint256()) override;
+    bool GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock = uint256()) override;
     bool GetForkGenealogy(const uint256& hashFork, std::vector<std::pair<uint256, int>>& vAncestry,
                           std::vector<std::pair<int, uint256>>& vSubline) override;
     bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight) override;
