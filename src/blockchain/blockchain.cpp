@@ -2351,9 +2351,9 @@ bool CBlockChain::VerifySameChain(const uint256& hashPrevBlock, const uint256& h
     return cntrBlock.VerifySameChain(hashPrevBlock, hashAfterBlock);
 }
 
-uint256 CBlockChain::AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork)
+bool CBlockChain::GetPrevBlockHashList(const uint256& hashBlock, const uint32 nGetCount, std::vector<uint256>& vPrevBlockhash)
 {
-    return cntrBlock.AddPendingTxFilter(hashClient, hashFork);
+    return cntrBlock.GetPrevBlockHashList(hashBlock, nGetCount, vPrevBlockhash);
 }
 
 void CBlockChain::AddPendingTx(const uint256& hashFork, const uint256& txid)

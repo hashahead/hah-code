@@ -1174,8 +1174,7 @@ bool CVoteDB::VerifyVoteReward(const uint256& hashFork, const uint256& hashPrevB
     uint256 hashPrevRoot;
     if (hashBlock != hashFork)
     {
-        uint64 nPrevRewardCount = 0;
-        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashPrevBlock, hashPrevRoot, nPrevRewardCount))
+        if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashPrevBlock, hashPrevRoot))
         {
             StdLog("CVoteDB", "Verify vote reward: Read prev trie root fail, prev block: %s", hashPrevBlock.GetHex().c_str());
             return false;

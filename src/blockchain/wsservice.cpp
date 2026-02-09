@@ -118,6 +118,11 @@ void CWsSubscribeFork::RemoveSubscribe(const uint128& nSubsId)
     }
 }
 
+const std::map<uint128, CClientSubscribe>& CWsSubscribeFork::GetSubsListByType(const uint8 nSubsType)
+{
+    return mapClientSubscribe[nSubsType];
+}
+
 //////////////////////////////
 // CWsService
 
