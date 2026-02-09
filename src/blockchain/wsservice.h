@@ -19,6 +19,36 @@ namespace hashahead
 
 typedef websocketpp::server<websocketpp::config::asio> WSSERVER;
 
+using websocketpp::connection_hdl;
+using websocketpp::frame::opcode::value;
+using websocketpp::lib::bind;
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+
+// pull out the type of messages sent by our config
+typedef WSSERVER::message_ptr message_ptr;
+typedef WSSERVER::connection_ptr connection_ptr;
+
+/////////////////////////////
+// CClientSubscribe
+
+class CClientSubscribe
+{
+public:
+    CClientSubscribe()
+      : nClientConnId(0), nSubsType(0) {}
+    CClientSubscribe(const uint64 nClientConnIdIn, const uint8 nSubsTypeIn, const std::set<CDestination>& setSubsAddressIn, const std::set<uint256>& setSubsTopicsIn)
+      : nClientConnId(nClientConnIdIn), nSubsType(nSubsTypeIn), setSubsAddress(setSubsAddressIn), setSubsTopics(setSubsTopicsIn) {}
+
+    void matchesLogs(CTransactionReceipt const& _m, MatchLogsVec& vLogs) const;
+
+public:
+    uint64 nClientConnId;
+    uint8 nSubsType;
+    std::set<CDestination> setSubsAddress;
+    std::set<uint256> setSubsTopics;
+};
+
 // CWsService
 
 class CWsService : public IWsService, virtual public CWsServiceEventListener

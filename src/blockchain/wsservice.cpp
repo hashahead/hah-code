@@ -94,6 +94,30 @@ void CWsSubscribeFork::RemoveClientAllSubscribe(const uint64 nClientConnId)
         mapClientConnect.erase(it);
     }
 }
+
+void CWsSubscribeFork::RemoveSubscribe(const uint128& nSubsId)
+{
+    uint8 nSubsType = GetSubsIdType(nSubsId);
+    auto it = mapClientSubscribe.find(nSubsType);
+    if (it != mapClientSubscribe.end())
+    {
+        auto nt = it->second.find(nSubsId);
+        if (nt != it->second.end())
+        {
+            auto mt = mapClientConnect.find(nt->second.nClientConnId);
+            if (mt != mapClientConnect.end())
+            {
+                mt->second.erase(nSubsType);
+                if (mt->second.empty())
+                {
+                    mapClientConnect.erase(mt);
+                }
+            }
+            it->second.erase(nt);
+        }
+    }
+}
+
 //////////////////////////////
 // CWsService
 
