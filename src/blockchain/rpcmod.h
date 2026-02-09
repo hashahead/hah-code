@@ -143,6 +143,7 @@ private:
     rpc::CRPCResultPtr RPCAddContractCoin(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCGetCoinInfo(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListCoinInfo(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCGetDexCoinPair(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCExportWallet(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCImportWallet(const CReqContext& ctxReq, rpc::CRPCParamPtr param);

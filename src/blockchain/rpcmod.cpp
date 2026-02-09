@@ -5105,6 +5105,43 @@ CRPCResultPtr CRPCMod::RPCListCoinInfo(const CReqContext& ctxReq, CRPCParamPtr p
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCGetDexCoinPair(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetDexCoinPairParam>(param);
+
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    if (!spParam->strSymbol1.IsValid() || spParam->strSymbol1.empty() || spParam->strSymbol1.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol1");
+    }
+    if (!spParam->strSymbol2.IsValid() || spParam->strSymbol2.empty() || spParam->strSymbol2.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol2");
+    }
+    if (spParam->strSymbol1 == spParam->strSymbol2)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol");
+    }
+
+    uint256 hashBlock = GetRefBlock(ctxReq.hashFork, spParam->strBlock);
+    if (hashBlock == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+
+    uint32 nCoinPair = 0;
+    if (!pService->GetDexCoinPairBySymbolPair(spParam->strSymbol1, spParam->strSymbol2, nCoinPair, hashBlock))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown symbol");
+    }
+
+    return MakeCGetDexCoinPairResultPtr(nCoinPair);
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
