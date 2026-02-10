@@ -279,34 +279,35 @@ public:
     uint256 nAgreement;
     uint256 hashRefBlock;
     uint256 hashStateRoot;
-    uint64 nRandBeacon;
     uint256 nGasLimit;
     uint256 nGasUsed;
     uint256 nChainTrust;
     uint256 nBlockReward;
     uint256 nMoneySupply;
     uint256 nMoneyDestroy;
-    uint8 nProofAlgo;
-    uint8 nProofBits;
     uint32 nFile;
     uint32 nOffset;
     uint32 nBlockCrc;
 
 public:
     CBlockIndex();
-    CBlockIndex(const uint256& hashBlock, const CBlock& block, const uint32 nFileIn, const uint32 nOffsetIn, const uint32 nCrcIn);
+    CBlockIndex(const uint256& hashOriginIn, const uint256& hashBlockIn, const CBlock& block, const uint32 nFileIn, const uint32 nOffsetIn, const uint32 nCrcIn);
 
-    uint256 GetBlockHash() const
+    const uint256& GetBlockHash() const
     {
-        return *phashBlock;
+        return hashBlock;
     }
-    int GetBlockHeight() const
+    CChainId GetBlockChainId() const
     {
-        return nHeight;
+        return CBlock::GetBlockChainIdByHash(hashBlock);
+    }
+    uint32 GetBlockHeight() const
+    {
+        return CBlock::GetBlockHeightByHash(hashBlock);
     }
     uint16 GetBlockSlot() const
     {
-        return nSlot;
+        return CBlock::GetBlockSlotByHash(hashBlock);
     }
     uint64 GetBlockNumber() const
     {
@@ -324,7 +325,7 @@ public:
     {
         return nUserTxCount;
     }
-    uint256 GetBlockGasUsed() const
+    const uint256& GetBlockGasUsed() const
     {
         return nGasUsed;
     }
@@ -332,19 +333,15 @@ public:
     {
         return nTimeStamp;
     }
-    uint256 GetOriginHash() const
+    const uint256& GetOriginHash() const
     {
-        return pOrigin->GetBlockHash();
+        return hashOrigin;
     }
-    uint256 GetParentHash() const
+    const uint256& GetPrevHash() const
     {
-        return (!pOrigin->pPrev ? uint64(0) : pOrigin->pPrev->GetOriginHash());
+        return hashPrev;
     }
-    uint256 GetPrevHash() const
-    {
-        return (!pPrev ? uint64(0) : pPrev->GetBlockHash());
-    }
-    uint256 GetAgreement() const
+    const uint256& GetAgreement() const
     {
         return nAgreement;
     }

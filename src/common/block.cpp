@@ -798,21 +798,17 @@ CBlockIndex::CBlockIndex()
     nBlockCrc = 0;
 }
 
-CBlockIndex::CBlockIndex(const uint256& hashBlock, const CBlock& block, const uint32 nFileIn, const uint32 nOffsetIn, const uint32 nCrcIn)
+CBlockIndex::CBlockIndex(const uint256& hashOriginIn, const uint256& hashBlockIn, const CBlock& block, const uint32 nFileIn, const uint32 nOffsetIn, const uint32 nCrcIn)
 {
-    phashBlock = nullptr;
-    pOrigin = this;
-    pPrev = nullptr;
-    pNext = nullptr;
-    nChainId = 0;
+    hashOrigin = hashOriginIn;
+    hashBlock = hashBlockIn;
+    hashPrev = block.hashPrev;
     txidMint = (block.IsVacant() ? uint64(0) : block.txMint.GetHash());
     nMintType = block.txMint.GetTxType();
     destMint = block.txMint.GetToAddress();
     nVersion = block.nVersion;
     nType = block.nType;
     nTimeStamp = block.GetBlockTime();
-    nHeight = block.GetBlockHeight();
-    nSlot = block.GetBlockSlot();
     nNumber = block.GetBlockNumber();
     nTxCount = block.vtx.size() + 1;
     nRewardTxCount = 0;
@@ -820,15 +816,12 @@ CBlockIndex::CBlockIndex(const uint256& hashBlock, const CBlock& block, const ui
     nAgreement = 0;
     hashRefBlock = 0;
     hashStateRoot = block.hashStateRoot;
-    nRandBeacon = 0;
     nGasLimit = block.nGasLimit;
     nGasUsed = block.nGasUsed;
     nChainTrust = uint64(0);
     nBlockReward = block.GetBlockTotalReward();
     nMoneySupply = 0;
     nMoneyDestroy = 0;
-    nProofAlgo = 0;
-    nProofBits = 0;
     nFile = nFileIn;
     nOffset = nOffsetIn;
     nBlockCrc = nCrcIn;
@@ -847,15 +840,12 @@ CBlockIndex::CBlockIndex(const uint256& hashBlock, const CBlock& block, const ui
 
     if (IsPrimary())
     {
-        if (IsProofOfWork())
+        if (IsProofOfPoa())
         {
-            CProofOfHashWork proof;
-            if (block.GetHashWorkProof(proof))
+            CProofOfPoa proof;
+            if (block.GetPoaProof(proof))
             {
-                nProofAlgo = proof.nAlgo;
-                nProofBits = proof.nBits;
-                uint256 hashTarget = (~uint256(uint64(0)) >> proof.nBits);
-                nAgreement = hashTarget + proof.nNonce;
+                nAgreement = proof.nAgreement;
             }
         }
         else
