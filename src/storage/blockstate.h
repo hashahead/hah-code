@@ -106,6 +106,7 @@ public:
     bool IsContractAddress(const CDestination& addr);
     bool GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy);
     bool GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd);
+    bool GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut);
 
 protected:
     CBlockBase& dbBlockBase;
@@ -126,6 +127,11 @@ protected:
     const bool fPrimaryBlock;
     const bool fBtTraceDb;
     const std::map<CChainId, CBlockProve> mapBlockProve; // key: peer chainid
+	
+    uint256 nOriginalBlockMintReward;
+    uint256 hashRefBlock;
+    uint256 nAgreement;
+
 };
 
 typedef std::shared_ptr<CBlockState> SHP_BLOCK_STATE;

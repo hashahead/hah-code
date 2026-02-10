@@ -355,5 +355,30 @@ void CBlockState::GetBlockBloomData(bytes& btBloomDataOut)
     }
 }
 
+bool CBlockState::GetDestBalance(const CDestination& dest, uint256& nBalance)
+{
+    CDestState stateDest;
+    if (!GetDestState(dest, stateDest))
+    {
+        StdLog("CBlockState", "Get dest balance: Get dest state failed, dest: %s", dest.ToString().c_str());
+        return false;
+    }
+    uint256 nLockedAmount;
+    if (!GetDestLockedAmount(dest, nLockedAmount))
+    {
+        StdLog("CBlockState", "Get dest balance: Get locked amount failed, dest: %s", dest.ToString().c_str());
+        return false;
+    }
+    if (stateDest.GetBalance() > nLockedAmount)
+    {
+        nBalance = stateDest.GetBalance() - nLockedAmount;
+    }
+    else
+    {
+        nBalance = 0;
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead

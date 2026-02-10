@@ -1411,53 +1411,40 @@ bool CBlockBase::GetBlockHashListByHeight(const uint256& hashFork, const uint32 
         set<uint256, CustomBlockHashCompare> setBlockHash;
         for (const uint256& hashHeightBlock : vHeightBlockHash)
         {
-            const CDestination& destPledge = kv.first;
+            if (IsLongchainBlock(hashFork, hashHeightBlock))
+            {
+                setBlockHash.insert(hashHeightBlock);
+            }
+        }
+        if (setBlockHash.empty())
+        {
+            return false;
+        }
+        for (auto& hash : setBlockHash)
+        {
+            vBlockHash.push_back(hash);
+        }
+        return true;
+    }
+    return false;
+}
 
-            CVoteContext ctxVote;
-            if (!dbBlockBase.RetrieveDestVoteContext(hashPrevBlock, destPledge, ctxVote))
-            {
-                StdLog("CBlockState", "Do block state: Retrieve dest vote context fail, pledge dest: %s, block height: %d, prev block: %s",
-                       destPledge.ToString().c_str(), nBlockHeight, hashPrevBlock.ToString().c_str());
-                return false;
-            }
-            if (kv.second.first != ctxVote.nFinalHeight)
-            {
-                StdLog("CBlockState", "Do block state: Final height error, get final height: %d, vote final height: %d, pledge dest: %s, block height: %d, prev block: %s",
-                       kv.second.first, ctxVote.nFinalHeight, destPledge.ToString().c_str(), nBlockHeight, hashPrevBlock.ToString().c_str());
-                continue;
-            }
-
-            CAddressContext ctxFromAddress;
-            if (!GetAddressContext(destPledge, ctxFromAddress))
-            {
-                StdLog("CBlockState", "Do block state: Retrieve pledge address context fail, pledge address: %s, block height: %d, prev block: %s",
-                       destPledge.ToString().c_str(), nBlockHeight, hashPrevBlock.ToString().c_str());
-                return false;
-            }
-            CTemplateAddressContext ctxTemplate;
-            if (!ctxFromAddress.GetTemplateAddressContext(ctxTemplate))
-            {
-                StdLog("CBlockState", "Do block state: Get template address context failed, pledge address: %s, block height: %d, prev block: %s",
-                       destPledge.ToString().c_str(), nBlockHeight, hashPrevBlock.ToString().c_str());
-                return false;
-            }
-            CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
-            if (!ptr || ptr->GetTemplateType() != TEMPLATE_PLEDGE)
-            {
-                StdLog("CBlockState", "Do block state: Import pledge template fail or template type error, pledge address: %s, block height: %d, prev block: %s",
-                       destPledge.ToString().c_str(), nBlockHeight, hashPrevBlock.ToString().c_str());
-                return false;
-            }
-            const CDestination& destTo = boost::dynamic_pointer_cast<CTemplatePledge>(ptr)->destOwner;
-
-            CDestState statePledge;
-            if (!GetDestState(destPledge, statePledge))
-            {
-                StdLog("CBlockState", "Do block state: Get pledge state fail, pledge address: %s, block height: %d, prev block: %s",
-                       destPledge.ToString().c_str(), nBlockHeight, hashPrevBlock.ToString().c_str());
-                return false;
-            }
-            uint256 nRedeemAmount = statePledge.GetBalance();
+bool CBlockBase::GetDelegateVotes(const uint256& hashGenesis, const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes)
+{
+    uint256 hashLastBlock = hashRefBlock;
+    if (hashRefBlock == 0)
+    {
+        if (!dbBlock.RetrieveForkLast(hashGenesis, hashLastBlock))
+        {
+            return false;
+        }
+    }
+    if (!dbBlock.RetrieveDestDelegateVote(hashLastBlock, destDelegate, nVotes))
+    {
+        return false;
+    }
+    return true;
+}
 
             CAddressContext ctxToAddress;
             if (!GetAddressContext(destTo, ctxToAddress))
