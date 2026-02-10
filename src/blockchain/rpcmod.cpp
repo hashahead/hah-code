@@ -5309,6 +5309,69 @@ CRPCResultPtr CRPCMod::RPCGetDexSymbolType(const CReqContext& ctxReq, CRPCParamP
     auto spParam = CastParamPtr<CGetDexSymbolTypeParam>(param);
 }
 
+
+CRPCResultPtr CRPCMod::RPCListRealtimeDexOrder(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListRealtimeDexOrderParam>(param);
+
+    std::string strCoinSymbolSell;
+    std::string strCoinSymbolBuy;
+    uint64 nCount;
+    uint256 hashFork;
+
+    if (spParam->strCoinsymbolsell.IsValid() && !spParam->strCoinsymbolsell.empty() && spParam->strCoinsymbolsell.size() <= MAX_COIN_SYMBOL_SIZE)
+    {
+        strCoinSymbolSell = spParam->strCoinsymbolsell;
+        StringToUpper(strCoinSymbolSell);
+    }
+    else
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbolsell");
+    }
+    if (spParam->strCoinsymbolbuy.IsValid() && !spParam->strCoinsymbolbuy.empty() && spParam->strCoinsymbolbuy.size() <= MAX_COIN_SYMBOL_SIZE)
+    {
+        strCoinSymbolBuy = spParam->strCoinsymbolbuy;
+        StringToUpper(strCoinSymbolBuy);
+    }
+    else
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbolbuy");
+    }
+    nCount = spParam->nCount;
+    if (nCount == 0)
+    {
+        nCount = 1000;
+    }
+    const bool fDetailOrder = spParam->fDetail;
+
+}
+
+CRPCResultPtr CRPCMod::RPCSendCrossTransferTx(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CSendCrossTransferTxParam>(param);
+
+    CDestination address;
+    CChainId nPeerChainId;
+    uint256 nTransferAmount;
+    uint256 hashFork;
+
+    address.ParseString(spParam->strAddress);
+    if (address.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+    if (spParam->nPeerchainid == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid peerchainid");
+    }
+    nPeerChainId = spParam->nPeerchainid;
+    if (!TokenBigFloatToCoin(spParam->strAmount, nTransferAmount) || nTransferAmount == 0)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid amount");
+    }
+
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
