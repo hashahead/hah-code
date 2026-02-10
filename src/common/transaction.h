@@ -711,6 +711,36 @@ public:
 };
 using TransactionReceiptExs = std::vector<CTransactionReceiptEx>;
 
+class CTxContractReceipt
+{
+    friend class hnbase::CStream;
+
+public:
+    CTxContractReceipt()
+      : nCallType(0), nGasLimit(0), nGasUsed(0), nStatus(0) {}
+
+    std::string GetCallTypeString() const
+    {
+        switch (nCallType)
+        {
+        case TCR_CALL_TYPE_CALL:
+            return "CALL";
+        case TCR_CALL_TYPE_DELEGATECALL:
+            return "DELEGATECALL";
+        case TCR_CALL_TYPE_CALLCODE:
+            return "CALLCODE";
+        case TCR_CALL_TYPE_STATICCALL:
+            return "STATICCALL";
+        case TCR_CALL_TYPE_CREATE:
+            return "CREATE";
+        case TCR_CALL_TYPE_CREATE2:
+            return "CREATE2";
+        default:
+            return "ERROR";
+        }
+    }
+};
+
 static const uint8 CODE_TYPE_TEMPLATE = 0;
 static const uint8 CODE_TYPE_CONTRACT = 1;
 
