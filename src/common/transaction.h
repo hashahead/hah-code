@@ -528,6 +528,8 @@ using MatchLogsVec = std::vector<CMatchLogs>;
 
 class CReceiptLogs
 {
+    friend class hnbase::CStream;
+
 public:
     CReceiptLogs() {}
     CReceiptLogs(const MatchLogsVec& vLogs)
@@ -539,6 +541,17 @@ public:
     uint64 nBlockNumber = 0;
     uint256 hashBlock;
     MatchLogsVec matchLogs;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(nTxIndex, opt);
+        s.Serialize(txid, opt);
+        s.Serialize(nBlockNumber, opt);
+        s.Serialize(hashBlock, opt);
+        s.Serialize(matchLogs, opt);
+    }
 };
 using ReceiptLogsVec = std::vector<CReceiptLogs>;
 

@@ -150,6 +150,17 @@ public:
         }
         return 0;
     }
+    static std::string GetAttachExtdataTypeStr(const uint8 nAeTypeIn)
+    {
+        switch (nAeTypeIn)
+        {
+        case PROFILE_ATTACH_EXTD_TYPE_COMMON:
+            return "common";
+        case PROFILE_ATTACH_EXTD_TYPE_BTCBRC20:
+            return "btcbrc20";
+        }
+        return "non";
+    }
 
 protected:
     void Serialize(hnbase::CStream& s, hnbase::SaveType&) const;
