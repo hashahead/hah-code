@@ -5299,6 +5299,16 @@ CRPCResultPtr CRPCMod::RPCSendDexOrderTx(const CReqContext& ctxReq, CRPCParamPtr
     return MakeCSendDexOrderTxResultPtr(txid.ToString());
 }
 
+CRPCResultPtr CRPCMod::RPCListDexOrder(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListDexOrderParam>(param);
+}
+
+CRPCResultPtr CRPCMod::RPCGetDexSymbolType(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetDexSymbolTypeParam>(param);
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);
