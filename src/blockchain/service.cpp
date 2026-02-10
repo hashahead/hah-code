@@ -678,13 +678,18 @@ bool CService::ListBlockContractPrevState(const uint256& hashFork, const uint256
 {
     return pBlockChain->ListBlockContractPrevState(hashFork, hashBlock, vBlockContractPrevState);
 }
-bool CService::CallContract(const bool fEthCall, const uint256& hashFork, const uint256& hashBlock, const CDestination& from, const CDestination& to, const uint256& nAmount, const uint256& nGasPrice,
-                            const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult)
+
+bool CService::GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext)
 {
-    return pBlockChain->CallContract(fEthCall, hashFork, hashBlock, from, to, nAmount, nGasPrice, nGas, btContractParam, nUsedGas, nGasLeft, nStatus, btResult);
+    return pBlockChain->GetContractKvList(hashFork, hashBlock, nTxIndex, destContract, keyStart, nLimit, vContractKv, keyNext);
 }
 
-bool CService::GetForkHashByChainId(const CChainId nChainIdIn, uint256& hashFork)
+bool CService::CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult)
+{
+    return pBlockChain->CallContract(hashFork, hashBlock, vmCallTx, vmCallResult);
+}
+
+bool CService::GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, string& strSymbol)
 {
     uint256 hashLastBlock;
     if (!pBlockChain->RetrieveForkLast(pCoreProtocol->GetGenesisBlockHash(), hashLastBlock))
