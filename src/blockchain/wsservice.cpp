@@ -123,6 +123,16 @@ const std::map<uint128, CClientSubscribe>& CWsSubscribeFork::GetSubsListByType(c
     return mapClientSubscribe[nSubsType];
 }
 
+uint128 CWsSubscribeFork::CreateSubsId(const uint8 nSubsType, const uint64 nConnId)
+{
+    hnbase::CBufStream ss;
+    ss << nSubsType << nConnId << nSubsIdSeed++;
+    uint256 hash = CryptoHash(ss.GetData(), ss.GetSize());
+    uint128 nSubsId(hash.begin(), uint128::size());
+    *(nSubsId.begin()) = nSubsType;
+    return nSubsId;
+}
+
 //////////////////////////////
 // CWsService
 

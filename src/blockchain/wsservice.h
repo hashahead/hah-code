@@ -49,6 +49,33 @@ public:
     std::set<uint256> setSubsTopics;
 };
 
+/////////////////////////////
+// CWsSubscribeFork
+
+class CWsSubscribeFork
+{
+public:
+    CWsSubscribeFork()
+      : nSubsIdSeed(0) {}
+
+    uint128 AddSubscribe(const uint64 nClientConnId, const uint8 nSubsType, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics);
+
+    void RemoveClientAllSubscribe(const uint64 nClientConnId);
+    void RemoveSubscribe(const uint128& nSubsId);
+
+    const std::map<uint128, CClientSubscribe>& GetSubsListByType(const uint8 nSubsType);
+
+protected:
+    uint128 CreateSubsId(const uint8 nSubsType, const uint64 nConnId);
+    uint8 GetSubsIdType(const uint128& nSubsId) const;
+
+protected:
+    std::map<uint8, std::map<uint128, CClientSubscribe>> mapClientSubscribe; // key1: subscribe type, key2: subscribe id
+    std::map<uint64, std::map<uint8, uint128>> mapClientConnect;             // key1: connect id, key2: subscribe type, value: subscribe id
+
+    uint64 nSubsIdSeed;
+};
+
 // CWsService
 
 class CWsService : public IWsService, virtual public CWsServiceEventListener
