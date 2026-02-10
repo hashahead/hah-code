@@ -61,6 +61,9 @@ public:
     void SetHash(const uint256& hashData);
     uint256 ToHash() const;
 
+    bytes GetCompressData() const;
+    void SetCompressData(const bytes& btCompressData);
+
     // public key
     CDestination& SetPubKey(const CPubKey& pubkey);
 

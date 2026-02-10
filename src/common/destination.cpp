@@ -131,11 +131,16 @@ string CDestination::ToString() const
 ////////////////////////////////////////////////////
 // CTimeVault
 
-void CTimeVault::SettlementTimeVault(const uint64 nBlockTime)
+void CTimeVault::SettlementTimeVault(const uint32 nHeight, const uint64 nBlockTime, const bool fEstimate)
 {
-    if (nPrevSettlementTime > 0 && nBlockTime > nPrevSettlementTime)
+    uint64 nCalcTime = nBlockTime;
+    if (VERIFY_FHX_HEIGHT_BRANCH_003(nHeight))
     {
-        uint256 nTvs = (nBalanceAmount * (nBlockTime - nPrevSettlementTime)) / TIME_VAULT_RATE;
+        nCalcTime = EstimateBlockTime(nBlockTime, fEstimate);
+    }
+    if (nPrevSettlementTime > 0 && nCalcTime > nPrevSettlementTime)
+    {
+        uint256 nTvs = (nBalanceAmount * (nCalcTime - nPrevSettlementTime)) / TIME_VAULT_RATE;
         if (fSurplus)
         {
             if (nTvAmount > nTvs)
@@ -153,7 +158,17 @@ void CTimeVault::SettlementTimeVault(const uint64 nBlockTime)
             nTvAmount += nTvs;
         }
     }
-    nPrevSettlementTime = nBlockTime;
+    if (VERIFY_FHX_HEIGHT_BRANCH_003(nHeight))
+    {
+        if (nCalcTime > nPrevSettlementTime)
+        {
+            nPrevSettlementTime = nCalcTime;
+        }
+    }
+    else
+    {
+        nPrevSettlementTime = nCalcTime;
+    }
 }
 
 void CTimeVault::ModifyBalance(const uint256& nBalance)
