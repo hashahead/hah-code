@@ -306,4 +306,37 @@ bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteUpdateBlock& ev
     return true;
 }
 
+bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteCommitVoteResult& eventVoteResult)
+{
+    const uint256& hashFork = eventVoteResult.hashFork;
+    const network::CBlockCommitVoteResult& voteResult = eventVoteResult.data;
+    StdDebug("CBlockVoteChannel", "Event commit block vote result: block: %s, fork: %s", voteResult.hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+    auto it = mapChnFork.find(hashFork);
+    if (it != mapChnFork.end())
+    {
+        it->second.SetVoteResult(voteResult.hashBlock, voteResult.btBitmap, voteResult.btAggSig);
+
+        bytes btDbBitmap;
+        bytes btDbAggSig;
+        bool fDbAtChain = false;
+        uint256 hashDbAtBlock;
+        if (!pBlockChain->RetrieveBlockVoteResult(voteResult.hashBlock, btDbBitmap, btDbAggSig, fDbAtChain, hashDbAtBlock))
+        {
+            if (!pBlockChain->AddBlockVoteResult(voteResult.hashBlock, true, voteResult.btBitmap, voteResult.btAggSig, false, uint256()))
+            {
+                StdLog("CBlockVoteChannel", "Event commit block vote result: Add block vote result fail, block: %s", voteResult.hashBlock.GetBhString().c_str());
+            }
+            else
+            {
+                StdDebug("CBlockVoteChannel", "Event commit block vote result: Add vote result success, block: %s, fork: %s", voteResult.hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+            }
+        }
+    }
+    else
+    {
+        StdLog("CBlockVoteChannel", "Event commit block vote result: Fork not exist, block: %s, fork: %s", voteResult.hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+    }
+    return true;
+}
+
 } // namespace hashahead
