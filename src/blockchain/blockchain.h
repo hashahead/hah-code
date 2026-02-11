@@ -100,7 +100,7 @@ public:
     bool VerifyAddressVoteRedeem(const CDestination& dest, const uint256& hashPrevBlock) override;
     bool GetVoteRewardLockedAmount(const uint256& hashFork, const uint256& hashPrevBlock, const CDestination& dest, uint256& nLockedAmount) override;
     bool GetAddressLockedAmount(const uint256& hashFork, const uint256& hashPrevBlock, const CDestination& dest, const CAddressContext& ctxAddress, const uint256& nBalance, uint256& nLockedAmount) override;
-    bool VerifyForkNameAndChainId(const uint256& hashFork, const CChainId nChainIdIn, const std::string& strForkName, const uint256& hashBlock = uint256()) override;
+    bool VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainIdIn, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashBlock = uint256()) override;
     bool GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, const uint256& hashBlock = uint256()) override;
     bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value) override;
     uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter) override;

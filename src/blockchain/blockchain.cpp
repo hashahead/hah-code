@@ -2484,8 +2484,8 @@ int64 CBlockChain::GetBlockInvestRewardTxMaxCount()
 {
     CBlock block;
 
-    CProofOfHashWork proof;
-    block.AddHashWorkProof(proof);
+    CProofOfPoa proof;
+    block.AddPoaProof(proof);
     size_t nMaxTxSize = MAX_BLOCK_SIZE - hnbase::GetSerializeSize(block);
 
     CTransaction txReward;
@@ -2519,7 +2519,7 @@ uint256 CBlockChain::GetPrimaryBlockReward(const uint256& hashPrev)
 }
 
 bool CBlockChain::CreateBlockStateRoot(const uint256& hashFork, const CBlock& block, uint256& hashStateRoot, uint256& hashReceiptRoot,
-                                       uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut)
+                                       uint256& hashCrosschainMerkleRoot, uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut, bool& fMoStatus)
 {
     uint256 hashPrevStateRoot;
     uint32 nPrevBlockTime = 0;
@@ -2572,27 +2572,15 @@ bool CBlockChain::GetTransactionReceipt(const uint256& hashFork, const uint256& 
     return cntrBlock.GetTransactionReceipt(hashFork, txid, receiptex);
 }
 
-bool CBlockChain::CallContract(const bool fEthCall, const uint256& hashFork, const uint256& hashBlock, const CDestination& from,
-                               const CDestination& to, const uint256& nAmount, const uint256& nGasPrice,
-                               const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult)
+bool CBlockChain::RetrieveTxContractReceipt(const uint256& hashFork, const uint256& txid, TxContractReceipts& tcrReceipt)
 {
-    CBlockIndex* pIndex = nullptr;
-    if (hashBlock == 0)
-    {
-        if (!cntrBlock.RetrieveFork(hashFork, &pIndex))
-        {
-            StdLog("BlockChain", "Call contract: Retrieve fork fail, fork: %s", hashFork.GetHex().c_str());
-            return false;
-        }
-    }
-    else
-    {
-        if (!cntrBlock.RetrieveIndex(hashBlock, &pIndex))
-        {
-            StdLog("BlockChain", "Call contract: Retrieve index fail, block: %s", hashBlock.GetHex().c_str());
-            return false;
-        }
-    }
+    return cntrBlock.RetrieveTxContractReceipt(hashFork, txid, tcrReceipt);
+}
+
+bool CBlockChain::ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts)
+{
+    return cntrBlock.ListBlockContractReceipt(hashFork, hashBlock, vContractReceipts);
+}
 
     uint256 hashPrimaryBlock;
     if (pIndex->IsPrimary())
