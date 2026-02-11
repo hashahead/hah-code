@@ -5302,6 +5302,34 @@ CRPCResultPtr CRPCMod::RPCSendDexOrderTx(const CReqContext& ctxReq, CRPCParamPtr
 CRPCResultPtr CRPCMod::RPCListDexOrder(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListDexOrderParam>(param);
+	
+    CDestination destOrder;
+    std::string strCoinSymbolOwner;
+    std::string strCoinSymbolPeer;
+    uint64 nBeginNumber;
+    uint8 nGetStatus;
+    uint32 nCount;
+    uint256 hashFork;
+
+    destOrder.ParseString(spParam->strAddress);
+    if (destOrder.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+    if (spParam->strCoinsymbolowner.IsValid() && !spParam->strCoinsymbolowner.empty() && spParam->strCoinsymbolowner.size() <= MAX_COIN_SYMBOL_SIZE)
+    {
+        strCoinSymbolOwner = spParam->strCoinsymbolowner;
+        StringToUpper(strCoinSymbolOwner);
+    }
+    if (spParam->strCoinsymbolpeer.IsValid() && !spParam->strCoinsymbolpeer.empty() && spParam->strCoinsymbolpeer.size() <= MAX_COIN_SYMBOL_SIZE)
+    {
+        strCoinSymbolPeer = spParam->strCoinsymbolpeer;
+        StringToUpper(strCoinSymbolPeer);
+    }
+    nBeginNumber = spParam->nBeginnumber;
+    nGetStatus = spParam->nStatus;
+    nCount = spParam->nCount;
+
 }
 
 CRPCResultPtr CRPCMod::RPCGetDexSymbolType(const CReqContext& ctxReq, CRPCParamPtr param)
@@ -5343,6 +5371,15 @@ CRPCResultPtr CRPCMod::RPCListRealtimeDexOrder(const CReqContext& ctxReq, CRPCPa
         nCount = 1000;
     }
     const bool fDetailOrder = spParam->fDetail;
+
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
 
 }
 
