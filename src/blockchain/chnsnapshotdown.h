@@ -159,6 +159,7 @@ protected:
     bool HandleEvent(network::CEventPeerSnapshotDownData& event) override;
 
     bool HandleMsgFilelistReq(const uint64 nNetId, const uint256& hashFork, const uint256& hashSnapBlock);
+    bool HandleMsgFilelistRsp(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgFilelistRsp& body);
 
 protected:
     network::CBbPeerNet* pPeerNet;

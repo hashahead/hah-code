@@ -276,4 +276,34 @@ bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteSubscribeFork& 
     return true;
 }
 
+bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteUpdateBlock& eventUpdateBlock)
+{
+    const uint256& hashFork = eventUpdateBlock.hashFork;
+    StdDebug("CBlockVoteChannel", "Event local block vote update block: fork: %s", hashFork.ToString().c_str());
+    const std::vector<network::CUpdateBlockVote>& vUpdate = eventUpdateBlock.data;
+    auto it = mapChnFork.find(hashFork);
+    if (it != mapChnFork.end())
+    {
+        CBlockVoteChnFork& chnFork = it->second;
+        for (const network::CUpdateBlockVote& updateBlockVote : vUpdate)
+        {
+            if (!AddBlockVoteCandidatePubkey(updateBlockVote.hashBlock, updateBlockVote.nBlockHeight, updateBlockVote.nBlockTime, chnFork))
+            {
+                StdLog("CBlockVoteChannel", "Event local block vote update block: Add candidate pubkey fail, block: %s", updateBlockVote.hashBlock.GetBhString().c_str());
+            }
+            else
+            {
+                StdDebug("CBlockVoteChannel", "Event local block vote update block: Add block candidate pubkey success, block: %s, fork: %s", updateBlockVote.hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+
+                chnFork.CheckBlockVoteState(updateBlockVote.hashBlock);
+            }
+        }
+    }
+    else
+    {
+        StdLog("CBlockVoteChannel", "Event local block vote update block: Fork not exist, fork: %s", hashFork.ToString().c_str());
+    }
+    return true;
+}
+
 } // namespace hashahead

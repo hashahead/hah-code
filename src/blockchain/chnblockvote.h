@@ -103,6 +103,7 @@ public:
 
     bool AddLocalConsKey(const uint256& prikey, const uint384& pubkey);
     bool AddBlockCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, const vector<uint384>& vPubkey);
+    void CheckBlockVoteState(const uint256& hashBlock);
 
 protected:
     const uint256 hashFork;

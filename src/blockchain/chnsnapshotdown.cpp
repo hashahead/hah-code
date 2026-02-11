@@ -252,4 +252,28 @@ bool CSnapshotDownChannel::HandleMsgFilelistRsp(const uint64 nNetId, const uint2
     return true;
 }
 
+bool CSnapshotDownChannel::HandleMsgDownDataReq(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgDownDataReq& body)
+{
+    CSnapDownMsgDownDataRsp bodyRsp(body.hashSnapBlock, body.strFileName, body.nOffset, {});
+
+    if (!pBlockChain->ReadSnapshotFileData(body.hashSnapBlock, bodyRsp.strFileName, bodyRsp.nOffset, READ_SNAPSHOT_FILE_SIZE, bodyRsp.btData))
+    {
+        StdLog("CSnapshotDownChannel", "Handle msg down data req: Read snapshot file data failed, file name: %s, offset: %lu, snap block: %s",
+               bodyRsp.strFileName.c_str(), bodyRsp.nOffset, body.hashSnapBlock.ToString().c_str());
+        return false;
+    }
+
+    CBufStream ss;
+    ss << SNAP_DOWN_MSGID_DOWNDATA_RSP << bodyRsp;
+
+    network::CEventPeerSnapshotDownData event(nNetId, hashFork);
+    ss.GetData(event.data);
+    if (!pPeerNet->DispatchEvent(&event))
+    {
+        StdLog("CSnapshotDownChannel", "Handle msg down data req: Dispatch event failed, snap block: %s", body.hashSnapBlock.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
 }; // namespace hashahead
