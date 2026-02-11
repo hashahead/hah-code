@@ -1319,6 +1319,60 @@ bool CForkAddressDB::AddDelegateAddressLinkTemplate(const uint256& hashBlock, co
     {
         return false;
     }
+
+    CDestination destDelegate;
+    switch (ctxTemplate.nTemplateType)
+    {
+    case TEMPLATE_VOTE:
+    {
+        CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+        if (!!ptr && ptr->GetTemplateType() == TEMPLATE_VOTE)
+        {
+            destDelegate = boost::dynamic_pointer_cast<CTemplateVote>(ptr)->destDelegate;
+        }
+        break;
+    }
+    case TEMPLATE_PLEDGE:
+    {
+        CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+        if (!!ptr && ptr->GetTemplateType() == TEMPLATE_PLEDGE)
+        {
+            destDelegate = boost::dynamic_pointer_cast<CTemplatePledge>(ptr)->destDelegate;
+        }
+        break;
+    }
+    }
+    if (destDelegate.IsNull())
+    {
+        return false;
+    }
+
+    auto& mapTemplateAddress = mapDelegateLinkTemplate[destDelegate];
+    if (mapTemplateAddress.empty())
+    {
+        std::vector<std::pair<CDestination, uint8>> vTemplateAddress;
+        GetDelegateLinkTemplateAddress(hashBlock, destDelegate, 0, 0, 0, vTemplateAddress);
+        for (auto& vd : vTemplateAddress)
+        {
+            mapTemplateAddress.insert(std::make_pair(vd.first, vd.second));
+        }
+    }
+    if (mapTemplateAddress.find(destTemplate) != mapTemplateAddress.end())
+    {
+        return false;
+    }
+    mapTemplateAddress.insert(std::make_pair(destTemplate, ctxTemplate.nTemplateType));
+
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+
+    ssKey << DB_ADDRESS_KEY_TYPE_DELEGATE_LINK_ADDRESS << destDelegate << destTemplate;
+    ssKey.GetData(btKey);
+
+    ssValue << ctxTemplate.nTemplateType;
+    ssValue.GetData(btValue);
+
+    mapKv[btKey] = btValue;
     return true;
 }
 
