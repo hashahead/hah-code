@@ -76,6 +76,28 @@ protected:
     uint64 nSubsIdSeed;
 };
 
+/////////////////////////////
+// CWsClient
+
+class CWsClient
+{
+public:
+    CWsClient(const uint64 nConnIdIn, const std::string& strClientIpIn, const uint16 nClientPortIn, const connection_hdl hdlIn)
+      : nConnId(nConnIdIn), strClientIp(strClientIpIn), nClientPort(nClientPortIn), hdl(hdlIn) {}
+
+    uint64 GetConnId() const;
+    const std::string& GetClientIp() const;
+    uint16 GetClientPort() const;
+    connection_hdl GetConnHdl() const;
+
+protected:
+    const uint64 nConnId;
+    const std::string strClientIp;
+    const uint16 nClientPort;
+
+    connection_hdl hdl;
+};
+
 // CWsService
 
 class CWsService : public IWsService, virtual public CWsServiceEventListener

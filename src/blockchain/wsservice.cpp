@@ -133,6 +133,11 @@ uint128 CWsSubscribeFork::CreateSubsId(const uint8 nSubsType, const uint64 nConn
     return nSubsId;
 }
 
+uint8 CWsSubscribeFork::GetSubsIdType(const uint128& nSubsId) const
+{
+    return *(nSubsId.begin());
+}
+
 //////////////////////////////
 // CWsService
 

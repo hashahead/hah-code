@@ -709,6 +709,11 @@ bool CService::RetrieveContractKvValue(const uint256& hashFork, const uint256& h
     return pBlockChain->RetrieveContractKvValue(hashFork, hashBlock, dest, key, value);
 }
 
+bool CService::GetBlockRewardList(const uint256& hashLastBlock, const uint32 nBlockCount, std::vector<uint256>& vBlockRewardList, std::vector<std::pair<uint256, uint256>>& vBlockGasUsedList)
+{
+    return pBlockChain->GetBlockRewardList(hashLastBlock, nBlockCount, vBlockRewardList, vBlockGasUsedList);
+}
+
 uint256 CService::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter)
 {
     return pBlockChain->AddLogsFilter(hashClient, hashFork, logsFilter);

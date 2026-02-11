@@ -119,14 +119,13 @@ public:
     void ListTx(std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true);
     void ListTx(std::vector<uint256>& vTxPool);
     bool ListTx(const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset, const int64 nGetCount, const bool fContainCertTx = true);
-    void GetDestBalance(const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
+    bool GetDestBalance(const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
                         uint256& nUnconfirmedIn, uint256& nUnconfirmedOut, CAddressContext& ctxAddress, const uint256& hashBlock = uint256());
 
 protected:
     bool GetDestState(const CDestination& dest, CDestState& state, const uint256& hashBlock = uint256());
     void SetDestState(const CDestination& dest, const CDestState& state);
     int64 GetMinTxSequenceNumber();
-    bool VerifyRepeatCertTx(const CTransaction& tx);
     void RemoveObsoletedCertTx();
 
 protected:
@@ -154,13 +153,13 @@ public:
     std::size_t Count(const uint256& hashFork) const override;
     Errno Push(const uint256& hashFork, const CTransaction& tx) override;
     bool Get(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork) const override;
-    void ListTx(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool) override;
+    void ListTx(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true) override;
     void ListTx(const uint256& hashFork, std::vector<uint256>& vTxPool) override;
-    bool ListTx(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0) override;
+    bool ListTx(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0, const bool fContainCertTx = true) override;
     bool FetchArrangeBlockTx(const uint256& hashFork, const uint256& hashPrev, const int64 nBlockTime,
                              const std::size_t nMaxSize, std::vector<CTransaction>& vtx, uint256& nTotalTxFee) override;
     bool SynchronizeBlockChain(const CBlockChainUpdate& update) override;
-    void GetDestBalance(const uint256& hashFork, const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
+    bool GetDestBalance(const uint256& hashFork, const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nTxNonce, uint256& nAvail,
                         uint256& nUnconfirmedIn, uint256& nUnconfirmedOut, CAddressContext& ctxAddress, const uint256& hashBlock = uint256()) override;
     uint64 GetDestNextTxNonce(const uint256& hashFork, const CDestination& dest) override;
     bool GetAddressContext(const uint256& hashFork, const CDestination& dest, CAddressContext& ctxAddress, const uint256& hashRefBlock = uint256()) override;
