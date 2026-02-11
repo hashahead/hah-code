@@ -5409,6 +5409,31 @@ CRPCResultPtr CRPCMod::RPCSendCrossTransferTx(const CReqContext& ctxReq, CRPCPar
 
 }
 
+CRPCResultPtr CRPCMod::RPCGetCrossTransferAmount(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CGetCrossTransferAmountParam>(param);
+
+    uint256 hashFork;
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock, true);
+
+    CWalletBalance balance;
+    if (!pService->GetBalance(hashFork, hashBlock, FUNCTION_CROSSCHAIN_ADDRESS, {}, balance))
+    {
+        balance.SetNull();
+    }
+
+    return MakeCGetCrossTransferAmountResultPtr(CoinToTokenBigFloat(balance.nAvailable));
+}
+
 CRPCResultPtr CRPCMod::RPCListAddress(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListAddressParam>(param);

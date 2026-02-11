@@ -148,6 +148,9 @@ private:
     rpc::CRPCResultPtr RPCSendDexOrderTx(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListDexOrder(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCGetDexSymbolType(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCListRealtimeDexOrder(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCSendCrossTransferTx(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCGetCrossTransferAmount(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCExportWallet(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCImportWallet(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
