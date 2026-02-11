@@ -691,12 +691,17 @@ bool CService::CallContract(const uint256& hashFork, const uint256& hashBlock, c
 
 bool CService::GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, string& strSymbol)
 {
-    uint256 hashLastBlock;
-    if (!pBlockChain->RetrieveForkLast(pCoreProtocol->GetGenesisBlockHash(), hashLastBlock))
-    {
-        return false;
-    }
-    return pBlockChain->GetForkHashByChainId(nChainIdIn, hashFork, hashLastBlock);
+    return pBlockChain->GetContractCoinSymbol(hashFork, hashBlock, destContract, strSymbol);
+}
+
+bool CService::GetContractCoinDecimals(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, uint8& nDecimals)
+{
+    return pBlockChain->GetContractCoinDecimals(hashFork, hashBlock, destContract, nDecimals);
+}
+
+bool CService::GetContractCoinBalance(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const CDestination& destUser, uint256& nBalance)
+{
+    return pBlockChain->GetContractCoinBalance(hashFork, hashBlock, destContract, destUser, nBalance);
 }
 
 bool CService::RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value)
