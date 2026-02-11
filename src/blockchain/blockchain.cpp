@@ -2356,14 +2356,9 @@ bool CBlockChain::GetPrevBlockHashList(const uint256& hashBlock, const uint32 nG
     return cntrBlock.GetPrevBlockHashList(hashBlock, nGetCount, vPrevBlockhash);
 }
 
-void CBlockChain::AddPendingTx(const uint256& hashFork, const uint256& txid)
+uint32 CBlockChain::GetAllForkMinLastBlockHeight(std::vector<uint256>* pForkHash)
 {
-    cntrBlock.AddPendingTx(hashFork, txid);
-}
-
-bool CBlockChain::GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid)
-{
-    return cntrBlock.GetFilterTxids(hashFork, nFilterId, fAll, vTxid);
+    return cntrBlock.GetAllForkMinLastHeight(pForkHash);
 }
 
 bool CBlockChain::CalcBlockVoteRewardTx(const uint256& hashPrev, const uint16 nBlockType, const int nBlockHeight, const uint32 nBlockTime, vector<CTransaction>& vVoteRewardTx)
