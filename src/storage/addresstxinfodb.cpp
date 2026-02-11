@@ -671,10 +671,21 @@ bool CForkAddressTxInfoDB::AddLongChainBlock(const uint256& hashBlock)
         StdLog("CForkAddressTxInfoDB", "Add longchain block: Write block address tx index fail, block: %s", hashBlock.GetBhString().c_str());
         return false;
     }
-    else
+
+    map<CDestination, map<CDestination, pair<uint64, uint64>>> mapBlockAddressTokenTxIndex; // key1: contract address, key2: user address, value1: begin index, value2: end index
+    for (auto& kv : mapTokenRecord)
     {
-        nGetCountInner = nGetTxCount;
-    }
+        const CDestination& destContractAddress = kv.first;
+        if (kv.second.size() > 0)
+        {
+            std::map<CDestination, uint64> mapAddressTxCount;
+            std::map<CDestination, uint64> mapBeginAddressTxCount;
+
+            auto funcWriteRecord = [&](const CDestination& address, const CTokenTransRecord& tokenRecord) -> bool {
+                if (address.IsNull())
+                {
+                    return true;
+                }
 
     CListAddressTxInfoTrieDBWalker walker(nGetCountInner, vAddressTxInfo);
     if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix, btBeginKeyTail, fReverse))
