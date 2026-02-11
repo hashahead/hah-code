@@ -52,6 +52,7 @@ public:
     CDestination(const uint160& data);
     CDestination(const uint256& hash);
     CDestination(const uint8* pData, std::size_t nSize);
+    CDestination(const bytes& btData);
     CDestination(const std::string& str);
     CDestination(const CPubKey& pubkey);
     CDestination(const CTemplateId& tid);

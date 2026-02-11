@@ -15,6 +15,7 @@ namespace hashahead
 bool TESTNET_FLAG = false;
 bool FASTTEST_FLAG = false;
 bool TESTMAINNET_FLAG = false;
+bool RUNSYS_FLAG = false;
 CChainId GENESIS_CHAINID = 0;
 uint32 NETWORK_NETID = 0;
 
@@ -27,6 +28,17 @@ bytes getFunctionContractCreateCode()
 bytes getFunctionContractRuntimeCode()
 {
     return ParseHexString("6080604052600080fdfea26469706673582212202ea6f39d821dc6f0cd0f6a99ca7ce9f154c082712f949eaa74b785e16926cb5c64736f6c63430008120033");
+}
+
+void setRunSysFlag(const uint256& hashGenesisBlock)
+{
+    if (hashGenesisBlock == uint256("0xf90329f7f7dcb35d04d03b913c3a6ca97925e0c001843d45b834598454b4925c") // mainnet
+        // || hashGenesisBlock == uint256("0xfa011623f7f74137856dafa544fab434190c0b12f519f97fc7b1659e28641992") // maintestnet
+        // || hashGenesisBlock == uint256("0xc9f7f718e0734fb323bc503635cd0941ca2d75faeea63b954da69c4b40c015a5") // testnet
+    )
+    {
+        RUNSYS_FLAG = true;
+    }
 }
 
 //////////////////////////////

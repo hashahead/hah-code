@@ -23,4 +23,39 @@ bool CBlockLogsFilter::isTimeout()
     return false;
 }
 
+bool CBlockLogsFilter::AddTxReceipt(const uint256& hashFork, const uint256& hashBlock, const CTransactionReceipt& receipt)
+{
+    if (hashFork != hashFork)
+    {
+        return true;
+    }
+    if (logFilter.hashFromBlock != 0 && CBlock::GetBlockHeightByHash(hashBlock) < CBlock::GetBlockHeightByHash(logFilter.hashFromBlock))
+    {
+        return true;
+    }
+    if (logFilter.hashToBlock != 0 && CBlock::GetBlockHeightByHash(hashBlock) > CBlock::GetBlockHeightByHash(logFilter.hashToBlock))
+    {
+        return true;
+    }
+
+    MatchLogsVec vLogs;
+    logFilter.matchesLogs(receipt, vLogs);
+    if (!vLogs.empty())
+    {
+        CReceiptLogs r(vLogs);
+        r.txid = receipt.txid;
+        r.nTxIndex = receipt.nTxIndex;
+        r.nBlockNumber = receipt.nBlockNumber;
+        r.hashBlock = hashBlock;
+        vReceiptLogs.push_back(r);
+
+        nLogsCount += r.matchLogs.size();
+        if (nLogsCount > MAX_FILTER_CACHE_COUNT * 2)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace hashahead

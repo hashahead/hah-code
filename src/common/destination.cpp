@@ -176,7 +176,7 @@ void CTimeVault::ModifyBalance(const uint256& nBalance)
     nBalanceAmount = nBalance;
 }
 
-uint256 CTimeVault::CalcTransTvGasFee(const uint256& nTransAmount)
+uint256 CTimeVault::CalcTransTvGasFee(const uint32 nHeight, const uint256& nTransAmount)
 {
     if (fSurplus || nTvAmount == 0)
     {
@@ -185,6 +185,13 @@ uint256 CTimeVault::CalcTransTvGasFee(const uint256& nTransAmount)
     if (nBalanceAmount == 0 || nBalanceAmount <= nTransAmount)
     {
         return nTvAmount;
+    }
+    if (VERIFY_FHX_HEIGHT_BRANCH_004(nHeight))
+    {
+        if (nBalanceAmount <= nTvAmount * 2)
+        {
+            return nTvAmount;
+        }
     }
     return (nTvAmount * nTransAmount) / nBalanceAmount;
 }

@@ -515,6 +515,56 @@
             "default": false,
             "format": "-syncforkheight",
             "desc": "Each FORK has blocks that are synchronized at the same height"
+        },
+        {
+            "name": "strSnapDownAddress",
+            "type": "string",
+            "opt": "snapdownaddress",
+            "format": "-snapdownaddress=<address>",
+            "desc": "Specified snapshot data download address(<address> can be IPv4 or IPv6)"
+        },
+        {
+            "name": "strSnapDownBlock",
+            "type": "string",
+            "opt": "snapdownblock",
+            "format": "-snapdownblock=",
+            "desc": "Specified snapshot data download block"
+        },
+        {
+            "name": "strNat",
+            "type": "string",
+            "opt": "nat",
+            "format": "-nat",
+            "desc": "NAT port mapping mechanism (any|none|upnp|pmp)"
+        },
+        {
+            "name": "strNatLocalIp",
+            "type": "string",
+            "opt": "natlocalip",
+            "format": "-natlocalip",
+            "desc": "NAT local ip address(IPv4)"
+        },
+        {
+            "name": "strNatExtIp",
+            "type": "string",
+            "opt": "natextip",
+            "format": "-natextip",
+            "desc": "NAT external ip address(IPv4)"
+        },
+        {
+            "name": "nNatExtPort",
+            "type": "uint",
+            "opt": "natextport",
+            "format": "-natextport",
+            "desc": "NAT external port(IPv4)"
+        },
+        {
+            "name": "fNatModifyGateway",
+            "type": "bool",
+            "opt": "natmodifygateway",
+            "default": false,
+            "format": "-natmodifygateway",
+            "desc": "NAT modify gateway"
         }
     ]
 }
