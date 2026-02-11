@@ -1446,20 +1446,15 @@ bool CBlockBase::GetDelegateVotes(const uint256& hashGenesis, const uint256& has
     return true;
 }
 
-            CAddressContext ctxToAddress;
-            if (!GetAddressContext(destTo, ctxToAddress))
-            {
-                ctxToAddress = CAddressContext(CPubkeyAddressContext());
-            }
-            if (ctxToAddress.IsContract())
-            {
-                CTransaction txRedeem;
-                txRedeem.SetTxType(CTransaction::TX_INTERNAL);
-                txRedeem.SetChainId(CBlock::GetBlockChainIdByHash(hashFork));
-                txRedeem.SetNonce(mintTx.GetNonce());
-                txRedeem.SetFromAddress(destPledge);
-                txRedeem.SetToAddress(destTo);
-                txRedeem.SetAmount(nRedeemAmount);
+bool CBlockBase::RetrieveDestVoteContext(const uint256& hashBlock, const CDestination& destVote, CVoteContext& ctxtVote)
+{
+    return dbBlock.RetrieveDestVoteContext(hashBlock, destVote, ctxtVote);
+}
+
+bool CBlockBase::RetrieveDestPledgeVoteContext(const uint256& hashBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote)
+{
+    return dbBlock.RetrieveDestPledgeVoteContext(hashBlock, destVote, ctxPledgeVote);
+}
 
                 bool fCallResult = true;
                 CTransactionReceipt receiptRedeem;

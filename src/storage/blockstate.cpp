@@ -380,5 +380,15 @@ bool CBlockState::GetDestBalance(const CDestination& dest, uint256& nBalance)
     return true;
 }
 
+uint64 CBlockState::GetAddressLastTxNonce(const CDestination& addr)
+{
+    CDestState state;
+    if (!GetDestState(addr, state))
+    {
+        return 0;
+    }
+    return state.GetTxNonce();
+}
+
 } // namespace storage
 } // namespace hashahead

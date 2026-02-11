@@ -107,6 +107,7 @@ public:
     bool GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy);
     bool GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd);
     bool GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut);
+    void GetBlockBloomData(bytes& btBloomDataOut);
 
 protected:
     CBlockBase& dbBlockBase;
