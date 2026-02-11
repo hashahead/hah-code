@@ -2582,15 +2582,10 @@ bool CBlockChain::ListBlockContractReceipt(const uint256& hashFork, const uint25
     return cntrBlock.ListBlockContractReceipt(hashFork, hashBlock, vContractReceipts);
 }
 
-    uint256 hashPrimaryBlock;
-    if (pIndex->IsPrimary())
-    {
-        hashPrimaryBlock = pIndex->GetBlockHash();
-    }
-    else
-    {
-        hashPrimaryBlock = pIndex->hashRefBlock;
-    }
+bool CBlockChain::RetrieveTxContractPrevState(const uint256& hashFork, const uint256& txid, MapContractPrevState& mapContractPrevState)
+{
+    return cntrBlock.RetrieveTxContractPrevState(hashFork, txid, mapContractPrevState);
+}
 
     CForkContext ctxFork;
     if (!cntrBlock.RetrieveForkContext(hashFork, ctxFork, hashPrimaryBlock))
