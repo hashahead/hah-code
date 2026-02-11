@@ -296,63 +296,88 @@ void StdDebug(const char* pszName, const char* pszFormat, ...)
 
 void StdLog(const char* pszName, const char* pszFormat, ...)
 {
+    std::stringstream ss;
+    char arg_buffer[2048] = { 0 };
+    va_list ap;
+    va_start(ap, pszFormat);
+    vsnprintf(arg_buffer, sizeof(arg_buffer), pszFormat, ap);
+    va_end(ap);
+    ss << arg_buffer;
+
     if (g_log_init)
     {
-        std::stringstream ss;
-        char arg_buffer[2048] = { 0 };
-        va_list ap;
-        va_start(ap, pszFormat);
-        vsnprintf(arg_buffer, sizeof(arg_buffer), pszFormat, ap);
-        va_end(ap);
-        ss << arg_buffer;
-        std::string str = ss.str();
-
         BOOST_LOG_SCOPED_THREAD_TAG("ThreadName", GetThreadName().c_str());
-        BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, info) << str;
+        BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, info) << ss.str();
+    }
+    else
+    {
+        if (g_log_out_show)
+        {
+            NointOutLog(info, pszName, ss.str());
+        }
     }
 }
 
 void StdWarn(const char* pszName, const char* pszFormat, ...)
 {
+    std::stringstream ss;
+    char arg_buffer[2048] = { 0 };
+    va_list ap;
+    va_start(ap, pszFormat);
+    vsnprintf(arg_buffer, sizeof(arg_buffer), pszFormat, ap);
+    va_end(ap);
+    ss << arg_buffer;
+
     if (g_log_init)
     {
-        std::stringstream ss;
-        char arg_buffer[2048] = { 0 };
-        va_list ap;
-        va_start(ap, pszFormat);
-        vsnprintf(arg_buffer, sizeof(arg_buffer), pszFormat, ap);
-        va_end(ap);
-        ss << arg_buffer;
-        std::string str = ss.str();
-
         BOOST_LOG_SCOPED_THREAD_TAG("ThreadName", GetThreadName().c_str());
-        BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, warn) << str;
+        BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, warn) << ss.str();
+    }
+    else
+    {
+        if (g_log_out_show)
+        {
+            NointOutLog(warn, pszName, ss.str());
+        }
     }
 }
 
 void StdError(const char* pszName, const char* pszFormat, ...)
 {
+    std::stringstream ss;
+    char arg_buffer[2048] = { 0 };
+    va_list ap;
+    va_start(ap, pszFormat);
+    vsnprintf(arg_buffer, sizeof(arg_buffer), pszFormat, ap);
+    va_end(ap);
+    ss << arg_buffer;
+
     if (g_log_init)
     {
-        std::stringstream ss;
-        char arg_buffer[2048] = { 0 };
-        va_list ap;
-        va_start(ap, pszFormat);
-        vsnprintf(arg_buffer, sizeof(arg_buffer), pszFormat, ap);
-        va_end(ap);
-        ss << arg_buffer;
-        std::string str = ss.str();
-
         BOOST_LOG_SCOPED_THREAD_TAG("ThreadName", GetThreadName().c_str());
-        BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, error) << str;
+        BOOST_LOG_CHANNEL_SEV(lg::get(), pszName, error) << ss.str();
+    }
+    else
+    {
+        if (g_log_out_show)
+        {
+            NointOutLog(error, pszName, ss.str());
+        }
     }
 }
 
 bool InitLog(const boost::filesystem::path& pathData, bool debug, bool daemon, int nLogFileSizeIn, int nLogHistorySizeIn)
 {
     g_log_init = true;
+    STD_DEBUG = debug;
     g_log.Init(pathData, debug, daemon, nLogFileSizeIn, nLogHistorySizeIn);
     return true;
+}
+
+void NointLogOut(const bool fOutShow, const bool debug)
+{
+    g_log_out_show = fOutShow;
+    STD_DEBUG = debug;
 }
 
 bool SplitNumber(const std::string& strNumber, std::string& strInteger, std::string& strDecimal)

@@ -5,6 +5,7 @@
 #ifndef HNBASE_UTIL_H
 #define HNBASE_UTIL_H
 
+#include <algorithm>
 #include <boost/asio/ip/address.hpp>
 #include <boost/date_time.hpp>
 #include <boost/filesystem.hpp>
@@ -127,7 +128,8 @@ void StdLog(const char* pszName, const char* pszFormat, ...);
 void StdWarn(const char* pszName, const char* pszFormat, ...);
 void StdError(const char* pszName, const char* pszFormat, ...);
 
-bool InitLog(const boost::filesystem::path& pathData, bool debug, bool daemon, int nLogFileSizeIn, int nLogHistorySizeIn);
+bool InitLog(const boost::filesystem::path& pathData, bool debug = true, bool daemon = false, int nLogFileSizeIn = 200, int nLogHistorySizeIn = 2048);
+void NointLogOut(const bool fOutShow = true, const bool debug = true);
 
 inline std::string PulsFileLine(const char* file, int line, const char* info)
 {
