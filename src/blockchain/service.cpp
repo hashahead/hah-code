@@ -716,7 +716,9 @@ bool CService::GetBlockRewardList(const uint256& hashLastBlock, const uint32 nBl
 
 uint256 CService::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter)
 {
-    return pBlockChain->AddLogsFilter(hashClient, hashFork, logsFilter);
+    std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare> mapBlockReceipts; // key: block hash
+    pBlockChain->GetBlockReceiptsByBlock(hashFork, logsFilter.hashFromBlock, logsFilter.hashToBlock, mapBlockReceipts);
+    return pBlockFilter->AddLogsFilter(hashClient, hashFork, logsFilter, mapBlockReceipts);
 }
 
 void CService::RemoveFilter(const uint256& nFilterId)
@@ -726,12 +728,41 @@ void CService::RemoveFilter(const uint256& nFilterId)
 
 bool CService::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs)
 {
-    return pBlockChain->GetTxReceiptLogsByFilterId(nFilterId, fAll, receiptLogs);
+    return pBlockFilter->GetTxReceiptLogsByFilterId(nFilterId, fAll, receiptLogs);
 }
 
 bool CService::GetTxReceiptsByLogsFilter(const uint256& hashFork, const CLogsFilter& logsFilter, ReceiptLogsVec& vReceiptLogs)
 {
-    return pBlockChain->GetTxReceiptsByLogsFilter(hashFork, logsFilter, vReceiptLogs);
+    std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare> mapBlockReceipts; // key: block hash
+    if (!pBlockChain->GetBlockReceiptsByBlock(hashFork, logsFilter.hashFromBlock, logsFilter.hashToBlock, mapBlockReceipts))
+    {
+        return false;
+    }
+    for (const auto& kv : mapBlockReceipts)
+    {
+        const uint256& hashBlock = kv.first;
+        for (const auto& receipt : kv.second)
+        {
+            MatchLogsVec vLogs;
+            logsFilter.matchesLogs(receipt, vLogs);
+            if (!vLogs.empty())
+            {
+                CReceiptLogs r(vLogs);
+                r.nTxIndex = receipt.nTxIndex;
+                r.txid = receipt.txid;
+                r.nBlockNumber = receipt.nBlockNumber;
+                r.hashBlock = hashBlock;
+                vReceiptLogs.push_back(r);
+
+                if (vReceiptLogs.size() > MAX_FILTER_CACHE_COUNT)
+                {
+                    StdLog("CService", "Get tx receipts by logs filter: Query returned more than %lu results", MAX_FILTER_CACHE_COUNT);
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 uint256 CService::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
