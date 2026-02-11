@@ -7444,7 +7444,7 @@ CRPCResultPtr CRPCMod::RPCEthGetStorageAt(const CReqContext& ctxReq, CRPCParamPt
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() != 3)
     {
         StdLog("CRPCMod", "RP EthGetStorageAt: Invalid paramlist, size: %lu", spParam->vecParamlist.size());
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     CDestination address;
@@ -7452,7 +7452,7 @@ CRPCResultPtr CRPCMod::RPCEthGetStorageAt(const CReqContext& ctxReq, CRPCParamPt
     if (address.IsNull())
     {
         StdLog("CRPCMod", "RP EthGetStorageAt: Invalid address");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
     }
     string strPosition = spParam->vecParamlist.at(1);
     string strRefBlock = spParam->vecParamlist.at(2);
@@ -7461,13 +7461,13 @@ CRPCResultPtr CRPCMod::RPCEthGetStorageAt(const CReqContext& ctxReq, CRPCParamPt
     if (hashBlock.IsNull())
     {
         StdLog("CRPCMod", "RP EthGetStorageAt: Invalid tag");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid tag");
     }
 
     if (!(strPosition.size() > 2 && strPosition[0] == '0' && strPosition[1] == 'x'))
     {
         StdLog("CRPCMod", "RP EthGetStorageAt: Invalid pos: %s", strPosition.c_str());
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid pos");
     }
     if (strPosition.size() % 2 == 1)
     {
@@ -7488,7 +7488,8 @@ CRPCResultPtr CRPCMod::RPCEthGetStorageAt(const CReqContext& ctxReq, CRPCParamPt
     {
         StdLog("CRPCMod", "RP EthGetStorageAt: Retrieve contract kv value fail, address: %s, key: %s, block: %s",
                address.ToString().c_str(), key.ToString().c_str(), hashBlock.ToString().c_str());
-        return nullptr;
+        // throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find address or key");
+        return MakeCeth_getStorageAtResultPtr("0x0000000000000000000000000000000000000000000000000000000000000000");
     }
 
     return MakeCeth_getStorageAtResultPtr(ToHexString(value));
@@ -8130,15 +8131,31 @@ CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr
     uint256 nGasUsed;
     if (destTo.IsNull())
     {
-        uint256 nGasLimit = 0;
-        uint256 nUsedGas = 0;
-        uint64 nGasLeft = 0;
-        int nStatus = 0;
-        bytes btResult;
-        if (!pService->CallContract(true, ctxReq.hashFork, hashBlock, destFrom, destTo, nAmount, nGasPrice, nGasLimit, btData, nUsedGas, nGasLeft, nStatus, btResult))
+        CVmCallTx vmCallTx;
+        CVmCallResult vmCallResult;
+
+        vmCallTx.fEthCall = true;
+        vmCallTx.destFrom = destFrom;
+        vmCallTx.destTo = destTo;
+        vmCallTx.nTxNonce = 0;
+        vmCallTx.nGasPrice = nGasPrice;
+        vmCallTx.nGasLimit = 0;
+        vmCallTx.nAmount = nAmount;
+        vmCallTx.btData = btData;
+
+        if (!pService->CallContract(hashFork, hashBlock, vmCallTx, vmCallResult))
         {
-            StdLog("rpcmod", "RPC EthEstimateGas: Call contract fail1");
-            nGasUsed = DEF_TX_GAS_LIMIT;
+            string strError;
+            if (GetVmExecResultInfo(vmCallResult.nStatus, vmCallResult.btResult, strError))
+            {
+                StdLog("CRPCMod", "RPC EthEstimateGas: call execution reverted, err: %s, to: %s", strError.c_str(), destTo.ToString().c_str());
+                throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, std::string("execution reverted: ") + strError, json_spirit::Value(ToHexString(vmCallResult.btResult)));
+            }
+            else
+            {
+                StdLog("CRPCMod", "RPC EthEstimateGas: call fail, to: %s", destTo.ToString().c_str());
+                throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "execution failed");
+            }
         }
         else
         {

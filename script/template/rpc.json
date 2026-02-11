@@ -616,6 +616,56 @@
                 "type": "string",
                 "desc": "tx input data",
                 "required": false
+            },
+            "type": {
+                "type": "string",
+                "desc": "tx type",
+                "required": false
+            },
+            "accessList": {
+                "type": "array",
+                "desc": "access list",
+                "content": {
+                    "access": {
+                        "type": "object",
+                        "content": {
+                            "address": {
+                                "type": "string",
+                                "desc": "address"
+                            },
+                            "storageKeys": {
+                                "type": "array",
+                                "desc": "storage keys list",
+                                "content": {
+                                    "key": {
+                                        "type": "string",
+                                        "desc": "key"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "chainId": {
+                "type": "string",
+                "desc": "chain id",
+                "required": false
+            },
+            "v": {
+                "type": "string",
+                "desc": "v",
+                "required": false
+            },
+            "r": {
+                "type": "string",
+                "desc": "r",
+                "required": false
+            },
+            "s": {
+                "type": "string",
+                "desc": "s",
+                "required": false
             }
         }
     },
