@@ -5901,7 +5901,15 @@ CRPCResultPtr CRPCMod::RPCMakeFork(const CReqContext& ctxReq, CRPCParamPtr param
     CBlockStatus lastStatus;
     if (!pService->GetLastBlockStatus(hashGenesisFork, lastStatus))
     {
-        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown key");
+        throw CRPCException(RPC_DATABASE_ERROR, "last block error");
+    }
+    std::vector<std::pair<uint256, CProfile>> vFork;
+    pService->ListFork(vFork);
+
+    destOwner.ParseString(spParam->strOwner);
+    if (destOwner.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid owner");
     }
     if (fPublic)
     {
@@ -6396,6 +6404,41 @@ CRPCResultPtr CRPCMod::RPCListContractAddress(const CReqContext& ctxReq, CRPCPar
     }
 
     return spResult;
+}
+
+CRPCResultPtr CRPCMod::RPCListTokenAddress(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListTokenAddressParam>(param);
+
+    CDestination destContractAddress;
+    string strGetName;
+    string strGetSymbol;
+
+    if (spParam->strContractaddress.IsValid())
+    {
+        if (!destContractAddress.ParseString(spParam->strContractaddress) || destContractAddress.IsNull())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid contractaddress");
+        }
+    }
+    if (spParam->strName.IsValid())
+    {
+        strGetName = spParam->strName;
+        if (strGetName.empty())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid name");
+        }
+        std::transform(strGetName.begin(), strGetName.end(), strGetName.begin(), [](unsigned char c) { return std::toupper(c); });
+    }
+    if (spParam->strSymbol.IsValid())
+    {
+        strGetSymbol = spParam->strSymbol;
+        if (strGetSymbol.empty())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol");
+        }
+        std::transform(strGetSymbol.begin(), strGetSymbol.end(), strGetSymbol.begin(), [](unsigned char c) { return std::toupper(c); });
+    }
 }
 
 CRPCResultPtr CRPCMod::RPCGetDestContract(const CReqContext& ctxReq, CRPCParamPtr param)
