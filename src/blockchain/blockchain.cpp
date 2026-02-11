@@ -2587,39 +2587,25 @@ bool CBlockChain::RetrieveTxContractPrevState(const uint256& hashFork, const uin
     return cntrBlock.RetrieveTxContractPrevState(hashFork, txid, mapContractPrevState);
 }
 
-    CForkContext ctxFork;
-    if (!cntrBlock.RetrieveForkContext(hashFork, ctxFork, hashPrimaryBlock))
-    {
-        StdLog("BlockChain", "Call contract: Retrieve forkc ontext fail, fork: %s", hashFork.GetHex().c_str());
-        return false;
-    }
+bool CBlockChain::ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState)
+{
+    return cntrBlock.ListBlockContractPrevState(hashFork, hashBlock, vBlockContractPrevState);
+}
 
-    CTimeVault tv;
-    if (!cntrBlock.RetrieveTimeVault(hashFork, hashBlock, from, tv))
-    {
-        tv.SetNull();
-    }
-    uint256 nTvGasFee = tv.EstimateTransTvGasFee(pIndex->GetBlockTime() + ESTIMATE_TIME_VAULT_TS, nAmount);
-    uint256 nTvGas;
-    CTimeVault::CalcRealityTvGasFee(nGasPrice, nTvGasFee, nTvGas);
+bool CBlockChain::GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext)
+{
+    return cntrBlock.GetContractKvList(hashFork, hashBlock, nTxIndex, destContract, keyStart, nLimit, vContractKv, keyNext);
+}
 
-    uint256 nRunGasLimit;
-    uint256 nBaseTvGas = TX_BASE_GAS + CTransaction::GetTxDataGasStatic(btContractParam.size()) + nTvGas;
-    if (nGas == 0)
-    {
-        // Gas is 0, Calc gas used
-        nRunGasLimit = DEF_TX_GAS_LIMIT;
-    }
-    else
-    {
-        if (nGas < nBaseTvGas)
-        {
-            StdLog("BlockChain", "Call contract: Gas not enough, tv gas: %lu, base+tv gas: %lu, gas limit: %lu, from: %s, fork: %s",
-                   nTvGas.Get64(), nBaseTvGas.Get64(), nGas.Get64(), from.ToString().c_str(), hashFork.GetHex().c_str());
-            return false;
-        }
-        nRunGasLimit = nGas - nBaseTvGas;
-    }
+bool CBlockChain::CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult)
+{
+    return cntrBlock.CallContract(hashFork, hashBlock, vmCallTx, vmCallResult);
+}
+
+bool CBlockChain::GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, string& strSymbol)
+{
+    return cntrBlock.GetContractCoinSymbol(hashFork, hashBlock, destContract, true, strSymbol);
+}
 
     if (!cntrBlock.CallContractCode(fEthCall, hashFork, ctxFork.nChainId, pIndex->GetAgreement(), pIndex->GetBlockHeight(), pIndex->destMint, MAX_BLOCK_GAS_LIMIT,
                                     from, to, nGasPrice, nRunGasLimit, nAmount,
