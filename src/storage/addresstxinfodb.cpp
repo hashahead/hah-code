@@ -687,18 +687,75 @@ bool CForkAddressTxInfoDB::AddLongChainBlock(const uint256& hashBlock)
                     return true;
                 }
 
-    CListAddressTxInfoTrieDBWalker walker(nGetCountInner, vAddressTxInfo);
-    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix, btBeginKeyTail, fReverse))
+                auto it = mapAddressTxCount.find(address);
+                if (it == mapAddressTxCount.end())
+                {
+                    uint64 nTxCount = 0;
+                    if (!ReadTokenTxCount(destContractAddress, address, nTxCount))
+                    {
+                        nTxCount = 0;
+                    }
+                    it = mapAddressTxCount.insert(std::make_pair(address, nTxCount)).first;
+                    mapBeginAddressTxCount[address] = nTxCount;
+                }
+                uint64& nTxCount = it->second;
+
+                hnbase::CBufStream ssKey, ssValue;
+                ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO << destContractAddress << address << BSwap64(nTxCount);
+                ssValue << tokenRecord;
+                if (!Write(ssKey, ssValue))
+                {
+                    StdLog("CForkAddressTxInfoDB", "Add longchain block: Write token address tx fail, contract: %s, address: %s, block: %s",
+                           destContractAddress.ToString().c_str(), address.ToString().c_str(), hashBlock.GetBhString().c_str());
+                    return false;
+                }
+                nTxCount++;
+                return true;
+            };
+
+            for (const CTokenTransRecord& tokenRecord : kv.second)
+            {
+                if (!funcWriteRecord(destContractAddress, tokenRecord))
+                {
+                    return false;
+                }
+                if (!funcWriteRecord(tokenRecord.destFrom, tokenRecord))
+                {
+                    return false;
+                }
+                if (tokenRecord.destFrom != tokenRecord.destTo)
+                {
+                    if (!funcWriteRecord(tokenRecord.destTo, tokenRecord))
+                    {
+                        return false;
+                    }
+                }
+            }
+            for (auto& kv2 : mapAddressTxCount)
+            {
+                const CDestination& destAddress = kv2.first;
+                const uint64 nTxCount = kv2.second;
+                if (!WriteTokenTxCount(destContractAddress, destAddress, nTxCount))
+                {
+                    StdLog("CForkAddressTxInfoDB", "Add longchain block: Write token address tx count fail, contract: %s, address: %s, block: %s",
+                           destContractAddress.ToString().c_str(), destAddress.ToString().c_str(), hashBlock.GetBhString().c_str());
+                    return false;
+                }
+                auto mt = mapBeginAddressTxCount.find(destAddress);
+                if (mt != mapBeginAddressTxCount.end())
+                {
+                    mapBlockAddressTokenTxIndex[destContractAddress].insert(make_pair(destAddress, make_pair(mt->second, nTxCount - 1)));
+                }
+            }
+        }
+    }
+    if (!WriteBlockAddressTokenTxIndex(hashBlock, mapBlockAddressTokenTxIndex))
     {
-        StdLog("CForkAddressTxInfoDB", "List address tx info: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
+        StdLog("CForkAddressTxInfoDB", "Add longchain block: Write block address token tx index fail, block: %s", hashBlock.GetBhString().c_str());
         return false;
     }
-    return true;
-}
 
-bool CForkAddressTxInfoDB::VerifyAddressTxInfo(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
-{
-    if (!ReadTrieRoot(hashBlock, hashRoot))
+    if (!WriteLastBlock(hashBlock))
     {
         StdLog("CForkAddressTxInfoDB", "Verify address tx info: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;

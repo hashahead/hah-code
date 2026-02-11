@@ -50,19 +50,17 @@ protected:
     bool GetBlockAddressTxInfo(const uint256& hashBlock, std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord);
     bool GetBlockPrevBlock(const uint256& hashBlock, uint256& hashPrevBlock);
     bool WalkThroughAllBlockHash(std::set<uint256>& setBlockHash);
+    bool WalkThroughAddressTxInfo(const CDestination& address, const uint64 nBeginTxIndex, const uint64 nGetTxCount, std::vector<CDestTxInfo>& vAddressTxInfo);
     void AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
     bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
     void WriteAddressLast(const CDestination& dest, const uint64 nTxCount, bytesmap& mapKv);
     bool ReadAddressLast(const uint256& hashRoot, const CDestination& dest, uint64& nTxCount);
 
 protected:
-    enum
-    {
-        MAX_CACHE_COUNT = 16
-    };
-    bool fCache;
     uint256 hashFork;
-    CTrieDB dbTrie;
+    hnbase::CRWAccess rwAccess;
+
+    std::set<uint256> setCacheBlockHash;
 };
 
 class CAddressTxInfoDB
