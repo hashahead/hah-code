@@ -108,6 +108,7 @@ public:
     bool GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd);
     bool GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut);
     void GetBlockBloomData(bytes& btBloomDataOut);
+    bool GetDestBalance(const CDestination& dest, uint256& nBalance);
 
 protected:
     CBlockBase& dbBlockBase;

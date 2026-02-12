@@ -390,5 +390,17 @@ uint64 CBlockState::GetAddressLastTxNonce(const CDestination& addr)
     return state.GetTxNonce();
 }
 
+bool CBlockState::SetAddressLastTxNonce(const CDestination& addr, const uint64 nNonce)
+{
+    CDestState state;
+    if (!GetDestState(addr, state))
+    {
+        return false;
+    }
+    state.SetTxNonce(nNonce);
+    SetCacheDestState(addr, state);
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
