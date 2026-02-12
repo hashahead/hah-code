@@ -109,6 +109,7 @@ public:
     bool GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut);
     void GetBlockBloomData(bytes& btBloomDataOut);
     bool GetDestBalance(const CDestination& dest, uint256& nBalance);
+    bool GetTransientValue(const CDestination& dest, const uint256& key, bytes& value) const;
 
 protected:
     CBlockBase& dbBlockBase;

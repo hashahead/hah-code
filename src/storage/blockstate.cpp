@@ -402,5 +402,20 @@ bool CBlockState::SetAddressLastTxNonce(const CDestination& addr, const uint64 n
     return true;
 }
 
+bool CBlockState::GetTransientValue(const CDestination& dest, const uint256& key, bytes& value) const
+{
+    auto it = mapCacheTransientStorage.find(dest);
+    if (it != mapCacheTransientStorage.end())
+    {
+        auto mt = it->second.find(key);
+        if (mt != it->second.end())
+        {
+            value = mt->second;
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead
