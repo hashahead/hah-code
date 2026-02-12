@@ -331,8 +331,8 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockBks& eventBks)
     }
     else if (pBlockChain->Exists(eventBks.data.hashBlock))
     {
-        StdDebug("CBlockChannel", "CEvent Peer Block Bks: Block existed, block: [%d] %s, prev: %s",
-                 CBlock::GetBlockHeightByHash(eventBks.data.hashBlock), eventBks.data.hashBlock.GetHex().c_str(), eventBks.data.hashPrev.GetHex().c_str());
+        StdDebug("CBlockChannel", "CEvent peer block bks: Block existed, block: %s, prev: %s",
+                 eventBks.data.hashBlock.GetBhString().c_str(), eventBks.data.hashPrev.GetBhString().c_str());
     }
     else
     {

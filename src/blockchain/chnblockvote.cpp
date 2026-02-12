@@ -339,4 +339,22 @@ bool CBlockVoteChannel::HandleEvent(network::CEventLocalBlockvoteCommitVoteResul
     return true;
 }
 
+//-------------------------------------------------------------------------------------------
+bool CBlockVoteChannel::SendNetData(const uint64 nNetId, const uint8 nTunnelId, const bytes& btData, const uint256& hashFork)
+{
+    if (pPeerNet == nullptr)
+    {
+        StdError("CBlockVoteChannel", "Send Net Data: pPeerNet is NULL, nNetId: 0x%lx, fork: %s", nNetId, hashFork.ToString().c_str());
+        return false;
+    }
+    network::CEventPeerBlockVoteProtoData eventBvp(nNetId, hashFork);
+    eventBvp.data = btData;
+    if (!pPeerNet->DispatchEvent(&eventBvp))
+    {
+        StdError("CBlockVoteChannel", "Send Net Data: Dispatch event fail, nNetId: 0x%lx, fork: %s", nNetId, hashFork.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
 } // namespace hashahead

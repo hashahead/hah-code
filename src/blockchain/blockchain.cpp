@@ -2607,25 +2607,14 @@ bool CBlockChain::GetContractCoinSymbol(const uint256& hashFork, const uint256& 
     return cntrBlock.GetContractCoinSymbol(hashFork, hashBlock, destContract, true, strSymbol);
 }
 
-    if (!cntrBlock.CallContractCode(fEthCall, hashFork, ctxFork.nChainId, pIndex->GetAgreement(), pIndex->GetBlockHeight(), pIndex->destMint, MAX_BLOCK_GAS_LIMIT,
-                                    from, to, nGasPrice, nRunGasLimit, nAmount,
-                                    btContractParam, GetNetTime(), pIndex->GetBlockHash(), pIndex->GetStateRoot(), pIndex->GetBlockTime(), nGasLeft, nStatus, btResult))
-    {
-        StdLog("BlockChain", "Call contract: Call contract fail, fork: %s", hashFork.GetHex().c_str());
-        return false;
-    }
-    if (nGas == 0)
-    {
-        if (nRunGasLimit.Get64() <= nGasLeft)
-        {
-            nUsedGas = nBaseTvGas;
-        }
-        else
-        {
-            nUsedGas = nBaseTvGas + (nRunGasLimit.Get64() - nGasLeft);
-        }
-    }
-    return true;
+bool CBlockChain::GetContractCoinDecimals(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, uint8& nDecimals)
+{
+    return cntrBlock.GetContractCoinDecimals(hashFork, hashBlock, destContract, true, nDecimals);
+}
+
+bool CBlockChain::GetContractCoinBalance(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const CDestination& destUser, uint256& nBalance)
+{
+    return cntrBlock.GetContractCoinBalance(hashFork, hashBlock, destContract, destUser, true, nBalance);
 }
 
 bool CBlockChain::VerifyContractAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract)

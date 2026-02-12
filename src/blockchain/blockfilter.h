@@ -76,6 +76,8 @@ protected:
     std::map<uint256, CBlockLogsFilter> mapLogFilter;     // key: filter id
     std::map<uint256, CBlockMakerFilter> mapBlockFilter;  // key: filter id
     std::map<uint256, CBlockPendingTxFilter> mapTxFilter; // key: filter id
+
+    std::map<uint256, CForkBlockStat> mapForkBlockStat; //key: fork hash
 };
 
 } // namespace hashahead
