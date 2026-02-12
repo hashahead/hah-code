@@ -767,22 +767,22 @@ bool CService::GetTxReceiptsByLogsFilter(const uint256& hashFork, const CLogsFil
 
 uint256 CService::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
 {
-    return pBlockChain->AddBlockFilter(hashClient, hashFork);
+    return pBlockFilter->AddBlockFilter(hashClient, hashFork);
 }
 
 bool CService::GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash)
 {
-    return pBlockChain->GetFilterBlockHashs(hashFork, nFilterId, fAll, vBlockHash);
+    return pBlockFilter->GetFilterBlockHashs(hashFork, nFilterId, fAll, vBlockHash);
 }
 
 uint256 CService::AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork)
 {
-    return pBlockChain->AddPendingTxFilter(hashClient, hashFork);
+    return pBlockFilter->AddPendingTxFilter(hashClient, hashFork);
 }
 
 bool CService::GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid)
 {
-    return pBlockChain->GetFilterTxids(hashFork, nFilterId, fAll, vTxid);
+    return pBlockFilter->GetFilterTxids(hashFork, nFilterId, fAll, vTxid);
 }
 
 bool CService::HaveKey(const CDestination& dest, const int32 nVersion)
@@ -860,10 +860,29 @@ bool CService::Unlock(const CDestination& dest, const crypto::CCryptoString& str
     return pWallet->Unlock(dest, strPassphrase, nTimeout);
 }
 
-bool CService::GetBalance(const uint256& hashFork, const uint256& hashLastBlock, const CDestination& dest, CWalletBalance& balance)
+bool CService::GetBalance(const uint256& hashFork, const uint256& hashLastBlock, const CDestination& dest, const CCoinContext& ctxCoin, CWalletBalance& balance)
 {
+    if (ctxCoin.nCoinType == CCoinContext::CT_COIN_TYPE_CONTRACT)
+    {
+        uint256 nContractBalance;
+        if (!pBlockChain->GetContractCoinBalance(hashFork, hashLastBlock, ctxCoin.destContract, dest, nContractBalance))
+        {
+            StdDebug("CService", "Get balance: Get coin balance fail, user address: %s, contract address: %s, fork: %s",
+                     dest.ToString().c_str(), ctxCoin.destContract.ToString().c_str(), hashFork.ToString().c_str());
+            return false;
+        }
+        balance.SetNull();
+        balance.nAvailable = nContractBalance;
+        return true;
+    }
+
     CAddressContext ctxAddress;
-    pTxPool->GetDestBalance(hashFork, dest, balance.nDestType, balance.nTemplateType, balance.nTxNonce, balance.nAvailable, balance.nUnconfirmedIn, balance.nUnconfirmedOut, ctxAddress, hashLastBlock);
+    if (!pTxPool->GetDestBalance(hashFork, dest, balance.nDestType, balance.nTemplateType, balance.nTxNonce, balance.nAvailable, balance.nUnconfirmedIn, balance.nUnconfirmedOut, ctxAddress, hashLastBlock))
+    {
+        StdDebug("CService", "Get balance: Get balance fail, address: %s, fork: %s",
+                 dest.ToString().c_str(), hashFork.ToString().c_str());
+        return false;
+    }
     if (balance.nAvailable > 0)
     {
         uint256 hashRefBlock;
