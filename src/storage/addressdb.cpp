@@ -1399,6 +1399,29 @@ bool CForkAddressDB::ListAddressDb(const uint256& hashBlock, std::map<CDestinati
     return true;
 }
 
+bool CForkAddressDB::ListContractAddressDb(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress)
+{
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_ADDRESS_KEY_TYPE_ROOT_TYPE_ADDRESS, hashBlock, hashRoot))
+    {
+        StdLog("CForkAddressDB", "List contract address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_ADDRESS;
+    bytes btKeyPrefix;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListContractAddressTrieDBWalker walker(mapContractAddress);
+    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+    {
+        StdLog("CForkAddressDB", "List contract address: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
 
 //////////////////////////////
 // CAddressDB
