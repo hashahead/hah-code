@@ -6421,6 +6421,15 @@ CRPCResultPtr CRPCMod::RPCListContractAddress(const CReqContext& ctxReq, CRPCPar
 {
     auto spParam = CastParamPtr<CListContractAddressParam>(param);
 
+    CDestination destGetAddress;
+    if (spParam->strAddress.IsValid())
+    {
+        if (!destGetAddress.ParseString(spParam->strAddress) || destGetAddress.IsNull())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+        }
+    }
+
     uint256 hashFork;
     if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
     {

@@ -901,6 +901,14 @@
                 "type": "uint",
                 "desc": "block slot"
             },
+            "confirm": {
+                "type": "bool",
+                "desc": "if confirm block"
+            },
+            "prevconfirmblock": {
+                "type": "string",
+                "desc": "prev confirm block"
+            },
             "reward": {
                 "type": "string",
                 "desc": "block reward"
@@ -920,6 +928,10 @@
             "txmint": {
                 "type": "string",
                 "desc": "transaction mint hash"
+            },
+            "txcount": {
+                "type": "uint",
+                "desc": "tx count"
             },
             "tx": {
                 "type": "array",
@@ -977,6 +989,10 @@
                 "type": "uint",
                 "desc": "block slot"
             },
+            "confirm": {
+                "type": "bool",
+                "desc": "if confirm block"
+            },
             "reward": {
                 "type": "string",
                 "desc": "block reward"
@@ -996,6 +1012,10 @@
             "txmint": {
                 "type": "transactiondata",
                 "desc": "transaction mint data"
+            },
+            "txcount": {
+                "type": "uint",
+                "desc": "tx count"
             },
             "tx": {
                 "type": "array",
