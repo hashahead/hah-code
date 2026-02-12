@@ -160,6 +160,7 @@ protected:
 
     bool HandleMsgFilelistReq(const uint64 nNetId, const uint256& hashFork, const uint256& hashSnapBlock);
     bool HandleMsgFilelistRsp(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgFilelistRsp& body);
+    bool HandleMsgDownDataReq(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgDownDataReq& body);
 
 protected:
     network::CBbPeerNet* pPeerNet;

@@ -276,4 +276,44 @@ bool CSnapshotDownChannel::HandleMsgDownDataReq(const uint64 nNetId, const uint2
     return true;
 }
 
+bool CSnapshotDownChannel::HandleMsgDownDataRsp(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgDownDataRsp& body)
+{
+    if (nNetId != nSnapshotDownNetId)
+    {
+        return true;
+    }
+    if (body.btData.empty())
+    {
+        FileDownComplete(body.strFileName);
+        if (!RequstNextFile(nNetId, hashFork, body.hashSnapBlock))
+        {
+            StdLog("CSnapshotDownChannel", "Handle msg down data rsp: Requst next file failed, snap block: %s", body.hashSnapBlock.ToString().c_str());
+            return false;
+        }
+    }
+    else
+    {
+        if (!pBlockChain->WriteSnapshotDownFileData(body.hashSnapBlock, body.strFileName, body.nOffset, body.btData))
+        {
+            StdLog("CSnapshotDownChannel", "Handle msg down data rsp: Write snapshot file data failed, file name: %s, offset: %lu, size: %lu, snap block: %s",
+                   body.strFileName.c_str(), body.nOffset, body.btData.size(), body.hashSnapBlock.ToString().c_str());
+            return false;
+        }
+
+        CSnapDownMsgDownDataReq bodyReq(body.hashSnapBlock, body.strFileName, body.nOffset + body.btData.size());
+
+        CBufStream ss;
+        ss << SNAP_DOWN_MSGID_DOWNDATA_REQ << bodyReq;
+
+        network::CEventPeerSnapshotDownData event(nNetId, hashFork);
+        ss.GetData(event.data);
+        if (!pPeerNet->DispatchEvent(&event))
+        {
+            StdLog("CSnapshotDownChannel", "Handle msg down data rsp: Dispatch event failed, snap block: %s", body.hashSnapBlock.ToString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
 }; // namespace hashahead
