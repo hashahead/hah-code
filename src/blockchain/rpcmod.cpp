@@ -5397,8 +5397,35 @@ CRPCResultPtr CRPCMod::RPCListDexOrder(const CReqContext& ctxReq, CRPCParamPtr p
 CRPCResultPtr CRPCMod::RPCGetDexSymbolType(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CGetDexSymbolTypeParam>(param);
-}
 
+    if (!spParam->strCoinsymbol1.IsValid() || spParam->strCoinsymbol1.empty() || spParam->strCoinsymbol1.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbol1");
+    }
+    if (!spParam->strCoinsymbol2.IsValid() || spParam->strCoinsymbol2.empty() || spParam->strCoinsymbol2.size() > MAX_COIN_SYMBOL_SIZE)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid coinsymbol2");
+    }
+    std::string strCoinSymbol1 = spParam->strCoinsymbol1;
+    std::string strCoinSymbol2 = spParam->strCoinsymbol2;
+    StringToUpper(strCoinSymbol1);
+    StringToUpper(strCoinSymbol2);
+
+    auto spResult = MakeCGetDexSymbolTypeResultPtr();
+    spResult->strCoinsymbol1 = spParam->strCoinsymbol1;
+    spResult->strCoinsymbol2 = spParam->strCoinsymbol2;
+    if (CDexOrderHeader::GetSellCoinSymbolStatic(strCoinSymbol1, strCoinSymbol2) == strCoinSymbol1)
+    {
+        spResult->strType1 = "SELL";
+        spResult->strType2 = "BUY";
+    }
+    else
+    {
+        spResult->strType1 = "BUY";
+        spResult->strType2 = "SELL";
+    }
+    return spResult;
+}
 
 CRPCResultPtr CRPCMod::RPCListRealtimeDexOrder(const CReqContext& ctxReq, CRPCParamPtr param)
 {
