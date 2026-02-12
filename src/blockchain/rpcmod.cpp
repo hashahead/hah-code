@@ -5302,7 +5302,7 @@ CRPCResultPtr CRPCMod::RPCSendDexOrderTx(const CReqContext& ctxReq, CRPCParamPtr
 CRPCResultPtr CRPCMod::RPCListDexOrder(const CReqContext& ctxReq, CRPCParamPtr param)
 {
     auto spParam = CastParamPtr<CListDexOrderParam>(param);
-	
+
     CDestination destOrder;
     std::string strCoinSymbolOwner;
     std::string strCoinSymbolPeer;
@@ -5330,6 +5330,68 @@ CRPCResultPtr CRPCMod::RPCListDexOrder(const CReqContext& ctxReq, CRPCParamPtr p
     nGetStatus = spParam->nStatus;
     nCount = spParam->nCount;
 
+    switch (nGetStatus)
+    {
+    case CDexCompleteStatus::DCS_DEX_ORDER_UNCOMPLETED:
+    case CDexCompleteStatus::DCS_DEX_ORDER_COMPLETED:
+    case CDexCompleteStatus::DCS_DEX_ORDER_ALL:
+        break;
+    default:
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid status");
+    }
+
+    if (strCoinSymbolOwner.empty() || strCoinSymbolPeer.empty())
+    {
+        nBeginNumber = 0;
+    }
+
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+
+    std::map<CDexOrderHeader, CDexOrderSave> mapDexOrder;
+    if (!pService->ListAddressDexOrder(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginNumber, nGetStatus, nCount, mapDexOrder))
+    {
+        throw CRPCException(RPC_DATABASE_ERROR, "Query fail");
+    }
+
+    auto spResult = MakeCListDexOrderResultPtr();
+    for (auto& kv : mapDexOrder)
+    {
+        const CDexOrderHeader& orderHeader = kv.first;
+        const CDexOrderSave& dexOrderSave = kv.second;
+        const CDexOrderBody& dexOrderBody = dexOrderSave.dexOrder;
+
+        uint256 nSurplusAmount;
+        if (dexOrderBody.nOrderAmount > dexOrderBody.nCompleteOrderAmount)
+        {
+            nSurplusAmount = dexOrderBody.nOrderAmount - dexOrderBody.nCompleteOrderAmount;
+        }
+
+        CListDexOrderResult::CDexorderdata item;
+
+        item.nOrdernumber = orderHeader.GetOrderNumber();
+        item.strCoinsymbolowner = dexOrderBody.strCoinSymbolOwner;
+        item.strCoinsymbolpeer = dexOrderBody.strCoinSymbolPeer;
+        item.strAmount = CoinToTokenBigFloat(dexOrderBody.nOrderAmount);
+        item.strPrice = CoinToTokenBigFloat(dexOrderBody.nOrderPrice);
+        item.strSurplusamount = CoinToTokenBigFloat(nSurplusAmount);
+        item.strCompleteamount = CoinToTokenBigFloat(dexOrderBody.nCompleteOrderAmount);
+        item.nCompletecount = dexOrderBody.nCompleteOrderCount;
+        item.nHeight = CBlock::GetBlockHeightByHash(dexOrderSave.hashAtBlock);
+        item.nSlot = CBlock::GetBlockSlotByHash(dexOrderSave.hashAtBlock);
+
+        spResult->vecDexorderdata.push_back(item);
+    }
+
+    return spResult;
 }
 
 CRPCResultPtr CRPCMod::RPCGetDexSymbolType(const CReqContext& ctxReq, CRPCParamPtr param)
