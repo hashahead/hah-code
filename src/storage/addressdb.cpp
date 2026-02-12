@@ -1384,6 +1384,18 @@ bool CForkAddressDB::ListAddressDb(const uint256& hashBlock, std::map<CDestinati
         StdLog("CForkAddressDB", "List address: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
+
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_ADDRESS;
+    bytes btKeyPrefix;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListAddressTrieDBWalker walker(mapAddress);
+    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+    {
+        StdLog("CForkAddressDB", "List address: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
     return true;
 }
 
