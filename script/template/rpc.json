@@ -713,6 +713,10 @@
                 "type": "string",
                 "desc": "block miner"
             },
+            "mixHash": {
+                "type": "string",
+                "desc": "block mix hash"
+            },
             "difficulty": {
                 "type": "string",
                 "desc": "block difficulty"
@@ -741,7 +745,7 @@
                 "type": "string",
                 "desc": "block timestamp"
             },
-            "transactionids": {
+            "transactions": {
                 "type": "array",
                 "desc": "transaction hash list",
                 "required": false,
@@ -772,6 +776,84 @@
                         "desc": "block uncle hash"
                     }
                 }
+            }
+        }
+    },
+    "blockheader": {
+        "type": "class",
+        "name": "BlockHeader",
+        "content": {
+            "hash": {
+                "type": "string",
+                "desc": "block hash"
+            },
+            "prev": {
+                "type": "string",
+                "desc": "previous block hash"
+            },
+            "chainid": {
+                "type": "uint",
+                "desc": "chain id"
+            },
+            "fork": {
+                "type": "string",
+                "desc": "fork hash"
+            },
+            "version": {
+                "type": "uint",
+                "desc": "version"
+            },
+            "type": {
+                "type": "string",
+                "desc": "block type"
+            },
+            "time": {
+                "type": "uint",
+                "desc": "block time"
+            },
+            "number": {
+                "type": "uint",
+                "desc": "block number"
+            },
+            "height": {
+                "type": "uint",
+                "desc": "block height"
+            },
+            "slot": {
+                "type": "uint",
+                "desc": "block slot"
+            },
+            "confirm": {
+                "type": "bool",
+                "desc": "if confirm block"
+            },
+            "prevconfirmblock": {
+                "type": "string",
+                "desc": "prev confirm block"
+            },
+            "reward": {
+                "type": "string",
+                "desc": "block reward"
+            },
+            "stateroot": {
+                "type": "string",
+                "desc": "state root"
+            },
+            "receiptsroot": {
+                "type": "string",
+                "desc": "receipts root"
+            },
+            "bloom": {
+                "type": "string",
+                "desc": "block bloom"
+            },
+            "txmint": {
+                "type": "string",
+                "desc": "transaction mint hash"
+            },
+            "txcount": {
+                "type": "uint",
+                "desc": "tx count"
             }
         }
     },

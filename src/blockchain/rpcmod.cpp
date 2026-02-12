@@ -6386,6 +6386,11 @@ CRPCResultPtr CRPCMod::RPCListContractCode(const CReqContext& ctxReq, CRPCParamP
     {
         CListContractCodeResult::CCodedata codeData;
 
+        if (kv.second.hashCreateTxid == 0)
+        {
+            continue;
+        }
+
         codeData.strCodehash = kv.second.hashCode.ToString();
         if (kv.second.hashSource != 0)
         {
