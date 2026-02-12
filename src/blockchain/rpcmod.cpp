@@ -6004,9 +6004,30 @@ CRPCResultPtr CRPCMod::RPCMakeFork(const CReqContext& ctxReq, CRPCParamPtr param
     {
         throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Can't sign origin block by public key");
     }
-    if (fLocked)
+
+    if (nForkType == CProfile::PROFILE_FORK_TYPE_CLONEMAP)
     {
-        throw CRPCException(RPC_WALLET_UNLOCK_NEEDED, "Key is locked");
+        CBlockStatus statusGen;
+        if (!pService->GetBlockStatus(hashGenesisFork, statusGen))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Get genesis block status fail");
+        }
+        if (destOwner != statusGen.destMint)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Must be the main chain creator");
+        }
+        nAmount = 0;
+        nMintReward = 0;
+        nHalvecycle = 0;
+        nTxAmount = 0;
+    }
+    else
+    {
+        if (!fCreateUserForkEnable)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Disable create user fork");
+        }
+        nTxAmount = MORTGAGE_BASE;
     }
 
     uint256 hashBlock = block.GetHash();
