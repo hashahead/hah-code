@@ -7746,7 +7746,7 @@ CRPCResultPtr CRPCMod::RPCEthGetCode(const CReqContext& ctxReq, CRPCParamPtr par
     if (address.IsNull())
     {
         StdLog("CRPCMod", "RPC EthGetCode: Invalid address");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
     }
     uint256 hashBlock = GetRefBlock(ctxReq.hashFork, (spParam->vecParamlist.size() > 1 ? spParam->vecParamlist.at(1) : string()));
 
@@ -7754,14 +7754,15 @@ CRPCResultPtr CRPCMod::RPCEthGetCode(const CReqContext& ctxReq, CRPCParamPtr par
     if (!pService->GeDestContractContext(ctxReq.hashFork, hashBlock, address, ctxtContract))
     {
         StdLog("CRPCMod", "RPC EthGetCode: Get address context fail");
-        return nullptr;
+        // throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find address");
+        return MakeCeth_getCodeResultPtr("0x");
     }
 
     bytes btCode;
     if (!pService->GetContractCode(ctxReq.hashFork, hashBlock, ctxtContract.hashContractCreateCode, btCode))
     {
         StdLog("CRPCMod", "RPC EthGetCode: Get code fail");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find code");
     }
 
     return MakeCeth_getCodeResultPtr(ToHexString(btCode));
@@ -7773,7 +7774,7 @@ CRPCResultPtr CRPCMod::RPCEthSign(const CReqContext& ctxReq, CRPCParamPtr param)
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() < 2)
     {
         StdLog("CRPCMod", "RPC EthSign: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     CDestination address;
@@ -7781,7 +7782,7 @@ CRPCResultPtr CRPCMod::RPCEthSign(const CReqContext& ctxReq, CRPCParamPtr param)
     if (address.IsNull())
     {
         StdLog("CRPCMod", "RPC EthSign: Invalid address");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
     }
     bytes btMsg = ParseHexString(spParam->vecParamlist.at(1));
     if (btMsg.empty())
@@ -8118,6 +8119,8 @@ CRPCResultPtr CRPCMod::RPCEthCall(const CReqContext& ctxReq, CRPCParamPtr param)
 
 CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr param)
 {
+    uint256 hashFork = ctxReq.hashFork;
+
     CDestination destFrom;
     CDestination destTo;
     uint256 nAmount;
@@ -8193,14 +8196,14 @@ CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr
 
     if (nGasPrice == 0)
     {
-        nGasPrice = pService->GetForkMintMinGasPrice(ctxReq.hashFork);
+        nGasPrice = pService->GetForkMintMinGasPrice(hashFork);
     }
     if (hashBlock == 0)
     {
         int nLastHeight;
-        if (!pService->GetForkLastBlock(ctxReq.hashFork, nLastHeight, hashBlock))
+        if (!pService->GetForkLastBlock(hashFork, nLastHeight, hashBlock))
         {
-            hashBlock = ctxReq.hashFork;
+            hashBlock = hashFork;
         }
     }
 

@@ -2402,7 +2402,237 @@
         "error": [
             "{\"code\" : -6, \"message\" : \"Invalid address\"}",
             "{\"code\" : -6, \"message\" : \"Invalid block\"}",
-            "{\"code\" : -32603, \"message\" : \"Query failed\"}"
+            "{\"code\" : -4, \"message\" : \"Unknown address\"}"
+        ]
+    },
+    "getpledgevotes": {
+        "type": "command",
+        "name": "GetPledgeVotes",
+        "desc": "Get pledge votes",
+        "request": {
+            "type": "object",
+            "content": {
+                "address": {
+                    "type": "string",
+                    "desc": "pledge template address"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash or number or latest (default latest block)",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "name": "result",
+            "content": {
+                "voteaddress": {
+                    "type": "string",
+                    "desc": "pledge vote address"
+                },
+                "delegateaddress": {
+                    "type": "string",
+                    "desc": "pos node address"
+                },
+                "owneraddress": {
+                    "type": "string",
+                    "desc": "vote user address"
+                },
+                "pledgetype": {
+                    "type": "uint",
+                    "desc": "pledge type"
+                },
+                "cycles": {
+                    "type": "uint",
+                    "desc": "0: unlimit, other: cycles"
+                },
+                "nonce": {
+                    "type": "uint",
+                    "desc": "nonce"
+                },
+                "voteamount": {
+                    "type": "string",
+                    "desc": "vote amount (big float)"
+                },
+                "votetime": {
+                    "type": "uint",
+                    "desc": "first vote time"
+                },
+                "voteheight": {
+                    "type": "uint",
+                    "desc": "first vote height"
+                },
+                "stopheight": {
+                    "type": "uint",
+                    "desc": "request stop height"
+                },
+                "redeemheight": {
+                    "type": "uint",
+                    "desc": "remeed height"
+                },
+                "status": {
+                    "type": "uint",
+                    "desc": "vote status, 0: no vote, 1: voting, 2: request stop"
+                },
+                "revoterewardamount": {
+                    "type": "string",
+                    "desc": "revote reward amount (big float)"
+                },
+                "stopedrewardamount": {
+                    "type": "string",
+                    "desc": "stoped reward amount (big float)"
+                },
+                "totalrewardamount": {
+                    "type": "string",
+                    "desc": "total reward amount (big float)"
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli getpledgevotes 0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c",
+                "response": "{\"voteaddress\":\"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c\",\"delegateaddress\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"owneraddress\":\"0x5962974eeb0b17b43edabfc9b747839317aa852f\",\"pledgetype\":4,\"cycles\":0,\"nonce\":0,\"voteamount\":\"504597.723695633079012759\",\"votetime\":1735097955,\"voteheight\":1373,\"stopheight\":0,\"redeemheight\":0,\"status\":1,\"revoterewardamount\":\"4597.723695633079012759\",\"stopedrewardamount\":\"0.0\",\"totalrewardamount\":\"6714.93754514595965232\"}"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"getpledgevotes\",\"jsonrpc\":\"2.0\",\"params\":{\"address\":\"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":{\"voteaddress\":\"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c\",\"delegateaddress\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"owneraddress\":\"0x5962974eeb0b17b43edabfc9b747839317aa852f\",\"pledgetype\":4,\"cycles\":0,\"nonce\":0,\"voteamount\":\"504597.723695633079012759\",\"votetime\":1735097955,\"voteheight\":1373,\"stopheight\":0,\"redeemheight\":0,\"status\":1,\"revoterewardamount\":\"4597.723695633079012759\",\"stopedrewardamount\":\"0.0\",\"totalrewardamount\":\"6714.93754514595965232\"}}"
+            }
+        ],
+        "error": [
+            "{\"code\" : -6, \"message\" : \"Invalid address\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid block\"}",
+            "{\"code\" : -4, \"message\" : \"Unknown address\"}"
+        ]
+    },
+    "listpledgevotes": {
+        "type": "command",
+        "name": "ListPledgeVotes",
+        "desc": "List pledge votes",
+        "request": {
+            "type": "object",
+            "content": {
+                "owneraddress": {
+                    "type": "string",
+                    "desc": "pledge owner address"
+                },
+                "delegateaddress": {
+                    "type": "string",
+                    "desc": "delegate address (default null: all delegate address)",
+                    "required": false,
+                    "opt": "d"
+                },
+                "pledgetype": {
+                    "type": "uint",
+                    "desc": "pledge type, 0: all",
+                    "required": false,
+                    "default": 0,
+                    "opt": "p"
+                },
+                "status": {
+                    "type": "uint",
+                    "desc": "vote status, 0: no vote, 1: voting, 2: request stop, 9: all (default is 9: all vote)",
+                    "required": false,
+                    "default": 9,
+                    "opt": "s"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash or number or latest (default latest block)",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "array",
+            "name": "pledgevotelist",
+            "desc": "pledge vote list",
+            "content": {
+                "pledgevote": {
+                    "type": "object",
+                    "desc": "vote",
+                    "content": {
+                        "voteaddress": {
+                            "type": "string",
+                            "desc": "pledge vote address"
+                        },
+                        "delegateaddress": {
+                            "type": "string",
+                            "desc": "pos node address"
+                        },
+                        "owneraddress": {
+                            "type": "string",
+                            "desc": "vote user address"
+                        },
+                        "pledgetype": {
+                            "type": "uint",
+                            "desc": "pledge type"
+                        },
+                        "cycles": {
+                            "type": "uint",
+                            "desc": "0: unlimit, other: cycles"
+                        },
+                        "nonce": {
+                            "type": "uint",
+                            "desc": "nonce"
+                        },
+                        "voteamount": {
+                            "type": "string",
+                            "desc": "vote amount (big float)"
+                        },
+                        "votetime": {
+                            "type": "uint",
+                            "desc": "first vote time"
+                        },
+                        "voteheight": {
+                            "type": "uint",
+                            "desc": "first vote height"
+                        },
+                        "stopheight": {
+                            "type": "uint",
+                            "desc": "request stop height"
+                        },
+                        "redeemheight": {
+                            "type": "uint",
+                            "desc": "remeed height"
+                        },
+                        "status": {
+                            "type": "uint",
+                            "desc": "vote status, 0: no vote, 1: voting, 2: request stop"
+                        },
+                        "revoterewardamount": {
+                            "type": "string",
+                            "desc": "revote reward amount (big float)"
+                        },
+                        "stopedrewardamount": {
+                            "type": "string",
+                            "desc": "stoped reward amount (big float)"
+                        },
+                        "totalrewardamount": {
+                            "type": "string",
+                            "desc": "total reward amount (big float)"
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listpledgevotes",
+                "response": "[{\"voteaddress\":\"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c\",\"delegateaddress\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"owneraddress\":\"0x5962974eeb0b17b43edabfc9b747839317aa852f\",\"pledgetype\":4,\"cycles\":0,\"nonce\":0,\"voteamount\":\"504597.723695633079012759\",\"votetime\":1735097955,\"voteheight\":1373,\"stopheight\":0,\"redeemheight\":0,\"status\":1,\"revoterewardamount\":\"4597.723695633079012759\",\"stopedrewardamount\":\"0.0\",\"totalrewardamount\":\"6714.93754514595965232\"}]"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"listpledgevotes\",\"jsonrpc\":\"2.0\",\"params\":{}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":[{\"voteaddress\":\"0xbb3cc3d9269a48f9851ac4a0b58f53bf382f851c\",\"delegateaddress\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"owneraddress\":\"0x5962974eeb0b17b43edabfc9b747839317aa852f\",\"pledgetype\":4,\"cycles\":0,\"nonce\":0,\"voteamount\":\"504597.723695633079012759\",\"votetime\":1735097955,\"voteheight\":1373,\"stopheight\":0,\"redeemheight\":0,\"status\":1,\"revoterewardamount\":\"4597.723695633079012759\",\"stopedrewardamount\":\"0.0\",\"totalrewardamount\":\"6714.93754514595965232\"}]}"
+            }
+        ],
+        "error": [
+            "{\"code\" : -6, \"message\" : \"Invalid address\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid block\"}",
+            "{\"code\" : -4, \"message\" : \"Unknown address\"}",
+            "{\"code\" : -4, \"message\" : \"No such owner address\"}"
         ]
     },
     "gettimevault": {
