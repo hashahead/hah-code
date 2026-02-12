@@ -597,20 +597,17 @@ bool CBlockIndexDB::AddBlockLocalSignFlagDb(const uint256& hashBlock)
     return Write(ssKey, ssValue);
 }
 
-bool CBlockIndexDB::GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock)
+bool CBlockIndexDB::GetBlockLocalSignFlagDb(const CChainId nChainId, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock)
 {
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-    ssKey << nRootType << DB_BLOCKINDEX_KEY_ID_PREVROOT;
-    ssKey.GetData(btKey);
-    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    CBufStream ssKey, ssValue;
+    ssKey << DB_BLOCKINDEX_KEY_TYPE_BLOCK_LOCAL_SIGN_FLAG << nChainId << nHeight << nSlot;
+    if (!Read(ssKey, ssValue))
     {
         return false;
     }
     try
     {
-        ssValue.Write((char*)(btValue.data()), btValue.size());
-        ssValue >> hashPrevRoot >> hashBlock;
+        ssValue >> hashBlock;
     }
     catch (std::exception& e)
     {
