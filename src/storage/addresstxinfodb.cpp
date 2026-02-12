@@ -757,26 +757,50 @@ bool CForkAddressTxInfoDB::AddLongChainBlock(const uint256& hashBlock)
 
     if (!WriteLastBlock(hashBlock))
     {
-        StdLog("CForkAddressTxInfoDB", "Verify address tx info: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        StdLog("CForkAddressTxInfoDB", "Add longchain block: Write last block fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CForkAddressTxInfoDB::RemoveLongChainlock(const uint256& hashBlock)
+{
+    map<CDestination, pair<uint64, uint64>> mapBlockAddressTxIndex;                         // key: address, value1: begin index, value2: end index
+    map<CDestination, map<CDestination, pair<uint64, uint64>>> mapBlockAddressTokenTxIndex; // key1: contract address, key2: user address, value1: begin index, value2: end index
+    if (!ReadBlockAddressTxIndex(hashBlock, mapBlockAddressTxIndex))
+    {
+        StdLog("CForkAddressTxInfoDB", "Remove longchain block: Read block address tx index fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    if (!ReadBlockAddressTokenTxIndex(hashBlock, mapBlockAddressTokenTxIndex))
+    {
+        StdLog("CForkAddressTxInfoDB", "Remove longchain block: Read block address token tx index fail, block: %s", hashBlock.GetBhString().c_str());
         return false;
     }
 
-    if (fVerifyAllNode)
+    uint256 hashPrevBlock;
+    if (!GetBlockPrevBlock(hashBlock, hashPrevBlock))
     {
-        std::map<uint256, CTrieValue> mapCacheNode;
-        if (!dbTrie.CheckTrieNode(hashRoot, mapCacheNode))
-        {
-            StdLog("CForkAddressTxInfoDB", "Verify address tx info: Check trie node fail, root: %s, block: %s", hashRoot.GetHex().c_str(), hashBlock.GetHex().c_str());
-            return false;
-        }
+        StdLog("CForkAddressTxInfoDB", "Remove longchain block: Get block prevblock fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
     }
 
-    uint256 hashPrevRoot;
-    if (hashBlock != hashFork)
+    for (auto& kv : mapBlockAddressTxIndex)
     {
-        if (!ReadTrieRoot(hashPrevBlock, hashPrevRoot))
+        const CDestination& address = kv.first;
+        const uint64 nBeginIndex = kv.second.first;
+        const uint64 nEndIndex = kv.second.second;
+
+        for (uint64 i = nBeginIndex; i <= nEndIndex; i++)
         {
-            StdLog("CForkAddressTxInfoDB", "Verify address tx info: Read prev trie root fail, prev block: %s", hashPrevBlock.GetHex().c_str());
+            hnbase::CBufStream ssKey;
+            ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_INFO << address << BSwap64(i);
+            Erase(ssKey);
+        }
+
+        if (!WriteAddressTxCount(address, nEndIndex + 1))
+        {
+            StdLog("CForkAddressTxInfoDB", "Remove longchain block: Write address tx count fail, address: %s, block: %s", address.ToString().c_str(), hashBlock.GetBhString().c_str());
             return false;
         }
     }
