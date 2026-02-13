@@ -133,5 +133,9 @@ bool CCoinDexPair::AddOrder(const uint256& hashDexOrder, const std::string& strC
     return true;
 }
 
+void CCoinDexPair::SetPrevCompletePrice(const uint256& nPrevPrice)
+{
+    nPrevCompletePrice = nPrevPrice;
+}
 } // namespace storage
 } // namespace hashahead

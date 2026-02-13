@@ -983,6 +983,8 @@ bool CForkDB::AddCacheForkContext(const uint256& hashPrevBlock, const uint256& h
         }
         if (!mapNewForkCtxt.empty())
         {
+            std::map<uint256, CForkContext> mapForkCtxt;
+            mapForkCtxt = ptr->mapForkContext;
             for (const auto& kv : mapNewForkCtxt)
             {
                 mapForkCtxt[kv.first] = kv.second;

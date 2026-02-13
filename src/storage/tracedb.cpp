@@ -103,6 +103,17 @@ void CCacheTraceData::AddCacheBlockContractTraceData(const uint256& hashBlock, c
     }
 }
 
+bool CCacheTraceData::GetBlockContractReceipt(const uint256& hashBlock, BlockContractReceipts& vContractReceipts) const
+{
+    auto it = mapBlockContractReceipts.find(hashBlock);
+    if (it != mapBlockContractReceipts.end())
+    {
+        vContractReceipts = it->second.GetBlockContractReceipts();
+        return true;
+    }
+    return false;
+}
+
 //////////////////////////////
 // CTraceDB
 

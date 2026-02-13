@@ -60,6 +60,7 @@ public:
 
     void AddCacheBlockContractTraceData(const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState);
 
+    bool GetBlockContractReceipt(const uint256& hashBlock, BlockContractReceipts& vContractReceipts) const;
 protected:
     std::map<uint256, CCacheBlockContractReceipts> mapBlockContractReceipts;   // key: block hash
     std::map<uint256, CCacheBlockContractPrevState> mapBlockContractPrevState; // key: block hash

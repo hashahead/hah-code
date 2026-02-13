@@ -112,7 +112,7 @@ bool CTimeSeriesBase::RemoveFollowUpFile(uint32 nBeginFile)
     std::string pathFile;
     while (GetFilePath(nBeginFile, pathFile))
     {
-        if (!boost::filesystem::remove(path(pathFile)))
+        if (!fs::remove(fs::path(pathFile)))
         {
             hnbase::StdError("TimeSeriesBase", "RemoveFollowUpFile: remove fail fail, file: %s", pathFile.c_str());
             return false;
@@ -125,7 +125,7 @@ bool CTimeSeriesBase::RemoveFollowUpFile(uint32 nBeginFile)
 bool CTimeSeriesBase::TruncateFile(const string& pathFile, uint32 nOffset)
 {
     string strTempFilePath = pathFile + ".temp";
-    boost::filesystem::rename(path(pathFile), path(strTempFilePath));
+    fs::rename(fs::path(pathFile), fs::path(strTempFilePath));
 
     FILE* pReadFd = nullptr;
     FILE* pWriteFd = nullptr;
@@ -165,7 +165,7 @@ bool CTimeSeriesBase::TruncateFile(const string& pathFile, uint32 nOffset)
     fclose(pReadFd);
     fclose(pWriteFd);
 
-    boost::filesystem::remove(path(strTempFilePath));
+    fs::remove(fs::path(strTempFilePath));
     return true;
 }
 

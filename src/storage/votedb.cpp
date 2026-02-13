@@ -1130,8 +1130,7 @@ bool CVoteDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, cons
 bool CVoteDB::ListVoteReward(const uint32 nChainId, const uint256& hashBlock, const CDestination& dest, const uint32 nGetCount, std::vector<std::pair<uint32, uint256>>& vVoteReward)
 {
     uint256 hashRoot;
-    uint64 nRewardCount = 0;
-    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashBlock, hashRoot, nRewardCount))
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashBlock, hashRoot))
     {
         StdLog("CVoteDB", "List vote reward: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
