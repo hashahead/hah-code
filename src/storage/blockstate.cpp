@@ -417,5 +417,10 @@ bool CBlockState::GetTransientValue(const CDestination& dest, const uint256& key
     return false;
 }
 
+void CBlockState::SetTransientValue(const CDestination& dest, const uint256& key, const bytes& value)
+{
+    mapCacheTransientStorage[dest][key] = value;
+}
+
 } // namespace storage
 } // namespace hashahead

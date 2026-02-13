@@ -153,7 +153,7 @@ public:
     void ListForkIndex(std::multimap<int, BlockIndexPtr>& mapForkIndex);
     bool GetBlockBranchList(const uint256& hashBlock, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder);
     bool GetPrevBlockHashList(const uint256& hashBlock, const uint32 nGetCount, std::vector<uint256>& vPrevBlockhash);
-    bool LoadIndex(CBlockOutline& diskIndex);
+    BlockIndexPtr LoadBlockIndex(const CBlockIndex& outline);
     bool LoadTx(const uint32 nTxFile, const uint32 nTxOffset, CTransaction& tx);
     bool AddBlockForkContext(const uint256& hashBlock, const CBlockEx& blockex, const std::map<CDestination, CAddressContext>& mapAddressContext, uint256& hashNewRoot);
     bool VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& tx, std::vector<std::pair<CDestination, CForkContext>>& vForkCtxt);

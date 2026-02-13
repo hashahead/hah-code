@@ -1456,6 +1456,16 @@ bool CBlockBase::RetrieveDestPledgeVoteContext(const uint256& hashBlock, const C
     return dbBlock.RetrieveDestPledgeVoteContext(hashBlock, destVote, ctxPledgeVote);
 }
 
+bool CBlockBase::ListPledgeFinalHeight(const uint256& hashBlock, const uint32 nFinalHeight, std::map<CDestination, std::pair<uint32, uint32>>& mapPledgeFinalHeight)
+{
+    return dbBlock.ListPledgeFinalHeight(hashBlock, nFinalHeight, mapPledgeFinalHeight);
+}
+
+bool CBlockBase::WalkThroughDayVote(const uint256& hashBeginBlock, const uint256& hashTailBlock, CDayVoteWalker& walker)
+{
+    return dbBlock.WalkThroughDayVote(hashBeginBlock, hashTailBlock, walker);
+}
+
                 bool fCallResult = true;
                 CTransactionReceipt receiptRedeem;
                 if (!AddContractState(txRedeem.GetHash(), txRedeem, 0, PLEDGE_REDEEM_TX_GAS_LIMIT, 0, fCallResult, receiptRedeem))
