@@ -114,6 +114,7 @@ public:
     bool GetTransientValue(const CDestination& dest, const uint256& key, bytes& value) const;
     void SetTransientValue(const CDestination& dest, const uint256& key, const bytes& value);
     bool IsTimeVaultWhitelistAddressExist(const CDestination& address);
+    void AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv);
 
 protected:
     CBlockBase& dbBlockBase;
