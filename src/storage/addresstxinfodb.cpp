@@ -846,13 +846,25 @@ bool CForkAddressTxInfoDB::WriteBlockAddressTxIndex(const uint256& hashBlock, co
     return Write(ssKey, ssValue);
 }
 
-bool CForkAddressTxInfoDB::ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot)
+bool CForkAddressTxInfoDB::ReadBlockAddressTxIndex(const uint256& hashBlock, map<CDestination, pair<uint64, uint64>>& mapBlockAddressTxIndex)
 {
-    if (hashBlock == 0)
+    try
     {
-        hashTrieRoot = 0;
-        return true;
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_RANGE << hashBlock;
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
+        ssValue >> mapBlockAddressTxIndex;
     }
+    catch (exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 
     hnbase::CBufStream ssKey, ssValue;
     ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_TRIEROOT << hashBlock;

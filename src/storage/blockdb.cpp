@@ -141,12 +141,14 @@ void CBlockDB::RemoveAll()
     dbAddress.Clear();
     dbState.Clear();
     dbVote.Clear();
+    dbHdex.Clear();
     dbTxIndex.Clear();
     dbBlockIndex.Clear();
     dbFork.Clear();
     dbVerify.Clear();
     dbAddressBlacklist.Remove();
     dbMintMinGasPrice.Remove();
+    dbSnapshot.Remove();
     if (fCfgFullDb)
     {
         dbAddressTxInfo.Clear();
