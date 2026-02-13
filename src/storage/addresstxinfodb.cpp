@@ -838,13 +838,12 @@ bool CForkAddressTxInfoDB::RemoveLongChainlock(const uint256& hashBlock)
     return true;
 }
 
-///////////////////////////////////
-bool CForkAddressTxInfoDB::WriteTrieRoot(const uint256& hashBlock, const uint256& hashTrieRoot)
+bool CForkAddressTxInfoDB::WriteBlockAddressTxIndex(const uint256& hashBlock, const map<CDestination, pair<uint64, uint64>>& mapBlockAddressTxIndex)
 {
     hnbase::CBufStream ssKey, ssValue;
-    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_TRIEROOT << hashBlock;
-    ssValue << hashTrieRoot;
-    return dbTrie.WriteExtKv(ssKey, ssValue);
+    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_ADDRESS_TX_RANGE << hashBlock;
+    ssValue << mapBlockAddressTxIndex;
+    return Write(ssKey, ssValue);
 }
 
 bool CForkAddressTxInfoDB::ReadTrieRoot(const uint256& hashBlock, uint256& hashTrieRoot)
