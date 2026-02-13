@@ -106,5 +106,22 @@ void CHdexDB::Clear()
     dbTrie.Clear();
 }
 
+bool CHdexDB::AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDexOrderHeader, CDexOrderBody>& mapDexOrder, const std::map<CChainId, std::vector<CBlockCoinTransferProve>>& mapCrossTransferProve,
+                          const std::map<uint256, uint256>& mapCoinPairCompletePrice, const std::set<CChainId>& setPeerCrossChainId, const std::map<CDexOrderHeader, std::vector<CCompDexOrderRecord>>& mapCompDexOrderRecord, const std::map<CChainId, CBlockProve>& mapBlockProve, uint256& hashNewRoot)
+{
+    CWriteLock wlock(rwAccess);
+
+    uint256 hashPrevRoot;
+    if (hashBlock != hashFork)
+    {
+        if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashPrevBlock, hashPrevRoot))
+        {
+            StdLog("CHdexDB", "Add dex order: Read trie root fail, prev block: %s, block: %s",
+                   hashPrevBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+}
+
 } // namespace storage
 } // namespace hashahead
