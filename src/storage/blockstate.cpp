@@ -422,5 +422,32 @@ void CBlockState::SetTransientValue(const CDestination& dest, const uint256& key
     mapCacheTransientStorage[dest][key] = value;
 }
 
+bool CBlockState::IsTimeVaultWhitelistAddressExist(const CDestination& address)
+{
+    if (setBlockTimeVaultWhitelist.count(address) > 0)
+    {
+        return true;
+    }
+    if (setCacheTimeVaultWhitelist.count(address) > 0)
+    {
+        return true;
+    }
+
+    uint256 hashPrimaryRefBlock;
+    if (fPrimaryBlock)
+    {
+        hashPrimaryRefBlock = hashPrevBlock;
+    }
+    else
+    {
+        hashPrimaryRefBlock = hashRefBlock;
+    }
+    if (dbBlockBase.IsTimeVaultWhitelistAddressExist(address, hashPrimaryRefBlock))
+    {
+        return true;
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead

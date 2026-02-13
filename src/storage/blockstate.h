@@ -109,7 +109,11 @@ public:
     bool GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut);
     void GetBlockBloomData(bytes& btBloomDataOut);
     bool GetDestBalance(const CDestination& dest, uint256& nBalance);
+    uint64 GetAddressLastTxNonce(const CDestination& addr);
+    bool SetAddressLastTxNonce(const CDestination& addr, const uint64 nNonce);
     bool GetTransientValue(const CDestination& dest, const uint256& key, bytes& value) const;
+    void SetTransientValue(const CDestination& dest, const uint256& key, const bytes& value);
+    bool IsTimeVaultWhitelistAddressExist(const CDestination& address);
 
 protected:
     CBlockBase& dbBlockBase;
@@ -130,11 +134,22 @@ protected:
     const bool fPrimaryBlock;
     const bool fBtTraceDb;
     const std::map<CChainId, CBlockProve> mapBlockProve; // key: peer chainid
-	
+
     uint256 nOriginalBlockMintReward;
     uint256 hashRefBlock;
     uint256 nAgreement;
 
+    class CCacheContractData
+    {
+    public:
+        CCacheContractData() {}
+
+    public:
+        CDestState cacheDestState;
+        std::vector<CTransactionLogs> cacheContractLogs;
+        std::map<uint256, bytes> cacheContractKv;
+        std::map<uint256, bytes> traceContractKv;
+    };
 };
 
 typedef std::shared_ptr<CBlockState> SHP_BLOCK_STATE;
