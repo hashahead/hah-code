@@ -151,7 +151,12 @@ protected:
     void AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
     bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
     bool AddAddressCount(const uint256& hashBlock, const uint64 nAddressCount, const uint64 nNewAddressCount);
+    bool RemoveAddressCount(const uint256& hashBlock);
+    bool AddOwnerAddressLinkTemplate(const uint256& hashBlock, const CDestination& destTemplate, const CAddressContext& ctxAddress, std::map<CDestination, std::map<CDestination, uint8>>& mapOwnerLinkTemplate, bytesmap& mapKv);
+    bool AddDelegateAddressLinkTemplate(const uint256& hashBlock, const CDestination& destTemplate, const CAddressContext& ctxAddress, std::map<CDestination, std::map<CDestination, uint8>>& mapDelegateLinkTemplate, bytesmap& mapKv);
+    bool ListAddressDb(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress);
     bool ListContractAddressDb(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
+    bool ListTokenContractAddressDb(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress);
 
 protected:
     enum
