@@ -1562,19 +1562,25 @@ bool CBlockBase::RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CD
     return true;
 }
 
-bool CBlockState::GetDestState(const CDestination& dest, CDestState& stateDest)
+bool CBlockBase::RetrieveAllDelegateVote(const uint256& hashBlock, std::map<CDestination, std::map<CDestination, CVoteContext>>& mapDelegateVote)
 {
-    auto mt = mapCacheContractData.find(dest);
-    if (mt != mapCacheContractData.end() && !mt->second.cacheDestState.IsNull())
+    return dbBlock.RetrieveAllDelegateVote(hashBlock, mapDelegateVote);
+}
+
+bool CBlockBase::GetDelegateMintRewardRatio(const uint256& hashBlock, const CDestination& destDelegate, uint32& nRewardRation)
+{
+    CAddressContext ctxAddress;
+    if (!dbBlock.RetrieveAddressContext(GetGenesisBlockHash(), hashBlock, destDelegate, ctxAddress))
     {
-        stateDest = mt->second.cacheDestState;
-        return true;
+        StdLog("CBlockBase", "Get Delegate Mint Reward Ratio: Retrieve address context fail, delegate: %s, block: %s",
+               destDelegate.ToString().c_str(), hashBlock.GetHex().c_str());
+        return false;
     }
-    auto it = mapBlockState.find(dest);
-    if (it != mapBlockState.end())
+    if (!ctxAddress.IsTemplate())
     {
-        stateDest = it->second;
-        return true;
+        StdLog("CBlockBase", "Get Delegate Mint Reward Ratio: Address not is template, delegate: %s, block: %s",
+               destDelegate.ToString().c_str(), hashBlock.GetHex().c_str());
+        return false;
     }
     return dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, dest, stateDest);
 }

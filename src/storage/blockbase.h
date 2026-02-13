@@ -155,7 +155,8 @@ public:
     bool GetPrevBlockHashList(const uint256& hashBlock, const uint32 nGetCount, std::vector<uint256>& vPrevBlockhash);
     BlockIndexPtr LoadBlockIndex(const CBlockIndex& outline);
     bool LoadTx(const uint32 nTxFile, const uint32 nTxOffset, CTransaction& tx);
-    bool AddBlockForkContext(const uint256& hashBlock, const CBlockEx& blockex, const std::map<CDestination, CAddressContext>& mapAddressContext, uint256& hashNewRoot);
+    bool AddBlockForkContext(const uint256& hashBlock, const CBlockEx& blockex, const std::map<CDestination, CAddressContext>& mapAddressContext, const std::map<std::string, CCoinContext>& mapNewSymbolCoin,
+                             const std::set<CDestination>& setTimeVaultWhitelist, const std::set<uint256>& setStopFork, uint256& hashNewRoot);
     bool VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& tx, std::vector<std::pair<CDestination, CForkContext>>& vForkCtxt);
     bool VerifyOriginBlock(const CBlock& block, const CProfile& parentProfile);
     bool ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, const uint256& hashBlock = uint256());

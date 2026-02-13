@@ -479,6 +479,16 @@ void CBlockState::AddCacheContractPrevState(const CDestination& address, const s
     }
 }
 
+const VmOperationTraceLogs& CBlockState::GetCacheVmOpTraceLogs() const
+{
+    return vCacheVmOpTraceLogs;
+}
+
+const TxContractReceipts& CBlockState::GetCacheContractReceipts() const
+{
+    return vCacheContractReceipt;
+}
+
 void CBlockState::AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv)
 {
     auto it = mapCacheContractPrevAddressState.find(address);

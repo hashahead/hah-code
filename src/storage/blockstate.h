@@ -116,6 +116,8 @@ public:
     bool IsTimeVaultWhitelistAddressExist(const CDestination& address);
     void AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv);
     const VmOperationTraceLogs& GetCacheVmOpTraceLogs() const;
+    const TxContractReceipts& GetCacheContractReceipts() const;
+    const MapContractPrevState& GetCacheContractPrevAddressState() const;
 
 protected:
     CBlockBase& dbBlockBase;
