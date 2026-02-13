@@ -805,19 +805,34 @@ bool CForkAddressTxInfoDB::RemoveLongChainlock(const uint256& hashBlock)
         }
     }
 
-    uint256 hashRootPrevDb;
-    uint256 hashBlockLocalDb;
-    if (!GetPrevRoot(hashRoot, hashRootPrevDb, hashBlockLocalDb))
+    for (auto& kv : mapBlockAddressTokenTxIndex)
     {
-        StdLog("CForkAddressTxInfoDB", "Verify address tx info: Get prev root fail, hashRoot: %s, hashPrevRoot: %s, hashBlock: %s",
-               hashRoot.GetHex().c_str(), hashPrevRoot.GetHex().c_str(), hashBlock.GetHex().c_str());
-        return false;
+        const CDestination& destContractAddress = kv.first;
+        for (auto& kv2 : kv.second)
+        {
+            const CDestination& address = kv2.first;
+            const uint64 nBeginIndex = kv2.second.first;
+            const uint64 nEndIndex = kv2.second.second;
+
+            for (uint64 i = nBeginIndex; i <= nEndIndex; i++)
+            {
+                hnbase::CBufStream ssKey;
+                ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_TX_INFO << destContractAddress << address << BSwap64(i);
+                Erase(ssKey);
+            }
+
+            if (!WriteTokenTxCount(destContractAddress, address, nEndIndex + 1))
+            {
+                StdLog("CForkAddressTxInfoDB", "Remove longchain block: Write address token tx count fail, contract: %s, address: %s, block: %s",
+                       destContractAddress.ToString().c_str(), address.ToString().c_str(), hashBlock.GetBhString().c_str());
+                return false;
+            }
+        }
     }
-    if (hashRootPrevDb != hashPrevRoot || hashBlockLocalDb != hashBlock)
+
+    if (!WriteLastBlock(hashPrevBlock))
     {
-        StdLog("CForkAddressTxInfoDB", "Verify address tx info: Root error, hashRootPrevDb: %s, hashPrevRoot: %s, hashBlockLocalDb: %s, hashBlock: %s",
-               hashRootPrevDb.GetHex().c_str(), hashPrevRoot.GetHex().c_str(),
-               hashBlockLocalDb.GetHex().c_str(), hashBlock.GetHex().c_str());
+        StdLog("CForkAddressTxInfoDB", "Remove longchain block: Write last block fail");
         return false;
     }
     return true;
