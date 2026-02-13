@@ -153,11 +153,16 @@ void CBlockDB::RemoveAll()
     {
         dbAddressTxInfo.Clear();
     }
+    if (fCfgTraceDb)
+    {
+        dbTrace.Clear();
+    }
 }
 
-bool CBlockDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxt, uint256& hashNewRoot)
+bool CBlockDB::AddForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxt, const std::map<std::string, CCoinContext>& mapSymbolCoin,
+                              const std::set<CDestination>& setTimeVaultWhitelist, const std::set<uint256>& setStopFork, const bool fTraceDb, uint256& hashNewRoot)
 {
-    return dbFork.AddForkContext(hashPrevBlock, hashBlock, mapForkCtxt, hashNewRoot);
+    return dbFork.AddForkContext(hashPrevBlock, hashBlock, mapForkCtxt, mapSymbolCoin, setTimeVaultWhitelist, setStopFork, fTraceDb, hashNewRoot);
 }
 
 bool CBlockDB::ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, const uint256& hashBlock)
