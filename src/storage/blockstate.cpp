@@ -479,5 +479,35 @@ void CBlockState::AddCacheContractPrevState(const CDestination& address, const s
     }
 }
 
+void CBlockState::AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv)
+{
+    auto it = mapCacheContractPrevAddressState.find(address);
+    if (it == mapCacheContractPrevAddressState.end())
+    {
+        CDestState stateDest;
+        bytes btContractRunCode;
+        if (GetDestState(address, stateDest) && stateDest.IsContract())
+        {
+            uint256 hashContractCreateCode;
+            CDestination destCodeOwner;
+            uint256 hashContractRunCode;
+            bool fDestroy;
+            if (!GetContractRunCode(address, hashContractCreateCode, destCodeOwner, hashContractRunCode, btContractRunCode, fDestroy))
+            {
+                btContractRunCode.clear();
+            }
+        }
+        it = mapCacheContractPrevAddressState.insert(std::make_pair(address, CContractPrevState(stateDest.GetBalance(), stateDest.GetTxNonce() + 1, btContractRunCode))).first;
+    }
+    CContractPrevState& prevState = it->second;
+    for (const auto& kv : mapContractKv)
+    {
+        if (prevState.mapStorage.count(kv.first) == 0)
+        {
+            prevState.mapStorage[kv.first] = kv.second;
+        }
+    }
+}
+
 } // namespace storage
 } // namespace hashahead
