@@ -1466,68 +1466,35 @@ bool CBlockBase::WalkThroughDayVote(const uint256& hashBeginBlock, const uint256
     return dbBlock.WalkThroughDayVote(hashBeginBlock, hashTailBlock, walker);
 }
 
-                bool fCallResult = true;
-                CTransactionReceipt receiptRedeem;
-                if (!AddContractState(txRedeem.GetHash(), txRedeem, 0, PLEDGE_REDEEM_TX_GAS_LIMIT, 0, fCallResult, receiptRedeem))
-                {
-                    // Execution failure does not affect the process.
-                    StdLog("CBlockState", "Do block state: Add redeem contract state fail");
-                }
-                else
-                {
-                    StdDebug("CBlockState", "Do block state: Add redeem contract state success, call result: %s", (fCallResult ? "true" : "false"));
-                }
-            }
-
-            CDestState stateTo;
-            if (!GetDestState(destTo, stateTo))
-            {
-                stateTo.SetNull();
-                stateTo.SetType(ctxToAddress.GetDestType(), ctxToAddress.GetTemplateType());
-            }
-            stateTo.IncBalance(nRedeemAmount);
-            statePledge.SetBalance(0);
-
-            SetDestState(destPledge, statePledge);
-            SetDestState(destTo, stateTo);
-
-            mapBlockAddressContext[destTo] = ctxToAddress;
-
-            CContractTransfer ctrTransfer(CContractTransfer::CT_REDEEM, destPledge, destTo, nRedeemAmount);
-            mapBlockContractTransfer[txidMint].push_back(ctrTransfer);
-
-            {
-                CTransactionReceipt receipt;
-
-                receipt.nReceiptType = CTransactionReceipt::RECEIPT_TYPE_COMMON;
-
-                receipt.nTxIndex = 0;
-                receipt.txid = txidMint;
-                receipt.nBlockNumber = nBlockNumber;
-                receipt.from = mintTx.GetFromAddress();
-                receipt.to = mintTx.GetToAddress();
-                receipt.nTxGasUsed = 0;
-                receipt.nTvGasUsed = 0;
-                receipt.nEffectiveGasPrice = mintTx.GetGasPrice();
-
-                receipt.vTransfer.push_back(ctrTransfer);
-
-                receipt.CalcLogsBloom();
-                //nBlockBloom |= receipt.nLogsBloom;
-                receipt.GetBloomDataSet(setBlockBloomData);
-                mapBlockTxReceipts.insert(std::make_pair(txidMint, receipt));
-                hnbase::CBufStream ss;
-                ss << receipt;
-                vReceiptHash.push_back(hashahead::crypto::CryptoHash(ss.GetData(), ss.GetSize()));
-            }
-
-            // When redeeming pledge, give timevault
-            mapBlockPayTvFee[destTo] += CTimeVault::CalcGiveTvFee(nRedeemAmount);
-
-            StdLog("CBlockState", "Do block state: Pledge redeem, redeem amount: %s, pledge address: %s, owner address: %s, block height: %d, prev block: %s",
-                   CoinToTokenBigFloat(nRedeemAmount).c_str(), destPledge.ToString().c_str(), destTo.ToString().c_str(), nBlockHeight, hashPrevBlock.ToString().c_str());
-        }
+bool CBlockBase::RetrieveDelegateEnrollStatus(const uint256& hashBlock, std::map<CDestination, std::pair<uint32, uint64>>& mapDelegateEnrollStatus)
+{
+    //std::map<CDestination, std::pair<uint32, uint64>> mapDelegateEnrollStatus; // key: delegate address, value1: last enroll height, value2: last enroll time
+    std::vector<uint256> vBlockRange;
+    std::map<uint32, uint64> mapHeightTime;
+    BlockIndexPtr pIndex = GetIndex(hashBlock);
+    for (int i = 0; pIndex && i < CONSENSUS_ENROLL_INTERVAL; i++)
+    {
+        vBlockRange.push_back(pIndex->GetBlockHash());
+        mapHeightTime[pIndex->GetBlockHeight()] = pIndex->GetBlockTime();
+        pIndex = GetPrevBlockIndex(pIndex);
     }
+    std::map<CDestination, uint32> mapEnrollHeight; // key: delegate address, value: last enroll height
+    if (!dbBlock.RetrieveDelegateEnrollStatus(vBlockRange, mapEnrollHeight))
+    {
+        return false;
+    }
+    for (auto& kv : mapEnrollHeight)
+    {
+        uint64 nTime = 0;
+        auto it = mapHeightTime.find(kv.second);
+        if (it != mapHeightTime.end())
+        {
+            nTime = it->second;
+        }
+        mapDelegateEnrollStatus[kv.first] = std::make_pair(kv.second, nTime);
+    }
+    return true;
+}
 
 bool CBlockBase::RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDestination, std::pair<uint256, double>>& mapDelegateRewardApy)
 {

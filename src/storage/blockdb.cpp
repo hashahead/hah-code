@@ -175,6 +175,16 @@ bool CBlockDB::RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt, 
     return dbFork.RetrieveForkContext(hashFork, ctxt, hashMainChainRefBlock);
 }
 
+bool CBlockDB::GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.GetForkCtxStatus(hashFork, forkStatus, hashMainChainRefBlock);
+}
+
+bool CBlockDB::GetTraceDbFlag()
+{
+    return dbFork.GetTraceDbFlag();
+}
+
 bool CBlockDB::UpdateForkLast(const uint256& hashFork, const uint256& hashLastBlock)
 {
     return dbFork.UpdateForkLast(hashFork, hashLastBlock);
