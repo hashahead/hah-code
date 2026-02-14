@@ -157,6 +157,7 @@ protected:
     bool ListAddressDb(const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress);
     bool ListContractAddressDb(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
     bool ListTokenContractAddressDb(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress);
+    bool AddCacheAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapIncAddress);
 
 protected:
     enum

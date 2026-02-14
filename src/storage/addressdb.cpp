@@ -1445,6 +1445,49 @@ bool CForkAddressDB::ListTokenContractAddressDb(const uint256& hashBlock, std::m
     return true;
 }
 
+bool CForkAddressDB::AddCacheAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapIncAddress)
+{
+    std::map<CDestination, CAddressContext> mapPrevAddressCache;
+    std::map<CDestination, CContractAddressContext> mapPrevContractAddressCache;
+    if (hashFork != hashBlock)
+    {
+        if (!cacheAddressData.GetBlockAddress(hashPrevBlock, mapPrevAddressCache))
+        {
+            if (!ListAddressDb(hashPrevBlock, mapPrevAddressCache))
+            {
+                StdLog("CForkAddressDB", "Add cache address data: List address fail, block: %s", hashBlock.GetHex().c_str());
+                return false;
+            }
+        }
+        if (!cacheAddressData.GetBlockContractAddress(hashPrevBlock, mapPrevContractAddressCache))
+        {
+            if (!ListContractAddressDb(hashPrevBlock, mapPrevContractAddressCache))
+            {
+                StdLog("CForkAddressDB", "Add cache address data: List contract address fail, block: %s", hashBlock.GetHex().c_str());
+                return false;
+            }
+        }
+    }
+
+    for (auto& kv : mapIncAddress)
+    {
+        mapPrevAddressCache[kv.first] = kv.second;
+        if (kv.second.IsContract())
+        {
+            CContractAddressContext ctxContract;
+            if (!kv.second.GetContractAddressContext(ctxContract))
+            {
+                continue;
+            }
+            mapPrevContractAddressCache[kv.first] = ctxContract;
+        }
+    }
+
+    cacheAddressData.AddBlockAddress(hashBlock, mapPrevAddressCache);
+    cacheAddressData.AddBlockContractAddress(hashBlock, mapPrevContractAddressCache);
+    return true;
+}
+
 
 //////////////////////////////
 // CAddressDB
