@@ -1303,7 +1303,7 @@ bool CService::SendEthRawTransaction(const uint256& hashAtFork, const bytes& btR
         CTransaction tx;
         if (!tx.SetEthTx(btRawTxData, fLinkToPubkeyAddress))
         {
-            StdError("CService", "Send eth raw tx: Nonce error");
+            StdError("CService", "Send eth raw tx: Nonce error, chainid: %lu, tx raw data: %s", nChainId, ToHexString(btRawTxData).c_str());
             return false;
         }
         txid = tx.GetHash();
@@ -1311,17 +1311,23 @@ bool CService::SendEthRawTransaction(const uint256& hashAtFork, const bytes& btR
         CTransactionReceiptEx receiptex;
         if (pBlockChain->GetTransactionReceipt(hashFork, txid, receiptex))
         {
-            StdLog("CService", "Send eth raw tx: tx is existed, txid: %s", txid.GetHex().c_str());
+            StdLog("CService", "Send eth raw tx: tx is existed, txid: %s, fork: %s", txid.GetHex().c_str(), hashFork.GetBhString().c_str());
             return true;
         }
 
         if (SendTransaction(hashFork, tx) != OK)
         {
-            StdError("CService", "Send eth raw tx: send tx fail");
+            StdError("CService", "Send eth raw tx: send tx fail, txid: %s, chainid: %d, nonce: %lu, from: %s, to: %s, amount: %s, gas price: %s, gas limit: %lu, data: %s, fork: %s",
+                     txid.GetHex().c_str(), nChainId, tx.GetNonce(), tx.GetFromAddress().ToString().c_str(), tx.GetToAddress().ToString().c_str(),
+                     CoinToTokenBigFloat(tx.GetAmount()).c_str(), CoinToTokenBigFloat(tx.GetGasPrice()).c_str(),
+                     tx.GetGasLimit().Get64(), ToHexString(tx.GetTxExtData()).c_str(), hashFork.GetBhString().c_str());
             return false;
         }
 
-        StdLog("CService", "Send eth raw tx success, txid: %s", txid.GetHex().c_str());
+        StdLog("CService", "Send eth raw tx success! txid: %s, chainid: %d, nonce: %lu, from: %s, to: %s, amount: %s, gas price: %s, gas limit: %lu, data: %s, fork: %s",
+               txid.GetHex().c_str(), nChainId, tx.GetNonce(), tx.GetFromAddress().ToString().c_str(), tx.GetToAddress().ToString().c_str(),
+               CoinToTokenBigFloat(tx.GetAmount()).c_str(), CoinToTokenBigFloat(tx.GetGasPrice()).c_str(),
+               tx.GetGasLimit().Get64(), ToHexString(tx.GetTxExtData()).c_str(), hashFork.GetBhString().c_str());
     }
     catch (exception& e)
     {
@@ -1341,7 +1347,7 @@ bool CService::SendEthTransaction(const uint256& hashFork, const CDestination& d
         StdLog("CRPCMod", "Send eth transaction: Failed to create transaction: %s", strErr->c_str());
         return false;
     }
-    return SendEthRawTransaction(btSignTxData, txid);
+    return SendEthRawTransaction(hashFork, btSignTxData, txid);
 }
 
 void CService::GetWalletDestinations(std::set<CDestination>& setDest)

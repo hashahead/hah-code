@@ -57,6 +57,7 @@ public:
     bool GetLastBlockOfHeight(const uint256& hashFork, const int nHeight, uint256& hashBlock, uint64& nTime) override;
     bool GetBlockStatus(const uint256& hashBlock, CBlockStatus& status) override;
     bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) override;
+    bool IsBlockConfirm(const uint256& hashBlock) override;
     void GetTxPool(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool) override;
     void ListTxPool(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0) override;
     bool GetTransactionAndPosition(const uint256& hashRefFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashAtBlock, uint64& nBlockNumber, uint16& nTxSeq) override;

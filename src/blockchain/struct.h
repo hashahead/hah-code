@@ -316,12 +316,12 @@ class CStatItemBlockMaker
 {
 public:
     CStatItemBlockMaker()
-      : nTimeValue(0), nPOWBlockCount(0), nDPOSBlockCount(0), nBlockTPS(0), nTxTPS(0) {}
+      : nTimeValue(0), nPoaBlockCount(0), nPosBlockCount(0), nBlockTPS(0), nTxTPS(0) {}
 
     uint32 nTimeValue;
 
-    uint64 nPOWBlockCount;
-    uint64 nDPOSBlockCount;
+    uint64 nPoaBlockCount;
+    uint64 nPosBlockCount;
     uint64 nBlockTPS;
     uint64 nTxTPS;
 };
