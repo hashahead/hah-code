@@ -983,9 +983,15 @@ bool CService::RemoveTemplate(const CDestination& dest)
     return pWallet->RemoveTemplate(dest);
 }
 
-bool CService::ListTransaction(const uint256& hashFork, const uint256& hashRefBlock, const CDestination& dest, const uint64 nOffset, const uint64 nCount, const bool fReverse, vector<CDestTxInfo>& vTx)
+bool CService::ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nOffset, const uint64 nCount, const bool fReverse, vector<CDestTxInfo>& vTx)
 {
-    return pBlockChain->ListAddressTxInfo(hashFork, hashRefBlock, dest, nOffset, nCount, fReverse, vTx);
+    return pBlockChain->ListAddressTxInfo(hashFork, dest, nOffset, nCount, fReverse, vTx);
+}
+
+bool CService::ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                           const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord)
+{
+    return pBlockChain->ListTokenTx(hashFork, destContractAddress, destUserAddress, nPageNumber, nPageSize, fReverse, nTotalRecordCount, nPageCount, vTokenTxRecord);
 }
 
 boost::optional<std::string> CService::CreateTransaction(const uint256& hashFork, const CDestination& destFrom, const CDestination& destTo, const bytes& btToData,
