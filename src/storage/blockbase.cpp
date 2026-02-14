@@ -1714,22 +1714,13 @@ bool CBlockBase::VerifyRepeatBlock(const uint256& hashFork, const uint256& hashB
             }
         }
     }
-
-    hashContractCreateCode = ctxDestCode.hashContractCreateCode;
-    destCodeOwner = ctxDestCode.destCodeOwner;
-    hashContractRunCode = ctxDestCode.hashContractRunCode;
-    btContractRunCode = ctxRunCode.btContractRunCode;
     return true;
 }
 
-bool CBlockState::GetContractCreateCode(const CDestination& destContractIn, CTxContractData& txcd)
+bool CBlockBase::GetBlockDelegateVote(const uint256& hashBlock, map<CDestination, uint256>& mapVote)
 {
-    bytes btDestCodeData;
-    if (!GetDestKvData(destContractIn, destContractIn.ToHash(), btDestCodeData))
-    {
-        StdLog("CBlockState", "Get contract create code: Get contract code fail, contract address: %s", destContractIn.ToString().c_str());
-        return false;
-    }
+    return dbBlock.RetrieveDelegate(hashBlock, mapVote);
+}
 
     CContractDestCodeContext ctxDestCode;
     try

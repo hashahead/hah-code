@@ -158,6 +158,7 @@ public:
     bool AddBlockForkContext(const uint256& hashBlock, const CBlockEx& blockex, const std::map<CDestination, CAddressContext>& mapAddressContext, const std::map<std::string, CCoinContext>& mapNewSymbolCoin,
                              const std::set<CDestination>& setTimeVaultWhitelist, const std::set<uint256>& setStopFork, uint256& hashNewRoot);
     bool VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& tx, std::vector<std::pair<CDestination, CForkContext>>& vForkCtxt);
+    bool VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainId, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashPrevBlock);
     bool VerifyOriginBlock(const CBlock& block, const CProfile& parentProfile);
     bool ListForkContext(std::map<uint256, CForkContext>& mapForkCtxt, const uint256& hashBlock = uint256());
     bool RetrieveForkContext(const uint256& hashFork, CForkContext& ctxt, const uint256& hashMainChainRefBlock = uint256());
