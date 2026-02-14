@@ -1582,17 +1582,28 @@ bool CBlockBase::GetDelegateMintRewardRatio(const uint256& hashBlock, const CDes
                destDelegate.ToString().c_str(), hashBlock.GetHex().c_str());
         return false;
     }
-    return dbBlockBase.RetrieveDestState(hashFork, hashPrevStateRoot, dest, stateDest);
-}
-
-void CBlockState::SetDestState(const CDestination& dest, const CDestState& stateDest)
-{
-    mapBlockState[dest] = stateDest;
-}
-
-void CBlockState::SetCacheDestState(const CDestination& dest, const CDestState& stateDest)
-{
-    mapCacheContractData[dest].cacheDestState = stateDest;
+    CTemplateAddressContext ctxtTemplate;
+    if (!ctxAddress.GetTemplateAddressContext(ctxtTemplate))
+    {
+        StdLog("CBlockBase", "Get Delegate Mint Reward Ratio: Get template address context fail, delegate: %s, block: %s",
+               destDelegate.ToString().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+    CTemplatePtr ptr = CTemplate::Import(ctxtTemplate.btData);
+    if (ptr == nullptr)
+    {
+        StdLog("CBlockBase", "Get Delegate Mint Reward Ratio: Create template fail, delegate: %s, block: %s",
+               destDelegate.ToString().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+    if (ptr->GetTemplateType() != TEMPLATE_DELEGATE)
+    {
+        StdLog("CBlockBase", "Get Delegate Mint Reward Ratio: Not delegate template, template type: %d, delegate: %s, block: %s",
+               ptr->GetTemplateType(), destDelegate.ToString().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+    nRewardRation = boost::dynamic_pointer_cast<CTemplateDelegate>(ptr)->nRewardRatio;
+    return true;
 }
 
 bool CBlockState::GetDestKvData(const CDestination& dest, const uint256& key, bytes& value)
