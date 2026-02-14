@@ -1606,104 +1606,113 @@ bool CBlockBase::GetDelegateMintRewardRatio(const uint256& hashBlock, const CDes
     return true;
 }
 
-bool CBlockState::GetDestKvData(const CDestination& dest, const uint256& key, bytes& value)
+bool CBlockBase::GetDelegateList(const uint256& hashRefBlock, const uint32 nStartIndex, const uint32 nCount, std::multimap<uint256, CDestination>& mapVotes)
 {
-    auto nt = mapCacheContractData.find(dest);
-    if (nt != mapCacheContractData.end())
+    uint256 hashLastBlock = hashRefBlock;
+    if (hashRefBlock == 0)
     {
-        auto mt = nt->second.cacheContractKv.find(key);
-        if (mt != nt->second.cacheContractKv.end())
+        if (!dbBlock.RetrieveForkLast(GetGenesisBlockHash(), hashLastBlock))
         {
-            value = mt->second;
-            return true;
+            return false;
         }
     }
-    auto it = mapContractKvState.find(dest);
-    if (it != mapContractKvState.end())
+    std::map<CDestination, uint256> mapAddressVote;
+    if (!dbBlock.RetrieveDelegate(hashLastBlock, mapAddressVote))
     {
-        auto mt = it->second.find(key);
-        if (mt != it->second.end())
+        return false;
+    }
+    if (nCount == 0)
+    {
+        for (const auto& d : mapAddressVote)
         {
-            value = mt->second;
-            return true;
+            mapVotes.insert(std::make_pair(d.second, d.first));
         }
     }
-    CDestState stateDest;
-    if (!GetDestState(dest, stateDest))
+    else
     {
-        return false;
+        std::multimap<uint256, CDestination> mapTempAmountVote;
+        for (const auto& d : mapAddressVote)
+        {
+            mapTempAmountVote.insert(std::make_pair(d.second, d.first));
+        }
+        auto it = mapTempAmountVote.begin();
+        uint32 nJumpIndex = nStartIndex;
+        while (it != mapTempAmountVote.end() && nJumpIndex > 0)
+        {
+            ++it;
+            --nJumpIndex;
+        }
+        uint32 nJumpCount = nCount;
+        while (it != mapTempAmountVote.end() && nJumpCount > 0)
+        {
+            mapVotes.insert(std::make_pair(it->first, it->second));
+            ++it;
+            --nJumpCount;
+        }
     }
-    return dbBlockBase.RetrieveContractKvValue(hashFork, stateDest.GetStorageRoot(), key, value);
+    return true;
 }
 
-bool CBlockState::GetAddressContext(const CDestination& dest, CAddressContext& ctxAddress)
+bool CBlockBase::VerifyRepeatBlock(const uint256& hashFork, const uint256& hashBlock, const uint32 height, const CDestination& destMint, const uint16 nBlockType,
+                                   const uint64 nBlockTimeStamp, const uint64 nRefBlockTimeStamp, const uint32 nExtendedBlockSpacing)
 {
-    auto it = mapCacheAddressContext.find(dest);
-    if (it != mapCacheAddressContext.end())
-    {
-        ctxAddress = it->second;
-        return true;
-    }
-    auto nt = mapBlockAddressContext.find(dest);
-    if (nt != mapBlockAddressContext.end())
-    {
-        ctxAddress = nt->second;
-        return true;
-    }
-    return dbBlockBase.RetrieveAddressContext(hashFork, hashPrevBlock, dest, ctxAddress);
-}
+    CWriteLock wlock(rwAccess);
 
-bool CBlockState::IsContractAddress(const CDestination& addr)
-{
-    CAddressContext ctxAddress;
-    if (!GetAddressContext(addr, ctxAddress))
+    map<uint256, CBlockHeightIndex> mapBlockMint;
+    if (GetForkBlockMintListByHeight(hashFork, height, mapBlockMint))
     {
-        return false;
-    }
-    return ctxAddress.IsContract();
-}
-
-bool CBlockState::GetContractRunCode(const CDestination& destContractIn, uint256& hashContractCreateCode, CDestination& destCodeOwner, uint256& hashContractRunCode, bytes& btContractRunCode, bool& fDestroy)
-{
-    CDestState stateContract;
-    if (!GetDestState(destContractIn, stateContract))
-    {
-        StdLog("CBlockState", "Get contract run code: Get contract state failed, contract address: %s", destContractIn.ToString().c_str());
-        return false;
-    }
-    if (stateContract.IsDestroy())
-    {
-        StdLog("CBlockState", "Get contract run code: Contract has been destroyed, contract address: %s", destContractIn.ToString().c_str());
-        fDestroy = true;
-        return true;
-    }
-    fDestroy = false;
-
-    bytes btDestCodeData;
-    if (!GetDestKvData(destContractIn, destContractIn.ToHash(), btDestCodeData))
-    {
-        StdLog("CBlockState", "Get contract run code: Get contract code fail, contract address: %s", destContractIn.ToString().c_str());
-        return false;
-    }
-
-    CContractDestCodeContext ctxDestCode;
-    try
-    {
-        CBufStream ss(btDestCodeData);
-        ss >> ctxDestCode;
-    }
-    catch (std::exception& e)
-    {
-        StdLog("CBlockState", "Get contract run code: Parse contract code fail, contract address: %s", destContractIn.ToString().c_str());
-        return false;
-    }
-
-    CContractRunCodeContext ctxRunCode;
-    if (!dbBlockBase.RetrieveContractRunCodeContext(hashFork, hashPrevBlock, ctxDestCode.hashContractRunCode, ctxRunCode))
-    {
-        StdLog("CBlockState", "Get contract run code: Retrieve contract run code fail, hashContractRunCode: %s, contract address: %s",
-               ctxDestCode.hashContractRunCode.GetHex().c_str(), destContractIn.ToString().c_str());
-        return false;
+        for (auto& mt : mapBlockMint)
+        {
+            const uint256& hashHiBlock = mt.first;
+            if (hashBlock == hashHiBlock)
+            {
+                continue;
+            }
+            if (mt.second.destMint.IsNull())
+            {
+                BlockIndexPtr pBlockIndex = GetIndex(hashHiBlock);
+                if (pBlockIndex)
+                {
+                    if (pBlockIndex->IsVacant())
+                    {
+                        CBlock block;
+                        if (Retrieve(pBlockIndex, block) && !block.txMint.GetToAddress().IsNull())
+                        {
+                            mt.second.destMint = block.txMint.GetToAddress();
+                        }
+                    }
+                    else
+                    {
+                        CTransaction tx;
+                        uint256 hashAtFork;
+                        uint256 hashTxAtBlock;
+                        CTxIndex txIndex;
+                        if (RetrieveTxAndIndex(hashFork, pBlockIndex->txidMint, tx, hashAtFork, hashTxAtBlock, txIndex))
+                        {
+                            mt.second.destMint = tx.GetToAddress();
+                        }
+                    }
+                }
+            }
+            if (mt.second.destMint == destMint)
+            {
+                if (nBlockType == CBlock::BLOCK_SUBSIDIARY || nBlockType == CBlock::BLOCK_EXTENDED)
+                {
+                    if ((nBlockTimeStamp - nRefBlockTimeStamp) / nExtendedBlockSpacing
+                        == (mt.second.nTimeStamp - nRefBlockTimeStamp) / nExtendedBlockSpacing)
+                    {
+                        StdTrace("BlockBase", "Verify Repeat Block: subsidiary or extended repeat block, block time: %lu, cache block time: %lu, ref block time: %lu, destMint: %s",
+                                 nBlockTimeStamp, mt.second.nTimeStamp, mt.second.nTimeStamp, destMint.ToString().c_str());
+                        return false;
+                    }
+                }
+                else
+                {
+                    StdTrace("BlockBase", "Verify Repeat Block: repeat block: %s, destMint: %s", hashHiBlock.GetHex().c_str(), destMint.ToString().c_str());
+                    return false;
+                }
+            }
+        }
     }
 
     hashContractCreateCode = ctxDestCode.hashContractCreateCode;
