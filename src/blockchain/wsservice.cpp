@@ -138,6 +138,29 @@ uint8 CWsSubscribeFork::GetSubsIdType(const uint128& nSubsId) const
     return *(nSubsId.begin());
 }
 
+/////////////////////////////
+// CWsClient
+
+uint64 CWsClient::GetConnId() const
+{
+    return nConnId;
+}
+
+const std::string& CWsClient::GetClientIp() const
+{
+    return strClientIp;
+}
+
+uint16 CWsClient::GetClientPort() const
+{
+    return nClientPort;
+}
+
+connection_hdl CWsClient::GetConnHdl() const
+{
+    return hdl;
+}
+
 //////////////////////////////
 // CWsService
 

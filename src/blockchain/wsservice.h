@@ -98,6 +98,57 @@ protected:
     connection_hdl hdl;
 };
 
+/////////////////////////////
+// CWsServer
+
+class CWsService;
+
+class CWsServer
+{
+public:
+    CWsServer(const CChainId nChainIdIn, const uint16 nListenPortIn, const uint32 nMaxConnectionsIn, const boost::asio::ip::address& addrListenIn, hnbase::IIOModule* pRpcModIn, CWsService* pWssIn);
+    ~CWsServer();
+
+    bool Start();
+    void Stop();
+
+    void SendWsMsg(const uint64 nConnId, const std::string& strMsg);
+
+protected:
+    void WsThreadFunc();
+
+    bool StartWsListen();
+    void StopWsListen();
+
+    void ParseIpPortString(const std::string& strIpPort, std::string& strIp, uint16& nPort);
+
+    void OnOpen(connection_hdl hdl);
+    void OnClose(connection_hdl hdl);
+    void OnMessage(connection_hdl hdl, message_ptr msg);
+
+    bool PostRpcModMsg(const CWsClient& wsClient, const std::string& strMsg);
+
+protected:
+    const CChainId nChainId;
+    const uint16 nListenPort;
+    const uint32 nMaxConnections;
+    const boost::asio::ip::address addrListen;
+
+    hnbase::IIOModule* const pRpcMod;
+    CWsService* const pWsService;
+
+    boost::thread* pThreadWs;
+    boost::mutex mutex;
+
+    WSSERVER wsServer;
+
+    hnbase::CRWAccess rwAccess;
+    std::map<uint64, CWsClient> mapWsClient; // key: client connect id
+};
+typedef std::shared_ptr<CWsServer> SHP_WS_SERVER;
+#define MAKE_SHARED_WS_SERVER std::make_shared<CWsServer>
+
+/////////////////////////////
 // CWsService
 
 class CWsService : public IWsService, virtual public CWsServiceEventListener
