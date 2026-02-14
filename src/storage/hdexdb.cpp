@@ -121,14 +121,72 @@ bool CHdexDB::AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, 
             return false;
         }
     }
-}
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+    const uint32 nHeight = CBlock::GetBlockHeightByHash(hashBlock);
+    const uint16 nSlot = CBlock::GetBlockSlotByHash(hashBlock);
 
-bool CHdexDB::GetDexOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, CDexOrderBody& dexOrder)
-{
-    CReadLock rlock(rwAccess);
+    std::map<CDexOrderHeader, CDexOrderSave> mapDbDexOrder;
+    std::map<std::tuple<CDestination, uint256, uint8>, uint64> mapMaxOrderNumber;                  // key: address, coin pair hash, owner coin flag, value: max order number
+    std::map<CDexOrderHeader, CDexOrderBody> mapAddNewOrder;                                       // key: order header, value: order body
+    std::map<CDexOrderHeader, std::tuple<CDexOrderBody, CChainId, uint256>> mapAddBlockProveOrder; // key: order header, value: 1: order body, 2: at chainid, 3: at block
+    std::map<uint256, std::tuple<uint256, uint256, uint64>> mapUpdateCompOrder;                    // key: dex order hash, value: 1: coin pair hash, 2: complete amount, 3: complete count
+    std::map<CChainId, uint256> mapPeerProveLastBlock;                                             // key: peer chain id, value: last block
 
-    uint256 hashRoot;
-    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashRoot))
+    std::set<bytes> setRemoveKeys;
+    bytesmap mapKv;
+
+    auto funcAddLocalDexOrder = [&](const bool fCompleted, const CDexOrderHeader& orderHeader, const CDexOrderSave& dexOrderBody) {
+        {
+            hnbase::CBufStream ssKey;
+            bytes btKey;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_LOCAL_DEX_ORDER << (fCompleted ? DB_HDEX_UNCOMPLETED_MATCH_ORDER : DB_HDEX_COMPLETED_MATCH_ORDER) << BSwap32(orderHeader.GetChainId()) << orderHeader.GetOrderAddress() << orderHeader.GetCoinPairHash() << orderHeader.GetOwnerCoinFlag() << BSwap64(orderHeader.GetOrderNumber());
+            ssKey.GetData(btKey);
+
+            setRemoveKeys.insert(btKey);
+            mapKv.erase(btKey);
+        }
+
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_LOCAL_DEX_ORDER << (fCompleted ? DB_HDEX_COMPLETED_MATCH_ORDER : DB_HDEX_UNCOMPLETED_MATCH_ORDER) << BSwap32(orderHeader.GetChainId()) << orderHeader.GetOrderAddress() << orderHeader.GetCoinPairHash() << orderHeader.GetOwnerCoinFlag() << BSwap64(orderHeader.GetOrderNumber());
+            ssKey.GetData(btKey);
+
+            ssValue << dexOrderBody;
+            ssValue.GetData(btValue);
+
+            mapKv[btKey] = btValue;
+        }
+    };
+
+    auto funcAddPeerDexOrder = [&](const bool fCompleted, const CDexOrderHeader& orderHeader, const CDexOrderSave& dexOrderBody) {
+        {
+            hnbase::CBufStream ssKey;
+            bytes btKey;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_PEER_DEX_ORDER << (fCompleted ? DB_HDEX_UNCOMPLETED_MATCH_ORDER : DB_HDEX_COMPLETED_MATCH_ORDER) << BSwap32(orderHeader.GetChainId()) << orderHeader.GetOrderAddress() << orderHeader.GetCoinPairHash() << orderHeader.GetOwnerCoinFlag() << BSwap64(orderHeader.GetOrderNumber());
+            ssKey.GetData(btKey);
+
+            setRemoveKeys.insert(btKey);
+            mapKv.erase(btKey);
+        }
+
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_PEER_DEX_ORDER << (fCompleted ? DB_HDEX_COMPLETED_MATCH_ORDER : DB_HDEX_UNCOMPLETED_MATCH_ORDER) << BSwap32(orderHeader.GetChainId()) << orderHeader.GetOrderAddress() << orderHeader.GetCoinPairHash() << orderHeader.GetOwnerCoinFlag() << BSwap64(orderHeader.GetOrderNumber());
+            ssKey.GetData(btKey);
+
+            ssValue << dexOrderBody;
+            ssValue.GetData(btValue);
+
+            mapKv[btKey] = btValue;
+        }
+    };
+
     {
         StdLog("CHdexDB", "Get dex order: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
         return false;
