@@ -171,6 +171,7 @@ private:
     rpc::CRPCResultPtr RPCListBlacklistAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCSetFunctionAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListFunctionAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCAddTimeVaultWhitelistAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     /* Util */
     rpc::CRPCResultPtr RPCVerifyMessage(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCMakeKeyPair(const CReqContext& ctxReq, rpc::CRPCParamPtr param);

@@ -6838,6 +6838,68 @@ CRPCResultPtr CRPCMod::RPCListFunctionAddress(const CReqContext& ctxReq, CRPCPar
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCAddTimeVaultWhitelistAddress(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CAddTimeVaultWhitelistAddressParam>(param);
+
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    CDestination from;
+    CDestination address;
+    from.ParseString(spParam->strFrom);
+    if (from.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
+    }
+    address.ParseString(spParam->strAddress);
+    if (address.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+
+    CDestination destPrimaryForkOwner;
+    if (!pService->GetPrimaryForkOwnerAddress(destPrimaryForkOwner))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Get primary owner fail");
+    }
+    if (from != destPrimaryForkOwner)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "From not is primary owner");
+    }
+
+    int nVersion;
+    bool fLocked, fPublic;
+    int64 nAutoLockTime;
+    if (!pService->GetKeyStatus(from, nVersion, fLocked, nAutoLockTime, fPublic))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Default address not import");
+    }
+    if (fLocked)
+    {
+        throw CRPCException(RPC_WALLET_ERROR, "Default address is locked");
+    }
+
+    if (pService->IsTimeVaultWhitelistAddressExist(address))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Address already exists");
+    }
+
+    std::vector<bytes> vParamList;
+    vParamList.push_back(address.ToHash().GetBytes());
+    bytes btData = MakeEthTxCallData("addTimeVaultWhitelist(address)", vParamList);
+
+    uint256 txid;
+    if (!pService->SendEthTransaction(pCoreProtocol->GetGenesisBlockHash(), from, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
+    {
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Verify tx fail");
+    }
+
+    return MakeCAddTimeVaultWhitelistAddressResultPtr(txid.ToString());
+}
+
 /* Util */
 CRPCResultPtr CRPCMod::RPCVerifyMessage(const CReqContext& ctxReq, CRPCParamPtr param)
 {

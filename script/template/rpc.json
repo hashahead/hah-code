@@ -5609,6 +5609,50 @@
             "{\"code\":-32600,\"message\":\"Only suitable for the main chain\"}"
         ]
     },
+    "addtimevaultwhitelistaddress": {
+        "type": "command",
+        "name": "AddTimeVaultWhitelistAddress",
+        "desc": "Add time vault whitelist address",
+        "request": {
+            "type": "object",
+            "content": {
+                "from": {
+                    "type": "string",
+                    "desc": "from address"
+                },
+                "address": {
+                    "type": "string",
+                    "desc": "time vault whitelist address"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "result",
+            "desc": "txid"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli addtimevaultwhitelistaddress 0xb955034fcefb66112bab47483c8d243b86cb2c1d 0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115",
+                "response": "0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"addtimevaultwhitelistaddress\",\"jsonrpc\":\"2.0\",\"params\":{\"from\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"address\":\"0xf7d47e4e74084441d5bf3b6d8a9dd6e59d151115\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":\"0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-32600,\"message\":\"Only suitable for the main chain\"}",
+            "{\"code\":-6,\"message\":\"Invalid from\"}",
+            "{\"code\":-6,\"message\":\"Invalid address\"}",
+            "{\"code\":-6,\"message\":\"Get primary owner fail\"}",
+            "{\"code\":-6,\"message\":\"From not is primary owner\"}",
+            "{\"code\":-6,\"message\":\"Address already exists\"}",
+            "{\"code\":-4,\"message\":\"Default address not import\"}",
+            "{\"code\":-401,\"message\":\"Default address is locked\"}",
+            "{\"code\":-9,\"message\":\"Verify tx fail\"}"
+        ]
+    },
     "setmintmingasprice": {
         "type": "command",
         "name": "SetMintMinGasPrice",
