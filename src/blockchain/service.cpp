@@ -1244,16 +1244,48 @@ bool CService::SendEthRawTransaction(const uint256& hashAtFork, const bytes& btR
 
         uint256 hashFork;
         uint64 nChainId = txEth.getChainId();
-        if (/*nChainId == 0 || nChainId == 1 ||*/ nChainId == pCoreProtocol->GetGenesisChainId())
+        if (nChainId == pCoreProtocol->GetGenesisChainId())
         {
             hashFork = pCoreProtocol->GetGenesisBlockHash();
         }
         else
         {
-            if (!pBlockChain->GetForkHashByChainId((CChainId)nChainId, hashFork))
+            if (nChainId == 0)
             {
-                StdError("CService", "Send eth raw tx: Get fork hash error");
-                return false;
+                CBlockStatus statusFork;
+                if (!pBlockChain->GetLastBlockStatus(hashAtFork, statusFork))
+                {
+                    StdError("CService", "Send eth raw tx: Get fork status fail, at fork: %s", hashAtFork.ToString().c_str());
+                    return false;
+                }
+                if (VERIFY_FHX_HEIGHT_BRANCH_002(statusFork.nBlockHeight))
+                {
+                    CDestination destFrom(address_to_hex(txEth.from()));
+                    if (destFrom != FUNCTION_DEPLOYMENT_SIGNER_ADDRESS)
+                    {
+                        CDestination destTo(address_to_hex(txEth.to()));
+                        uint64 nTxNonce = (uint64)(txEth.nonce());
+
+                        StdError("CService", "Send eth raw tx: Chain id error, chainid: %lu, from: %s, to: %s, nonce: %lu, data: %s",
+                                 nChainId, destFrom.ToString().c_str(), destTo.ToString().c_str(), nTxNonce, ToHexString(txEth.data()).c_str());
+                        return false;
+                    }
+
+                    hashFork = hashAtFork;
+                }
+                else
+                {
+                    StdError("CService", "Send eth raw tx: Chain id error, chainid: %lu, at fork: %s", nChainId, hashAtFork.ToString().c_str());
+                    return false;
+                }
+            }
+            else
+            {
+                if (!pBlockChain->GetForkHashByChainId((CChainId)nChainId, hashFork))
+                {
+                    StdError("CService", "Send eth raw tx: Get fork hash error, chainid: %lu", nChainId);
+                    return false;
+                }
             }
         }
 
