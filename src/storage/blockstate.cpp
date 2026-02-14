@@ -489,6 +489,42 @@ const TxContractReceipts& CBlockState::GetCacheContractReceipts() const
     return vCacheContractReceipt;
 }
 
+const MapContractPrevState& CBlockState::GetCacheContractPrevAddressState() const
+{
+    return mapCacheContractPrevAddressState;
+}
+
+bool CBlockState::SaveContractRunCode(const CDestination& destContractIn, const bytes& btContractRunCode, const CTxContractData& txcd, const uint256& txidCreate)
+{
+    uint256 hashContractCreateCode = txcd.GetContractCreateCodeHash();
+    uint256 hashContractRunCode = hashahead::crypto::CryptoKeccakHash(btContractRunCode.data(), btContractRunCode.size());
+
+    CContractDestCodeContext ctxDestCode(hashContractCreateCode, hashContractRunCode, txcd.GetCodeOwner());
+    bytes btDestCodeData;
+    CBufStream ss;
+    ss << ctxDestCode;
+    ss.GetData(btDestCodeData);
+
+    CDestState stateContractDest;
+    if (GetDestState(destContractIn, stateContractDest) && stateContractDest.GetCodeHash() != 0)
+    {
+        StdLog("CBlockState", "Save contract run code: contract address already exists, contract address: %s", destContractIn.ToString().c_str());
+        return false;
+    }
+    stateContractDest.SetType(CDestination::PREFIX_CONTRACT);
+    stateContractDest.SetCodeHash(hashContractRunCode);
+
+    auto& cachContract = mapCacheContractData[destContractIn];
+    cachContract.cacheContractKv[destContractIn.ToHash()] = btDestCodeData;
+    cachContract.cacheDestState = stateContractDest;
+
+    mapCacheContractCreateCodeContext[hashContractCreateCode] = CContractCreateCodeContext(txcd.GetType(), txcd.GetName(), txcd.GetDescribe(), txcd.GetCodeOwner(), txcd.GetCode(),
+                                                                                           txidCreate, txcd.GetSourceCodeHash(), hashContractRunCode);
+    mapCacheContractRunCodeContext[hashContractRunCode] = CContractRunCodeContext(hashContractCreateCode, btContractRunCode);
+    mapCacheAddressContext[destContractIn] = CAddressContext(CContractAddressContext(txcd.GetType(), txcd.GetCodeOwner(), txcd.GetName(), txcd.GetDescribe(), txidCreate, txcd.GetSourceCodeHash(), txcd.GetContractCreateCodeHash(), hashContractRunCode));
+    return true;
+}
+
 void CBlockState::AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv)
 {
     auto it = mapCacheContractPrevAddressState.find(address);

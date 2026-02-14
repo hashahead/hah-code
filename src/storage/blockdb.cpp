@@ -195,6 +195,11 @@ bool CBlockDB::RetrieveForkLast(const uint256& hashFork, uint256& hashLastBlock)
     return dbFork.RetrieveForkLast(hashFork, hashLastBlock);
 }
 
+bool CBlockDB::GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.GetForkCoinCtxByForkSymbol(strForkSymbol, ctxCoin, hashMainChainRefBlock);
+}
+
 bool CBlockDB::GetForkHashByForkName(const std::string& strForkName, uint256& hashFork, const uint256& hashMainChainRefBlock)
 {
     return dbFork.GetForkHashByForkName(strForkName, hashFork, hashMainChainRefBlock);
