@@ -1148,25 +1148,6 @@ boost::optional<std::string> CService::CreateTransaction(const uint256& hashFork
     }
 
     uint256 nTvGas;
-    if (!txNew.GetFromAddress().IsNull())
-    {
-        CAddressContext ctxFromAddress;
-        if (!pTxPool->GetAddressContext(hashFork, txNew.GetFromAddress(), ctxFromAddress))
-        {
-            return funcReturnError(std::string("From address error, from: ") + txNew.GetFromAddress().ToString());
-        }
-        if (ctxFromAddress.IsPubkey())
-        {
-            CTimeVault tv;
-            if (!pBlockChain->RetrieveTimeVault(hashFork, statusFork.hashBlock, txNew.GetFromAddress(), tv))
-            {
-                tv.SetNull();
-            }
-            uint256 nTvFee = tv.EstimateTransTvGasFee(GetNetTime() + ESTIMATE_TIME_VAULT_TS, txNew.GetAmount());
-            CTimeVault::CalcRealityTvGasFee(txNew.GetGasPrice(), nTvFee, nTvGas);
-        }
-    }
-
     uint256 nNeedGas = txNew.GetTxBaseGas() + nTvGas;
     if (!fToContractAddress && nGas == 0)
     {
@@ -1234,29 +1215,6 @@ boost::optional<std::string> CService::SignEthTransaction(const uint256& hashFor
         ets.gasPrice = nGasPrice;
 
     uint256 nTvGas;
-    if (!destFrom.IsNull())
-    {
-        CAddressContext ctxFromAddress;
-        if (!pTxPool->GetAddressContext(hashFork, destFrom, ctxFromAddress))
-        {
-            return funcReturnError(std::string("From address error, from: ") + destFrom.ToString());
-        }
-        if (ctxFromAddress.IsPubkey())
-        {
-            CTimeVault tv;
-            if (!pBlockChain->RetrieveTimeVault(hashFork, statusFork.hashBlock, destFrom, tv))
-            {
-                tv.SetNull();
-            }
-            uint256 nTvFee = tv.EstimateTransTvGasFee(GetNetTime() + ESTIMATE_TIME_VAULT_TS, nAmount);
-            CTimeVault::CalcRealityTvGasFee(ets.gasPrice, nTvFee, nTvGas);
-            if (nTvGas == 0)
-            {
-                nTvGas = 1;
-            }
-        }
-    }
-
     uint256 nNeedGas = CTransaction::GetTxBaseGasStatic(btData.size()) + nTvGas + nAddGas;
     if (nGas == 0)
     {
@@ -1278,34 +1236,11 @@ boost::optional<std::string> CService::SignEthTransaction(const uint256& hashFor
     return boost::optional<std::string>{};
 }
 
-bool CService::SendEthRawTransaction(const bytes& btRawTxData, uint256& txid)
+bool CService::SendEthRawTransaction(const uint256& hashAtFork, const bytes& btRawTxData, uint256& txid)
 {
     try
     {
         TransactionBase txEth(btRawTxData, CheckTransaction::Everything);
-
-        // StdDebug("CService", "eth tx hash: 0x%s", txEth.sha3().hex().c_str());
-        // StdDebug("CService", "chainId: %lu", txEth.getChainId());
-        // StdDebug("CService", "nonce: %ld", (uint64)(txEth.nonce()));
-        // StdDebug("CService", "from: %s", address_to_hex(txEth.from()).c_str());
-        // StdDebug("CService", "to: %s", address_to_hex(txEth.to()).c_str());
-        // StdDebug("CService", "value: %s", u256_to_hex(txEth.value()).c_str());
-        // StdDebug("CService", "gas: %s", u256_to_hex(txEth.gas()).c_str());
-        // StdDebug("CService", "gasPrice: %s", u256_to_hex(txEth.gasPrice()).c_str());
-        // StdDebug("CService", "data: %s", ToHexString(txEth.data()).c_str());
-        // StdDebug("CService", "sig: %s", ToHexString(txEth.getSignature()).c_str());
-
-        // StdDebug("CService", "rlp: %s", ToHexString(txEth.rlp()).c_str());
-
-        // if (nNonce == 0)
-        // {
-        //     nNonce = pTxPool->GetDestNextTxNonce(pCoreProtocol->GetGenesisBlockHash(), destFrom);
-        //     if (nNonce == 0)
-        //     {
-        //         StdError("CService", "Send eth raw tx: Nonce error");
-        //         return false;
-        //     }
-        // }
 
         uint256 hashFork;
         uint64 nChainId = txEth.getChainId();

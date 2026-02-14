@@ -49,8 +49,8 @@ public:
                           std::vector<std::pair<int, uint256>>& vSubline) override;
     bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight) override;
     int GetBlockCount(const uint256& hashFork) override;
-    bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) override;
-    bool GetBlockHashList(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) override;
+    bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) override;
+    bool GetBlockHashListByHeight(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) override;
     bool GetBlockNumberHash(const uint256& hashFork, const uint64 nNumber, uint256& hashBlock) override;
     bool GetBlock(const uint256& hashBlock, CBlock& block, CChainId& nChainId, uint256& hashFork, int& nHeight) override;
     bool GetBlockEx(const uint256& hashBlock, CBlockEx& block, CChainId& nChainId, uint256& hashFork, int& nHeight) override;
