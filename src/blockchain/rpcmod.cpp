@@ -5487,6 +5487,41 @@ CRPCResultPtr CRPCMod::RPCListRealtimeDexOrder(const CReqContext& ctxReq, CRPCPa
     spResult->nBuychainid = realDexOrder.nBuyChainId;
     spResult->nMaxmatchheight = realDexOrder.nMaxMatchHeight;
     spResult->nMaxmatchslot = realDexOrder.nMaxMatchSlot;
+
+    for (auto& mso : realDexOrder.vSell)
+    {
+        CListRealtimeDexOrderResult::CSellorder item;
+        item.strPrice = CoinToTokenBigFloat(mso.nPrice);
+        item.strOrderamount = CoinToTokenBigFloat(mso.nOrderAmount);
+        item.strDealamount = CoinToTokenBigFloat(mso.nDealAmount);
+        if (fDetailOrder)
+        {
+            item.strOrderaddress = mso.destOrder.ToString();
+            item.nOrdernumber = mso.nOrderNumber;
+            item.strOriorderamount = CoinToTokenBigFloat(mso.nOriOrderAmount);
+            item.nHeight = mso.nAtHeight;
+            item.nSlot = mso.nAtSlot;
+        }
+        spResult->vecSellorder.push_back(item);
+    }
+    for (auto& mso : realDexOrder.vBuy)
+    {
+        CListRealtimeDexOrderResult::CBuyorder item;
+        item.strPrice = CoinToTokenBigFloat(mso.nPrice);
+        item.strOrderamount = CoinToTokenBigFloat(mso.nOrderAmount);
+        item.strDealamount = CoinToTokenBigFloat(mso.nDealAmount);
+        if (fDetailOrder)
+        {
+            item.strOrderaddress = mso.destOrder.ToString();
+            item.nOrdernumber = mso.nOrderNumber;
+            item.strOriorderamount = CoinToTokenBigFloat(mso.nOriOrderAmount);
+            item.nHeight = mso.nAtHeight;
+            item.nSlot = mso.nAtSlot;
+        }
+        spResult->vecBuyorder.push_back(item);
+    }
+
+    return spResult;
 }
 
 CRPCResultPtr CRPCMod::RPCSendCrossTransferTx(const CReqContext& ctxReq, CRPCParamPtr param)

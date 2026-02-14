@@ -1394,7 +1394,20 @@ bool CService::ListContractAddress(const uint256& hashFork, const uint256& hashR
     return pBlockChain->ListContractAddress(hashFork, hashLastBlock, mapContractAddress);
 }
 
-bool CService::RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv)
+bool CService::ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
+{
+    uint256 hashLastBlock = hashBlock;
+    if (hashBlock == 0)
+    {
+        if (!pBlockChain->RetrieveForkLast(hashFork, hashLastBlock))
+        {
+            return false;
+        }
+    }
+    return pBlockChain->ListTokenContractAddress(hashFork, hashLastBlock, mapTokenContractAddress);
+}
+
+bool CService::GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress)
 {
     return pBlockChain->RetrieveTimeVault(hashFork, hashBlock, dest, tv);
 }
