@@ -5470,6 +5470,23 @@ CRPCResultPtr CRPCMod::RPCListRealtimeDexOrder(const CReqContext& ctxReq, CRPCPa
         throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
     }
 
+    uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+
+    CRealtimeDexOrder realDexOrder;
+    if (!pService->ListMatchDexOrder(hashBlock, strCoinSymbolSell, strCoinSymbolBuy, nCount, realDexOrder))
+    {
+        throw CRPCException(RPC_DATABASE_ERROR, "Query fail");
+    }
+
+    auto spResult = MakeCListRealtimeDexOrderResultPtr();
+
+    spResult->strCoinsymbolsell = realDexOrder.strCoinSymbolSell;
+    spResult->strCoinsymbolbuy = realDexOrder.strCoinSymbolBuy;
+    spResult->strPrevcompleteprice = CoinToTokenBigFloat(realDexOrder.nPrevCompletePrice);
+    spResult->nSellchainid = realDexOrder.nSellChainId;
+    spResult->nBuychainid = realDexOrder.nBuyChainId;
+    spResult->nMaxmatchheight = realDexOrder.nMaxMatchHeight;
+    spResult->nMaxmatchslot = realDexOrder.nMaxMatchSlot;
 }
 
 CRPCResultPtr CRPCMod::RPCSendCrossTransferTx(const CReqContext& ctxReq, CRPCParamPtr param)
