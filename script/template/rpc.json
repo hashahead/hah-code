@@ -5653,6 +5653,42 @@
             "{\"code\":-9,\"message\":\"Verify tx fail\"}"
         ]
     },
+    "listtimevaultwhitelistaddress": {
+        "type": "command",
+        "name": "ListTimeVaultWhitelistAddress",
+        "desc": "List time vault whitelist address",
+        "request": {
+            "type": "object",
+            "content": {
+                "block": {
+                    "type": "string",
+                    "desc": "block hash or number or latest (default latest block)",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "array",
+            "name": "address",
+            "content": {
+                "address": {
+                    "type": "string",
+                    "desc": "time vault whitelist address"
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listtimevaultwhitelistaddress",
+                "response": "[\"0xea811cbcfa6c892340261072d9ecdc7008d28a2e\"]"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"listtimevaultwhitelistaddress\",\"jsonrpc\":\"2.0\",\"params\":{}}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":[\"0xea811cbcfa6c892340261072d9ecdc7008d28a2e\"]}"
+            }
+        ]
+    },
     "setmintmingasprice": {
         "type": "command",
         "name": "SetMintMinGasPrice",

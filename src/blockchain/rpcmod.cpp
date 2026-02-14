@@ -6900,6 +6900,31 @@ CRPCResultPtr CRPCMod::RPCAddTimeVaultWhitelistAddress(const CReqContext& ctxReq
     return MakeCAddTimeVaultWhitelistAddressResultPtr(txid.ToString());
 }
 
+CRPCResultPtr CRPCMod::RPCListTimeVaultWhitelistAddress(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListTimeVaultWhitelistAddressParam>(param);
+
+    // if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    // {
+    //     throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    // }
+
+    uint256 hashBlock = GetRefBlock(pCoreProtocol->GetGenesisBlockHash(), spParam->strBlock);
+
+    std::set<CDestination> setTimeVaultWhitelist;
+    if (!pService->ListTimeVaultWhitelist(setTimeVaultWhitelist, hashBlock))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Get address list fail");
+    }
+
+    auto spResult = MakeCListTimeVaultWhitelistAddressResultPtr();
+    for (auto& address : setTimeVaultWhitelist)
+    {
+        spResult->vecAddress.push_back(address.ToString());
+    }
+    return spResult;
+}
+
 /* Util */
 CRPCResultPtr CRPCMod::RPCVerifyMessage(const CReqContext& ctxReq, CRPCParamPtr param)
 {
