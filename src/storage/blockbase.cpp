@@ -1722,25 +1722,19 @@ bool CBlockBase::GetBlockDelegateVote(const uint256& hashBlock, map<CDestination
     return dbBlock.RetrieveDelegate(hashBlock, mapVote);
 }
 
-    CContractDestCodeContext ctxDestCode;
-    try
-    {
-        CBufStream ss(btDestCodeData);
-        ss >> ctxDestCode;
-    }
-    catch (std::exception& e)
-    {
-        StdLog("CBlockState", "Get contract create code: Parse contract code fail, contract address: %s", destContractIn.ToString().c_str());
-        return false;
-    }
+bool CBlockBase::GetRangeDelegateEnroll(int height, const vector<uint256>& vBlockRange, map<CDestination, CDiskPos>& mapEnrollTxPos)
+{
+    return dbBlock.RetrieveRangeEnroll(height, vBlockRange, mapEnrollTxPos);
+}
 
-    if (!dbBlockBase.GetBlockContractCreateCodeData(hashFork, hashPrevBlock, ctxDestCode.hashContractCreateCode, txcd))
+bool CBlockBase::VerifyRefBlock(const uint256& hashGenesis, const uint256& hashRefBlock)
+{
+    const BlockIndexPtr pIndexGenesisLast = GetForkLastIndex(hashGenesis);
+    if (!pIndexGenesisLast)
     {
-        StdLog("CBlockState", "Get contract create code: Get contract create code fail, hashContractCreateCode: %s, contract address: %s, prev block: %s",
-               ctxDestCode.hashContractCreateCode.GetHex().c_str(), destContractIn.ToString().c_str(), hashPrevBlock.GetHex().c_str());
         return false;
     }
-    return true;
+    return IsValidBlock(pIndexGenesisLast, hashRefBlock);
 }
 
 bool CBlockState::GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut)
