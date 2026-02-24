@@ -1409,7 +1409,12 @@ bool CService::ListTokenContractAddress(const uint256& hashFork, const uint256& 
 
 bool CService::GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress)
 {
-    return pBlockChain->RetrieveTimeVault(hashFork, hashBlock, dest, tv);
+    return pBlockChain->GetOwnerLinkTemplateAddress(hashFork, hashBlock, destOwner, mapTemplateAddress);
+}
+
+bool CService::GetDelegateLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress)
+{
+    return pBlockChain->GetDelegateLinkTemplateAddress(hashFork, hashBlock, destDelegate, nTemplateType, nBegin, nCount, vTemplateAddress);
 }
 
 bool CService::GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount)
