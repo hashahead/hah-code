@@ -357,4 +357,48 @@ bool CBlockVoteChannel::SendNetData(const uint64 nNetId, const uint8 nTunnelId, 
     return true;
 }
 
+bool CBlockVoteChannel::GetVoteBlockCandidatePubkey(const uint256& hashBlock, uint32& nBlockHeight, int64& nBlockTime, vector<uint384>& vPubkey, bytes& btAggBitmap, bytes& btAggSig, const uint256& hashFork)
+{
+    btAggBitmap.clear();
+    btAggSig.clear();
+
+    uint256 hashLastBlock;
+    if (!pBlockChain->RetrieveForkLast(hashFork, hashLastBlock))
+    {
+        StdLog("CBlockVoteChannel", "Get vote block candidate pubkey: Retrieve fork last fail, fork: %s", hashFork.ToString().c_str());
+        return false;
+    }
+    if (!pBlockChain->VerifySameChain(hashBlock, hashLastBlock))
+    {
+        StdLog("CBlockVoteChannel", "Get vote block candidate pubkey: Verify same chain fail, block: %s, last block: %s, fork: %s",
+               hashBlock.GetBhString().c_str(), hashLastBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+        return false;
+    }
+
+    CBlockStatus status;
+    if (!pBlockChain->GetBlockStatus(hashBlock, status))
+    {
+        StdLog("CBlockVoteChannel", "Get vote block candidate pubkey: Get block status fail, block: %s, fork: %s",
+               hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+        return false;
+    }
+    if (!pBlockChain->GetPrevBlockCandidatePubkey(hashBlock, vPubkey))
+    {
+        StdLog("CBlockVoteChannel", "Get vote block candidate pubkey: Get prev block candidate pubkey fail, block: %s, fork: %s",
+               hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+        return false;
+    }
+    nBlockHeight = status.nBlockHeight;
+    nBlockTime = status.nBlockTime;
+
+    bool fAtChain = false;
+    uint256 hashAtBlock;
+    if (!pBlockChain->RetrieveBlockVoteResult(hashBlock, btAggBitmap, btAggSig, fAtChain, hashAtBlock))
+    {
+        btAggBitmap.clear();
+        btAggSig.clear();
+    }
+    return true;
+}
+
 } // namespace hashahead
