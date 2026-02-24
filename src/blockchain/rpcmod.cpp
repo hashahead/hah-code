@@ -6124,6 +6124,45 @@ CRPCResultPtr CRPCMod::RPCMakeFork(const CReqContext& ctxReq, CRPCParamPtr param
         nTxAmount = MORTGAGE_BASE;
     }
 
+    CProfile profile;
+    profile.nType = nForkType;
+    profile.strName = strName;
+    profile.strSymbol = strSymbol;
+    profile.nChainId = nChainId;
+    profile.destOwner = destOwner;
+    profile.hashParent = hashGenesisFork;
+    profile.nJointHeight = nJointHeight;
+    profile.nAmount = nAmount;
+    profile.nMintReward = nMintReward;
+    profile.nMinTxFee = MIN_GAS_PRICE * TX_BASE_GAS;
+    profile.nHalveCycle = nHalvecycle;
+
+    CBlock block;
+    block.nVersion = 1;
+    block.nType = CBlock::BLOCK_ORIGIN;
+    block.SetBlockTime(nTimeRef);
+    block.nNumber = 0;
+    block.nHeight = CBlock::GetBlockHeightByHash(hashPrev) + 1;
+    block.nSlot = 0;
+    block.hashPrev = hashPrev;
+
+    block.AddForkProfile(profile);
+
+    block.hashStateRoot = CCoreProtocol::CreateGenesisStateRoot(block.nType, block.GetBlockTime(), destOwner, nAmount);
+
+    CTransaction& tx = block.txMint;
+
+    tx.SetTxType(CTransaction::TX_GENESIS);
+    tx.SetNonce(nForkNonce);
+    tx.SetChainId(profile.nChainId);
+    tx.SetToAddress(destOwner);
+    tx.SetAmount(nAmount);
+
+    tx.SetToAddressData(CAddressContext(CPubkeyAddressContext()));
+
+    block.AddMintCoinProof(tx.GetAmount());
+    block.UpdateMerkleRoot();
+
     uint256 hashBlock = block.GetHash();
 
     if (!pService->SignSignature(destOwner, hashBlock, block.vchSig))
