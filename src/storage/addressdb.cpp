@@ -1488,6 +1488,34 @@ bool CForkAddressDB::AddCacheAddressData(const uint256& hashPrevBlock, const uin
     return true;
 }
 
+bool CForkAddressDB::AddCacheTokenContractAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapIncTokenAddress, const bool fAll)
+{
+    if (fAll)
+    {
+        cacheAddressData.AddBlockTokenContractAddress(hashBlock, mapIncTokenAddress);
+    }
+    else
+    {
+        std::map<CDestination, CTokenContractAddressContext> mapPrevCoinContractAddressCache;
+        if (hashFork != hashBlock)
+        {
+            if (!cacheAddressData.GetBlockTokenContractAddress(hashPrevBlock, mapPrevCoinContractAddressCache))
+            {
+                if (!ListTokenContractAddressDb(hashPrevBlock, mapPrevCoinContractAddressCache))
+                {
+                    StdLog("CForkAddressDB", "Add cache token contract address data: List token contract address fail, block: %s", hashBlock.GetHex().c_str());
+                    return false;
+                }
+            }
+        }
+        for (auto& kv : mapIncTokenAddress)
+        {
+            mapPrevCoinContractAddressCache[kv.first] = kv.second;
+        }
+        cacheAddressData.AddBlockTokenContractAddress(hashBlock, mapPrevCoinContractAddressCache);
+    }
+    return true;
+}
 
 //////////////////////////////
 // CAddressDB
