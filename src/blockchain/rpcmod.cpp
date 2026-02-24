@@ -5548,6 +5548,48 @@ CRPCResultPtr CRPCMod::RPCSendCrossTransferTx(const CReqContext& ctxReq, CRPCPar
         throw CRPCException(RPC_INVALID_PARAMETER, "Invalid amount");
     }
 
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    if (nPeerChainId == CBlock::GetBlockChainIdByHash(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid peerchainid");
+    }
+
+    uint256 hashBlock = GetRefBlock(hashFork, string(), false);
+
+    CWalletBalance balance;
+    if (!pService->GetBalance(hashFork, hashBlock, address, {}, balance))
+    {
+        balance.SetNull();
+    }
+    if (balance.nAvailable < nTransferAmount)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid amount");
+    }
+
+    std::vector<bytes> vParamList;
+    vParamList.push_back(uint256((uint32)nPeerChainId).ToBigEndian());
+    vParamList.push_back(nTransferAmount.ToBigEndian());
+
+    bytes btData = MakeEthTxCallData("transferCoin(uint32,uint256)", vParamList);
+
+    uint256 txid;
+    if (!pService->SendEthTransaction(hashFork, address, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
+    {
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Verify tx fail");
+    }
+
+    StdDebug("CRPCMod", "Send crosschain transfer tx success, address: %s, peer chainid: %d, amount: %s, txid: %s",
+             address.ToString().c_str(), nPeerChainId, CoinToTokenBigFloat(nTransferAmount).c_str(), txid.ToString().c_str());
+
+    return MakeCSendCrossTransferTxResultPtr(txid.ToString());
 }
 
 CRPCResultPtr CRPCMod::RPCGetCrossTransferAmount(const CReqContext& ctxReq, CRPCParamPtr param)
