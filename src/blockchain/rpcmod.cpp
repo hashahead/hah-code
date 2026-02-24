@@ -6838,6 +6838,82 @@ CRPCResultPtr CRPCMod::RPCListTokenAddress(const CReqContext& ctxReq, CRPCParamP
         }
         std::transform(strGetSymbol.begin(), strGetSymbol.end(), strGetSymbol.begin(), [](unsigned char c) { return std::toupper(c); });
     }
+
+    uint256 hashFork;
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+    const uint256 hashBlock = GetRefBlock(hashFork, spParam->strBlock);
+
+    std::map<CDestination, CTokenContractAddressContext> mapContractAddress;
+    if (!pService->ListTokenContractAddress(hashFork, hashBlock, mapContractAddress))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Get failed");
+    }
+
+    std::map<uint64, std::map<CDestination, CTokenContractAddressContext>> mapOrderContractAddress;
+    for (const auto& kv : mapContractAddress)
+    {
+        mapOrderContractAddress[kv.second.nAtBlockNumber][kv.first] = kv.second;
+    }
+
+    auto spResult = MakeCListTokenAddressResultPtr();
+
+    for (const auto& kv : mapOrderContractAddress)
+    {
+        const uint64 nBlockNumber = kv.first;
+        for (const auto& kv2 : kv.second)
+        {
+            const CDestination& destAddress = kv2.first;
+            const CTokenContractAddressContext& ctxAddress = kv2.second;
+
+            if (!destContractAddress.IsNull())
+            {
+                if (destAddress != destContractAddress)
+                {
+                    continue;
+                }
+            }
+            else if (!strGetName.empty())
+            {
+                string strCoinName = ctxAddress.strCoinName;
+                std::transform(strCoinName.begin(), strCoinName.end(), strCoinName.begin(), [](unsigned char c) { return std::toupper(c); });
+                if (strCoinName.find(strGetName) == std::string::npos)
+                {
+                    continue;
+                }
+            }
+            else if (!strGetSymbol.empty())
+            {
+                string strCoinSymbol = ctxAddress.strCoinSymbol;
+                std::transform(strCoinSymbol.begin(), strCoinSymbol.end(), strCoinSymbol.begin(), [](unsigned char c) { return std::toupper(c); });
+                if (strCoinSymbol.find(strGetSymbol) == std::string::npos)
+                {
+                    continue;
+                }
+            }
+
+            CListTokenAddressResult::CAddressdata addressData;
+
+            addressData.strAddress = destAddress.ToString();
+            addressData.nBlocknumber = nBlockNumber;
+            addressData.strCreatetxid = ctxAddress.hashCreateTxid.ToString();
+            addressData.strCreateaddress = ctxAddress.destCreate.ToString();
+            addressData.strName = ctxAddress.strCoinName;
+            addressData.strSymbol = ctxAddress.strCoinSymbol;
+            addressData.nDecimals = ctxAddress.nCoinDecimals;
+            addressData.strTotalsupply = CoinToTokenBigFloat(ctxAddress.nCoinTotalSupply, ctxAddress.nCoinDecimals);
+
+            spResult->vecAddressdata.push_back(addressData);
+        }
+    }
+
+    return spResult;
 }
 
 CRPCResultPtr CRPCMod::RPCGetDestContract(const CReqContext& ctxReq, CRPCParamPtr param)
