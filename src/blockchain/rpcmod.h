@@ -173,6 +173,7 @@ private:
     rpc::CRPCResultPtr RPCListFunctionAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCAddTimeVaultWhitelistAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListTimeVaultWhitelistAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCStopFork(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     /* Util */
     rpc::CRPCResultPtr RPCVerifyMessage(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCMakeKeyPair(const CReqContext& ctxReq, rpc::CRPCParamPtr param);

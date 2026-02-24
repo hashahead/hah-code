@@ -7002,6 +7002,71 @@ CRPCResultPtr CRPCMod::RPCListTimeVaultWhitelistAddress(const CReqContext& ctxRe
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCStopFork(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CStopForkParam>(param);
+
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    CDestination from;
+    from.ParseString(spParam->strFrom);
+    if (from.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
+    }
+
+    if (!spParam->nChainid.IsValid())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid chainid");
+    }
+    const CChainId nChainId = spParam->nChainid;
+
+    uint256 hashSetFork;
+    if (!pService->GetForkHashByChainId(nChainId, hashSetFork))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Chain id error");
+    }
+
+    CForkContext ctxFork;
+    if (!pService->GetForkContext(hashSetFork, ctxFork))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Get fork error");
+    }
+    if (from != ctxFork.destOwner)
+    {
+        throw CRPCException(RPC_VERIFY_ERROR, "From address is not fork owner address");
+    }
+    if (!ctxFork.IsUserFork())
+    {
+        throw CRPCException(RPC_VERIFY_ERROR, "Fork is not user fork");
+    }
+
+    CForkCtxStatus forkStatus;
+    if (!pService->GetForkCtxStatus(hashSetFork, forkStatus))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Get fork error");
+    }
+    if (forkStatus.IsStopped())
+    {
+        throw CRPCException(RPC_TRANSACTION_REJECTED, "Fork is stopped");
+    }
+
+    std::vector<bytes> vParamList;
+    vParamList.push_back(uint256(nChainId).ToBigEndian());
+    bytes btData = MakeEthTxCallData("stopFork(uint32)", vParamList);
+
+    uint256 txid;
+    if (!pService->SendEthTransaction(pCoreProtocol->GetGenesisBlockHash(), from, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
+    {
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Verify tx fail");
+    }
+
+    return MakeCStopForkResultPtr(txid.ToString());
+}
+
 /* Util */
 CRPCResultPtr CRPCMod::RPCVerifyMessage(const CReqContext& ctxReq, CRPCParamPtr param)
 {
