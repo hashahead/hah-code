@@ -32,6 +32,19 @@ protected:
 protected:
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
+
+    bool fCfgPruneStateData;
+    bool fCfgTraceDb;
+    uint32 nCfgPruneRetentionDays;
+    uint32 nCfgPruneReserveHeight;
+
+    hnbase::CThread thrPruneDb;
+    bool fExit;
+    boost::condition_variable condExit;
+    boost::mutex mutex;
+
+    std::map<uint256, uint32> mapPrevPruneHeight;
+    std::map<uint256, uint32> mapPrevKvPruneHeight;
 };
 
 } // namespace hashahead

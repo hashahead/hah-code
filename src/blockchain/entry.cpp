@@ -639,7 +639,7 @@ bool CBbEntry::RunInBackground(const path& pathData)
     pid_t pid = fork();
     if (pid < 0)
     {
-        cerr << "Error: fork() returned " << pid << " errno " << errno << "\n";
+        cerr << "Error: fork() returned " << pid << " errno " << errno << endl;
         return false;
     }
     if (pid > 0)
@@ -656,7 +656,7 @@ bool CBbEntry::RunInBackground(const path& pathData)
     pid_t sid = setsid();
     if (sid < 0)
     {
-        cerr << "Error: setsid) returned " << sid << " errno " << errno << "\n";
+        cerr << "Error: setsid) returned " << sid << " errno " << errno << endl;
         return false;
     }
     ioService.notify_fork(boost::asio::io_service::fork_child);

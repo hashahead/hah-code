@@ -1060,15 +1060,15 @@ bool CCoreProtocol::CheckBlockSignature(const uint256& hashFork, const CBlock& b
         else
         {
             CTemplatePtr ptr = pBlockChain->GetTxToAddressTemplatePtr(hashFork, block.hashPrev, block.txMint);
-            if (!ptr || (ptr->GetTemplateType() != TEMPLATE_PROOF && ptr->GetTemplateType() != TEMPLATE_DELEGATE))
+            if (!ptr || (ptr->GetTemplateType() != TEMPLATE_POA && ptr->GetTemplateType() != TEMPLATE_DELEGATE))
             {
                 if (!ptr)
                 {
-                    StdLog("CoreProtocol", "Check Block Signature: Get template fail, block: %s, to: %s", block.GetHash().GetHex().c_str(), block.txMint.GetToAddress().ToString().c_str());
+                    StdLog("CoreProtocol", "Check Block Signature: Get template fail, block: %s, to: %s", hashBlock.GetHex().c_str(), block.txMint.GetToAddress().ToString().c_str());
                 }
                 else
                 {
-                    StdLog("CoreProtocol", "Check Block Signature: Template error, template type: %d, block: %s, to: %s", ptr->GetTemplateType(), block.GetHash().GetHex().c_str(), block.txMint.GetToAddress().ToString().c_str());
+                    StdLog("CoreProtocol", "Check Block Signature: Template error, template type: %d, block: %s, to: %s", ptr->GetTemplateType(), hashBlock.GetHex().c_str(), block.txMint.GetToAddress().ToString().c_str());
                 }
                 return false;
             }
@@ -1078,7 +1078,7 @@ bool CCoreProtocol::CheckBlockSignature(const uint256& hashFork, const CBlock& b
             ptrMint->GetBlockSignDestination(destBlockSign);
             if (!block.VerifyBlockSignature(destBlockSign))
             {
-                StdLog("CoreProtocol", "Check Block Signature: Verify block sign fail, block: %s", block.GetHash().GetHex().c_str());
+                StdLog("CoreProtocol", "Check Block Signature: Verify block sign fail, block: %s", hashBlock.GetHex().c_str());
                 return false;
             }
         }
@@ -1210,6 +1210,15 @@ Errno CCoreProtocol::VerifyPledgeTx(const uint256& hashFork, const CTransaction&
     {
         StdLog("CoreProtocol", "Verify Pledge Tx: From and to addresses cannot be the same, txid: %s", txid.GetHex().c_str());
         return ERR_TRANSACTION_INVALID;
+    }
+
+    if (VERIFY_FHX_HEIGHT_BRANCH_002(CBlock::GetBlockHeightByHash(hashPrev) + 1))
+    {
+        if (!tx.GetFromAddress().IsNull())
+        {
+            StdLog("CoreProtocol", "Verify Pledge Tx: Prohibition of trading mortgage voting, txid: %s", txid.GetHex().c_str());
+            return ERR_TRANSACTION_INVALID;
+        }
     }
 
     if (tx.GetAmount() == 0)
