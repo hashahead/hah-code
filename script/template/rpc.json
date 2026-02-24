@@ -1118,6 +1118,115 @@
             }
         }
     },
+    "ethtracedata": {
+        "type": "class",
+        "name": "EthTraceData",
+        "content": {
+            "action": {
+                "type": "object",
+                "content": {
+                    "callType": {
+                        "type": "string",
+                        "desc": "call type: call, delegatecall, callcode, staticcall",
+                        "required": false
+                    },
+                    "from": {
+                        "type": "string",
+                        "desc": "from address",
+                        "required": false
+                    },
+                    "to": {
+                        "type": "string",
+                        "desc": "to address",
+                        "required": false
+                    },
+                    "value": {
+                        "type": "string",
+                        "desc": "value",
+                        "required": false
+                    },
+                    "gas": {
+                        "type": "string",
+                        "desc": "gas",
+                        "required": false
+                    },
+                    "input": {
+                        "type": "string",
+                        "desc": "input",
+                        "required": false
+                    },
+                    "address": {
+                        "type": "string",
+                        "desc": "address",
+                        "required": false
+                    },
+                    "refundAddress": {
+                        "type": "string",
+                        "desc": "refundAddress",
+                        "required": false
+                    }
+                }
+            },
+            "blockHash": {
+                "type": "string",
+                "desc": "block hash"
+            },
+            "blockNumber": {
+                "type": "uint",
+                "desc": "block number"
+            },
+            "result": {
+                "type": "object",
+                "content": {
+                    "gasUsed": {
+                        "type": "string",
+                        "desc": "gas used",
+                        "required": false
+                    },
+                    "output": {
+                        "type": "string",
+                        "desc": "output",
+                        "required": false
+                    },
+                    "address": {
+                        "type": "string",
+                        "desc": "address",
+                        "required": false
+                    },
+                    "code": {
+                        "type": "string",
+                        "desc": "code",
+                        "required": false
+                    }
+                }
+            },
+            "subtraces": {
+                "type": "uint",
+                "desc": "subtraces"
+            },
+            "traceAddress": {
+                "type": "array",
+                "content": {
+                    "pos": {
+                        "type": "uint",
+                        "desc": "pos"
+                    }
+                }
+            },
+            "transactionHash": {
+                "type": "string",
+                "desc": "transaction hash"
+            },
+            "transactionPosition": {
+                "type": "uint",
+                "desc": "transaction position"
+            },
+            "type": {
+                "type": "string",
+                "desc": "type: create, suicide, call"
+            }
+        }
+    },
     "help": {
         "type": "command",
         "name": "Help",

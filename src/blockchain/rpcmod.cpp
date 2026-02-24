@@ -6305,14 +6305,15 @@ CRPCResultPtr CRPCMod::RPCMakeFork(const CReqContext& ctxReq, CRPCParamPtr param
     block.UpdateMerkleRoot();
 
     uint256 hashBlock = block.GetHash();
-
-    if (!pService->SignSignature(destOwner, hashBlock, block.vchSig))
+    if (!pService->VerifyForkFlag(hashBlock, (CChainId)(spParam->nChainid), spParam->strSymbol, spParam->strName))
     {
-        throw CRPCException(RPC_WALLET_ERROR, "Failed to sign message");
+        throw CRPCException(RPC_VERIFY_ALREADY_IN_CHAIN, "Fork name or chainid is existed");
     }
 
     CBufStream ss;
     ss << block;
+    bytes vchData;
+    ss.GetData(vchData);
 
     auto spResult = MakeCMakeOriginResultPtr();
     spResult->strHash = hashBlock.GetHex();
