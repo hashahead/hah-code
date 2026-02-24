@@ -7116,7 +7116,7 @@ CRPCResultPtr CRPCMod::RPCSetFunctionAddress(const CReqContext& ctxReq, CRPCPara
     vParamList.push_back(uint256(nFuncid).ToBigEndian());
     vParamList.push_back(newAddress.ToHash().GetBytes());
     vParamList.push_back(uint256(nDisableModify).ToBigEndian());
-    bytes btData = pService->MakeEthTxCallData("setFunctionAddress(uint32,address,bool)", vParamList);
+    bytes btData = MakeEthTxCallData("setFunctionAddress(uint32,address,bool)", vParamList);
 
     uint256 txid;
     if (!pService->SendEthTransaction(pCoreProtocol->GetGenesisBlockHash(), destDefaultFunction, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
@@ -7322,6 +7322,77 @@ CRPCResultPtr CRPCMod::RPCStopFork(const CReqContext& ctxReq, CRPCParamPtr param
     }
 
     return MakeCStopForkResultPtr(txid.ToString());
+}
+
+CRPCResultPtr CRPCMod::RPCSetDelegateName(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CSetDelegateNameParam>(param);
+
+    if (ctxReq.hashFork != pCoreProtocol->GetGenesisBlockHash())
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Only suitable for the main chain");
+    }
+
+    CDestination from;
+    CDestination destDelegate;
+    string strName;
+    string strDescribe;
+
+    from.ParseString(spParam->strFrom);
+    if (from.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
+    }
+
+    destDelegate.ParseString(spParam->strDelegateaddress);
+    if (destDelegate.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid delegateaddress");
+    }
+
+    if (!spParam->strName.IsValid() || spParam->strName.empty() || spParam->strName.size() > 32)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid name");
+    }
+    strName = spParam->strName;
+
+    if (!spParam->strDescribe.IsValid() || spParam->strDescribe.empty() || spParam->strDescribe.size() > 512)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid describe");
+    }
+    strDescribe = spParam->strDescribe;
+
+    CAddressContext ctxAddress;
+    if (!pService->RetrieveAddressContext(pCoreProtocol->GetGenesisBlockHash(), destDelegate, ctxAddress))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid delegateaddress");
+    }
+
+    bytes btNameData, btDescribeData;
+    btNameData.resize(32);
+    std::copy(strName.begin(), strName.end(), btNameData.data());
+    btDescribeData.resize(((strDescribe.size() + 31) / 32) * 32);
+    std::copy(strDescribe.begin(), strDescribe.end(), btDescribeData.data());
+
+    std::vector<bytes> vParamList;
+    vParamList.push_back(destDelegate.ToHash().GetBytes());
+    vParamList.push_back(uint256((uint64)0x60).ToBigEndian());           // first var pos
+    vParamList.push_back(uint256((uint64)0xA0).ToBigEndian());           // second var pos
+    vParamList.push_back(uint256((uint64)strName.size()).ToBigEndian()); // first var size
+    vParamList.push_back(btNameData);
+    vParamList.push_back(uint256((uint64)strDescribe.size()).ToBigEndian()); // second var size
+    vParamList.push_back(btDescribeData);
+
+    //function setDelegateName(address delegateAddress, string memory strName, string memory strDescribe) external returns (bool);
+    bytes btData = MakeEthTxCallData("setDelegateName(address,string,string)", vParamList);
+
+    uint256 txid;
+    if (!pService->SendEthTransaction(pCoreProtocol->GetGenesisBlockHash(), from, FUNCTION_CONTRACT_ADDRESS, 0, 0, 0, 0, btData, FUNCTION_TX_GAS_BASE, txid))
+    {
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Verify tx fail");
+    }
+
+    return MakeCSetDelegateNameResultPtr(txid.ToString());
 }
 
 /* Util */
