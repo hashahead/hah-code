@@ -59,7 +59,7 @@ public:
     bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) override;
     bool IsBlockConfirm(const uint256& hashBlock) override;
     void GetTxPool(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true) override;
-    void ListTxPool(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0) override;
+    void ListTxPool(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0, const bool fContainCertTx = true) override;
     bool GetTransactionAndPosition(const uint256& hashRefFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashAtBlock, uint64& nBlockNumber, uint16& nTxSeq) override;
     bool GetTransactionByIndex(const uint256& hashBlock, const uint64 nTxIndex, CTransaction& tx, uint64& nBlockNumber) override;
     Errno SendTransaction(const uint256& hashFork, CTransaction& tx) override;

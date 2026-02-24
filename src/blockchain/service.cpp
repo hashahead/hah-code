@@ -1537,6 +1537,10 @@ bool CService::RetrieveAddressContext(const uint256& hashFork, const CDestinatio
     return pTxPool->GetAddressContext(hashFork, dest, ctxAddress, hashBlock);
 }
 
+bool CService::RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress)
+{
+    return pBlockChain->RetrieveTokenContractAddressContext(hashFork, hashBlock, dest, ctxAddress);
+}
 bool CService::AddBlacklistAddress(const CDestination& dest)
 {
     return pBlockChain->AddBlacklistAddress(dest);
