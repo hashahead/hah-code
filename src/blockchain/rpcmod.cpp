@@ -6094,9 +6094,150 @@ CRPCResultPtr CRPCMod::RPCMakeFork(const CReqContext& ctxReq, CRPCParamPtr param
     {
         throw CRPCException(RPC_INVALID_PARAMETER, "Invalid owner");
     }
-    if (fPublic)
+
+    if (spParam->strType.IsValid())
     {
-        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Can't sign origin block by public key");
+        nForkType = CProfile::ParseTypeStr(spParam->strType);
+        if (!CProfile::VerifySubforkType(nForkType))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid type");
+        }
+    }
+    if (spParam->strPrev.IsValid())
+    {
+        hashPrev.SetHex(spParam->strPrev);
+        if (hashPrev == 0)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid prev");
+        }
+
+        const uint32 nPrevHeight = CBlock::GetBlockHeightByHash(hashPrev);
+        if (nPrevHeight > lastStatus.nBlockHeight)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid prev");
+        }
+        uint256 hashGetPrevBlock;
+        if (!pService->GetBlockHashByHeightSlot(hashGenesisFork, lastStatus.hashBlock, nPrevHeight, 0, hashGetPrevBlock))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid prev");
+        }
+        if (hashGetPrevBlock != hashPrev)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid prev");
+        }
+    }
+    else
+    {
+        uint32 nMakeSpaceHeight = MIN_CREATE_FORK_INTERVAL_HEIGHT;
+        if (nMakeSpaceHeight == 0)
+        {
+            nMakeSpaceHeight = 2;
+        }
+        if (lastStatus.nBlockHeight < nMakeSpaceHeight)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "last block error");
+        }
+        if (!pService->GetBlockHashByHeightSlot(hashGenesisFork, lastStatus.hashBlock, lastStatus.nBlockHeight - nMakeSpaceHeight, 0, hashPrev))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "last block error");
+        }
+    }
+    if (spParam->nChainid.IsValid())
+    {
+        if (spParam->nChainid == 0)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid chainid");
+        }
+        nChainId = spParam->nChainid;
+        for (auto& vd : vFork)
+        {
+            if (nChainId == vd.second.nChainId)
+            {
+                throw CRPCException(RPC_INVALID_PARAMETER, "Chain id already exists");
+            }
+        }
+    }
+    else
+    {
+        CChainId nMaxUserChainId = 0;
+        for (auto& vd : vFork)
+        {
+            const CProfile& proFile = vd.second;
+            if (nMaxUserChainId < proFile.nChainId)
+            {
+                nMaxUserChainId = proFile.nChainId;
+            }
+        }
+        if (nMaxUserChainId == 0)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid chainid");
+        }
+        nChainId = nMaxUserChainId + 1;
+    }
+    if (spParam->strAmount.IsValid())
+    {
+        if (!TokenBigFloatToCoin(spParam->strAmount, nAmount))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid amount");
+        }
+    }
+    if (spParam->strReward.IsValid())
+    {
+        if (!TokenBigFloatToCoin(spParam->strReward, nMintReward))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid reward");
+        }
+        if (!RewardRange(nMintReward))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid reward");
+        }
+    }
+    if (spParam->strName.IsValid())
+    {
+        if (spParam->strName.empty() || spParam->strName.size() > MAX_FORK_NAME_SIZE)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid name");
+        }
+        strName = spParam->strName;
+    }
+    else
+    {
+        strName = string("CHAIN-") + std::to_string(nChainId);
+    }
+    if (spParam->strSymbol.IsValid())
+    {
+        if (spParam->strSymbol.empty() || spParam->strSymbol.size() > MAX_COIN_SYMBOL_SIZE)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid symbol");
+        }
+        strSymbol = spParam->strSymbol;
+    }
+    else
+    {
+        strSymbol = string("SYM") + std::to_string(nChainId);
+    }
+    if (spParam->nHalvecycle.IsValid())
+    {
+        nHalvecycle = spParam->nHalvecycle;
+    }
+    nForkNonce = spParam->nNonce;
+
+    const uint32 nJointHeight = CBlock::GetBlockHeightByHash(hashPrev);
+    int nForkHeight = lastStatus.nBlockHeight;
+    if (nForkHeight < nJointHeight + MIN_CREATE_FORK_INTERVAL_HEIGHT)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, string("The minimum confirmed height of the previous block is ") + to_string(MIN_CREATE_FORK_INTERVAL_HEIGHT));
+    }
+    if ((int64)nForkHeight > (int64)nJointHeight + MAX_JOINT_FORK_INTERVAL_HEIGHT)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, string("Maximum fork spacing height is ") + to_string(MAX_JOINT_FORK_INTERVAL_HEIGHT));
+    }
+
+    uint256 hashBlockRef;
+    uint64 nTimeRef;
+    if (!pService->GetLastBlockOfHeight(hashGenesisFork, nJointHeight + 1, hashBlockRef, nTimeRef))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Failed to query main chain reference block");
     }
 
     if (nForkType == CProfile::PROFILE_FORK_TYPE_CLONEMAP)
