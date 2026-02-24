@@ -1757,37 +1757,44 @@ BlockIndexPtr CBlockBase::GetForkValidLast(const uint256& hashGenesis, const uin
     BlockIndexPtr pIndex = pForkLast;
     while (pIndex && !pIndex->IsOrigin())
     {
-        CNhBloomFilter bf(setBlockBloomData.size() * 4);
-        for (auto& bt : setBlockBloomData)
+        if (VerifyValidBlock(pIndexGenesisLast, pIndex))
         {
-            bf.Add(bt);
+            break;
         }
-        bf.GetData(btBloomDataOut);
+        setInvalidHash.insert(pIndex->GetBlockHash());
+        pIndex = GetPrevBlockIndex(pIndex);
     }
+    if (!pIndex)
+    {
+        pIndex = GetIndex(hashFork);
+    }
+    if (pIndex->GetBlockHash() == pForkLast->GetBlockHash())
+    {
+        return nullptr;
+    }
+    BlockIndexPtr pIndexValidLast = GetLongChainLastBlock(hashFork, pIndex->GetBlockHeight(), pIndexGenesisLast, setInvalidHash);
+    if (!pIndexValidLast)
+    {
+        return pIndex;
+    }
+    return pIndexValidLast;
 }
 
-bool CBlockState::GetDestBalance(const CDestination& dest, uint256& nBalance)
+bool CBlockBase::VerifySameChain(const uint256& hashPrevBlock, const uint256& hashAfterBlock)
 {
-    CDestState stateDest;
-    if (!GetDestState(dest, stateDest))
+    CReadLock rlock(rwAccess);
+    return VerifySameChainNoLock(hashPrevBlock, hashAfterBlock);
+}
+
+bool CBlockBase::GetLastRefBlockHash(const uint256& hashFork, const uint256& hashBlock, uint256& hashRefBlock, bool& fOrigin)
+{
+    BlockIndexPtr pIndex = GetIndex(hashBlock);
+    if (!pIndex)
     {
-        StdLog("CBlockState", "Get dest balance: Get dest state failed, dest: %s", dest.ToString().c_str());
         return false;
     }
-    uint256 nLockedAmount;
-    if (!GetDestLockedAmount(dest, nLockedAmount))
-    {
-        StdLog("CBlockState", "Get dest balance: Get locked amount failed, dest: %s", dest.ToString().c_str());
-        return false;
-    }
-    if (stateDest.GetBalance() > nLockedAmount)
-    {
-        nBalance = stateDest.GetBalance() - nLockedAmount;
-    }
-    else
-    {
-        nBalance = 0;
-    }
+    hashRefBlock = pIndex->GetRefBlock();
+    fOrigin = pIndex->IsOrigin();
     return true;
 }
 
