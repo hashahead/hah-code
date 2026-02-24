@@ -1737,14 +1737,25 @@ bool CBlockBase::VerifyRefBlock(const uint256& hashGenesis, const uint256& hashR
     return IsValidBlock(pIndexGenesisLast, hashRefBlock);
 }
 
-bool CBlockState::GetBlockHashByNumber(const uint64 nBlockNumberIn, uint256& hashBlockOut)
+BlockIndexPtr CBlockBase::GetForkValidLast(const uint256& hashGenesis, const uint256& hashFork)
 {
-    return dbBlockBase.GetBlockHashByNumber(hashFork, nBlockNumberIn, hashBlockOut);
-}
+    CReadLock rlock(rwAccess);
 
-void CBlockState::GetBlockBloomData(bytes& btBloomDataOut)
-{
-    if (!setBlockBloomData.empty())
+    BlockIndexPtr pIndexGenesisLast = GetForkLastIndex(hashGenesis);
+    if (!pIndexGenesisLast)
+    {
+        return nullptr;
+    }
+
+    BlockIndexPtr pForkLast = GetForkLastIndex(hashFork);
+    if (!pForkLast || pForkLast->IsOrigin())
+    {
+        return nullptr;
+    }
+
+    set<uint256> setInvalidHash;
+    BlockIndexPtr pIndex = pForkLast;
+    while (pIndex && !pIndex->IsOrigin())
     {
         CNhBloomFilter bf(setBlockBloomData.size() * 4);
         for (auto& bt : setBlockBloomData)
