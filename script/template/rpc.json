@@ -1227,6 +1227,76 @@
             }
         }
     },
+    "ethdebugcalltracerresult": {
+        "type": "class",
+        "name": "EthDebugCallTracerResult",
+        "content": {
+            "type": {
+                "type": "string",
+                "desc": "call type: call, delegatecall, callcode, staticcall",
+                "required": false
+            },
+            "from": {
+                "type": "string",
+                "desc": "from address",
+                "required": false
+            },
+            "to": {
+                "type": "string",
+                "desc": "to address",
+                "required": false
+            },
+            "value": {
+                "type": "string",
+                "desc": "value",
+                "required": false
+            },
+            "gas": {
+                "type": "string",
+                "desc": "gas",
+                "required": false
+            },
+            "gasUsed": {
+                "type": "string",
+                "desc": "gas used",
+                "required": false
+            },
+            "input": {
+                "type": "string",
+                "desc": "input",
+                "required": false
+            },
+            "output": {
+                "type": "string",
+                "desc": "output",
+                "required": false
+            },
+            "error": {
+                "type": "string",
+                "desc": "error",
+                "required": false
+            },
+            "revertReason": {
+                "type": "string",
+                "desc": "revert reason",
+                "required": false
+            }
+        }
+    },
+    "ethdebugcalltracerdata": {
+        "type": "class",
+        "name": "EthDebugCallTracerData",
+        "content": {
+            "txHash": {
+                "type": "string",
+                "desc": "tx hash"
+            },
+            "result": {
+                "type": "ethdebugcalltracerresult",
+                "desc": "result"
+            }
+        }
+    },
     "help": {
         "type": "command",
         "name": "Help",
@@ -1567,6 +1637,10 @@
                             "type": "string",
                             "desc": "fork symbol"
                         },
+                        "coinsymbol": {
+                            "type": "string",
+                            "desc": "coin fork symbol"
+                        },
                         "amount": {
                             "type": "string",
                             "desc": "amount (big float)"
@@ -1615,6 +1689,10 @@
                             "type": "string",
                             "desc": "last block hash"
                         },
+                        "lastconfirm": {
+                            "type": "bool",
+                            "desc": "last block confirm"
+                        },
                         "totaltxcount": {
                             "type": "uint",
                             "desc": "total tx count"
@@ -1638,6 +1716,10 @@
                         "moneydestroy": {
                             "type": "string",
                             "desc": "money destroy (big float)"
+                        },
+                        "status": {
+                            "type": "string",
+                            "desc": "fork status"
                         }
                     }
                 }
