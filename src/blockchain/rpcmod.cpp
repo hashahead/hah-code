@@ -6802,6 +6802,18 @@ CRPCResultPtr CRPCMod::RPCListContractAddress(const CReqContext& ctxReq, CRPCPar
         CListContractAddressResult::CAddressdata addressData;
 
         const CDestination& address = kv.first;
+        if (isFunctionContractAddress(address))
+        {
+            continue;
+        }
+        if (!destGetAddress.IsNull())
+        {
+            if (address != destGetAddress)
+            {
+                continue;
+            }
+        }
+
         addressData.strAddress = address.ToString();
         if (!kv.second.strType.empty())
         {
