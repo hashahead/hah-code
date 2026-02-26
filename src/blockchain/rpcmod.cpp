@@ -6315,11 +6315,35 @@ CRPCResultPtr CRPCMod::RPCMakeFork(const CReqContext& ctxReq, CRPCParamPtr param
     bytes vchData;
     ss.GetData(vchData);
 
-    auto spResult = MakeCMakeOriginResultPtr();
-    spResult->strHash = hashBlock.GetHex();
-    spResult->strHex = ToHexString((const unsigned char*)ss.GetData(), ss.GetSize());
+    auto ptrFork = CTemplate::CreateTemplatePtr(new CTemplateFork(destOwner, hashBlock));
+    if (!ptrFork)
+    {
+        throw CRPCException(RPC_VERIFY_ALREADY_IN_CHAIN, "Make fork address failed");
+    }
+    CDestination destFork(ptrFork->GetTemplateId());
 
-    return spResult;
+    CTransaction txNew;
+    auto strErr = pService->CreateTransaction(hashGenesisFork, destOwner, destFork, ptrFork->Export(), nTxAmount, 0, 0, 0, vchData, {}, {}, {}, txNew);
+    if (strErr)
+    {
+        throw CRPCException(RPC_WALLET_ERROR, std::string("Failed to create transaction: ") + *strErr);
+    }
+
+    if (!pService->SignTransaction(hashGenesisFork, txNew))
+    {
+        throw CRPCException(RPC_WALLET_ERROR, "Failed to sign transaction");
+    }
+
+    Errno err = pService->SendTransaction(hashGenesisFork, txNew);
+    if (err != OK)
+    {
+        throw CRPCException(RPC_TRANSACTION_REJECTED, string("Tx rejected : ") + ErrorString(err));
+    }
+    uint256 txid = txNew.GetHash();
+
+    StdDebug("CRPCMod", "Send fork tx success, fork: %s, txid: %s", destFork.ToString().c_str(), txid.GetHex().c_str());
+
+    return MakeCMakeForkResultPtr(txid.GetHex());
 }
 
 CRPCResultPtr CRPCMod::RPCCallContract(const CReqContext& ctxReq, CRPCParamPtr param)
