@@ -7973,22 +7973,22 @@ CRPCResultPtr CRPCMod::RPCQueryStat(const CReqContext& ctxReq, CRPCParamPtr para
             }
         }
 
-        int nTimeWidth = 8 + 2;                                 //hh:mm:ss + two spaces
-        int nPowBlocksWidth = string("powblocks").size() + 2;   //+ two spaces
-        int nDposBlocksWidth = string("dposblocks").size() + 2; //+ two spaces
+        int nTimeWidth = 8 + 2;                               //hh:mm:ss + two spaces
+        int nPoaBlocksWidth = string("poablocks").size() + 2; //+ two spaces
+        int nPosBlocksWidth = string("posblocks").size() + 2; //+ two spaces
         int nTxTPSWidth = string("tps").size() + 2;
         for (const CStatItemBlockMaker& item : vStatData)
         {
             int nTempValue;
-            nTempValue = to_string(item.nPOWBlockCount).size() + 2; //+ two spaces (not decimal point)
-            if (nTempValue > nPowBlocksWidth)
+            nTempValue = to_string(item.nPoaBlockCount).size() + 2; //+ two spaces (not decimal point)
+            if (nTempValue > nPoaBlocksWidth)
             {
-                nPowBlocksWidth = nTempValue;
+                nPoaBlocksWidth = nTempValue;
             }
-            nTempValue = to_string(item.nDPOSBlockCount).size() + 2; //+ two spaces (not decimal point)
-            if (nTempValue > nDposBlocksWidth)
+            nTempValue = to_string(item.nPosBlockCount).size() + 2; //+ two spaces (not decimal point)
+            if (nTempValue > nPosBlocksWidth)
             {
-                nDposBlocksWidth = nTempValue;
+                nPosBlocksWidth = nTempValue;
             }
             nTempValue = to_string(item.nTxTPS).size() + 3; //+ one decimal point + two spaces
             if (nTempValue > nTxTPSWidth)
@@ -8001,8 +8001,8 @@ CRPCResultPtr CRPCMod::RPCQueryStat(const CReqContext& ctxReq, CRPCParamPtr para
 
         string strResult = "";
         strResult += GetWidthString("time", nTimeWidth);
-        strResult += GetWidthString("powblocks", nPowBlocksWidth);
-        strResult += GetWidthString("dposblocks", nDposBlocksWidth);
+        strResult += GetWidthString("poablocks", nPoaBlocksWidth);
+        strResult += GetWidthString("posblocks", nPosBlocksWidth);
         strResult += GetWidthString("tps", nTxTPSWidth);
         strResult += string("\r\n");
         for (const CStatItemBlockMaker& item : vStatData)
@@ -8019,8 +8019,8 @@ CRPCResultPtr CRPCMod::RPCQueryStat(const CReqContext& ctxReq, CRPCParamPtr para
             char sTimeBuf[128] = { 0 };
             sprintf(sTimeBuf, "%2.2d:%2.2d:59", nLocalTimeValue / 3600, nLocalTimeValue % 3600 / 60);
             strResult += GetWidthString(sTimeBuf, nTimeWidth);
-            strResult += GetWidthString(to_string(item.nPOWBlockCount), nPowBlocksWidth);
-            strResult += GetWidthString(to_string(item.nDPOSBlockCount), nDposBlocksWidth);
+            strResult += GetWidthString(to_string(item.nPoaBlockCount), nPoaBlocksWidth);
+            strResult += GetWidthString(to_string(item.nPosBlockCount), nPosBlocksWidth);
             strResult += GetWidthString(item.nTxTPS, nTxTPSWidth);
             strResult += string("\r\n");
         }
