@@ -8105,6 +8105,54 @@ CRPCResultPtr CRPCMod::RPCQueryStat(const CReqContext& ctxReq, CRPCParamPtr para
     return MakeCQueryStatResultPtr(string("error"));
 }
 
+CRPCResultPtr CRPCMod::RPCCreateSnapshot(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CCreateSnapshotParam>(param);
+    uint256 hashSnapshotBlockHash;
+    if (spParam->nHeight.IsValid())
+    {
+        if (spParam->nHeight == 0)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid height");
+        }
+        StdLog("CRPCMod", "RPCCreateSnapshot: nHeight: %lu", spParam->nHeight);
+        if (!pService->StartRpcSnapshot((uint32)(uint64)(spParam->nHeight), hashSnapshotBlockHash))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid height");
+        }
+    }
+    else if (spParam->strBlock.IsValid())
+    {
+        const uint256 hashBlock(spParam->strBlock);
+        CBlockStatus status;
+        if (!pService->GetBlockStatus(hashBlock, status))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+        }
+        if (!status.IsPrimary())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+        }
+        if (!pService->StartRpcSnapshot(CBlock::GetBlockHeightByHash(hashBlock), hashSnapshotBlockHash))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+        }
+    }
+    else
+    {
+        int nForkHeight = pService->GetForkHeight(pCoreProtocol->GetGenesisBlockHash());
+        if (nForkHeight < DAY_HEIGHT * 2)
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid height or block");
+        }
+        if (!pService->StartRpcSnapshot(nForkHeight - 2, hashSnapshotBlockHash))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid height or block");
+        }
+    }
+    return MakeCCreateSnapshotResultPtr(hashSnapshotBlockHash.ToString());
+}
+
 ////////////////////////////////////////////////////////////////////////
 /* eth rpc*/
 

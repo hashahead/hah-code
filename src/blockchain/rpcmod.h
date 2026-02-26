@@ -192,8 +192,8 @@ private:
     rpc::CRPCResultPtr RPCGetMintMinGasPrice(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCListMintMinGasPrice(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCCheckAtBloomFilter(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
-    /* tool */
     rpc::CRPCResultPtr RPCQueryStat(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCCreateSnapshot(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     /* eth rpc */
     rpc::CRPCResultPtr RPCEthGetWebClientVersion(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthGetSha3(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
