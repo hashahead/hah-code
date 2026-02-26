@@ -8153,6 +8153,13 @@ CRPCResultPtr CRPCMod::RPCCreateSnapshot(const CReqContext& ctxReq, CRPCParamPtr
     return MakeCCreateSnapshotResultPtr(hashSnapshotBlockHash.ToString());
 }
 
+CRPCResultPtr CRPCMod::RPCGetSnapshotStatus(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    uint256 hashSnapshotBlockHash;
+    uint32 nStatus = pService->GetSnapshotStatus(hashSnapshotBlockHash);
+    return MakeCGetSnapshotStatusResultPtr(nStatus, CBlock::GetBlockHeightByHash(hashSnapshotBlockHash), hashSnapshotBlockHash.ToString());
+}
+
 ////////////////////////////////////////////////////////////////////////
 /* eth rpc*/
 

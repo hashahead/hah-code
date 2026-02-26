@@ -4823,6 +4823,46 @@
             "{\"code\" : -32603, \"message\" : \"query error\"}"
         ]
     },
+    "getsnapshotstatus": {
+        "type": "command",
+        "name": "GetSnapshotStatus",
+        "desc": "Get snapshot status",
+        "request": {
+            "type": "object",
+            "content": {}
+        },
+        "response": {
+            "type": "object",
+            "name": "result",
+            "content": {
+                "status": {
+                    "type": "uint",
+                    "desc": "snapshot status, 0: no snapshot, 1: shapshoting, 2: shapshot completed"
+                },
+                "snapshotheight": {
+                    "type": "uint",
+                    "desc": "snapshot height"
+                },
+                "snapshotblock": {
+                    "type": "string",
+                    "desc": "snapshot block"
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli getsnapshotstatus 0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8",
+                "response": "{\"status\":1,\"snapshotheight\":5369,\"snapshotblock\":\"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8\"}"
+            },
+            {
+                "request": "curl -d '{\"id\":15,\"method\":\"getsnapshotstatus\",\"jsonrpc\":\"2.0\",\"params\":{\"snapshotblock\":\"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":15,\"jsonrpc\":\"2.0\",\"result\":{\"status\":1,\"snapshotheight\":5369,\"snapshotblock\":\"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8\"}}"
+            }
+        ],
+        "error": [
+            "{\"code\":-32603,\"message\":\"Get fail\"}"
+        ]
+    },
     "reversehex": {
         "type": "command",
         "name": "ReverseHex",
