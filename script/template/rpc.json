@@ -5910,6 +5910,133 @@
             }
         ]
     },
+    "listtokentransaction": {
+        "type": "command",
+        "name": "ListTokenTransaction",
+        "desc": "List token transaction",
+        "request": {
+            "type": "object",
+            "content": {
+                "tokenaddress": {
+                    "type": "string",
+                    "desc": "token contract address"
+                },
+                "useraddress": {
+                    "type": "string",
+                    "desc": "user address",
+                    "required": false,
+                    "opt": "a"
+                },
+                "pagenumber": {
+                    "type": "uint",
+                    "desc": "page number, begin 0, default is 0",
+                    "required": false,
+                    "default": 0,
+                    "opt": "p"
+                },
+                "pagesize": {
+                    "type": "uint",
+                    "desc": "page size, default is 100, 0: all",
+                    "required": false,
+                    "default": 100,
+                    "opt": "s"
+                },
+                "reverse": {
+                    "type": "bool",
+                    "desc": "reverse",
+                    "required": false,
+                    "default": true,
+                    "opt": "r"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash",
+                    "required": false,
+                    "opt": "f"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "name": "result",
+            "content": {
+                "totalrecordcount": {
+                    "type": "uint",
+                    "desc": "total record count"
+                },
+                "totalpagecount": {
+                    "type": "uint",
+                    "desc": "total page count"
+                },
+                "pagenumber": {
+                    "type": "uint",
+                    "desc": "page number"
+                },
+                "pagesize": {
+                    "type": "uint",
+                    "desc": "page size"
+                },
+                "datalist": {
+                    "type": "array",
+                    "name": "datalist",
+                    "content": {
+                        "dataitem": {
+                            "type": "object",
+                            "content": {
+                                "id": {
+                                    "type": "uint",
+                                    "desc": "id"
+                                },
+                                "blocknumber": {
+                                    "type": "uint",
+                                    "desc": "block number"
+                                },
+                                "blocktime": {
+                                    "type": "uint",
+                                    "desc": "block time"
+                                },
+                                "txid": {
+                                    "type": "string",
+                                    "desc": "txid"
+                                },
+                                "from": {
+                                    "type": "string",
+                                    "desc": "from address"
+                                },
+                                "to": {
+                                    "type": "string",
+                                    "desc": "to address"
+                                },
+                                "amount": {
+                                    "type": "string",
+                                    "desc": "amount (bit float)"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listtokentransaction 0x8d9a8ad94950ebd89fd5231554b1dd4af915c7b7",
+                "response": "{\"totalrecordcount\":1,\"totalpagecount\":1,\"pagenumber\":0,\"pagesize\":100,\"datalist\":[{\"id\":0,\"txid\":\"0x9e9309a8ecba90eace5ce113a1d77ce2c0ecd7121db42fb0b394f4fd6844bc05\",\"from\":\"0xba2c61b77f04140389338a7416e11851224d7685\",\"to\":\"0x9835c12d95f059eb4eaecb4b00f2ea2c99b2a0d4\",\"amount\":\"0.88888\"}]}"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"listtokentransaction\",\"jsonrpc\":\"2.0\",\"params\":{\"tokenaddress\":\"0x8d9a8ad94950ebd89fd5231554b1dd4af915c7b7\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":{\"totalrecordcount\":1,\"totalpagecount\":1,\"pagenumber\":0,\"pagesize\":100,\"datalist\":[{\"id\":0,\"txid\":\"0x9e9309a8ecba90eace5ce113a1d77ce2c0ecd7121db42fb0b394f4fd6844bc05\",\"from\":\"0xba2c61b77f04140389338a7416e11851224d7685\",\"to\":\"0x9835c12d95f059eb4eaecb4b00f2ea2c99b2a0d4\",\"amount\":\"0.88888\"}]}}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid tokenaddress\"}",
+            "{\"code\":-4,\"message\":\"Unknown tokenaddress\"}",
+            "{\"code\":-6,\"message\":\"Invalid pagenumber\"}",
+            "{\"code\":-6,\"message\":\"Invalid pagesize\"}",
+            "{\"code\":-6,\"message\":\"Invalid fork\"}",
+            "{\"code\":-4,\"message\":\"Unknown fork\"}",
+            "{\"code\":-6,\"message\":\"Invalid block\"}"
+        ]
+    },
     "setmintmingasprice": {
         "type": "command",
         "name": "SetMintMinGasPrice",

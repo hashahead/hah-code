@@ -175,6 +175,7 @@ private:
     rpc::CRPCResultPtr RPCListTimeVaultWhitelistAddress(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCStopFork(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCSetDelegateName(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCListTokenTransaction(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     /* Util */
     rpc::CRPCResultPtr RPCVerifyMessage(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCMakeKeyPair(const CReqContext& ctxReq, rpc::CRPCParamPtr param);

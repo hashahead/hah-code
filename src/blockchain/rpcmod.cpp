@@ -7431,6 +7431,94 @@ CRPCResultPtr CRPCMod::RPCSetDelegateName(const CReqContext& ctxReq, CRPCParamPt
     return MakeCSetDelegateNameResultPtr(txid.ToString());
 }
 
+CRPCResultPtr CRPCMod::RPCListTokenTransaction(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CListTokenTransactionParam>(param);
+
+    CDestination destTokenContract;
+    CDestination destUserAddress;
+    uint64 nPageNumber = 0;
+    uint64 nPageSize = 0;
+    bool fReverse = true;
+
+    destTokenContract.ParseString(spParam->strTokenaddress);
+    if (destTokenContract.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid tokenaddress");
+    }
+    if (spParam->strUseraddress.IsValid())
+    {
+        destUserAddress.ParseString(spParam->strUseraddress);
+        if (destUserAddress.IsNull())
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid useraddress");
+        }
+    }
+
+    nPageNumber = spParam->nPagenumber;
+    nPageSize = spParam->nPagesize;
+    fReverse = spParam->fReverse;
+    if (nPageSize == 0)
+    {
+        nPageSize = 100;
+    }
+
+    uint256 hashFork;
+    if (!GetForkHashOfDef(spParam->strFork, ctxReq.hashFork, hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+    }
+    if (!pService->HaveFork(hashFork))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown fork");
+    }
+
+    CTokenContractAddressContext ctxContractAddress;
+    if (!pService->RetrieveTokenContractAddressContext(hashFork, 0, destTokenContract, ctxContractAddress))
+    {
+        StdLog("CRPCMod", "RPC ListTokenTransaction: Get token address context failed, contract address: %s", destTokenContract.ToString().c_str());
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown tokenaddress");
+    }
+    uint32 nDecimals = ctxContractAddress.nCoinDecimals;
+    if (nDecimals == 0)
+    {
+        nDecimals = TOKEN_DECIMAL_DIGIT;
+    }
+
+    uint64 nTotalRecordCount = 0;
+    uint64 nTotalPageCount = 0;
+    std::vector<std::pair<uint64, CTokenTransRecord>> vTokenTxRecord;
+    if (!pService->ListTokenTx(hashFork, destTokenContract, destUserAddress, nPageNumber, nPageSize, fReverse, nTotalRecordCount, nTotalPageCount, vTokenTxRecord))
+    {
+        StdLog("CRPCMod", "RPC ListTokenTransaction: List token tx failed, contract address: %s", destTokenContract.ToString().c_str());
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown tokenaddress");
+    }
+
+    auto spResult = MakeCListTokenTransactionResultPtr();
+
+    spResult->nTotalrecordcount = nTotalRecordCount;
+    spResult->nTotalpagecount = nTotalPageCount;
+    spResult->nPagenumber = nPageNumber;
+    spResult->nPagesize = nPageSize;
+
+    for (auto& vd : vTokenTxRecord)
+    {
+        CListTokenTransactionResult::CDatalist item;
+
+        item.nId = vd.first;
+        item.nBlocknumber = vd.second.nBlockNumber;
+        item.nBlocktime = vd.second.nBlockTime;
+        item.strTxid = vd.second.txid.ToString();
+        item.strFrom = vd.second.destFrom.ToString();
+        item.strTo = vd.second.destTo.ToString();
+        item.strAmount = CoinToTokenBigFloat(vd.second.nAmount, nDecimals);
+
+        spResult->vecDatalist.push_back(item);
+    }
+
+    return spResult;
+}
+
 /* Util */
 CRPCResultPtr CRPCMod::RPCVerifyMessage(const CReqContext& ctxReq, CRPCParamPtr param)
 {
