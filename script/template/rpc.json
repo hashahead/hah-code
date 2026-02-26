@@ -2049,11 +2049,11 @@
         "example": [
             {
                 "request": "hashahead-cli getblock 0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b",
-                "response": "{\"hash\":\"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b\",\"prev\":\"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3\",\"chainid\":201,\"fork\":\"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d\",\"version\":1,\"type\":\"primary-stake\",\"time\":1691292094,\"number\":56,\"height\":56,\"slot\":0,\"reward\":\"130.0\",\"stateroot\":\"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3\",\"receiptsroot\":\"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607\",\"bloom\":\"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f\",\"txmint\":\"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb\",\"tx\":[\"0x5a666daaa87477d923b890efd15952aa23004878c10aa63370245b72ecfc2bb2\",\"0x1b777e66ea46754a49ebb2a606caab38672f965feb38e3a802d7356096ee19d2\"]}"
+                "response": "{\"hash\":\"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b\",\"prev\":\"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3\",\"chainid\":201,\"fork\":\"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d\",\"version\":1,\"type\":\"primary-stake\",\"time\":1691292094,\"number\":56,\"height\":56,\"slot\":0,\"reward\":\"130.0\",\"stateroot\":\"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3\",\"receiptsroot\":\"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607\",\"bloom\":\"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f\",\"txmint\":\"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb\",\"txcount\":2,\"tx\":[\"0x5a666daaa87477d923b890efd15952aa23004878c10aa63370245b72ecfc2bb2\",\"0x1b777e66ea46754a49ebb2a606caab38672f965feb38e3a802d7356096ee19d2\"]}"
             },
             {
                 "request": "curl -d '{\"id\":10,\"method\":\"getblock\",\"jsonrpc\":\"2.0\",\"params\":{\"block\":\"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b\"}}' http://127.0.0.1:8812",
-                "response": "{\"id\":10,\"jsonrpc\":\"2.0\",\"result\":{\"hash\":\"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b\",\"prev\":\"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3\",\"chainid\":201,\"fork\":\"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d\",\"version\":1,\"type\":\"primary-stake\",\"time\":1691292094,\"number\":56,\"height\":56,\"slot\":0,\"reward\":\"130.0\",\"stateroot\":\"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3\",\"receiptsroot\":\"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607\",\"bloom\":\"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f\",\"txmint\":\"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb\",\"tx\":[\"0x5a666daaa87477d923b890efd15952aa23004878c10aa63370245b72ecfc2bb2\",\"0x1b777e66ea46754a49ebb2a606caab38672f965feb38e3a802d7356096ee19d2\"]}}"
+                "response": "{\"id\":10,\"jsonrpc\":\"2.0\",\"result\":{\"hash\":\"0xc938f722d704ce2585f114c0005743e69d25b0f83a99d79705fb303c95e3c21b\",\"prev\":\"0xc937f77ee553b2b7b7fd50cf303a9077a1e71fc4d6c1e0336b2dd93cf1c5cbc3\",\"chainid\":201,\"fork\":\"0xc9f7f70be6841102645505f96cdc28f00570d22c64d50dbfa3e44632e6ae3d5d\",\"version\":1,\"type\":\"primary-stake\",\"time\":1691292094,\"number\":56,\"height\":56,\"slot\":0,\"reward\":\"130.0\",\"stateroot\":\"0xbedbcf8bd065c04d040a1873e310b5a576c4a1ba97ef36ad73b5d86aa06a0da3\",\"receiptsroot\":\"0xf780fed5098460ecc4333c4deaa5abada70aa14479301462432f9567c7b43607\",\"bloom\":\"0xfbe36bbadd36f7ce77ffe15befeff8f3db7edfef6f\",\"txmint\":\"0xe5f3246178169493a351b29cb76064baf25980b12ea3746d5d78f73f14fa21fb\",\"txcount\":2,\"tx\":[\"0x5a666daaa87477d923b890efd15952aa23004878c10aa63370245b72ecfc2bb2\",\"0x1b777e66ea46754a49ebb2a606caab38672f965feb38e3a802d7356096ee19d2\"]}}"
             }
         ],
         "error": "{\"code\":-6,\"message\":\"Unknown block.\"}"
@@ -2121,6 +2121,13 @@
                     "desc": "block number",
                     "required": false,
                     "opt": "n"
+                },
+                "onlyblockheader": {
+                    "type": "bool",
+                    "desc": "only block header",
+                    "required": false,
+                    "default": false,
+                    "opt": "y"
                 },
                 "fork": {
                     "type": "string",
