@@ -1907,12 +1907,17 @@ bool CBlockBase::VerifyPrimaryHeightRefBlockTime(const int nHeight, const int64 
     return true;
 }
 
-void CBlockState::SaveGasUsed(const CDestination& destCodeOwner, const uint64 nGasUsed)
+bool CBlockBase::UpdateForkNext(const uint256& hashFork, BlockIndexPtr pIndexLast, const std::vector<CBlockEx>& vBlockRemove, const std::vector<CBlockEx>& vBlockAddNew)
 {
-    if (nGasUsed > 0)
+    CWriteLock wlock(rwAccess);
+
+    if (!UpdateBlockLongChain(hashFork, vBlockRemove, vBlockAddNew))
     {
-        mapCacheCodeDestGasUsed[destCodeOwner] += nGasUsed;
+        StdLog("BlockBase", "Update Fork Next: Update block long chain fail, fork: %s, last block: %s", hashFork.ToString().c_str(), pIndexLast->GetBlockHash().ToString().c_str());
+        return false;
     }
+
+    return dbBlock.UpdateForkLast(hashFork, pIndexLast->GetBlockHash());
 }
 
 void CBlockState::SaveRunResult(const CDestination& destContractIn, const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv)
