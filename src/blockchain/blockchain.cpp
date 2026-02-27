@@ -2627,6 +2627,12 @@ bool CBlockChain::VerifyCreateCodeTx(const uint256& hashFork, const uint256& has
     return cntrBlock.VerifyCreateCodeTx(hashFork, hashBlock, tx);
 }
 
+bool CBlockChain::ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                                      const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
+{
+    return cntrBlock.ListAddressDexOrder(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, nGetStatus, nGetCount, mapDexOrder);
+}
+
 bool CBlockChain::AddBlacklistAddress(const CDestination& dest)
 {
     return cntrBlock.AddBlacklistAddress(dest);
