@@ -1920,15 +1920,10 @@ bool CBlockBase::UpdateForkNext(const uint256& hashFork, BlockIndexPtr pIndexLas
     return dbBlock.UpdateForkLast(hashFork, pIndexLast->GetBlockHash());
 }
 
-void CBlockState::SaveRunResult(const CDestination& destContractIn, const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv)
+bool CBlockBase::RetrieveDestState(const uint256& hashFork, const uint256& hashBlockRoot, const CDestination& dest, CDestState& state)
 {
-    auto& cacheContract = mapCacheContractData[destContractIn];
-
-    // CDestState stateContractDest;
-    // if (GetDestState(destContractIn, stateContractDest))
-    // {
-    //     cacheContract.cacheDestState = stateContractDest;
-    // }
+    return dbBlock.RetrieveDestState(hashFork, hashBlockRoot, dest, state);
+}
 
     for (auto& kv : mapCacheKv)
     {

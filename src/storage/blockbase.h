@@ -192,9 +192,10 @@ public:
     CBlockIndex* GetForkValidLast(const uint256& hashGenesis, const uint256& hashFork);
     bool VerifySameChain(const uint256& hashPrevBlock, const uint256& hashAfterBlock);
     bool GetLastRefBlockHash(const uint256& hashFork, const uint256& hashBlock, uint256& hashRefBlock, bool& fOrigin);
+    bool GetBlockForRefBlockNoLock(const uint256& hashBlock, uint256& hashRefBlock);
     bool GetPrimaryHeightBlockTime(const uint256& hashLastBlock, int nHeight, uint256& hashBlock, int64& nTime);
     bool VerifyPrimaryHeightRefBlockTime(const int nHeight, const int64 nTime);
-    bool UpdateForkNext(const uint256& hashFork, CBlockIndex* pIndexLast, const std::vector<CBlockEx>& vBlockRemove, const std::vector<CBlockEx>& vBlockAddNew);
+    bool UpdateForkNext(const uint256& hashFork, BlockIndexPtr pIndexLast, const std::vector<CBlockEx>& vBlockRemove, const std::vector<CBlockEx>& vBlockAddNew);
     bool RetrieveDestState(const uint256& hashFork, const uint256& hashBlockRoot, const CDestination& dest, CDestState& state);
     SHP_BLOCK_STATE CreateBlockStateRoot(const uint256& hashFork, const CBlock& block, const uint256& hashPrevStateRoot, const uint32 nPrevBlockTime, uint256& hashStateRoot, uint256& hashReceiptRoot,
                                          uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut, const std::map<CDestination, CAddressContext>& mapAddressContext);
