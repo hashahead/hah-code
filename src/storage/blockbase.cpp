@@ -1796,36 +1796,64 @@ bool CBlockBase::GetLastRefBlockHash(const uint256& hashFork, const uint256& has
     hashRefBlock = pIndex->GetRefBlock();
     fOrigin = pIndex->IsOrigin();
     return true;
+
+    // hashRefBlock = 0;
+    // fOrigin = false;
+    // BlockIndexPtr pIndexUpdateRef;
+
+    // {
+    //     CReadLock rlock(rwAccess);
+
+    //     std::map<uint256, CBlockHeightIndex> mapHeightIndex;
+    //     if (GetForkBlockMintListByHeight(hashFork, CBlock::GetBlockHeightByHash(hashBlock), mapHeightIndex))
+    //     {
+    //         auto mt = mapHeightIndex.find(hashBlock);
+    //         if (mt != mapHeightIndex.end() && mt->second.hashRefBlock != 0)
+    //         {
+    //             hashRefBlock = mt->second.hashRefBlock;
+    //             return true;
+    //         }
+    //     }
+
+    //     BlockIndexPtr pIndex = GetIndex(hashBlock);
+    //     while (pIndex)
+    //     {
+    //         if (pIndex->IsOrigin())
+    //         {
+    //             fOrigin = true;
+    //             return true;
+    //         }
+    //         CBlockEx block;
+    //         if (!Retrieve(pIndex, block))
+    //         {
+    //             return false;
+    //         }
+    //         CProofOfPiggyback proof;
+    //         if (block.GetPiggybackProof(proof) && proof.hashRefBlock != 0)
+    //         {
+    //             hashRefBlock = proof.hashRefBlock;
+    //             pIndexUpdateRef = pIndex;
+    //             break;
+    //         }
+    //         pIndex = GetPrevBlockIndex(pIndex);
+    //     }
+    // }
+
+    // if (pIndexUpdateRef)
+    // {
+    //     return true;
+    // }
+    // return false;
 }
 
-bool CBlockState::SaveContractRunCode(const CDestination& destContractIn, const bytes& btContractRunCode, const CTxContractData& txcd, const uint256& txidCreate)
+bool CBlockBase::GetBlockForRefBlockNoLock(const uint256& hashBlock, uint256& hashRefBlock)
 {
-    uint256 hashContractCreateCode = txcd.GetContractCreateCodeHash();
-    uint256 hashContractRunCode = hashahead::crypto::CryptoKeccakHash(btContractRunCode.data(), btContractRunCode.size());
-
-    CContractDestCodeContext ctxDestCode(hashContractCreateCode, hashContractRunCode, txcd.GetCodeOwner());
-    bytes btDestCodeData;
-    CBufStream ss;
-    ss << ctxDestCode;
-    ss.GetData(btDestCodeData);
-
-    CDestState stateContractDest;
-    if (GetDestState(destContractIn, stateContractDest) && stateContractDest.GetCodeHash() != 0)
+    BlockIndexPtr pIndex = GetIndex(hashBlock);
+    if (!pIndex)
     {
-        StdLog("CBlockState", "Save contract run code: contract address already exists, contract address: %s", destContractIn.ToString().c_str());
         return false;
     }
-    stateContractDest.SetType(CDestination::PREFIX_CONTRACT);
-    stateContractDest.SetCodeHash(hashContractRunCode);
-
-    auto& cachContract = mapCacheContractData[destContractIn];
-    cachContract.cacheContractKv[destContractIn.ToHash()] = btDestCodeData;
-    cachContract.cacheDestState = stateContractDest;
-
-    mapCacheContractCreateCodeContext[hashContractCreateCode] = CContractCreateCodeContext(txcd.GetType(), txcd.GetName(), txcd.GetDescribe(), txcd.GetCodeOwner(), txcd.GetCode(),
-                                                                                           txidCreate, txcd.GetSourceCodeHash(), hashContractRunCode);
-    mapCacheContractRunCodeContext[hashContractRunCode] = CContractRunCodeContext(hashContractCreateCode, btContractRunCode);
-    mapCacheAddressContext[destContractIn] = CAddressContext(CContractAddressContext(txcd.GetType(), txcd.GetCodeOwner(), txcd.GetName(), txcd.GetDescribe(), txidCreate, txcd.GetSourceCodeHash(), txcd.GetContractCreateCodeHash(), hashContractRunCode));
+    hashRefBlock = pIndex->GetRefBlock();
     return true;
 }
 
