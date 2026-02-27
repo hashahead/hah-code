@@ -210,6 +210,21 @@ bool CBlockDB::GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, 
     return dbFork.GetForkHashByChainId(nChainId, hashFork, hashMainChainRefBlock);
 }
 
+bool CBlockDB::ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.ListCoinContext(mapSymbolCoin, hashMainChainRefBlock);
+}
+
+bool CBlockDB::GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.GetDexCoinPairBySymbolPair(strSymbol1, strSymbol2, nCoinPair, hashMainChainRefBlock);
+}
+
+bool CBlockDB::GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& strSymbol1, std::string& strSymbol2, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.GetSymbolPairByDexCoinPair(nCoinPair, strSymbol1, strSymbol2, hashMainChainRefBlock);
+}
+
 bool CBlockDB::AddNewFork(const uint256& hashFork)
 {
     if (!dbFork.UpdateForkLast(hashFork, hashFork))
