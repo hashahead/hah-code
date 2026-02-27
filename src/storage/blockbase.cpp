@@ -1888,31 +1888,22 @@ bool CBlockBase::GetPrimaryHeightBlockTime(const uint256& hashLastBlock, int nHe
     return false;
 }
 
-bool CBlockState::Selfdestruct(const CDestination& destContractIn, const CDestination& destBeneficiaryIn)
+bool CBlockBase::VerifyPrimaryHeightRefBlockTime(const int nHeight, const int64 nTime)
 {
-    CDestState stateContract;
-    CDestState stateBeneficiary;
-    if (!GetDestState(destContractIn, stateContract))
+    CReadLock rlock(rwAccess);
+
+    std::map<uint256, CBlockHeightIndex> mapHeightIndex;
+    if (!GetForkBlockMintListByHeight(GetGenesisBlockHash(), nHeight, mapHeightIndex))
     {
-        StdLog("CBlockState", "Selfdestruct: Get contract state fail, contract address: %s", destContractIn.ToString().c_str());
         return false;
     }
-    if (stateContract.IsDestroy())
+    for (const auto& kv : mapHeightIndex)
     {
-        return true;
+        if (kv.second.nTimeStamp != nTime)
+        {
+            return false;
+        }
     }
-    if (!GetDestState(destBeneficiaryIn, stateBeneficiary))
-    {
-        stateBeneficiary.SetNull();
-        stateBeneficiary.SetType(CDestination::PREFIX_PUBKEY); // WAIT_CHECK
-    }
-
-    stateBeneficiary.IncBalance(stateContract.GetBalance());
-    stateContract.SetBalance(0);
-    stateContract.SetDestroy(true);
-
-    SetCacheDestState(destContractIn, stateContract);
-    SetCacheDestState(destBeneficiaryIn, stateBeneficiary);
     return true;
 }
 
