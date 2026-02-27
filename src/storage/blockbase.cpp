@@ -1857,22 +1857,35 @@ bool CBlockBase::GetBlockForRefBlockNoLock(const uint256& hashBlock, uint256& ha
     return true;
 }
 
-bool CBlockState::ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, bytes& btResult)
+bool CBlockBase::GetPrimaryHeightBlockTime(const uint256& hashLastBlock, int nHeight, uint256& hashBlock, int64& nTime)
 {
-    if (btData.size() < 4)
+    CReadLock rlock(rwAccess);
+
+    BlockIndexPtr pIndex = GetIndex(hashLastBlock);
+    if (!pIndex || !pIndex->IsPrimary())
     {
-        StdLog("CBlockState", "Exec function contract: data size error, data size: %lu", btData.size());
         return false;
     }
-    bytes btTxParam;
-    if (btData.size() > 4)
+    // while (pIndex && pIndex->GetBlockHeight() >= nHeight)
+    // {
+    //     if (pIndex->GetBlockHeight() == nHeight)
+    //     {
+    //         hashBlock = pIndex->GetBlockHash();
+    //         nTime = pIndex->GetBlockTime();
+    //         return true;
+    //     }
+    //     pIndex = GetPrevBlockIndex(pIndex);
+    // }
+    if (GetBlockHashByHeightSlot(pIndex->GetOriginHash(), pIndex->GetBlockHash(), nHeight, 0, hashBlock))
     {
-        btTxParam.assign(btData.begin() + 4, btData.end());
+        pIndex = GetIndex(hashBlock);
+        if (pIndex)
+        {
+            nTime = pIndex->GetBlockTime();
+            return true;
+        }
     }
-    bytes btFuncSign(btData.begin(), btData.begin() + 4);
-    CTransactionLogs logs;
-    nGasLeft = nGasLimit;
-    return DoFuncContractCall(destFromIn, destToIn, btFuncSign, btTxParam, nGasLimit, nGasLeft, logs, btResult);
+    return false;
 }
 
 bool CBlockState::Selfdestruct(const CDestination& destContractIn, const CDestination& destBeneficiaryIn)
