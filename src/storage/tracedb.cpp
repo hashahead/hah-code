@@ -114,6 +114,17 @@ bool CCacheTraceData::GetBlockContractReceipt(const uint256& hashBlock, BlockCon
     return false;
 }
 
+bool CCacheTraceData::GetBlockContractPrevState(const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState) const
+{
+    auto it = mapBlockContractPrevState.find(hashBlock);
+    if (it != mapBlockContractPrevState.end())
+    {
+        vBlockContractPrevState = it->second.GetBlockContractPrevState();
+        return true;
+    }
+    return false;
+}
+
 //////////////////////////////
 // CTraceDB
 

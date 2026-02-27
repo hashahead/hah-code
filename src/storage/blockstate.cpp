@@ -525,6 +525,24 @@ bool CBlockState::SaveContractRunCode(const CDestination& destContractIn, const 
     return true;
 }
 
+bool CBlockState::ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const uint256& nAmount, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, int& nStatus, bytes& btResult)
+{
+    if (btData.size() < 4)
+    {
+        StdLog("CBlockState", "Exec function contract: data size error, data size: %lu", btData.size());
+        return false;
+    }
+    bytes btTxParam;
+    if (btData.size() > 4)
+    {
+        btTxParam.assign(btData.begin() + 4, btData.end());
+    }
+    bytes btFuncSign(btData.begin(), btData.begin() + 4);
+    CTransactionLogs logs;
+    nGasLeft = nGasLimit;
+    return true;
+}
+
 void CBlockState::AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv)
 {
     auto it = mapCacheContractPrevAddressState.find(address);

@@ -119,6 +119,7 @@ public:
     const TxContractReceipts& GetCacheContractReceipts() const;
     const MapContractPrevState& GetCacheContractPrevAddressState() const;
 
+    bool ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const uint256& nAmount, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, int& nStatus, bytes& btResult);
 protected:
     CBlockBase& dbBlockBase;
     const uint16 nBlockType;
