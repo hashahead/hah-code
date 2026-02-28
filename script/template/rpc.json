@@ -4709,6 +4709,111 @@
             "{\"code\":-4,\"message\":\"Unknown chainid\"}"
         ]
     },
+    "addcontractcoin": {
+        "type": "command",
+        "name": "AddContractCoin",
+        "desc": "Add contract coin",
+        "request": {
+            "type": "object",
+            "content": {
+                "from": {
+                    "type": "string",
+                    "desc": "from address"
+                },
+                "symbol": {
+                    "type": "string",
+                    "desc": "coin symbol"
+                },
+                "chainid": {
+                    "type": "uint",
+                    "desc": "at chainid"
+                },
+                "contractaddress": {
+                    "type": "string",
+                    "desc": "contract address"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "txid",
+            "desc": "txid"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli addcontractcoin 0xb955034fcefb66112bab47483c8d243b86cb2c1d ABC 202 0x3e80fb38ae4e71beaccb053b716921eb6b03519f",
+                "response": "0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"addcontractcoin\",\"jsonrpc\":\"2.0\",\"params\":{\"from\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"symbol\":\"ABC\",\"chainid\":202,\"contractaddress\":\"0x3e80fb38ae4e71beaccb053b716921eb6b03519f\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":\"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid from\"}",
+            "{\"code\":-6,\"message\":\"Invalid symbol\"}",
+            "{\"code\":-6,\"message\":\"Invalid contractaddress\"}",
+            "{\"code\":-6,\"message\":\"Invalid chainid\"}",
+            "{\"code\":-4,\"message\":\"Unknown chainid\"}"
+        ]
+    },
+    "getcoininfo": {
+        "type": "command",
+        "name": "GetCoinInfo",
+        "desc": "Get coin information by symbol",
+        "request": {
+            "type": "object",
+            "content": {
+                "symbol": {
+                    "type": "string",
+                    "desc": "coin symbol"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "name": "coininfo",
+            "content": {
+                "coinsymbol": {
+                    "type": "string",
+                    "desc": "coin symbol"
+                },
+                "cointype": {
+                    "type": "string",
+                    "desc": "coin type"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "at fork hash"
+                },
+                "chainid": {
+                    "type": "uint",
+                    "desc": "at fork chainid"
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli getcoininfo HAH",
+                "response": "{\"coinsymbol\":\"HAH\",\"cointype\":\"forkcoin\",\"fork\":\"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0\",\"chainid\":201}"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"getcoininfo\",\"jsonrpc\":\"2.0\",\"params\":{\"symbol\":\"HAH\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":{\"coinsymbol\":\"HAH\",\"cointype\":\"forkcoin\",\"fork\":\"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0\",\"chainid\":201}}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid symbol\"}",
+            "{\"code\":-6,\"message\":\"Invalid block\"}",
+            "{\"code\":-4,\"message\":\"Unknown symbol\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
