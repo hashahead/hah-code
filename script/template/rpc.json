@@ -2556,12 +2556,18 @@
         "request": {
             "type": "object",
             "content": {
-                "count": {
-                    "type": "uint",
-                    "desc": "list count, default 0 is all",
-                    "default": 0,
+                "delegateaddress": {
+                    "type": "string",
+                    "desc": "delegate address (default null: all delegate address)",
                     "required": false,
-                    "opt": "n"
+                    "opt": "d"
+                },
+                "validdelegate": {
+                    "type": "bool",
+                    "desc": "valid delegate address (default all delegate address)",
+                    "required": false,
+                    "default": false,
+                    "opt": "v"
                 },
                 "block": {
                     "type": "string",
@@ -2582,9 +2588,33 @@
                             "type": "string",
                             "desc": "delegate address"
                         },
+                        "name": {
+                            "type": "string",
+                            "desc": "address name"
+                        },
                         "votes": {
                             "type": "string",
                             "desc": "number of votes (big float)"
+                        },
+                        "scale": {
+                            "type": "string",
+                            "desc": "scale"
+                        },
+                        "reward": {
+                            "type": "string",
+                            "desc": "reward (big float)"
+                        },
+                        "apy": {
+                            "type": "string",
+                            "desc": "apy"
+                        },
+                        "state": {
+                            "type": "uint",
+                            "desc": "state, 0: offline, 1: online"
+                        },
+                        "uptime": {
+                            "type": "uint",
+                            "desc": "uptime"
                         }
                     }
                 }
@@ -2593,11 +2623,11 @@
         "example": [
             {
                 "request": "hashahead-cli listdelegate",
-                "response": "{\"address\":\"0xd2b670ea0bb5bac8cdaac13772dcfec6fadeb0ee\",\"votes\":100002000.000000}"
+                "response": "{\"address\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"name\":\"123\",\"votes\":\"3660871.6950737581895835\",\"scale\":\"0.082062\",\"reward\":\"1036728.000937\",\"apy\":\"0.543294\",\"state\":1,\"uptime\":1735099480}"
             },
             {
                 "request": "curl -d '{\"id\":1,\"method\":\"listdelegate\",\"jsonrpc\":\"2.0\",\"params\":{}}' http://127.0.0.1:8812",
-                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":\"{\"address\":\"0xd2b670ea0bb5bac8cdaac13772dcfec6fadeb0ee\",\"votes\":100002000.000000}\"}"
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":\"{\"address\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"name\":\"123\",\"votes\":\"3660871.6950737581895835\",\"scale\":\"0.082062\",\"reward\":\"1036728.000937\",\"apy\":\"0.543294\",\"state\":1,\"uptime\":1735099480}\"}"
             }
         ],
         "error": [
