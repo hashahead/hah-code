@@ -4050,6 +4050,14 @@
                             "type": "string",
                             "desc": "wallet address"
                         },
+                        "name": {
+                            "type": "string",
+                            "desc": "address name"
+                        },
+                        "describe": {
+                            "type": "string",
+                            "desc": "address describe"
+                        },
                         "ismine": {
                             "type": "bool",
                             "desc": "is mine"
@@ -4117,6 +4125,18 @@
                     "required": false,
                     "opt": "f"
                 },
+                "coinsymbol": {
+                    "type": "string",
+                    "desc": "coin symbol",
+                    "required": false,
+                    "opt": "c"
+                },
+                "coinaddress": {
+                    "type": "string",
+                    "desc": "coin contract address",
+                    "required": false,
+                    "opt": "r"
+                },
                 "address": {
                     "type": "string",
                     "desc": "address, default is all",
@@ -4160,6 +4180,10 @@
                         "type": {
                             "type": "string",
                             "desc": "address type"
+                        },
+                        "coinsymbol": {
+                            "type": "string",
+                            "desc": "coin symbol"
                         },
                         "nonce": {
                             "type": "uint",
@@ -4362,6 +4386,24 @@
                     "desc": "contract param",
                     "required": false,
                     "opt": "cp"
+                },
+                "coinsymbol": {
+                    "type": "string",
+                    "desc": "coin symbol",
+                    "required": false,
+                    "opt": "cs"
+                },
+                "coinaddress": {
+                    "type": "string",
+                    "desc": "coin contract address, erc20",
+                    "required": false,
+                    "opt": "ca"
+                },
+                "ethtx": {
+                    "type": "bool",
+                    "desc": "eth tx",
+                    "required": false,
+                    "opt": "et"
                 }
             }
         },
