@@ -4814,6 +4814,68 @@
             "{\"code\":-4,\"message\":\"Unknown symbol\"}"
         ]
     },
+    "listcoininfo": {
+        "type": "command",
+        "name": "ListCoinInfo",
+        "desc": "List coin information",
+        "request": {
+            "type": "object",
+            "content": {
+                "block": {
+                    "type": "string",
+                    "desc": "block hash",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "array",
+            "name": "coindata",
+            "content": {
+                "coindata": {
+                    "type": "object",
+                    "desc": "coin data",
+                    "content": {
+                        "coinsymbol": {
+                            "type": "string",
+                            "desc": "coin symbol"
+                        },
+                        "cointype": {
+                            "type": "string",
+                            "desc": "coin type"
+                        },
+                        "fork": {
+                            "type": "string",
+                            "desc": "at fork hash"
+                        },
+                        "chainid": {
+                            "type": "uint",
+                            "desc": "at fork chainid"
+                        },
+                        "contractaddress": {
+                            "type": "string",
+                            "desc": "at contract address"
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listcoininfo",
+                "response": "[{\"coinsymbol\":\"HAH\",\"cointype\":\"forkcoin\",\"fork\":\"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0\",\"chainid\":201,\"contractaddress\":\"\"}]"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"listcoininfo\",\"jsonrpc\":\"2.0\",\"params\":{}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":[{\"coinsymbol\":\"HAH\",\"cointype\":\"forkcoin\",\"fork\":\"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0\",\"chainid\":201,\"contractaddress\":\"\"}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid block\"}",
+            "{\"code\":-7,\"message\":\"Get coin fail\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
