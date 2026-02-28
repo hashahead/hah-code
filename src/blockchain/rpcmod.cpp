@@ -8165,7 +8165,8 @@ CRPCResultPtr CRPCMod::RPCGetSnapshotStatus(const CReqContext& ctxReq, CRPCParam
 
 CRPCResultPtr CRPCMod::RPCEthGetWebClientVersion(const CReqContext& ctxReq, CRPCParamPtr param)
 {
-    return MakeCweb3_clientVersionResultPtr(string("null"));
+    string strVer = string(VERSION_NAME) + string("/") + GetClientVersion() + string("/linux-amd64/gcc11.4.0");
+    return MakeCweb3_clientVersionResultPtr(strVer);
 }
 
 CRPCResultPtr CRPCMod::RPCEthGetSha3(const CReqContext& ctxReq, CRPCParamPtr param)
@@ -8174,13 +8175,13 @@ CRPCResultPtr CRPCMod::RPCEthGetSha3(const CReqContext& ctxReq, CRPCParamPtr par
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthGetSha3: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
     vector<unsigned char> vData = ParseHexString(spParam->vecParamlist.at(0));
     if (vData.empty())
     {
         StdLog("CRPCMod", "RPC EthGetSha3: Invalid data");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid data");
     }
     bytes btSha3 = dev::sha3_bytes(vData);
     return MakeCweb3_sha3ResultPtr(ToHexString(btSha3));
@@ -8224,7 +8225,7 @@ CRPCResultPtr CRPCMod::RPCEthGetSyncing(const CReqContext& ctxReq, CRPCParamPtr 
     if (!pService->GetBlockStatus(hashBlock, status))
     {
         StdLog("CRPCMod", "RPC EthGetSyncing: Get block status fail");
-        return nullptr;
+        throw CRPCException(RPC_ETH_ERROR_NOT_FOUND_BLOCK, "Not find block.");
     }
 
     auto spResult = MakeCeth_syncingResultPtr();
@@ -8281,7 +8282,7 @@ CRPCResultPtr CRPCMod::RPCEthGetBalance(const CReqContext& ctxReq, CRPCParamPtr 
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC Eth Get Balance: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     CDestination address;
@@ -8289,16 +8290,18 @@ CRPCResultPtr CRPCMod::RPCEthGetBalance(const CReqContext& ctxReq, CRPCParamPtr 
     if (address.IsNull())
     {
         StdLog("CRPCMod", "RPC Eth Get Balance: Invalid address, address: %s", address.ToString().c_str());
-        return nullptr;
+        // throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+        return MakeCeth_getBalanceResultPtr("0x0");
     }
 
     uint256 hashBlock = GetRefBlock(ctxReq.hashFork, (spParam->vecParamlist.size() > 1 ? spParam->vecParamlist.at(1) : string()), true);
 
     CWalletBalance balance;
-    if (!pService->GetBalance(ctxReq.hashFork, hashBlock, address, balance))
+    if (!pService->GetBalance(ctxReq.hashFork, hashBlock, address, {}, balance))
     {
         StdLog("CRPCMod", "RPC Eth Get Balance: Get balance fail, address: %s, block: %s", address.ToString().c_str(), hashBlock.ToString().c_str());
-        return nullptr;
+        // throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find address");
+        return MakeCeth_getBalanceResultPtr("0x0");
     }
 
     return MakeCeth_getBalanceResultPtr(balance.nAvailable.GetValueHex());
@@ -8310,7 +8313,7 @@ CRPCResultPtr CRPCMod::RPCEthGetBlockNumber(const CReqContext& ctxReq, CRPCParam
     if (!pService->GetLastBlockStatus(ctxReq.hashFork, status))
     {
         StdLog("CRPCMod", "RPC EthGetBlockNumber: Get last block status fail");
-        return nullptr;
+        throw CRPCException(RPC_ETH_ERROR_NOT_FOUND_BLOCK, "Not find block");
     }
     return MakeCeth_blockNumberResultPtr(ToHexString(status.nBlockNumber));
 }
