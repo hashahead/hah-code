@@ -8381,7 +8381,7 @@ CRPCResultPtr CRPCMod::RPCEthGetStorageRoot(const CReqContext& ctxReq, CRPCParam
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthGetStorageRoot: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     CDestination address;
@@ -8389,7 +8389,7 @@ CRPCResultPtr CRPCMod::RPCEthGetStorageRoot(const CReqContext& ctxReq, CRPCParam
     if (address.IsNull())
     {
         StdLog("CRPCMod", "RPC EthGetStorageRoot: Invalid address");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
     }
     uint256 hashBlock = GetRefBlock(ctxReq.hashFork, (spParam->vecParamlist.size() > 1 ? spParam->vecParamlist.at(1) : string()));
 
@@ -8397,7 +8397,7 @@ CRPCResultPtr CRPCMod::RPCEthGetStorageRoot(const CReqContext& ctxReq, CRPCParam
     if (!pService->GetBlockStatus(hashBlock, status))
     {
         StdLog("CRPCMod", "RPC EthGetStorageRoot: Get block status fail");
-        return nullptr;
+        throw CRPCException(RPC_ETH_ERROR_NOT_FOUND_BLOCK, "Not find block");
     }
     return MakeCeth_getStorageRootResultPtr(status.hashStateRoot.GetHex());
 }
@@ -8408,7 +8408,7 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionCount(const CReqContext& ctxReq, CRPC
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthGetTransactionCount: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     CDestination address;
@@ -8416,15 +8416,16 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionCount(const CReqContext& ctxReq, CRPC
     if (address.IsNull())
     {
         StdLog("CRPCMod", "RPC EthGetTransactionCount: Invalid address");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
     }
     uint256 hashBlock = GetRefBlock(ctxReq.hashFork, (spParam->vecParamlist.size() > 1 ? spParam->vecParamlist.at(1) : string()));
 
     CWalletBalance balance;
-    if (!pService->GetBalance(ctxReq.hashFork, hashBlock, address, balance))
+    if (!pService->GetBalance(ctxReq.hashFork, hashBlock, address, {}, balance))
     {
         StdLog("CRPCMod", "RPC EthGetTransactionCount: Get balance fail, address: %s, block: %s, fork: %s", address.ToString().c_str(), hashBlock.ToString().c_str(), ctxReq.hashFork.ToString().c_str());
-        return nullptr;
+        // throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find address");
+        return MakeCeth_getTransactionCountResultPtr("0x0");
     }
 
     return MakeCeth_getTransactionCountResultPtr(ToHexString(balance.nTxNonce + 1));
