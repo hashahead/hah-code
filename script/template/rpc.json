@@ -4666,6 +4666,49 @@
             "{\"code\":-401,\"message\":\"Failed to sign message\"}"
         ]
     },
+    "addusercoin": {
+        "type": "command",
+        "name": "AddUserCoin",
+        "desc": "Add user coin",
+        "request": {
+            "type": "object",
+            "content": {
+                "from": {
+                    "type": "string",
+                    "desc": "from address"
+                },
+                "symbol": {
+                    "type": "string",
+                    "desc": "coin symbol"
+                },
+                "chainid": {
+                    "type": "uint",
+                    "desc": "at chainid"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "txid",
+            "desc": "txid"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli addusercoin 0xb955034fcefb66112bab47483c8d243b86cb2c1d ABC 202",
+                "response": "0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"addusercoin\",\"jsonrpc\":\"2.0\",\"params\":{\"from\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"symbol\":\"ABC\",\"chainid\":202}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":\"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid from\"}",
+            "{\"code\":-6,\"message\":\"Invalid symbol\"}",
+            "{\"code\":-6,\"message\":\"Invalid chainid\"}",
+            "{\"code\":-4,\"message\":\"Unknown chainid\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
