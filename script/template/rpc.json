@@ -3288,6 +3288,141 @@
             "{\"code\" : -4, \"message\" : \"No such delegate address\"}"
         ]
     },
+    "listuservotebydelegate": {
+        "type": "command",
+        "name": "ListUserVoteByDelegate",
+        "desc": "List user vote by delegate",
+        "request": {
+            "type": "object",
+            "content": {
+                "delegate": {
+                    "type": "string",
+                    "desc": "delegate address"
+                },
+                "type": {
+                    "type": "uint",
+                    "desc": "vote type, 0: all, 4: user vote, 5: pledge vote, default: 0",
+                    "required": false,
+                    "default": 0,
+                    "opt": "t"
+                },
+                "pagenumber": {
+                    "type": "uint",
+                    "desc": "page number, begin 0, default is 0",
+                    "required": false,
+                    "default": 0,
+                    "opt": "p"
+                },
+                "pagesize": {
+                    "type": "uint",
+                    "desc": "page size, default is 100, 0: all",
+                    "required": false,
+                    "default": 100,
+                    "opt": "s"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash",
+                    "required": false,
+                    "opt": "f"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash or number or latest (default latest block)",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "name": "result",
+            "content": {
+                "delegateaddress": {
+                    "type": "string",
+                    "desc": "delegate address"
+                },
+                "delegatename": {
+                    "type": "string",
+                    "desc": "delegate node name"
+                },
+                "delegatetotalvotes": {
+                    "type": "string",
+                    "desc": "delegate total node votes (big float)"
+                },
+                "delegateselfvotes": {
+                    "type": "string",
+                    "desc": "delegate self votes (big float)"
+                },
+                "totalrecordcount": {
+                    "type": "uint",
+                    "desc": "total record count"
+                },
+                "totalpagecount": {
+                    "type": "uint",
+                    "desc": "total page count"
+                },
+                "pagenumber": {
+                    "type": "uint",
+                    "desc": "page number"
+                },
+                "pagesize": {
+                    "type": "uint",
+                    "desc": "page size"
+                },
+                "datalist": {
+                    "type": "array",
+                    "name": "datalist",
+                    "content": {
+                        "dataitem": {
+                            "type": "object",
+                            "content": {
+                                "type": {
+                                    "type": "uint",
+                                    "desc": "template type, 4: user vote, 5: pledge vote"
+                                },
+                                "voteflagaddress": {
+                                    "type": "string",
+                                    "desc": "vote flag address"
+                                },
+                                "useraddress": {
+                                    "type": "string",
+                                    "desc": "user address"
+                                },
+                                "pledgetype": {
+                                    "type": "uint",
+                                    "desc": "pledge type, when type 5 is valid"
+                                },
+                                "votes": {
+                                    "type": "string",
+                                    "desc": "number of votes (big float)"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listuservotebydelegate 0x888629a65cfadc11110bec2c6e3c5facda8ad433",
+                "response": "{\"delegateaddress\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"delegatename\":\"\",\"delegatetotalvotes\":\"60005197.1286516313508464\",\"delegateselfvotes\":\"59999188.705901056615205106\",\"totalrecordcount\":1,\"totalpagecount\":1,\"pagenumber\":0,\"pagesize\":100,\"datalist\":[{\"type\":5,\"voteflagaddress\":\"0x19f33cbe2a5fd7635a56181950d3c3d28a560e20\",\"useraddress\":\"0xba2c61b77f04140389338a7416e11851224d7685\",\"pledgetype\":3,\"votes\":\"6008.422750574735641294\"}]}"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"listuservotebydelegate\",\"jsonrpc\":\"2.0\",\"params\":{\"delegate\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":{\"delegateaddress\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"delegatename\":\"\",\"delegatetotalvotes\":\"60005197.1286516313508464\",\"delegateselfvotes\":\"59999188.705901056615205106\",\"totalrecordcount\":1,\"totalpagecount\":1,\"pagenumber\":0,\"pagesize\":100,\"datalist\":[{\"type\":5,\"voteflagaddress\":\"0x19f33cbe2a5fd7635a56181950d3c3d28a560e20\",\"useraddress\":\"0xba2c61b77f04140389338a7416e11851224d7685\",\"pledgetype\":3,\"votes\":\"6008.422750574735641294\"}]}}"
+            }
+        ],
+        "error": [
+            "{\"code\":-32600,\"message\":\"Only suitable for the main chain\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid delegate\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid type\"}",
+            "{\"code\" : -6, \"message\" : \"Unknown fork\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid block\"}",
+            "{\"code\" : -6, \"message\" : \"Block status error\"}",
+            "{\"code\" : -4, \"message\" : \"No such delegate address\"}"
+        ]
+    },
     "listkey": {
         "type": "command",
         "name": "ListKey",
