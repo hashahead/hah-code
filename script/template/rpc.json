@@ -3143,6 +3143,71 @@
             "{\"code\" : -4, \"message\" : \"Get address count fail\"}"
         ]
     },
+    "listownertemplate": {
+        "type": "command",
+        "name": "ListOwnerTemplate",
+        "desc": "List owner template",
+        "request": {
+            "type": "object",
+            "content": {
+                "owner": {
+                    "type": "string",
+                    "desc": "owner address"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash",
+                    "required": false,
+                    "opt": "f"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash or number or latest (default latest block)",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "array",
+            "name": "templateaddress",
+            "desc": "template address list",
+            "content": {
+                "templateaddress": {
+                    "type": "object",
+                    "desc": "template address",
+                    "content": {
+                        "type": {
+                            "type": "string",
+                            "desc": "template type"
+                        },
+                        "address": {
+                            "type": "string",
+                            "desc": "template address"
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listownertemplate 0xd888fa3b343579474985383858803f8c267dc036",
+                "response": "[{\"type\":\"pledge\",\"address\":\"0xf3a4b07c356312b277cf6d10d4322bee215d79b8\"},{\"type\":\"pledge\",\"address\":\"0xd14f8efa824d3281e164375fc77060ef3931e5a2\"}]"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"listownertemplate\",\"jsonrpc\":\"2.0\",\"params\":{\"owner\":\"0xd888fa3b343579474985383858803f8c267dc036\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":[{\"type\":\"pledge\",\"address\":\"0xf3a4b07c356312b277cf6d10d4322bee215d79b8\"},{\"type\":\"pledge\",\"address\":\"0xd14f8efa824d3281e164375fc77060ef3931e5a2\"}]}"
+            }
+        ],
+        "error": [
+            "{\"code\" : -6, \"message\" : \"Invalid owner\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid fork\"}",
+            "{\"code\" : -6, \"message\" : \"Unknown fork\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid block\"}",
+            "{\"code\" : -6, \"message\" : \"Block status error\"}",
+            "{\"code\" : -4, \"message\" : \"No such owner address\"}"
+        ]
+    },
     "listkey": {
         "type": "command",
         "name": "ListKey",
