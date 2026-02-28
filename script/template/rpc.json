@@ -3019,6 +3019,73 @@
             "{\"code\" : -6, \"message\" : \"Block status error\"}"
         ]
     },
+    "estimatetimevaultgas": {
+        "type": "command",
+        "name": "EstimateTimeVaultGas",
+        "desc": "Estimate time vault gas",
+        "request": {
+            "type": "object",
+            "content": {
+                "address": {
+                    "type": "string",
+                    "desc": "pubkey address"
+                },
+                "amount": {
+                    "type": "string",
+                    "desc": "amount (big float)"
+                },
+                "time": {
+                    "type": "uint",
+                    "desc": "time",
+                    "required": false,
+                    "opt": "t"
+                },
+                "gasprice": {
+                    "type": "string",
+                    "desc": "gas price (big float)",
+                    "required": false,
+                    "opt": "g"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash",
+                    "required": false,
+                    "opt": "f"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash or number or latest (default latest block)",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "uint",
+            "name": "result",
+            "desc": "time vault gas"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli estimatetimevaultgas 0x1882823f69b35fbf58833f2892b0cfdabddf0c63 5000000",
+                "response": "82659024607"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"estimatetimevaultgas\",\"jsonrpc\":\"2.0\",\"params\":{\"address\":\"0x1882823f69b35fbf58833f2892b0cfdabddf0c63\",\"amount\":\"5000000\",\"duration\":30}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":82659024607}"
+            }
+        ],
+        "error": [
+            "{\"code\" : -6, \"message\" : \"Invalid address\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid amount\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid time\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid gasprice\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid fork\"}",
+            "{\"code\" : -6, \"message\" : \"Unknown fork\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid block\"}",
+            "{\"code\" : -6, \"message\" : \"Block status error\"}"
+        ]
+    },
     "getaddresscount": {
         "type": "command",
         "name": "GetAddressCount",
