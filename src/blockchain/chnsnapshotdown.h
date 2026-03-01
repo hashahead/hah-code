@@ -163,6 +163,7 @@ protected:
     bool HandleMsgDownDataReq(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgDownDataReq& body);
 
 protected:
+    const string GetPeerAddressInfo(uint64 nNonce);
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
