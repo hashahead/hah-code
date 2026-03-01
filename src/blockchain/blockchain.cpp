@@ -2633,6 +2633,11 @@ bool CBlockChain::ListAddressDexOrder(const uint256& hashBlock, const CDestinati
     return cntrBlock.ListAddressDexOrder(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, nGetStatus, nGetCount, mapDexOrder);
 }
 
+bool CBlockChain::ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder)
+{
+    return cntrBlock.ListMatchDexOrder(hashBlock, strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
+}
+
 bool CBlockChain::AddBlacklistAddress(const CDestination& dest)
 {
     return cntrBlock.AddBlacklistAddress(dest);
