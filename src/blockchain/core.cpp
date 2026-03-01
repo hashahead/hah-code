@@ -1241,6 +1241,22 @@ Errno CCoreProtocol::VerifyPledgeTx(const uint256& hashFork, const CTransaction&
         return ERR_TRANSACTION_INVALID;
     }
 
+    if (VERIFY_FHX_HEIGHT_BRANCH_002(CBlock::GetBlockHeightByHash(hashPrev) + 1))
+    {
+        if (objPledge->nCycles != 0 || objPledge->nNonce != 0)
+        {
+            StdDebug("CoreProtocol", "Verify Pledge Tx: Cycles or nonce not is 0, cycles: %d, nonce: %d, txid: %s, from: %s, to: %s",
+                     objPledge->nCycles, objPledge->nNonce, txid.GetHex().c_str(), tx.GetFromAddress().ToString().c_str(), tx.GetToAddress().ToString().c_str());
+            return ERR_TRANSACTION_INVALID;
+        }
+        if (!pBlockChain->VerifyAddressPledgeVote(tx.GetToAddress(), hashPrev))
+        {
+            StdDebug("CoreProtocol", "Verify Pledge Tx: Voting has been banned, txid: %s, from: %s, to: %s",
+                     txid.GetHex().c_str(), tx.GetFromAddress().ToString().c_str(), tx.GetToAddress().ToString().c_str());
+            return ERR_TRANSACTION_INVALID;
+        }
+    }
+
     // CAddressContext ctxOwnerAddress;
     // if (!pBlockChain->RetrieveAddressContext(hashFork, hashPrev, objPledge->destOwner, ctxOwnerAddress))
     // {
@@ -1357,8 +1373,13 @@ CTestNetCoreProtocol::CTestNetCoreProtocol()
 {
 }
 
+// "privkey" : "0xd8b8db5ef512bd8e5a04f83ccfcfe6470c83d3f2e31480828ecf93a9ac0a54e2",
+// "pubkey" : "0xa9cd6869b7d2d41c56c3573e43ca0bc666353ec387821857d5b0ad1bbd3377a1a62e4d69cc18c4a393b5ecd22513af25722a4db955650aa91a11ce4d7a1a3765",
+// "address" : "0x5962974eeb0b17b43edabfc9b747839317aa852f"
+
 void CTestNetCoreProtocol::GetGenesisBlock(CBlock& block)
 {
+    CreateGenesisBlock(false, GetGenesisChainId(), "0x5962974eeb0b17b43edabfc9b747839317aa852f", block);
 }
 
 ///////////////////////////////
