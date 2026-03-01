@@ -424,4 +424,23 @@ bool CBlockVoteChannel::AddBlockLocalVoteSignFlag(const uint256& hashBlock, cons
     return true;
 }
 
+bool CBlockVoteChannel::CommitBlockVoteResult(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const uint256& hashFork)
+{
+    StdDebug("CBlockVoteChannel", "Commit block vote result: block: %s, fork: %s", hashBlock.ToString().c_str(), hashFork.ToString().c_str());
+    network::CEventLocalBlockvoteCommitVoteResult* pEvent = new network::CEventLocalBlockvoteCommitVoteResult(0, hashFork);
+    if (pEvent)
+    {
+        network::CBlockCommitVoteResult& voteResult = pEvent->data;
+        voteResult.hashBlock = hashBlock;
+        voteResult.btBitmap = btBitmap;
+        voteResult.btAggSig = btAggSig;
+        PostEvent(pEvent);
+    }
+    else
+    {
+        StdError("CBlockVoteChannel", "Commit block vote result: New fail, fork: %s", hashFork.ToString().c_str());
+    }
+    return true;
+}
+
 } // namespace hashahead
