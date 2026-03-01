@@ -2950,29 +2950,38 @@ bool CBlockChain::CalcEndVoteReward(const uint256& hashPrev, const uint16 nBlock
                 {
                     txReward.SetToAddressData(CAddressContext(CPubkeyAddressContext()));
                 }
+
+                if (VERIFY_FHX_HEIGHT_BRANCH_002(CBlock::GetBlockHeightByHash(hashCalcEndBlock)))
+                {
+                    auto it = mapRewardVoteAddress.find(destRewardAddress);
+                    if (it == mapRewardVoteAddress.end())
+                    {
+                        StdError("BlockChain", "Calc end vote reward tx: Reward address error, reward address: %s, hashPrev: %s",
+                                 destRewardAddress.ToString().c_str(), hashPrev.GetHex().c_str());
+                        return false;
+                    }
+                    CBufStream ss;
+                    ss << it->second;
+                    bytes btExtData;
+                    ss.GetData(btExtData);
+                    txReward.AddTxData(CTransaction::DF_VOTEREWARDLIST, btExtData);
+                }
             }
             else
             {
                 CAddressContext ctxAddress;
                 if (!cntrBlock.RetrieveAddressContext(hashFork, hashPrev, txReward.GetToAddress(), ctxAddress))
                 {
-                    CBlockIndex* pPrevIndex = nullptr;
-                    if (!cntrBlock.RetrieveIndex(hashPrev, &pPrevIndex) || pPrevIndex == nullptr)
-                    {
-                        StdError("BlockChain", "Calc end vote reward tx: Retrieve prev index fail, to: %s, hashPrev: %s",
-                                 txReward.GetToAddress().ToString().c_str(), hashPrev.GetHex().c_str());
-                        return false;
-                    }
-                    if (pPrevIndex->IsPrimary())
+                    if (fIsPrimaryFork)
                     {
                         StdError("BlockChain", "Calc end vote reward tx: Primary not address context fail, to: %s, hashPrev: %s",
                                  txReward.GetToAddress().ToString().c_str(), hashPrev.GetHex().c_str());
                         return false;
                     }
-                    if (!cntrBlock.RetrieveAddressContext(pCoreProtocol->GetGenesisBlockHash(), pPrevIndex->GetRefBlock(), txReward.GetToAddress(), ctxAddress))
+                    if (!cntrBlock.RetrieveAddressContext(pCoreProtocol->GetGenesisBlockHash(), hashPrevRefBlock, txReward.GetToAddress(), ctxAddress))
                     {
                         StdError("BlockChain", "Calc end vote reward tx: Retrieve ref block address context fail, to: %s, ref block: %s, hashPrev: %s",
-                                 txReward.GetToAddress().ToString().c_str(), pPrevIndex->GetRefBlock().GetHex().c_str(), hashPrev.GetHex().c_str());
+                                 txReward.GetToAddress().ToString().c_str(), hashPrevRefBlock.GetHex().c_str(), hashPrev.GetHex().c_str());
                         return false;
                     }
                     txReward.SetToAddressData(ctxAddress);
