@@ -126,6 +126,7 @@ protected:
 
     bool HandleEvent(network::CEventPeerActive& eventActive) override;
     bool HandleEvent(network::CEventPeerDeactive& eventDeactive) override;
+    bool AddBlockLocalVoteSignFlag(const uint256& hashBlock, const uint256& hashFork);
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;

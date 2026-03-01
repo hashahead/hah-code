@@ -401,4 +401,27 @@ bool CBlockVoteChannel::GetVoteBlockCandidatePubkey(const uint256& hashBlock, ui
     return true;
 }
 
+bool CBlockVoteChannel::AddBlockLocalVoteSignFlag(const uint256& hashBlock, const uint256& hashFork)
+{
+    // uint256 hashLastBlock;
+    // if (!pBlockChain->RetrieveForkLast(hashFork, hashLastBlock))
+    // {
+    //     StdLog("CBlockVoteChannel", "Add block local sign flag: Retrieve fork last fail, fork: %s", hashFork.ToString().c_str());
+    //     return false;
+    // }
+    // if (!pBlockChain->VerifySameChain(hashBlock, hashLastBlock))
+    // {
+    //     StdLog("CBlockVoteChannel", "Add block local sign flag: Verify same chain fail, block: %s, last block: %s, fork: %s",
+    //            hashBlock.GetBhString().c_str(), hashLastBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+    //     return false;
+    // }
+    // if (!pBlockChain->AddBlockLocalVoteSignFlag(hashBlock))
+    // {
+    //     StdLog("CBlockVoteChannel", "Add block local sign flag: Add block local sign flag fail, block: %s, fork: %s",
+    //            hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+    //     return false;
+    // }
+    return true;
+}
+
 } // namespace hashahead
