@@ -3032,8 +3032,9 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
     std::map<uint32, CCalcBlock> mapCalcBlock;
     //int nTailHeight = pTailIndex->GetBlockHeight();                        // N
     int nBeginHeight = pTailIndex->GetBlockHeight() - nDistributeHeight + 1; // 1
-    CBlockIndex* pIndex = pTailIndex;
-    while (pIndex && pIndex->pPrev && !pIndex->IsOrigin() && pIndex->GetBlockHeight() >= nBeginHeight)
+    BlockIndexPtr pIndex = pTailIndex;
+    BlockIndexPtr pPrevIndex = (pIndex ? cntrBlock.GetPrevBlockIndex(pIndex) : nullptr);
+    while (pIndex && pPrevIndex && !pIndex->IsOrigin() && pIndex->GetBlockHeight() >= nBeginHeight)
     {
         if ((pIndex->IsPrimary() && pIndex->nMintType == CTransaction::TX_STAKE)
             || (!pIndex->IsPrimary() && (pIndex->IsSubsidiary() || pIndex->IsExtended())))
@@ -3041,14 +3042,15 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
             CCalcBlock& calcBlock = mapCalcBlock[pIndex->GetBlockHeight()];
             if (calcBlock.hashPrimaryBlock == 0)
             {
-                CBlockIndex* pPrimaryIndex = nullptr;
+                BlockIndexPtr pPrimaryIndex;
                 if (pIndex->IsPrimary())
                 {
                     pPrimaryIndex = pIndex;
                 }
                 else
                 {
-                    if (!cntrBlock.RetrieveIndex(pIndex->GetRefBlock(), &pPrimaryIndex) || pPrimaryIndex == nullptr)
+                    pPrimaryIndex = cntrBlock.RetrieveIndex(pIndex->GetRefBlock());
+                    if (!pPrimaryIndex)
                     {
                         StdLog("BlockChain", "Calculate block vote reward: Retrieve ref index fail, ref block: %s, block: %s",
                                pIndex->GetRefBlock().GetHex().c_str(), pIndex->GetBlockHash().GetHex().c_str());

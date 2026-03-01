@@ -111,15 +111,11 @@ public:
     bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256()) override;
     bool GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock = uint256()) override;
     bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value) override;
-    uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter) override;
-    void RemoveFilter(const uint256& nFilterId) override;
-    bool GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs) override;
-    bool GetTxReceiptsByLogsFilter(const uint256& hashFork, const CLogsFilter& logsFilter, ReceiptLogsVec& vReceiptLogs) override;
-    uint256 AddBlockFilter(const uint256& hashClient, const uint256& hashFork) override;
-    bool GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash) override;
-    uint256 AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork) override;
-    void AddPendingTx(const uint256& hashFork, const uint256& txid) override;
-    bool GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid) override;
+    bool GetBlockRewardList(const uint256& hashLastBlock, const uint32 nBlockCount, std::vector<uint256>& vBlockRewardList, std::vector<std::pair<uint256, uint256>>& vBlockGasUsedList) override;
+    bool GetBlockReceiptsByBlock(const uint256& hashFork, const uint256& hashFromBlock, const uint256& hashToBlock, std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapBlockReceipts) override;
+    bool VerifySameChain(const uint256& hashPrevBlock, const uint256& hashAfterBlock) override;
+    bool GetPrevBlockHashList(const uint256& hashBlock, const uint32 nGetCount, std::vector<uint256>& vPrevBlockhash) override;
+    uint32 GetAllForkMinLastBlockHeight(std::vector<uint256>* pForkHash = nullptr) override;
 
     typedef std::map<int, CCheckPoint> MapCheckPointsType;
 
