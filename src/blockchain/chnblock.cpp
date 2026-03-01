@@ -363,6 +363,49 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockBks& eventBks)
     return true;
 }
 
+bool CBlockChannel::HandleEvent(network::CEventPeerBlockNextPrevBlock& eventData)
+{
+    const uint256& hashFork = eventData.hashFork;
+    const uint64 nRecvPeerNonce = eventData.nNonce;
+    uint256 hashBlock = eventData.data;
+
+    network::CEventPeerBlockPrevBlocks eventPrevBlocks(nRecvPeerNonce, hashFork);
+    std::vector<uint256>& vPrevBlockhash = eventPrevBlocks.data;
+
+    do
+    {
+        uint256 hashLastBlock;
+        if (!pBlockChain->RetrieveForkLast(hashFork, hashLastBlock))
+        {
+            StdLog("CBlockChannel", "CEvent peer block next prev block: Retrieve fork last fail, fork: %s", hashFork.GetBhString().c_str());
+            break;
+        }
+        if (hashBlock == 0)
+        {
+            hashBlock = hashLastBlock;
+            vPrevBlockhash.push_back(hashLastBlock);
+        }
+        else
+        {
+            if (!pBlockChain->VerifySameChain(hashBlock, hashLastBlock))
+            {
+                StdLog("CBlockChannel", "CEvent peer block next prev block: Verify same chain fail, block: %s, last block: %s, fork: %s",
+                       hashBlock.GetBhString().c_str(), hashLastBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
+                break;
+            }
+            vPrevBlockhash.push_back(hashBlock);
+        }
+        if (!pBlockChain->GetPrevBlockHashList(hashBlock, SINGLE_REQ_BLOCK_HASH_COUNT, vPrevBlockhash))
+        {
+            StdLog("CBlockChannel", "CEvent peer block next prev block: Get prev block hash fail, block: %s, fork: %s",
+                   hashBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
+        }
+    } while (0);
+
+    pPeerNet->DispatchEvent(&eventPrevBlocks);
+    return true;
+}
+
 bool CBlockChannel::HandleEvent(network::CEventLocalBlockSubscribeFork& eventSubsFork)
 {
     network::CEventPeerBlockSubscribe eventSubscribe(0, pCoreProtocol->GetGenesisBlockHash());
