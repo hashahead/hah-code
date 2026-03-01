@@ -108,6 +108,8 @@ public:
     bool GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& strSymbol1, std::string& strSymbol2, const uint256& hashMainChainRefBlock = uint256()) override;
     bool ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock = uint256()) override;
     bool IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock = uint256()) override;
+    bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256()) override;
+    bool GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock = uint256()) override;
     bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value) override;
     uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter) override;
     void RemoveFilter(const uint256& nFilterId) override;

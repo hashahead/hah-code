@@ -3009,10 +3009,10 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
     }
     mapVoteReward.clear();
 
-    CBlockIndex* pTailIndex = nullptr;
-    if (!cntrBlock.RetrieveIndex(hashCalcEndBlock, &pTailIndex) || pTailIndex == nullptr)
+    BlockIndexPtr pTailIndex = cntrBlock.RetrieveIndex(hashCalcEndBlock);
+    if (!pTailIndex)
     {
-        StdLog("BlockChain", "Calculate distribute vote reward: RetrieveIndex fail, hashCalcEndBlock: %s", hashCalcEndBlock.GetHex().c_str());
+        StdLog("BlockChain", "Calculate distribute vote reward: Retrieve index fail, hashCalcEndBlock: %s", hashCalcEndBlock.GetHex().c_str());
         return false;
     }
 
