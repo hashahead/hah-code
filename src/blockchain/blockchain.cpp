@@ -2931,15 +2931,19 @@ bool CBlockChain::CalcEndVoteReward(const uint256& hashPrev, const uint16 nBlock
         uint32 nAddTxCount = 0;
         for (const auto& kv : mapReward)
         {
+            const CDestination& destRewardAddress = kv.first;
+            const uint256& nRewardAmount = kv.second.first;
+            const bool fNoVoteAddress = kv.second.second;
+
             CTransaction txReward;
 
             txReward.SetTxType(CTransaction::TX_VOTE_REWARD);
             txReward.SetChainId(ctxFork.nChainId);
             txReward.SetNonce(((uint64)nCalcHeight << 32) | nAddTxCount);
-            txReward.SetToAddress(kv.first);
-            txReward.SetAmount(kv.second.first);
+            txReward.SetToAddress(destRewardAddress);
+            txReward.SetAmount(nRewardAmount);
 
-            if (kv.second.second)
+            if (fNoVoteAddress)
             {
                 CAddressContext ctxAddress;
                 if (!cntrBlock.RetrieveAddressContext(hashFork, hashPrev, txReward.GetToAddress(), ctxAddress))
