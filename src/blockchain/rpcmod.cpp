@@ -8436,7 +8436,7 @@ CRPCResultPtr CRPCMod::RPCEthGetPendingTransactions(const CReqContext& ctxReq, C
     auto spResult = MakeCeth_pendingTransactionsResultPtr();
 
     vector<CTxInfo> vTxPool;
-    pService->ListTxPool(ctxReq.hashFork, CDestination(), vTxPool, 0, 0);
+    pService->ListTxPool(ctxReq.hashFork, CDestination(), vTxPool, 0, 0, false);
 
     for (const CTxInfo& txinfo : vTxPool)
     {
@@ -8448,8 +8448,17 @@ CRPCResultPtr CRPCMod::RPCEthGetPendingTransactions(const CReqContext& ctxReq, C
         txData.strTo = txinfo.destTo.ToString();
         txData.strValue = txinfo.nAmount.GetValueHex();
         txData.strGasprice = txinfo.nGasPrice.GetValueHex();
+        txData.strMaxfeepergas = txData.strGasprice;
+        txData.strMaxpriorityfeepergas = "0x0";
         txData.strGas = txinfo.nGas.GetValueHex();
-        txData.strInput = "";
+        if (txinfo.btData.empty())
+        {
+            txData.strInput = "0x";
+        }
+        else
+        {
+            txData.strInput = ToHexString(txinfo.btData);
+        }
 
         spResult->vecTransaction.push_back(txData);
         if (spResult->vecTransaction.size() >= 256)
