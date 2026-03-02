@@ -5275,6 +5275,199 @@
             "{\"code\":-6,\"message\":\"Invalid coinsymbol2\"}"
         ]
     },
+    "listrealtimedexorder": {
+        "type": "command",
+        "name": "ListRealtimeDexOrder",
+        "desc": "List realtime dex order",
+        "request": {
+            "type": "object",
+            "content": {
+                "coinsymbolsell": {
+                    "type": "string",
+                    "desc": "coin symbol sell"
+                },
+                "coinsymbolbuy": {
+                    "type": "string",
+                    "desc": "coin symbol buy"
+                },
+                "count": {
+                    "type": "uint",
+                    "desc": "count, default is 1000",
+                    "default": 1000,
+                    "required": false,
+                    "opt": "n"
+                },
+                "detail": {
+                    "type": "bool",
+                    "desc": "detail order, default is false",
+                    "default": false,
+                    "required": false,
+                    "opt": "d"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash or chainid",
+                    "required": false,
+                    "opt": "f"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash",
+                    "required": false,
+                    "opt": "h"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "name": "symboltype",
+            "content": {
+                "coinsymbolsell": {
+                    "type": "string",
+                    "desc": "coin symbol sell"
+                },
+                "coinsymbolbuy": {
+                    "type": "string",
+                    "desc": "coin symbol buy"
+                },
+                "prevcompleteprice": {
+                    "type": "string",
+                    "desc": "previous complete price"
+                },
+                "sellchainid": {
+                    "type": "uint",
+                    "desc": "sell chain id"
+                },
+                "buychainid": {
+                    "type": "uint",
+                    "desc": "buy chain id"
+                },
+                "maxmatchheight": {
+                    "type": "uint",
+                    "desc": "max match height"
+                },
+                "maxmatchslot": {
+                    "type": "uint",
+                    "desc": "max match slot"
+                },
+                "sellorder": {
+                    "type": "array",
+                    "desc": "sell order",
+                    "content": {
+                        "order": {
+                            "type": "object",
+                            "desc": "order struct",
+                            "content": {
+                                "price": {
+                                    "type": "string",
+                                    "desc": "price"
+                                },
+                                "orderamount": {
+                                    "type": "string",
+                                    "desc": "order amount"
+                                },
+                                "dealamount": {
+                                    "type": "string",
+                                    "desc": "deal amount"
+                                },
+                                "orderaddress": {
+                                    "type": "string",
+                                    "desc": "order address",
+                                    "required": false
+                                },
+                                "ordernumber": {
+                                    "type": "uint",
+                                    "desc": "order number",
+                                    "required": false
+                                },
+                                "oriorderamount": {
+                                    "type": "string",
+                                    "desc": "original order amount",
+                                    "required": false
+                                },
+                                "height": {
+                                    "type": "uint",
+                                    "desc": "at height",
+                                    "required": false
+                                },
+                                "slot": {
+                                    "type": "uint",
+                                    "desc": "at slot",
+                                    "required": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "buyorder": {
+                    "type": "array",
+                    "desc": "buy order",
+                    "content": {
+                        "order": {
+                            "type": "object",
+                            "desc": "order struct",
+                            "content": {
+                                "price": {
+                                    "type": "string",
+                                    "desc": "price"
+                                },
+                                "orderamount": {
+                                    "type": "string",
+                                    "desc": "order amount"
+                                },
+                                "dealamount": {
+                                    "type": "string",
+                                    "desc": "deal amount"
+                                },
+                                "orderaddress": {
+                                    "type": "string",
+                                    "desc": "order address",
+                                    "required": false
+                                },
+                                "ordernumber": {
+                                    "type": "uint",
+                                    "desc": "order number",
+                                    "required": false
+                                },
+                                "oriorderamount": {
+                                    "type": "string",
+                                    "desc": "original order amount",
+                                    "required": false
+                                },
+                                "height": {
+                                    "type": "uint",
+                                    "desc": "at height",
+                                    "required": false
+                                },
+                                "slot": {
+                                    "type": "uint",
+                                    "desc": "at slot",
+                                    "required": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listrealtimedexorder AAA BBB",
+                "response": "{\"coinsymbolsell\":\"AAA\",\"coinsymbolbuy\":\"BBB\",\"prevcompleteprice\":\"1.2\",\"sellorder\":[{\"price\":\"1.2\",\"orderamount\":\"66.666666666666666667\",\"dealamount\":\"80.0\"}],\"buyorder\":[]}"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"listrealtimedexorder\",\"jsonrpc\":\"2.0\",\"params\":{\"coinsymbolsell\":\"AAA\",\"coinsymbolbuy\":\"BBB\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":{\"coinsymbolsell\":\"AAA\",\"coinsymbolbuy\":\"BBB\",\"prevcompleteprice\":\"1.2\",\"sellorder\":[{\"price\":\"1.2\",\"orderamount\":\"66.666666666666666667\",\"dealamount\":\"80.0\"}],\"buyorder\":[]}}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid coinsymbolsell\"}",
+            "{\"code\":-6,\"message\":\"Invalid coinsymbolbuy\"}",
+            "{\"code\":-6,\"message\":\"Invalid fork\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}",
+            "{\"code\":-7,\"message\":\"Query fail\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
