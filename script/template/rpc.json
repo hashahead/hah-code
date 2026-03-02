@@ -5024,6 +5024,76 @@
             "{\"code\":-7,\"message\":\"Get coin context fail\"}"
         ]
     },
+    "senddexordertx": {
+        "type": "command",
+        "name": "SendDexOrderTx",
+        "desc": "Send dexorder transaction",
+        "request": {
+            "type": "object",
+            "content": {
+                "from": {
+                    "type": "string",
+                    "desc": "from address"
+                },
+                "coinsymbolowner": {
+                    "type": "string",
+                    "desc": "coin symbol owner"
+                },
+                "coinsymbolpeer": {
+                    "type": "string",
+                    "desc": "coin symbol peer"
+                },
+                "amount": {
+                    "type": "string",
+                    "desc": "order amount (big float)"
+                },
+                "price": {
+                    "type": "string",
+                    "desc": "order amount (big float)"
+                },
+                "ordernumber": {
+                    "type": "uint",
+                    "desc": "order number, default is 0",
+                    "required": false,
+                    "opt": "n"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash or chainid, default is local fork",
+                    "required": false,
+                    "opt": "f"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "result",
+            "desc": "transaction hash"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli senddexordertx 0xc0f0ddde81c1dff508e038d20295d8001493d8bc AAA BBB 11 0 234.98 1.23",
+                "response": "0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f"
+            },
+            {
+                "request": "curl -d '{\"id\":4,\"method\":\"senddexordertx\",\"jsonrpc\":\"2.0\",\"params\":{\"from\":\"0xc0f0ddde81c1dff508e038d20295d8001493d8bc\",\"coinsymbolowner\":\"AAA\",\"coinsymbolpeer\":\"BBB\",\"ordernumber\":0,\"amount\":\"234.98\",\"price\":\"1.23\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":4,\"jsonrpc\":\"2.0\",\"result\":\"0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid from\"}",
+            "{\"code\":-6,\"message\":\"Invalid coinsymbolowner\"}",
+            "{\"code\":-6,\"message\":\"Invalid coinsymbolpeer\"}",
+            "{\"code\":-6,\"message\":\"Invalid ordernumber\"}",
+            "{\"code\":-6,\"message\":\"Invalid amount\"}",
+            "{\"code\":-6,\"message\":\"Invalid price\"}",
+            "{\"code\":-6,\"message\":\"Invalid fork\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}",
+            "{\"code\":-4,\"message\":\"Get tx nonce fail\"}",
+            "{\"code\":-401,\"message\":\"Failed to sign transaction\"}",
+            "{\"code\":-10,\"message\":\"Tx rejected : xxx\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
