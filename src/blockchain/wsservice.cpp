@@ -161,6 +161,59 @@ connection_hdl CWsClient::GetConnHdl() const
     return hdl;
 }
 
+/////////////////////////////
+// CWsServer
+
+CWsServer::CWsServer(const CChainId nChainIdIn, const uint16 nListenPortIn, const uint32 nMaxConnectionsIn, const boost::asio::ip::address& addrListenIn, hnbase::IIOModule* pRpcModIn, CWsService* pWssIn)
+  : nChainId(nChainIdIn), nListenPort(nListenPortIn), nMaxConnections(nMaxConnectionsIn), addrListen(addrListenIn), pRpcMod(pRpcModIn), pWsService(pWssIn), pThreadWs(nullptr)
+{
+}
+
+CWsServer::~CWsServer()
+{
+}
+
+bool CWsServer::Start()
+{
+    if (!StartWsListen())
+    {
+        return false;
+    }
+
+    boost::thread::attributes attr;
+    attr.set_stack_size(16 * 1024 * 1024);
+    pThreadWs = new boost::thread(attr, boost::bind(&CWsServer::WsThreadFunc, this));
+    if (!pThreadWs)
+    {
+        StopWsListen();
+        return false;
+    }
+    return true;
+}
+
+void CWsServer::Stop()
+{
+    StopWsListen();
+
+    if (pThreadWs)
+    {
+        pThreadWs->join();
+        delete pThreadWs;
+        pThreadWs = nullptr;
+    }
+}
+
+void CWsServer::SendWsMsg(const uint64 nConnId, const std::string& strMsg)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapWsClient.find(nConnId);
+    if (it != mapWsClient.end())
+    {
+        wsServer.send(it->second.GetConnHdl(), strMsg, websocketpp::frame::opcode::TEXT);
+    }
+}
+
 //////////////////////////////
 // CWsService
 

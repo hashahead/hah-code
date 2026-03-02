@@ -1541,6 +1541,23 @@ bool CService::RetrieveTokenContractAddressContext(const uint256& hashFork, cons
 {
     return pBlockChain->RetrieveTokenContractAddressContext(hashFork, hashBlock, dest, ctxAddress);
 }
+
+uint64 CService::GetDestNextTxNonce(const uint256& hashFork, const CDestination& dest)
+{
+    return pTxPool->GetDestNextTxNonce(hashFork, dest);
+}
+
+bool CService::ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                                   const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
+{
+    return pBlockChain->ListAddressDexOrder(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, nGetStatus, nGetCount, mapDexOrder);
+}
+
+bool CService::ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder)
+{
+    return pBlockChain->ListMatchDexOrder(hashBlock, strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
+}
+
 bool CService::AddBlacklistAddress(const CDestination& dest)
 {
     return pBlockChain->AddBlacklistAddress(dest);

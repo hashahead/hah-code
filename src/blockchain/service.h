@@ -61,11 +61,12 @@ public:
     void GetTxPool(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true) override;
     void ListTxPool(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0, const bool fContainCertTx = true) override;
     bool GetTransactionAndPosition(const uint256& hashRefFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashAtBlock, uint64& nBlockNumber, uint16& nTxSeq) override;
-    bool GetTransactionByIndex(const uint256& hashBlock, const uint64 nTxIndex, CTransaction& tx, uint64& nBlockNumber) override;
+    bool GetEthTransactionByIndex(const uint256& hashBlock, const uint64 nTxIndex, CTransaction& tx, uint64& nBlockNumber) override;
     Errno SendTransaction(const uint256& hashFork, CTransaction& tx) override;
     bool GetVotes(const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes, string& strFailCause) override;
     bool ListDelegate(const uint256& hashRefBlock, const uint32 nStartIndex, const uint32 nCount, std::multimap<uint256, CDestination>& mapVotes) override;
     bool GetDelegateVotes(const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes) override;
+    bool RetrieveDelegateEnrollStatus(const uint256& hashBlock, std::map<CDestination, std::pair<uint32, uint64>>& mapDelegateEnrollStatus) override;
     bool GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight) override;
     bool GetPledgeVotes(const uint256& hashRefBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote) override;
     bool GetTransactionReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceiptEx& receiptex) override;

@@ -157,6 +157,7 @@ public:
     CWsService();
     ~CWsService();
 
+    bool HandleEvent(CEventWsServicePushNewBlock& eventPush) override;
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;
