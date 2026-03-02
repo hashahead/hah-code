@@ -4921,6 +4921,109 @@
             "{\"code\":-4,\"message\":\"Unknown symbol\"}"
         ]
     },
+    "listdexcoinpair": {
+        "type": "command",
+        "name": "ListDexCoinPair",
+        "desc": "List dex coin pair",
+        "request": {
+            "type": "object",
+            "content": {
+                "coinpair": {
+                    "type": "uint",
+                    "desc": "coin pair",
+                    "required": false,
+                    "opt": "c"
+                },
+                "coinsymbol": {
+                    "type": "string",
+                    "desc": "coin symbol",
+                    "required": false,
+                    "opt": "s"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "array",
+            "name": "coinpairdata",
+            "content": {
+                "coinpairdata": {
+                    "type": "object",
+                    "desc": "coin pair data",
+                    "content": {
+                        "coinpair": {
+                            "type": "uint",
+                            "desc": "coin pair"
+                        },
+                        "coin1": {
+                            "type": "object",
+                            "desc": "coin1",
+                            "content": {
+                                "coinsymbol": {
+                                    "type": "string",
+                                    "desc": "coin symbol"
+                                },
+                                "cointype": {
+                                    "type": "string",
+                                    "desc": "coin type"
+                                },
+                                "fork": {
+                                    "type": "string",
+                                    "desc": "at fork hash"
+                                },
+                                "chainid": {
+                                    "type": "uint",
+                                    "desc": "at fork chainid"
+                                }
+                            }
+                        },
+                        "coin2": {
+                            "type": "object",
+                            "desc": "coin2",
+                            "content": {
+                                "coinsymbol": {
+                                    "type": "string",
+                                    "desc": "coin symbol"
+                                },
+                                "cointype": {
+                                    "type": "string",
+                                    "desc": "coin type"
+                                },
+                                "fork": {
+                                    "type": "string",
+                                    "desc": "at fork hash"
+                                },
+                                "chainid": {
+                                    "type": "uint",
+                                    "desc": "at fork chainid"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listdexcoinpair",
+                "response": "[{\"coinpair\":1,\"coin1\":{\"coinsymbol\":\"HAHT\",\"cointype\":\"forkcoin\",\"fork\":\"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0\",\"chainid\":201},\"coin2\":{\"coinsymbol\":\"SY202\",\"cointype\":\"forkcoin\",\"fork\":\"0xcab0f744f00351c05d9035b22f737325596a3b94337542dbecf623f054a6172a\",\"chainid\":202}}]"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"listdexcoinpair\",\"jsonrpc\":\"2.0\",\"params\":{}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":[{\"coinpair\":1,\"coin1\":{\"coinsymbol\":\"HAHT\",\"cointype\":\"forkcoin\",\"fork\":\"0xc9f7f76ed1f265880a269080b5a115470fc36b06717346c44c72caca03dddcc0\",\"chainid\":201},\"coin2\":{\"coinsymbol\":\"SY202\",\"cointype\":\"forkcoin\",\"fork\":\"0xcab0f744f00351c05d9035b22f737325596a3b94337542dbecf623f054a6172a\",\"chainid\":202}}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid block\"}",
+            "{\"code\":-7,\"message\":\"Get coin pair fail\"}",
+            "{\"code\":-7,\"message\":\"Get coin context fail\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
