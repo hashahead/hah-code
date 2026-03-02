@@ -8476,7 +8476,7 @@ CRPCResultPtr CRPCMod::RPCEthGetBlockTransactionCountByHash(const CReqContext& c
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthGetBlockTransactionCountByHash: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     uint256 hashBlock;
@@ -8484,25 +8484,25 @@ CRPCResultPtr CRPCMod::RPCEthGetBlockTransactionCountByHash(const CReqContext& c
     if (hashBlock.IsNull())
     {
         StdLog("CRPCMod", "RPC EthGetBlockTransactionCountByHash: Invalid block hash");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
     }
 
     CBlockStatus status, statusPrev;
     if (!pService->GetBlockStatus(hashBlock, status))
     {
         StdLog("CRPCMod", "RPC EthGetBlockTransactionCountByHash: Get block status fail");
-        return nullptr;
+        throw CRPCException(RPC_ETH_ERROR_NOT_FOUND_BLOCK, "Not find block");
     }
     if (status.hashPrevBlock != 0)
     {
         if (!pService->GetBlockStatus(status.hashPrevBlock, statusPrev))
         {
             StdLog("CRPCMod", "RPC EthGetBlockTransactionCountByHash: Get block status fail");
-            return nullptr;
+            throw CRPCException(RPC_ETH_ERROR_NOT_FOUND_BLOCK, "Not find prev block");
         }
     }
 
-    return MakeCeth_getBlockTransactionCountByHashResultPtr(ToHexString(status.nTotalTxCount - statusPrev.nTotalTxCount));
+    return MakeCeth_getBlockTransactionCountByHashResultPtr(ToHexString((status.nUserTxCount + status.nRewardTxCount) - (statusPrev.nUserTxCount + statusPrev.nRewardTxCount)));
 }
 
 CRPCResultPtr CRPCMod::RPCEthGetBlockTransactionCountByNumber(const CReqContext& ctxReq, CRPCParamPtr param)
