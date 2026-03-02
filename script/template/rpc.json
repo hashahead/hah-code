@@ -5094,6 +5094,133 @@
             "{\"code\":-10,\"message\":\"Tx rejected : xxx\"}"
         ]
     },
+    "listdexorder": {
+        "type": "command",
+        "name": "ListDexOrder",
+        "desc": "List dex order",
+        "request": {
+            "type": "object",
+            "content": {
+                "address": {
+                    "type": "string",
+                    "desc": "order address"
+                },
+                "coinsymbolowner": {
+                    "type": "string",
+                    "desc": "coin symbol owner",
+                    "required": false,
+                    "opt": "co"
+                },
+                "coinsymbolpeer": {
+                    "type": "string",
+                    "desc": "coin symbol owner",
+                    "required": false,
+                    "opt": "cp"
+                },
+                "beginnumber": {
+                    "type": "uint",
+                    "desc": "begin order number",
+                    "default": 0,
+                    "required": false,
+                    "opt": "b"
+                },
+                "status": {
+                    "type": "uint",
+                    "desc": "get order status, 0: uncompleted status, 1: completed status, 2: all status, default is 0",
+                    "default": 0,
+                    "required": false,
+                    "opt": "s"
+                },
+                "count": {
+                    "type": "uint",
+                    "desc": "count, default is 1000",
+                    "default": 1000,
+                    "required": false,
+                    "opt": "n"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash or chainid",
+                    "required": false,
+                    "opt": "f"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash",
+                    "required": false,
+                    "opt": "h"
+                }
+            }
+        },
+        "response": {
+            "type": "array",
+            "name": "dexorderdata",
+            "content": {
+                "dexorderdata": {
+                    "type": "object",
+                    "desc": "dex order data",
+                    "content": {
+                        "ordernumber": {
+                            "type": "uint",
+                            "desc": "order number"
+                        },
+                        "coinsymbolowner": {
+                            "type": "string",
+                            "desc": "coin symbol owner"
+                        },
+                        "coinsymbolpeer": {
+                            "type": "string",
+                            "desc": "coin symbol peer"
+                        },
+                        "amount": {
+                            "type": "string",
+                            "desc": "order amount (big float)"
+                        },
+                        "price": {
+                            "type": "string",
+                            "desc": "order amount (big float)"
+                        },
+                        "surplusamount": {
+                            "type": "string",
+                            "desc": "surplus amount (big float)"
+                        },
+                        "completeamount": {
+                            "type": "string",
+                            "desc": "complete amount (big float)"
+                        },
+                        "completecount": {
+                            "type": "uint",
+                            "desc": "complete count"
+                        },
+                        "height": {
+                            "type": "uint",
+                            "desc": "at height"
+                        },
+                        "slot": {
+                            "type": "uint",
+                            "desc": "at slot"
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listdexorder 0xb955034fcefb66112bab47483c8d243b86cb2c1d",
+                "response": "[{\"ordernumber\":1,\"coinsymbolowner\":\"AAA\",\"coinsymbolpeer\":\"BBB\",\"amount\":\"100.45\",\"price\":\"0.5\",\"surplusamount\":\"30.0\",\"completeamount\":\"70.5\",\"completecount\":2,\"height\":398,\"slot\":0}]"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"listdexorder\",\"jsonrpc\":\"2.0\",\"params\":{\"address\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":[{\"ordernumber\":1,\"coinsymbolowner\":\"AAA\",\"coinsymbolpeer\":\"BBB\",\"amount\":\"100.45\",\"price\":\"0.5\",\"surplusamount\":\"30.0\",\"completeamount\":\"70.5\",\"completecount\":2,\"height\":398,\"slot\":0}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid address\"}",
+            "{\"code\":-6,\"message\":\"Invalid fork\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}",
+            "{\"code\":-7,\"message\":\"Query fail\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
