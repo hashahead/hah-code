@@ -5221,6 +5221,60 @@
             "{\"code\":-7,\"message\":\"Query fail\"}"
         ]
     },
+    "getdexsymboltype": {
+        "type": "command",
+        "name": "GetDexSymbolType",
+        "desc": "Get dex symbol type, sell symbol and buy symbol",
+        "request": {
+            "type": "object",
+            "content": {
+                "coinsymbol1": {
+                    "type": "string",
+                    "desc": "coin symbol1"
+                },
+                "coinsymbol2": {
+                    "type": "string",
+                    "desc": "coin symbol2"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "name": "symboltype",
+            "content": {
+                "coinsymbol1": {
+                    "type": "string",
+                    "desc": "coin symbol1"
+                },
+                "type1": {
+                    "type": "string",
+                    "desc": "type1: SELL or BUY"
+                },
+                "coinsymbol2": {
+                    "type": "string",
+                    "desc": "coin symbol2"
+                },
+                "type2": {
+                    "type": "string",
+                    "desc": "type2: SELL or BUY"
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli getdexsymboltype AAA BBB",
+                "response": "{\"coinsymbol1\":\"AAA\",\"type1\":\"SELL\",\"coinsymbol2\":\"BBB\",\"type2\":\"BUY\"}"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"getdexsymboltype\",\"jsonrpc\":\"2.0\",\"params\":{\"coinsymbol1\":\"AAA\",\"coinsymbol2\":\"BBB\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":{\"coinsymbol1\":\"AAA\",\"type1\":\"SELL\",\"coinsymbol2\":\"BBB\",\"type2\":\"BUY\"}}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid coinsymbol1\"}",
+            "{\"code\":-6,\"message\":\"Invalid coinsymbol2\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
