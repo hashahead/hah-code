@@ -8556,7 +8556,7 @@ CRPCResultPtr CRPCMod::RPCEthGetCode(const CReqContext& ctxReq, CRPCParamPtr par
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthGetCode: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     CDestination address;
@@ -8606,7 +8606,7 @@ CRPCResultPtr CRPCMod::RPCEthSign(const CReqContext& ctxReq, CRPCParamPtr param)
     if (btMsg.empty())
     {
         StdLog("CRPCMod", "RPC EthSign: Invalid message");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid message");
     }
 
     uint256 hash = CryptoKeccakHash(btMsg.data(), btMsg.size());
@@ -8615,7 +8615,7 @@ CRPCResultPtr CRPCMod::RPCEthSign(const CReqContext& ctxReq, CRPCParamPtr param)
     if (!pService->SignSignature(address, hash, btSig))
     {
         StdLog("CRPCMod", "RPC EthSign: Failed to sign message");
-        return nullptr;
+        throw CRPCException(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign message");
     }
 
     return MakeCeth_signResultPtr(ToHexString(btSig));
