@@ -9273,7 +9273,7 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionByBlockHashAndIndex(const CReqContext
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() != 2)
     {
         StdLog("CRPCMod", "RPC EthGetTransactionByBlockHashAndIndex: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     const uint256& hashFork = ctxReq.hashFork;
@@ -9284,10 +9284,10 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionByBlockHashAndIndex(const CReqContext
 
     CTransaction tx;
     uint64 nBlockNumber = 0;
-    if (!pService->GetTransactionByIndex(hashBlock, nIndex, tx, nBlockNumber))
+    if (!pService->GetEthTransactionByIndex(hashBlock, nIndex, tx, nBlockNumber))
     {
         StdLog("CRPCMod", "RPC EthGetTransactionByBlockHashAndIndex: No information available about transaction");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find transaction");
     }
     uint256 txid = tx.GetHash();
 
@@ -9327,7 +9327,7 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionReceipt(const CReqContext& ctxReq, CR
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthGetTransactionReceipt: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     uint256 txid;
@@ -9335,13 +9335,14 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionReceipt(const CReqContext& ctxReq, CR
     if (txid.IsNull())
     {
         StdLog("CRPCMod", "RPC EthGetTransactionReceipt: Invalid tx hash");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid txid");
     }
 
     CTransactionReceiptEx receipt;
     if (!pService->GetTransactionReceipt(ctxReq.hashFork, txid, receipt))
     {
         StdLog("CRPCMod", "RPC EthGetTransactionReceipt: Get transaction receipt fail, txid: %s", txid.ToString().c_str());
+        // throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find transaction");
         return nullptr;
     }
 
