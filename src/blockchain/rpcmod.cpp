@@ -8806,30 +8806,27 @@ CRPCResultPtr CRPCMod::RPCEthSendRawTransaction(const CReqContext& ctxReq, CRPCP
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthSendRawTransaction: Invalid paramlist");
-        uint256 txid = 0;
-        return MakeCeth_sendRawTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
     string strTxData = spParam->vecParamlist.at(0);
     if (strTxData.empty())
     {
         StdLog("CRPCMod", "RPC EthSendRawTransaction: Invalid txdata");
-        uint256 txid = 0;
-        return MakeCeth_sendRawTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid txdata");
     }
 
     bytes txData = ParseHexString(strTxData);
     if (txData.empty())
     {
         StdLog("CRPCMod", "RPC EthSendRawTransaction: Invalid raw tx");
-        uint256 txid = 0;
-        return MakeCeth_sendRawTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid raw tx");
     }
 
     uint256 txid;
-    if (!pService->SendEthRawTransaction(txData, txid))
+    if (!pService->SendEthRawTransaction(ctxReq.hashFork, txData, txid))
     {
         StdLog("CRPCMod", "RPC EthSendRawTransaction: Send raw tx fail");
-        txid = 0;
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Tx rejected");
     }
 
     return MakeCeth_sendRawTransactionResultPtr(txid.GetHex());
@@ -8837,71 +8834,99 @@ CRPCResultPtr CRPCMod::RPCEthSendRawTransaction(const CReqContext& ctxReq, CRPCP
 
 CRPCResultPtr CRPCMod::RPCEthCall(const CReqContext& ctxReq, CRPCParamPtr param)
 {
+    uint256 hashFork = ctxReq.hashFork;
+
     CDestination destFrom;
     CDestination destTo;
-    uint256 nAmount;
     uint256 nGasPrice;
     uint256 nGas;
+    uint256 nValue;
     bytes btData;
     uint256 hashBlock;
 
-    json_spirit::Value valParam;
-    if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
     {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
-    }
-    if (valParam.type() != json_spirit::array_type)
-    {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
-    }
-    const json_spirit::Array& arrayParam = valParam.get_array();
-    if (arrayParam.size() == 0)
-    {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
-    }
+        boost::unique_lock<boost::mutex> lock(mutexDec);
 
-    for (auto& v : arrayParam)
-    {
-        if (v.type() == json_spirit::obj_type)
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
         {
-            const json_spirit::Value& objFrom = json_spirit::find_value(v.get_obj(), "from");
-            if (!objFrom.is_null() && objFrom.type() == json_spirit::str_type)
-            {
-                destFrom.ParseString(objFrom.get_str());
-            }
-            const json_spirit::Value& objTo = json_spirit::find_value(v.get_obj(), "to");
-            if (!objTo.is_null() && objTo.type() == json_spirit::str_type)
-            {
-                destTo.ParseString(objTo.get_str());
-            }
-            const json_spirit::Value& objGas = json_spirit::find_value(v.get_obj(), "gas");
-            if (!objGas.is_null() && objGas.type() == json_spirit::str_type)
-            {
-                nGas.SetValueHex(objGas.get_str());
-            }
-            const json_spirit::Value& objGasPrice = json_spirit::find_value(v.get_obj(), "gasPrice");
-            if (!objGasPrice.is_null() && objGasPrice.type() == json_spirit::str_type)
-            {
-                nGasPrice.SetValueHex(objGasPrice.get_str());
-            }
-            const json_spirit::Value& objData = json_spirit::find_value(v.get_obj(), "data");
-            if (!objData.is_null() && objData.type() == json_spirit::str_type)
-            {
-                btData = ParseHexString(objData.get_str());
-            }
-            const json_spirit::Value& objCode = json_spirit::find_value(v.get_obj(), "code");
-            if (!objCode.is_null() && objCode.type() == json_spirit::str_type)
-            {
-                btData = ParseHexString(objCode.get_str());
-            }
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
         }
-        else if (v.type() == json_spirit::str_type)
+        if (valParam.type() != json_spirit::array_type)
         {
-            hashBlock = GetRefBlock(ctxReq.hashFork, v.get_str());
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
         }
-        else if (v.type() == json_spirit::int_type)
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
         {
-            hashBlock = GetRefBlock(ctxReq.hashFork, ToHexString((uint64)(v.get_int())));
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::obj_type)
+            {
+                const json_spirit::Value& objFrom = json_spirit::find_value(v.get_obj(), "from");
+                if (!objFrom.is_null() && objFrom.type() == json_spirit::str_type)
+                {
+                    destFrom.ParseString(objFrom.get_str());
+                }
+                const json_spirit::Value& objTo = json_spirit::find_value(v.get_obj(), "to");
+                if (!objTo.is_null() && objTo.type() == json_spirit::str_type)
+                {
+                    destTo.ParseString(objTo.get_str());
+                }
+                const json_spirit::Value& objGas = json_spirit::find_value(v.get_obj(), "gas");
+                if (!objGas.is_null() && objGas.type() == json_spirit::str_type)
+                {
+                    nGas.SetValueHex(objGas.get_str());
+                }
+                const json_spirit::Value& objGasPrice = json_spirit::find_value(v.get_obj(), "gasPrice");
+                if (!objGasPrice.is_null() && objGasPrice.type() == json_spirit::str_type)
+                {
+                    nGasPrice.SetValueHex(objGasPrice.get_str());
+                }
+                const json_spirit::Value& objValue = json_spirit::find_value(v.get_obj(), "value");
+                if (!objValue.is_null() && objValue.type() == json_spirit::str_type)
+                {
+                    nValue.SetValueHex(objValue.get_str());
+                }
+                const json_spirit::Value& objData = json_spirit::find_value(v.get_obj(), "data");
+                if (!objData.is_null() && objData.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objData.get_str());
+                }
+                const json_spirit::Value& objCode = json_spirit::find_value(v.get_obj(), "code");
+                if (!objCode.is_null() && objCode.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objCode.get_str());
+                }
+                const json_spirit::Value& objInput = json_spirit::find_value(v.get_obj(), "input");
+                if (!objInput.is_null() && objInput.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objInput.get_str());
+                }
+                const json_spirit::Value& objFork = json_spirit::find_value(v.get_obj(), "fork");
+                if (!objFork.is_null() && objFork.type() == json_spirit::str_type)
+                {
+                    if (!GetForkHashOfDef(objFork.get_str(), ctxReq.hashFork, hashFork))
+                    {
+                        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+                    }
+                    if (!pService->HaveFork(hashFork))
+                    {
+                        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+                    }
+                }
+            }
+            else if (v.type() == json_spirit::str_type)
+            {
+                hashBlock = GetRefBlock(hashFork, v.get_str());
+            }
+            else if (v.type() == json_spirit::int_type)
+            {
+                hashBlock = GetRefBlock(hashFork, ToHexString((uint64)(v.get_int())));
+            }
         }
     }
 
