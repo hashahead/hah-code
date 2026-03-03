@@ -8932,38 +8932,38 @@ CRPCResultPtr CRPCMod::RPCEthCall(const CReqContext& ctxReq, CRPCParamPtr param)
 
     if (nGasPrice == 0)
     {
-        nGasPrice = pService->GetForkMintMinGasPrice(ctxReq.hashFork);
+        nGasPrice = pService->GetForkMintMinGasPrice(hashFork);
     }
-    if (nGas == 0)
-    {
-        nGas = DEF_TX_GAS_LIMIT;
-    }
+    // No need to handle 0 values
+    // if (nGas == 0)
+    // {
+    //     nGas = DEF_TX_GAS_LIMIT;
+    // }
     if (hashBlock == 0)
     {
         int nLastHeight;
-        if (!pService->GetForkLastBlock(ctxReq.hashFork, nLastHeight, hashBlock))
+        if (!pService->GetForkLastBlock(hashFork, nLastHeight, hashBlock))
         {
-            hashBlock = ctxReq.hashFork;
+            hashBlock = hashFork;
         }
     }
 
     if (destTo.IsNull())
     {
         StdLog("CRPCMod", "Rpc eth call: to is null");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid to address");
     }
 
-    const uint256& hashFork = ctxReq.hashFork;
     CAddressContext ctxAddress;
     if (!pService->RetrieveAddressContext(hashFork, destTo, ctxAddress))
     {
         StdLog("CRPCMod", "Rpc eth call: To not is created, to: %s", destTo.ToString().c_str());
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid to address");
     }
     if (!ctxAddress.IsContract())
     {
         StdLog("CRPCMod", "Rpc eth call: To not is contract, to: %s", destTo.ToString().c_str());
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid to address");
     }
 
     uint256 nUsedGas;
