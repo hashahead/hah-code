@@ -472,7 +472,7 @@ public:
         nIndexCrc = 0;
         nRootCrc = 0;
     }
-    CBlockVerify(const uint32 nPrevVerifyCrcIn, const CBlockOutline& outline, const uint32 nRootCrcIn)
+    CBlockVerify(const uint32 nPrevVerifyCrcIn, const CBlockIndex& outline, const uint32 nRootCrcIn)
     {
         nPrevVerifyCrc = nPrevVerifyCrcIn;
         hashBlock = outline.GetBlockHash();
@@ -528,6 +528,8 @@ public:
     uint256 hashDelegateRoot;
     uint256 hashVoteRoot;
     uint256 hashVoteRewardRoot;
+    uint256 hashDexOrderRoot;
+    uint256 hashHbrRoot;
 
 protected:
     template <typename O>
@@ -542,6 +544,8 @@ protected:
         s.Serialize(hashDelegateRoot, opt);
         s.Serialize(hashVoteRoot, opt);
         s.Serialize(hashVoteRewardRoot, opt);
+        s.Serialize(hashDexOrderRoot, opt);
+        s.Serialize(hashHbrRoot, opt);
     }
 };
 
