@@ -869,4 +869,31 @@ CBlockIndex::CBlockIndex(const uint256& hashOriginIn, const uint256& hashBlockIn
     }
 }
 
+///////////////////////////////////////////////////
+// CBlockDexOrderProve
+
+void CBlockDexOrderProve::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+{
+    s << destOrder << nChainIdOwner << nChainIdPeer << strCoinSymbolOwner << strCoinSymbolPeer << hnbase::CVarInt(nOrderNumber) << nOrderAmount.ToValidBigEndianData() << nOrderPrice.ToValidBigEndianData();
+}
+
+void CBlockDexOrderProve::Serialize(hnbase::CStream& s, hnbase::LoadType&)
+{
+    hnbase::CVarInt varOrderNumber;
+    bytes btOrderAmount;
+    bytes btOrderPrice;
+    s >> destOrder >> nChainIdOwner >> nChainIdPeer >> strCoinSymbolOwner >> strCoinSymbolPeer >> varOrderNumber >> btOrderAmount >> btOrderPrice;
+    nOrderNumber = varOrderNumber.GetValue();
+    nOrderAmount.FromValidBigEndianData(btOrderAmount);
+    nOrderPrice.FromValidBigEndianData(btOrderPrice);
+}
+
+void CBlockDexOrderProve::Serialize(hnbase::CStream& s, std::size_t& serSize) const
+{
+    (void)s;
+    hnbase::CBufStream ss;
+    ss << destOrder << nChainIdOwner << nChainIdPeer << strCoinSymbolOwner << strCoinSymbolPeer << hnbase::CVarInt(nOrderNumber) << nOrderAmount.ToValidBigEndianData() << nOrderPrice.ToValidBigEndianData();
+    serSize = ss.GetSize();
+}
+
 } // namespace hashahead
