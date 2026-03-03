@@ -1695,11 +1695,11 @@ bool CService::SubmitPoaBlock(const CTemplateMintPtr& templMint, crypto::CKey& k
 
     CTransaction& txMint = block.txMint;
 
-    txMint.SetTxType(CTransaction::TX_WORK);
+    txMint.SetTxType(CTransaction::TX_POA);
     txMint.SetNonce(block.nNumber);
     txMint.SetChainId(pCoreProtocol->GetGenesisChainId());
     txMint.SetToAddress(CDestination(templMint->GetTemplateId()));
-    txMint.SetAmount(nReward);
+    txMint.SetAmount(0);
     txMint.SetGasPrice(0);
     txMint.SetGasLimit(0);
 
@@ -1710,37 +1710,33 @@ bool CService::SubmitPoaBlock(const CTemplateMintPtr& templMint, crypto::CKey& k
         txMint.SetToAddressData(CAddressContext(ctxTemplate));
     }
 
-    size_t nSigSize = templMint->Export().size() + crypto::SIGN_DATA_SIZE + 2 + 32 * 5;
+    size_t nSigSize = templMint->Export().size() + crypto::SIGN_DATA_SIZE + 2 + 32 * 10;
     size_t nMaxTxSize = MAX_BLOCK_SIZE - GetSerializeSize(block) - nSigSize;
 
     vector<CTransaction> vVoteRewardTx;
     if (!pBlockChain->CalcBlockVoteRewardTx(block.hashPrev, block.nType, block.GetBlockHeight(), block.GetBlockTime(), vVoteRewardTx))
     {
-        StdError("CService", "Submit work: Get block invest reward fail");
-        return FAILED;
+        StdLog("CService", "Submit poa block: Get block invest reward fail");
+        return false;
     }
-    uint256 nVoteRewardTxFee;
     for (const CTransaction& tx : vVoteRewardTx)
     {
         size_t nTxSize = GetSerializeSize(tx);
         if (nMaxTxSize < nTxSize)
         {
-            StdError("CService", "Submit work: Invest reward tx size error");
-            return FAILED;
+            StdLog("CService", "Submit poa block: Invest reward tx size error");
+            return false;
         }
         block.vtx.push_back(tx);
-        nVoteRewardTxFee += tx.GetTxFee();
         nMaxTxSize -= nTxSize;
     }
 
     uint256 nTotalTxFee;
     if (!pTxPool->FetchArrangeBlockTx(pCoreProtocol->GetGenesisBlockHash(), block.hashPrev, block.GetBlockTime(), nMaxTxSize, block.vtx, nTotalTxFee))
     {
-        StdError("CService", "Submit work: Fetch arrange block tx fail");
-        return FAILED;
+        StdLog("CService", "Submit poa block: Fetch arrange block tx fail");
+        return false;
     }
-    // uint256 nMintCoin(block.txMint.GetAmount());
-    // block.txMint.SetAmount(block.txMint.GetAmount() + nTotalTxFee + nVoteRewardTxFee);
     block.AddMintCoinProof(block.txMint.GetAmount());
     block.txMint.SetAmount(0);
     block.nGasLimit = MAX_BLOCK_GAS_LIMIT;
