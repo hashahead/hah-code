@@ -8966,17 +8966,34 @@ CRPCResultPtr CRPCMod::RPCEthCall(const CReqContext& ctxReq, CRPCParamPtr param)
         throw CRPCException(RPC_INVALID_PARAMETER, "Invalid to address");
     }
 
-    uint256 nUsedGas;
-    uint64 nGasLeft = 0;
-    int nStatus = 0;
-    bytes btResult;
-    if (!pService->CallContract(true, hashFork, hashBlock, destFrom, destTo, nAmount, nGasPrice, nGas, btData, nUsedGas, nGasLeft, nStatus, btResult))
+    CVmCallTx vmCallTx;
+    CVmCallResult vmCallResult;
+
+    vmCallTx.fEthCall = true;
+    vmCallTx.destFrom = destFrom;
+    vmCallTx.destTo = destTo;
+    vmCallTx.nTxNonce = 0;
+    vmCallTx.nGasPrice = nGasPrice;
+    vmCallTx.nGasLimit = nGas;
+    vmCallTx.nAmount = nValue;
+    vmCallTx.btData = btData;
+
+    if (!pService->CallContract(hashFork, hashBlock, vmCallTx, vmCallResult))
     {
-        StdLog("CRPCMod", "Rpc eth call: call fail, to: %s", destTo.ToString().c_str());
-        return nullptr;
+        string strError;
+        if (GetVmExecResultInfo(vmCallResult.nStatus, vmCallResult.btResult, strError))
+        {
+            StdLog("CRPCMod", "Rpc eth call: call execution reverted, err: %s, to: %s", strError.c_str(), destTo.ToString().c_str());
+            throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, std::string("execution reverted: ") + strError, json_spirit::Value(ToHexString(vmCallResult.btResult)));
+        }
+        else
+        {
+            StdLog("CRPCMod", "Rpc eth call: call fail, to: %s", destTo.ToString().c_str());
+            throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "execution failed");
+        }
     }
 
-    return MakeCeth_callResultPtr(ToHexString(btResult));
+    return MakeCeth_callResultPtr(ToHexString(vmCallResult.btResult));
 }
 
 CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr param)
