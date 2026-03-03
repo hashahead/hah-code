@@ -20,6 +20,25 @@ namespace hashahead
 {
 
 //////////////////////////////
+// CVmCallTx
+class CVmCallTx
+{
+public:
+    CVmCallTx()
+      : fEthCall(false), nTxNonce(0), fNeedVerifyToAddress(true) {}
+
+public:
+    bool fEthCall;
+    CDestination destFrom;
+    CDestination destTo;
+    uint64 nTxNonce;
+    uint256 nGasPrice;
+    uint256 nGasLimit;
+    uint256 nAmount;
+    bytes btData;
+    bool fNeedVerifyToAddress;
+};
+
 // CBlockLogsFilter
 
 class CBlockLogsFilter

@@ -11,7 +11,7 @@ set(template
     template/template.h template/template.cpp
     template/fork.h template/fork.cpp
     template/mint.h template/mint.cpp
-    template/proof.h template/proof.cpp
+    template/poa.h template/poa.cpp
     template/delegate.h template/delegate.cpp
     template/vote.h template/vote.cpp
     template/pledge.h template/pledge.cpp
@@ -26,6 +26,7 @@ set(sources
     block.cpp block.h
     forkcontext.h
     param.h param.cpp
+    cmstruct.cpp cmstruct.h
     ${template}
 )
 

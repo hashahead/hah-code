@@ -58,4 +58,39 @@ bool CBlockLogsFilter::AddTxReceipt(const uint256& hashFork, const uint256& hash
     return true;
 }
 
+void CBlockLogsFilter::GetTxReceiptLogs(const bool fAll, ReceiptLogsVec& receiptLogs)
+{
+    if (fAll)
+    {
+        for (auto& r : vHisReceiptLogs)
+        {
+            receiptLogs.push_back(r);
+        }
+        for (auto& r : vReceiptLogs)
+        {
+            receiptLogs.push_back(r);
+        }
+    }
+    else
+    {
+        for (auto& r : vReceiptLogs)
+        {
+            receiptLogs.push_back(r);
+            vHisReceiptLogs.push_back(r);
+            nHisLogsCount += r.matchLogs.size();
+        }
+
+        vReceiptLogs.clear();
+        nLogsCount = 0;
+        nPrevGetChangesTime = GetTime();
+
+        while (vHisReceiptLogs.size() > 0 && nHisLogsCount > MAX_FILTER_CACHE_COUNT * 2)
+        {
+            auto it = vHisReceiptLogs.begin();
+            nHisLogsCount -= it->matchLogs.size();
+            vHisReceiptLogs.erase(it);
+        }
+    }
+}
+
 } // namespace hashahead
