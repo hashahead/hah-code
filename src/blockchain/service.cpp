@@ -1603,44 +1603,29 @@ uint256 CService::GetForkMintMinGasPrice(const uint256& hashFork)
     return pBlockChain->GetForkMintMinGasPrice(hashFork);
 }
 
-bytes CService::MakeEthTxCallData(const std::string& strFunction, const std::vector<bytes>& vParamList)
+bool CService::GetPoaBlock(const CTemplateMintPtr& templMint, CBlock& block)
 {
-    bytes btData;
-    bytes btFuncSign = CryptoKeccakSign(strFunction);
-    btData.insert(btData.end(), btFuncSign.begin(), btFuncSign.end());
-    for (auto& p : vParamList)
-    {
-        btData.insert(btData.end(), p.begin(), p.end());
-    }
-    return btData;
-}
-
-bool CService::GetWork(vector<unsigned char>& vchWorkData, int& nPrevBlockHeight,
-                       uint256& hashPrev, int& nAlgo,
-                       int& nBits, const CTemplateMintPtr& templMint)
-{
-    CBlock block;
-    block.nType = CBlock::BLOCK_PRIMARY;
-
     CBlockStatus status;
     if (!pBlockChain->GetLastBlockStatus(pCoreProtocol->GetGenesisBlockHash(), status))
     {
-        StdTrace("CService", "Get work: Get last block status fail");
+        StdTrace("CService", "Get poa block: Get primary last block status fail");
         return false;
     }
-    hashPrev = status.hashBlock;
-    nPrevBlockHeight = status.nBlockHeight;
-    block.hashPrev = hashPrev;
+
+    if (!pBlockChain->VerifyPrimaryBlockConfirm(status.hashBlock))
+    {
+        StdDebug("CService", "Get poa block: Primary prev block no confirm, prev block: %s", status.hashBlock.GetBhString().c_str());
+        pDispatcher->NotifyBlockVoteChnNewBlock(status.hashBlock);
+        return false;
+    }
+
+    block.nType = CBlock::BLOCK_PRIMARY;
+    block.hashPrev = status.hashBlock;
     block.nNumber = status.nBlockNumber + 1;
+    block.nHeight = CBlock::GetBlockHeightByHash(block.hashPrev) + 1;
+    block.nSlot = 0;
 
-    // uint32 nNextTimestamp = pCoreProtocol->GetNextBlockTimestamp(status.nBlockTime);
-    // block.nTimeStamp = nNextTimestamp;
-    // uint32 nCurrTime = GetNetTime();
-    // if (nCurrTime > block.nTimeStamp)
-    // {
-    //     block.nTimeStamp += (((nCurrTime - block.nTimeStamp) / BLOCK_TARGET_SPACING) * BLOCK_TARGET_SPACING);
-    // }
-
+    uint64 nCurrTime = GetNetTime();
     uint64 nNextTimestamp = pCoreProtocol->GetNextBlockTimestamp(status.nBlockTime);
     block.SetBlockTime(nNextTimestamp);
     uint64 nCurrTime = GetNetTime();
