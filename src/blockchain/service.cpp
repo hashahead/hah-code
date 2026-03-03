@@ -1627,51 +1627,45 @@ bool CService::GetPoaBlock(const CTemplateMintPtr& templMint, CBlock& block)
 
     uint64 nCurrTime = GetNetTime();
     uint64 nNextTimestamp = pCoreProtocol->GetNextBlockTimestamp(status.nBlockTime);
-    block.SetBlockTime(nNextTimestamp);
-    uint64 nCurrTime = GetNetTime();
-    if (nCurrTime > block.GetBlockTime())
+    if (nCurrTime < nNextTimestamp)
     {
-        block.SetBlockTime(block.GetBlockTime() + (((nCurrTime - block.GetBlockTime()) / BLOCK_TARGET_SPACING) * BLOCK_TARGET_SPACING));
-    }
-
-    bool fIsDpos = false;
-    if (pNetChannel->IsLocalCachePowBlock(nPrevBlockHeight + 1, fIsDpos))
-    {
-        StdTrace("CService", "Get work: IsLocalCachePowBlock poa exist");
         return false;
     }
-    if (fIsDpos)
+    block.SetBlockTime(nNextTimestamp);
+
+    if (!Config()->fFastPoa)
     {
-        if (block.GetBlockTime() < nNextTimestamp + BLOCK_TARGET_SPACING)
+        if (nCurrTime > block.GetBlockTime())
         {
-            StdTrace("CService", "Get work: Wait pos block......");
+            block.SetBlockTime(block.GetBlockTime() + (((nCurrTime - block.GetBlockTime()) / BLOCK_TARGET_SPACING) * BLOCK_TARGET_SPACING));
+        }
+    }
+
+    bool fIsPos = false;
+    if (pNetChannel->IsLocalCachePoaBlock(block.nHeight, fIsPos))
+    {
+        StdTrace("CService", "Get poa block: Is local cache poa block poa exist");
+        return false;
+    }
+    if (fIsPos)
+    {
+        if (nCurrTime < nNextTimestamp + BLOCK_TARGET_SPACING)
+        {
+            StdTrace("CService", "Get poa block: Wait pos block......");
             return false;
         }
     }
 
-    nAlgo = CM_CRYPTONIGHT;
-    if (!pBlockChain->GetProofOfWorkTarget(block.hashPrev, nAlgo, nBits))
-    {
-        StdError("CService", "Get work: Get ProofOfWork Target fail");
-        return false;
-    }
-
-    CProofOfHashWork proof;
-    proof.nWeight = 0;
-    proof.nAgreement = 0;
-    proof.nAlgo = nAlgo;
-    proof.nBits = nBits;
+    CProofOfPoa proof;
+    proof.nWeight = 1;
     proof.destMint = CDestination(templMint->GetTemplateId());
-    proof.nNonce = 0;
+    proof.nNonce = GetTimeMillis() + block.nNumber;
 
-    block.AddHashWorkProof(proof);
+    CBufStream ss;
+    ss << block.hashPrev << proof.destMint << proof.nNonce;
+    proof.nAgreement = crypto::CryptoHash(ss.GetData(), ss.GetSize());
 
-    block.GetSerializedProofOfWorkData(vchWorkData);
-
-    if (fIsDpos)
-    {
-        nAlgo = CM_MPVSS;
-    }
+    block.AddPoaProof(proof);
     return true;
 }
 
