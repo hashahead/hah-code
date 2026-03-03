@@ -8627,8 +8627,10 @@ CRPCResultPtr CRPCMod::RPCEthSignTransaction(const CReqContext& ctxReq, CRPCPara
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthSignTransaction: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
+
+    uint256 hashFork = ctxReq.hashFork;
 
     CDestination destFrom;
     CDestination destTo;
@@ -8643,7 +8645,7 @@ CRPCResultPtr CRPCMod::RPCEthSignTransaction(const CReqContext& ctxReq, CRPCPara
     if (!txParam.strFrom.IsValid() || !destFrom.ParseString(txParam.strFrom) || destFrom.IsNull())
     {
         StdLog("CRPCMod", "RPC EthSignTransaction: Invalid from");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
     }
     if (txParam.strTo.IsValid())
     {
@@ -8669,15 +8671,26 @@ CRPCResultPtr CRPCMod::RPCEthSignTransaction(const CReqContext& ctxReq, CRPCPara
     {
         btData = ParseHexString(txParam.strData);
     }
+    if (txParam.strFork.IsValid())
+    {
+        if (!GetForkHashOfDef(txParam.strFork, ctxReq.hashFork, hashFork))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+        }
+        if (!pService->HaveFork(hashFork))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+        }
+    }
 
     uint256 txid;
     bytes btSignTxData;
-    auto strErr = pService->SignEthTransaction(ctxReq.hashFork, destFrom, destTo, nAmount,
+    auto strErr = pService->SignEthTransaction(hashFork, destFrom, destTo, nAmount,
                                                nNonce, nGasPrice, nGas, btData, 0, txid, btSignTxData);
     if (strErr)
     {
         StdLog("CRPCMod", "RPC EthSignTransaction: Failed to create transaction: %s", strErr->c_str());
-        return nullptr;
+        throw CRPCException(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign transaction");
     }
 
     auto spResult = MakeCeth_signTransactionResultPtr();
