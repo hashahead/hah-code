@@ -8707,9 +8707,10 @@ CRPCResultPtr CRPCMod::RPCEthSendTransaction(const CReqContext& ctxReq, CRPCPara
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthSendTransaction: Invalid paramlist");
-        uint256 txid = 0;
-        return MakeCeth_sendTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
+
+    uint256 hashFork = ctxReq.hashFork;
 
     CDestination destFrom;
     CDestination destTo;
@@ -8724,8 +8725,7 @@ CRPCResultPtr CRPCMod::RPCEthSendTransaction(const CReqContext& ctxReq, CRPCPara
     if (!txParam.strFrom.IsValid() || !destFrom.ParseString(txParam.strFrom) || destFrom.IsNull())
     {
         StdLog("CRPCMod", "RPC EthSendTransaction: Invalid from");
-        uint256 txid = 0;
-        return MakeCeth_sendTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid from");
     }
     if (txParam.strTo.IsValid())
     {
@@ -8751,8 +8751,17 @@ CRPCResultPtr CRPCMod::RPCEthSendTransaction(const CReqContext& ctxReq, CRPCPara
     {
         btData = ParseHexString(txParam.strData);
     }
-
-    const uint256& hashFork = ctxReq.hashFork;
+    if (txParam.strFork.IsValid())
+    {
+        if (!GetForkHashOfDef(txParam.strFork, ctxReq.hashFork, hashFork))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+        }
+        if (!pService->HaveFork(hashFork))
+        {
+            throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+        }
+    }
 
     uint256 txid;
     bytes btSignTxData;
@@ -8761,8 +8770,7 @@ CRPCResultPtr CRPCMod::RPCEthSendTransaction(const CReqContext& ctxReq, CRPCPara
     if (strErr)
     {
         StdLog("CRPCMod", "RPC EthSendTransaction: Failed to create transaction: %s", strErr->c_str());
-        uint256 txid = 0;
-        return MakeCeth_sendTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign transaction");
     }
 
     bool fLinkToPubkeyAddress = false;
@@ -8779,16 +8787,14 @@ CRPCResultPtr CRPCMod::RPCEthSendTransaction(const CReqContext& ctxReq, CRPCPara
     if (!txNew.SetEthTx(btSignTxData, fLinkToPubkeyAddress))
     {
         StdLog("CRPCMod", "RPC EthSendTransaction: Packet eth tx fail");
-        uint256 txid = 0;
-        return MakeCeth_sendTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_INTERNAL_ERROR, "Packet eth tx fail");
     }
 
     Errno err = pService->SendTransaction(hashFork, txNew);
     if (err != OK)
     {
         StdLog("CRPCMod", "RPC EthSendTransaction: Tx rejected: %s", ErrorString(err));
-        uint256 txid = 0;
-        return MakeCeth_sendTransactionResultPtr(txid.GetHex());
+        throw CRPCException(RPC_TRANSACTION_ERROR, "Tx rejected");
     }
 
     return MakeCeth_sendTransactionResultPtr(txid.GetHex());
