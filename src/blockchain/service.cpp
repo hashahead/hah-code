@@ -1669,52 +1669,28 @@ bool CService::GetPoaBlock(const CTemplateMintPtr& templMint, CBlock& block)
     return true;
 }
 
-Errno CService::SubmitWork(const vector<unsigned char>& vchWorkData,
-                           const CTemplateMintPtr& templMint, crypto::CKey& keyMint, uint256& hashBlock)
+bool CService::SubmitPoaBlock(const CTemplateMintPtr& templMint, crypto::CKey& keyMint)
 {
-    if (vchWorkData.empty())
-    {
-        StdError("CService", "Submit work: vchWorkData is empty");
-        return FAILED;
-    }
     CBlock block;
-    CProofOfHashWork proof;
-    CBufStream ss;
-    ss.Write((const char*)&vchWorkData[0], vchWorkData.size());
-    try
+    if (!GetPoaBlock(templMint, block))
     {
-        uint64 nBlockTime;
-        ss >> block.nVersion >> block.nType >> nBlockTime >> block.nNumber >> block.nSlot >> block.hashPrev >> block.mapProof;
-        block.SetBlockTime(nBlockTime);
-        if (!block.GetHashWorkProof(proof))
-        {
-            StdError("CService", "Submit work: Load proof fail");
-            return ERR_BLOCK_PROOF_OF_WORK_INVALID;
-        }
-        if (proof.nAlgo != CM_CRYPTONIGHT)
-        {
-            StdError("CService", "Submit work: nAlgo error");
-            return ERR_BLOCK_PROOF_OF_WORK_INVALID;
-        }
-    }
-    catch (exception& e)
-    {
-        StdError(__PRETTY_FUNCTION__, e.what());
-        return FAILED;
+        StdDebug("CService", "Submit poa block: Get block fail");
+        return false;
     }
 
-    int nBits;
-    if (!pBlockChain->GetProofOfWorkTarget(block.hashPrev, proof.nAlgo, nBits))
+    bytes btDbBitmap;
+    bytes btDbAggSig;
+    bool fDbAtChain = false;
+    uint256 hashDbAtBlock;
+    if (pBlockChain->RetrieveBlockVoteResult(block.hashPrev, btDbBitmap, btDbAggSig, fDbAtChain, hashDbAtBlock) && !fDbAtChain)
     {
-        StdError("CService", "Submit work: Get ProofOfWork Target fail");
-        return FAILED;
+        block.AddBlockVoteSig(CBlockVoteSig(block.hashPrev, btDbBitmap, btDbAggSig));
     }
 
-    uint256 nReward = 0;
-    if (!pBlockChain->GetBlockMintReward(block.hashPrev, true, nReward, block.hashPrev))
+    std::map<CChainId, CBlockProve> mapCrosschainProve;
+    if (pBlockChain->GetCrosschainProveForPrevBlock(block.GetChainId(), block.hashPrev, mapCrosschainProve))
     {
-        StdError("CService", "Submit work: Get block mint reward fail");
-        return FAILED;
+        block.mapProve = mapCrosschainProve;
     }
 
     CTransaction& txMint = block.txMint;
