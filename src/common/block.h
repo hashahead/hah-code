@@ -345,23 +345,23 @@ public:
     {
         return nAgreement;
     }
-    uint256 GetRefBlock() const
+    const uint256& GetRefBlock() const
     {
         return hashRefBlock;
     }
-    uint256 GetStateRoot() const
+    const uint256& GetStateRoot() const
     {
         return hashStateRoot;
     }
-    uint256 GetBlockReward() const
+    const uint256& GetBlockReward() const
     {
         return nBlockReward;
     }
-    uint256 GetMoneySupply() const
+    const uint256& GetMoneySupply() const
     {
         return nMoneySupply;
     }
-    uint256 GetMoneyDestroy() const
+    const uint256& GetMoneyDestroy() const
     {
         return nMoneyDestroy;
     }
@@ -385,85 +385,17 @@ public:
     {
         return (nType == CBlock::BLOCK_VACANT);
     }
-    bool IsProofOfWork() const
+    bool IsProofOfPoa() const
     {
-        return (nMintType == CTransaction::TX_WORK);
+        return (nMintType == CTransaction::TX_POA);
     }
-    bool IsEquivalent(const CBlockIndex* pIndexCompare) const
+    bool IsProofOfStake() const
     {
-        if (pIndexCompare != nullptr)
-        {
-            const CBlockIndex* pIndex = this;
-            while (pIndex)
-            {
-                if (pIndex == pIndexCompare)
-                {
-                    return true;
-                }
-                if (pIndex->nType != CBlock::BLOCK_VACANT
-                    || pIndex->GetBlockHeight() <= pIndexCompare->GetBlockHeight())
-                {
-                    break;
-                }
-                pIndex = pIndex->pPrev;
-            }
-        }
-        return false;
-    }
-    int GetExtendedSequence() const
-    {
-        int nSeq = 0;
-        const CBlockIndex* pIndex = this;
-        while (pIndex && pIndex->IsExtended())
-        {
-            nSeq++;
-            pIndex = pIndex->pPrev;
-        }
-        return nSeq;
+        return (nMintType == CTransaction::TX_STAKE);
     }
     const std::string GetBlockType() const
     {
         return GetBlockTypeStr(nType, nMintType);
-    }
-    std::string ToString() const
-    {
-        std::ostringstream oss;
-        oss << "CBlockIndex : hash=" << GetBlockHash().ToString()
-            << " prev=" << (pPrev ? pPrev->GetBlockHash().ToString() : "nullptr")
-            << " height=" << nHeight
-            << " type=" << GetBlockType()
-            << " time=" << nTimeStamp
-            << " trust=" << nChainTrust.ToString();
-        return oss.str();
-    }
-};
-
-class CBlockOutline : public CBlockIndex
-{
-    friend class hnbase::CStream;
-
-public:
-    uint256 hashBlock;
-    uint256 hashPrev;
-    uint256 hashOrigin;
-
-public:
-    CBlockOutline()
-    {
-        hashBlock = 0;
-        hashPrev = 0;
-        hashOrigin = 0;
-    }
-    CBlockOutline(const CBlockIndex* pIndex)
-      : CBlockIndex(*pIndex)
-    {
-        hashBlock = pIndex->GetBlockHash();
-        hashPrev = (pPrev ? pPrev->GetBlockHash() : uint64(0));
-        hashOrigin = pOrigin->GetBlockHash();
-    }
-    uint256 GetBlockHash() const
-    {
-        return hashBlock;
     }
     uint32 GetCrc() const
     {
@@ -474,10 +406,12 @@ public:
     std::string ToString() const
     {
         std::ostringstream oss;
-        oss << "CBlockOutline : hash=" << GetBlockHash().ToString()
-            << " prev=" << hashPrev.ToString()
-            << " height=" << nHeight << " file=" << nFile << " offset=" << nOffset
-            << " type=" << GetBlockType();
+        oss << "CBlockIndex : hash=" << GetBlockHash().ToString()
+            << " prev=" << GetPrevHash().ToString()
+            << " height=" << GetBlockHeight()
+            << " type=" << GetBlockType()
+            << " time=" << nTimeStamp
+            << " trust=" << nChainTrust.ToString();
         return oss.str();
     }
 
@@ -488,15 +422,12 @@ protected:
         s.Serialize(hashBlock, opt);
         s.Serialize(hashPrev, opt);
         s.Serialize(hashOrigin, opt);
-        s.Serialize(nChainId, opt);
         s.Serialize(txidMint, opt);
         s.Serialize(nMintType, opt);
         s.Serialize(destMint, opt);
         s.Serialize(nVersion, opt);
         s.Serialize(nType, opt);
         s.Serialize(nTimeStamp, opt);
-        s.Serialize(nHeight, opt);
-        s.Serialize(nSlot, opt);
         s.Serialize(nNumber, opt);
         s.Serialize(nTxCount, opt);
         s.Serialize(nRewardTxCount, opt);
@@ -504,20 +435,19 @@ protected:
         s.Serialize(nAgreement, opt);
         s.Serialize(hashRefBlock, opt);
         s.Serialize(hashStateRoot, opt);
-        s.Serialize(nRandBeacon, opt);
         s.Serialize(nGasLimit, opt);
         s.Serialize(nGasUsed, opt);
         s.Serialize(nChainTrust, opt);
         s.Serialize(nBlockReward, opt);
         s.Serialize(nMoneySupply, opt);
         s.Serialize(nMoneyDestroy, opt);
-        s.Serialize(nProofAlgo, opt);
-        s.Serialize(nProofBits, opt);
         s.Serialize(nFile, opt);
         s.Serialize(nOffset, opt);
         s.Serialize(nBlockCrc, opt);
     }
 };
+typedef std::shared_ptr<CBlockIndex> BlockIndexPtr;
+#define MAKE_SHARED_BLOCK_INDEX std::make_shared<CBlockIndex>
 
 class CBlockVerify
 {
