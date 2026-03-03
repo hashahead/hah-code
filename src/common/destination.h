@@ -163,14 +163,15 @@ public:
     {
         return (nPrevSettlementTime == 0);
     }
-    void SettlementTimeVault(const uint64 nBlockTime);
+    void SettlementTimeVault(const uint32 nHeight, const uint64 nBlockTime, const bool fEstimate);
     void ModifyBalance(const uint256& nBalance);
-    uint256 CalcTransTvGasFee(const uint256& nTransAmount);
-    uint256 EstimateTransTvGasFee(const uint64 nEstimateBlockTime, const uint256& nTransAmount);
+    uint256 CalcTransTvGasFee(const uint32 nHeight, const uint256& nTransAmount);
+    uint256 EstimateTransTvGasFee(const bool fPrimary, const uint32 nHeight, const uint64 nEstimateBlockTime, const bool fEstimate, const uint256& nTransAmount);
     void PayTvGasFee(const uint256& nTvGasFee);
 
     static uint256 CalcGiveTvFee(const uint256& nAmount);
     static void CalcRealityTvGasFee(const uint256& nGasPrice, uint256& nTvGasFee, uint256& nTvGas);
+    static uint64 EstimateBlockTime(const uint64 nTime, const bool fEstimate);
 
 public:
     uint64 nPrevSettlementTime;
@@ -283,6 +284,16 @@ public:
             return true;
         }
         return false;
+    }
+
+    friend bool operator==(const CAddressContext& a, const CAddressContext& b)
+    {
+        return (a.nType == b.nType
+                && a.btData == b.btData);
+    }
+    friend bool operator!=(const CAddressContext& a, const CAddressContext& b)
+    {
+        return !(a == b);
     }
 
 public:
