@@ -7581,6 +7581,49 @@
             }
         ]
     },
+    "stopfork": {
+        "type": "command",
+        "name": "StopFork",
+        "desc": "Stop fork",
+        "request": {
+            "type": "object",
+            "content": {
+                "from": {
+                    "type": "string",
+                    "desc": "from address"
+                },
+                "chainid": {
+                    "type": "uint",
+                    "desc": "stop fork chainid"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "result",
+            "desc": "txid"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli stopfork 0xb955034fcefb66112bab47483c8d243b86cb2c1d 202",
+                "response": "0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"stopfork\",\"jsonrpc\":\"2.0\",\"params\":{\"from\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"chainid\":202}}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":\"0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-32600,\"message\":\"Only suitable for the main chain\"}",
+            "{\"code\":-6,\"message\":\"Invalid from\"}",
+            "{\"code\":-6,\"message\":\"Invalid chainid\"}",
+            "{\"code\":-4,\"message\":\"Chain id error\"}",
+            "{\"code\":-4,\"message\":\"Get fork error\"}",
+            "{\"code\":-9,\"message\":\"From address is not fork owner address\"}",
+            "{\"code\":-9,\"message\":\"Verify tx fail\"}",
+            "{\"code\":-10,\"message\":\"Fork is stopped\"}"
+        ]
+    },
     "listtokentransaction": {
         "type": "command",
         "name": "ListTokenTransaction",
