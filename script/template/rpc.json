@@ -5798,6 +5798,104 @@
             "{\"code\":-401,\"message\":\"Failed to sign message\"}"
         ]
     },
+    "makefork": {
+        "type": "command",
+        "name": "MakeFork",
+        "desc": "Make fork.",
+        "request": {
+            "type": "object",
+            "content": {
+                "owner": {
+                    "type": "string",
+                    "desc": "owner address"
+                },
+                "type": {
+                    "type": "string",
+                    "desc": "fork type: clonemap, user",
+                    "required": false,
+                    "opt": "t"
+                },
+                "prev": {
+                    "type": "string",
+                    "desc": "prev block hash",
+                    "required": false,
+                    "opt": "p"
+                },
+                "amount": {
+                    "type": "string",
+                    "desc": "amount (big float)",
+                    "required": false,
+                    "opt": "a"
+                },
+                "name": {
+                    "type": "string",
+                    "desc": "unique fork name",
+                    "required": false,
+                    "opt": "m"
+                },
+                "symbol": {
+                    "type": "string",
+                    "desc": "fork symbol",
+                    "required": false,
+                    "opt": "s"
+                },
+                "chainid": {
+                    "type": "uint",
+                    "desc": "chain id",
+                    "required": false,
+                    "opt": "c"
+                },
+                "reward": {
+                    "type": "string",
+                    "desc": "mint reward (big float)",
+                    "required": false,
+                    "opt": "r"
+                },
+                "halvecycle": {
+                    "type": "uint",
+                    "desc": "halve cycle: 0: fixed reward, >0: blocks of halve cycle",
+                    "required": false,
+                    "opt": "h"
+                },
+                "nonce": {
+                    "type": "uint",
+                    "desc": "fork nonce",
+                    "default": 0,
+                    "required": false,
+                    "opt": "n"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "transaction",
+            "desc": "transaction id"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli makefork 0x5962974eeb0b17b43edabfc9b747839317aa852f",
+                "response": "{\"id\":18,\"jsonrpc\":\"2.0\",\"result\":\"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f\"}"
+            },
+            {
+                "request": "curl -d '{\"id\":4,\"method\":\"makefork\",\"jsonrpc\":\"2.0\",\"params\":{\"owner\":\"0x5962974eeb0b17b43edabfc9b747839317aa852f\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":18,\"jsonrpc\":\"2.0\",\"result\":\"0x4646c445d31e313764db47c894b3372d72e23b9d58ada120b7229cf4ea6b1d6f\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-4,\"message\":\"Owner' address should be pubkey address\"}",
+            "{\"code\":-4,\"message\":\"Unknown key\"}",
+            "{\"code\":-6,\"message\":\"Unknown prev block\"}",
+            "{\"code\":-6,\"message\":\"Invalid owner\"}",
+            "{\"code\":-6,\"message\":\"Invalid amount\"}",
+            "{\"code\":-6,\"message\":\"Invalid name or symbol\"}",
+            "{\"code\":-6,\"message\":\"Prev block should not be extended/vacant block\"}",
+            "{\"code\":-405,\"message\":\"Key is locked\"}",
+            "{\"code\":-401,\"message\":\"Failed to sign message\"}",
+            "{\"code\":-401,\"message\":\"Failed to create transaction\"}",
+            "{\"code\":-401,\"message\":\"Failed to sign transaction\"}",
+            "{\"code\":-10,\"message\":\"Tx rejected : xxx\"}"
+        ]
+    },
     "verifymessage": {
         "type": "command",
         "name": "VerifyMessage",
