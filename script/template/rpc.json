@@ -5518,6 +5518,47 @@
             "{\"code\":-6,\"message\":\"Unknown fork\"}"
         ]
     },
+    "getcrosstransferamount": {
+        "type": "command",
+        "name": "GetCrossTransferAmount",
+        "desc": "Get crosschain transfer amount",
+        "request": {
+            "type": "object",
+            "content": {
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash or chainid",
+                    "required": false,
+                    "opt": "f"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash",
+                    "required": false,
+                    "opt": "h"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "result",
+            "desc": "transfer amount (big float)"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli getcrosstransferamount",
+                "response": "8845.987"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"sendcrosstransfertx\",\"jsonrpc\":\"2.0\",\"params\":{}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":\"8845.987\"}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid fork\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
