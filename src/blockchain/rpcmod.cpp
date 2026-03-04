@@ -9219,35 +9219,39 @@ CRPCResultPtr CRPCMod::RPCEthGetBlockByHash(const CReqContext& ctxReq, CRPCParam
     uint256 hashBlock;
     bool fTxDetail = false;
 
-    json_spirit::Value valParam;
-    if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
     {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
-    }
-    if (valParam.type() != json_spirit::array_type)
-    {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
-    }
-    const json_spirit::Array& arrayParam = valParam.get_array();
-    if (arrayParam.size() == 0)
-    {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
-    }
+        boost::unique_lock<boost::mutex> lock(mutexDec);
 
-    for (auto& v : arrayParam)
-    {
-        if (v.type() == json_spirit::str_type)
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
         {
-            hashBlock.SetHex(v.get_str());
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
         }
-        else if (v.type() == json_spirit::bool_type)
+        if (valParam.type() != json_spirit::array_type)
         {
-            fTxDetail = v.get_bool();
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
         }
-    }
-    if (hashBlock == 0)
-    {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse error: block is null.");
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::str_type)
+            {
+                hashBlock.SetHex(v.get_str());
+            }
+            else if (v.type() == json_spirit::bool_type)
+            {
+                fTxDetail = v.get_bool();
+            }
+        }
+        if (hashBlock == 0)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: block is null.");
+        }
     }
 
     CBlock block;
@@ -9257,7 +9261,7 @@ CRPCResultPtr CRPCMod::RPCEthGetBlockByHash(const CReqContext& ctxReq, CRPCParam
     if (!pService->GetBlock(hashBlock, block, nChainId, fork, height))
     {
         StdLog("CRPCMod", "RPC EthGetBlockByHash: Get block fail, block: %s", hashBlock.ToString().c_str());
-        return nullptr;
+        throw CRPCException(RPC_ETH_ERROR_NOT_FOUND_BLOCK, "Not find block");
     }
 
     return MakeCeth_getBlockByHashResultPtr(EthBlockToJSON(block, fTxDetail));
