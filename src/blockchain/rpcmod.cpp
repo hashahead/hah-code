@@ -9456,19 +9456,19 @@ CRPCResultPtr CRPCMod::RPCEthNewFilter(const CReqContext& ctxReq, CRPCParamPtr p
 {
     CLogsFilter logFilter = GetLogFilterFromJson(ctxReq.hashFork, param->GetParamJson());
 
-    // StdLog("CRPCMod", "RPC EthNewFilter: fromBlock: %s", logFilter.hashFromBlock.ToString().c_str());
-    // StdLog("CRPCMod", "RPC EthNewFilter: toBlock: %s", logFilter.hashToBlock.ToString().c_str());
-    // for (auto& dest : logFilter.setAddress)
-    // {
-    //     StdLog("CRPCMod", "RPC EthNewFilter: address: %s", dest.ToString().c_str());
-    // }
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     for (auto& topics : logFilter.arrayTopics[i])
-    //     {
-    //         StdLog("CRPCMod", "RPC EthNewFilter: [%d] topics: %s", i, topics.ToString().c_str());
-    //     }
-    // }
+    StdDebug("CRPCMod", "RPC EthNewFilter: fromBlock: %s", logFilter.hashFromBlock.GetBhString().c_str());
+    StdDebug("CRPCMod", "RPC EthNewFilter: toBlock: %s", logFilter.hashToBlock.GetBhString().c_str());
+    for (auto& dest : logFilter.setAddress)
+    {
+        StdDebug("CRPCMod", "RPC EthNewFilter: address: %s", dest.ToString().c_str());
+    }
+    for (int i = 0; i < 4; i++)
+    {
+        for (auto& topics : logFilter.arrayTopics[i])
+        {
+            StdDebug("CRPCMod", "RPC EthNewFilter: [%d] topics: %s", i, topics.ToString().c_str());
+        }
+    }
 
     hnbase::CBufStream ss;
     ss << ctxReq.strPeerIp << ctxReq.nPeerPort;
@@ -9504,7 +9504,7 @@ CRPCResultPtr CRPCMod::RPCEthUninstallFilter(const CReqContext& ctxReq, CRPCPara
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthUninstallFilter: Param error");
-        return MakeCeth_uninstallFilterResultPtr(false);
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     uint256 nFilterId;
@@ -9520,8 +9520,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterChanges(const CReqContext& ctxReq, CRPCPar
     auto spParam = CastParamPtr<Ceth_getFilterChangesParam>(param);
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
-        StdLog("CRPCMod", "RPC EthGetFilterChanges: Param error");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     uint256 nFilterId;
@@ -9533,7 +9532,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterChanges(const CReqContext& ctxReq, CRPCPar
         if (!pService->GetTxReceiptLogsByFilterId(nFilterId, false, vReceiptLogs))
         {
             StdLog("CRPCMod", "RPC EthGetFilterChanges: Get logs fail");
-            return nullptr;
+            return MakeCeth_getFilterChangesResultPtr();
         }
 
         auto spResult = MakeCeth_getFilterChangesResultPtr();
@@ -9550,7 +9549,14 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterChanges(const CReqContext& ctxReq, CRPCPar
                 txLogs.strBlocknumber = ToHexString(v.nBlockNumber);
                 txLogs.strBlockhash = v.hashBlock.ToString();
                 txLogs.strAddress = d.address.ToString();
-                txLogs.strData = d.data.ToString();
+                if (d.data.empty())
+                {
+                    txLogs.strData = "0x";
+                }
+                else
+                {
+                    txLogs.strData = ToHexString(d.data);
+                }
                 for (auto& t : d.topics)
                 {
                     txLogs.vecTopics.push_back(t.ToString());
@@ -9567,7 +9573,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterChanges(const CReqContext& ctxReq, CRPCPar
         if (!pService->GetFilterBlockHashs(ctxReq.hashFork, nFilterId, false, vBlockHash))
         {
             StdLog("CRPCMod", "RPC EthGetFilterChanges: Get block fail");
-            return nullptr;
+            return MakeCeth_getFilterBlockTxResultPtr();
         }
 
         auto spResult = MakeCeth_getFilterBlockTxResultPtr();
@@ -9583,7 +9589,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterChanges(const CReqContext& ctxReq, CRPCPar
         if (!pService->GetFilterTxids(ctxReq.hashFork, nFilterId, false, vTxid))
         {
             StdLog("CRPCMod", "RPC EthGetFilterChanges: Get tx fail");
-            return nullptr;
+            return MakeCeth_getFilterBlockTxResultPtr();
         }
 
         auto spResult = MakeCeth_getFilterBlockTxResultPtr();
@@ -9593,7 +9599,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterChanges(const CReqContext& ctxReq, CRPCPar
         }
         return spResult;
     }
-    return nullptr;
+    return MakeCeth_getFilterChangesResultPtr();
 }
 
 CRPCResultPtr CRPCMod::RPCEthGetFilterLogs(const CReqContext& ctxReq, CRPCParamPtr param)
