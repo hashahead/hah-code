@@ -6884,6 +6884,12 @@
         "request": {
             "type": "object",
             "content": {
+                "address": {
+                    "type": "string",
+                    "desc": "address",
+                    "required": false,
+                    "opt": "a"
+                },
                 "fork": {
                     "type": "string",
                     "desc": "fork",
@@ -6949,14 +6955,116 @@
         "example": [
             {
                 "request": "hashahead-cli listcontractaddress",
-                "response": "[{\"address\":\"0x00000000000000000000000000000000000000a1\",\"owner\":\"0x00000000000000000000000000000000000000a1\",\"txid\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"codehash\":\"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7\"},{\"address\":\"0x06963e6599ae8a485491a9008bf01c778bdf80c2\",\"owner\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"txid\":\"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27\",\"codehash\":\"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b\"}]"
+                "response": "[{\"address\":\"0x6262931a0ebcc5af849c901c164077f904313374\",\"owner\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"txid\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"codehash\":\"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7\"},{\"address\":\"0x06963e6599ae8a485491a9008bf01c778bdf80c2\",\"owner\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"txid\":\"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27\",\"codehash\":\"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b\"}]"
             },
             {
                 "request": "curl -d '{\"id\":3,\"method\":\"listcontractaddress\",\"jsonrpc\":\"2.0\",\"params\":{}' http://127.0.0.1:8812",
-                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":\"[{\"address\":\"0x00000000000000000000000000000000000000a1\",\"owner\":\"0x00000000000000000000000000000000000000a1\",\"txid\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"codehash\":\"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7\"},{\"address\":\"0x06963e6599ae8a485491a9008bf01c778bdf80c2\",\"owner\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"txid\":\"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27\",\"codehash\":\"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b\"}]\"}"
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":\"[{\"address\":\"0x6262931a0ebcc5af849c901c164077f904313374\",\"owner\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"txid\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"codehash\":\"0xb2aa186a283a1ad3b250649eb5568ce3a65ca04109c33f53081ff4caff4970c7\"},{\"address\":\"0x06963e6599ae8a485491a9008bf01c778bdf80c2\",\"owner\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"txid\":\"0x9d50297ade3ef3dc138ac505f7eb3db8334ac5db9ca33fa218554097c26b0f27\",\"codehash\":\"0xaa3fa7bbad961c25b1083ee0bb15c1d8f5cf41bfa0a6fc9be56eb19e2057a65b\"}]\"}"
             }
         ],
         "error": [
+            "{\"code\":-6,\"message\":\"Invalid address\"}",
+            "{\"code\":-6,\"message\":\"Invalid fork\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
+    },
+    "listtokenaddress": {
+        "type": "command",
+        "name": "ListTokenAddress",
+        "desc": "List token contract address",
+        "request": {
+            "type": "object",
+            "content": {
+                "contractaddress": {
+                    "type": "string",
+                    "desc": "contract address",
+                    "required": false,
+                    "opt": "a"
+                },
+                "name": {
+                    "type": "string",
+                    "desc": "token name (support fuzzy queries)",
+                    "required": false,
+                    "opt": "n"
+                },
+                "symbol": {
+                    "type": "string",
+                    "desc": "token symbol (support fuzzy queries)",
+                    "required": false,
+                    "opt": "s"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork",
+                    "required": false,
+                    "opt": "f"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "block hash or number or latest (default latest block)",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "array",
+            "name": "addressdata",
+            "content": {
+                "addressdata": {
+                    "type": "object",
+                    "desc": "address data",
+                    "content": {
+                        "address": {
+                            "type": "string",
+                            "desc": "token contract address"
+                        },
+                        "blocknumber": {
+                            "type": "uint",
+                            "desc": "block number"
+                        },
+                        "createtxid": {
+                            "type": "string",
+                            "desc": "create txid"
+                        },
+                        "createaddress": {
+                            "type": "string",
+                            "desc": "create address"
+                        },
+                        "name": {
+                            "type": "string",
+                            "desc": "token name"
+                        },
+                        "symbol": {
+                            "type": "string",
+                            "desc": "token symbol"
+                        },
+                        "decimals": {
+                            "type": "uint",
+                            "desc": "token decimals"
+                        },
+                        "totalsupply": {
+                            "type": "string",
+                            "desc": "token total supply"
+                        }
+                    }
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli listtokenaddress",
+                "response": "[{\"address\":\"0x41e963357852db2183841df4b6b737ee79fefd13\",\"blocknumber\":33,\"createtxid\":\"0x98d2a062756fbac2a1a8d31d5991d12bf7f08c47164c6170d9f4f9014f194336\",\"createaddress\":\"0xba2c61b77f04140389338a7416e11851224d7685\",\"name\":\"CodeWithJoe\",\"symbol\":\"CWJ\",\"decimals\":18,\"totalsupply\":\"100000000.0\"}]"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"listtokenaddress\",\"jsonrpc\":\"2.0\",\"params\":{}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":[{\"address\":\"0x41e963357852db2183841df4b6b737ee79fefd13\",\"blocknumber\":33,\"createtxid\":\"0x98d2a062756fbac2a1a8d31d5991d12bf7f08c47164c6170d9f4f9014f194336\",\"createaddress\":\"0xba2c61b77f04140389338a7416e11851224d7685\",\"name\":\"CodeWithJoe\",\"symbol\":\"CWJ\",\"decimals\":18,\"totalsupply\":\"100000000.0\"}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid contractaddress\"}",
+            "{\"code\":-6,\"message\":\"Invalid name\"}",
+            "{\"code\":-6,\"message\":\"Invalid symbol\"}",
             "{\"code\":-6,\"message\":\"Invalid fork\"}",
             "{\"code\":-6,\"message\":\"Unknown fork\"}"
         ]
