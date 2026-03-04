@@ -9008,68 +9008,89 @@ CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr
     bytes btData;
     uint256 hashBlock;
 
-    json_spirit::Value valParam;
-    if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
     {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
-    }
-    if (valParam.type() != json_spirit::array_type)
-    {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
-    }
-    const json_spirit::Array& arrayParam = valParam.get_array();
-    if (arrayParam.size() == 0)
-    {
-        throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
-    }
+        boost::unique_lock<boost::mutex> lock(mutexDec);
 
-    for (auto& v : arrayParam)
-    {
-        if (v.type() == json_spirit::obj_type)
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
         {
-            const json_spirit::Value& objFrom = json_spirit::find_value(v.get_obj(), "from");
-            if (!objFrom.is_null() && objFrom.type() == json_spirit::str_type)
-            {
-                destFrom.ParseString(objFrom.get_str());
-            }
-            const json_spirit::Value& objTo = json_spirit::find_value(v.get_obj(), "to");
-            if (!objTo.is_null() && objTo.type() == json_spirit::str_type)
-            {
-                destTo.ParseString(objTo.get_str());
-            }
-            const json_spirit::Value& objValue = json_spirit::find_value(v.get_obj(), "value");
-            if (!objValue.is_null() && objValue.type() == json_spirit::str_type)
-            {
-                nAmount.SetValueHex(objValue.get_str());
-            }
-            const json_spirit::Value& objGas = json_spirit::find_value(v.get_obj(), "gas");
-            if (!objGas.is_null() && objGas.type() == json_spirit::str_type)
-            {
-                nGas.SetValueHex(objGas.get_str());
-            }
-            const json_spirit::Value& objGasPrice = json_spirit::find_value(v.get_obj(), "gasPrice");
-            if (!objGasPrice.is_null() && objGasPrice.type() == json_spirit::str_type)
-            {
-                nGasPrice.SetValueHex(objGasPrice.get_str());
-            }
-            const json_spirit::Value& objData = json_spirit::find_value(v.get_obj(), "data");
-            if (!objData.is_null() && objData.type() == json_spirit::str_type)
-            {
-                btData = ParseHexString(objData.get_str());
-            }
-            const json_spirit::Value& objCode = json_spirit::find_value(v.get_obj(), "code");
-            if (!objCode.is_null() && objCode.type() == json_spirit::str_type)
-            {
-                btData = ParseHexString(objCode.get_str());
-            }
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
         }
-        else if (v.type() == json_spirit::str_type)
+        if (valParam.type() != json_spirit::array_type)
         {
-            hashBlock = GetRefBlock(ctxReq.hashFork, v.get_str());
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
         }
-        else if (v.type() == json_spirit::int_type)
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
         {
-            hashBlock = GetRefBlock(ctxReq.hashFork, ToHexString((uint64)(v.get_int())));
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::obj_type)
+            {
+                const json_spirit::Value& objFrom = json_spirit::find_value(v.get_obj(), "from");
+                if (!objFrom.is_null() && objFrom.type() == json_spirit::str_type)
+                {
+                    destFrom.ParseString(objFrom.get_str());
+                }
+                const json_spirit::Value& objTo = json_spirit::find_value(v.get_obj(), "to");
+                if (!objTo.is_null() && objTo.type() == json_spirit::str_type)
+                {
+                    destTo.ParseString(objTo.get_str());
+                }
+                const json_spirit::Value& objValue = json_spirit::find_value(v.get_obj(), "value");
+                if (!objValue.is_null() && objValue.type() == json_spirit::str_type)
+                {
+                    nAmount.SetValueHex(objValue.get_str());
+                }
+                const json_spirit::Value& objGas = json_spirit::find_value(v.get_obj(), "gas");
+                if (!objGas.is_null() && objGas.type() == json_spirit::str_type)
+                {
+                    nGas.SetValueHex(objGas.get_str());
+                }
+                const json_spirit::Value& objGasPrice = json_spirit::find_value(v.get_obj(), "gasPrice");
+                if (!objGasPrice.is_null() && objGasPrice.type() == json_spirit::str_type)
+                {
+                    nGasPrice.SetValueHex(objGasPrice.get_str());
+                }
+                const json_spirit::Value& objData = json_spirit::find_value(v.get_obj(), "data");
+                if (!objData.is_null() && objData.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objData.get_str());
+                }
+                const json_spirit::Value& objCode = json_spirit::find_value(v.get_obj(), "code");
+                if (!objCode.is_null() && objCode.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objCode.get_str());
+                }
+                const json_spirit::Value& objInput = json_spirit::find_value(v.get_obj(), "input");
+                if (!objInput.is_null() && objInput.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objInput.get_str());
+                }
+                const json_spirit::Value& objFork = json_spirit::find_value(v.get_obj(), "fork");
+                if (!objFork.is_null() && objFork.type() == json_spirit::str_type)
+                {
+                    if (!GetForkHashOfDef(objFork.get_str(), ctxReq.hashFork, hashFork))
+                    {
+                        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid fork");
+                    }
+                    if (!pService->HaveFork(hashFork))
+                    {
+                        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+                    }
+                }
+            }
+            else if (v.type() == json_spirit::str_type)
+            {
+                hashBlock = GetRefBlock(hashFork, v.get_str());
+            }
+            else if (v.type() == json_spirit::int_type)
+            {
+                hashBlock = GetRefBlock(hashFork, ToHexString((uint64)(v.get_int())));
+            }
         }
     }
 
@@ -9117,7 +9138,7 @@ CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr
         }
         else
         {
-            nGasUsed = nUsedGas;
+            nGasUsed = vmCallResult.nGasUsed;
         }
     }
     else
@@ -9125,7 +9146,7 @@ CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr
         bool fAddressCtxExist = true;
         uint8 nDestType = 0;
         CAddressContext ctxAddress;
-        if (!pService->RetrieveAddressContext(ctxReq.hashFork, destTo, ctxAddress))
+        if (!pService->RetrieveAddressContext(hashFork, destTo, ctxAddress))
         {
             fAddressCtxExist = false;
             nDestType = CDestination::PREFIX_PUBKEY;
@@ -9146,47 +9167,46 @@ CRPCResultPtr CRPCMod::RPCEthEstimateGas(const CReqContext& ctxReq, CRPCParamPtr
                 tx.SetToAddressData(CAddressContext(CPubkeyAddressContext()));
             }
 
-            uint256 nTvGas;
-            CAddressContext ctxFromAddress;
-            if (pService->RetrieveAddressContext(ctxReq.hashFork, destFrom, ctxFromAddress) && ctxFromAddress.IsPubkey())
+            CForkContext ctxFork;
+            if (!pService->GetForkContext(hashFork, ctxFork))
             {
-                uint64 nRefBlockTime;
-                CBlockStatus statusBlock;
-                if (!pService->GetBlockStatus(hashBlock, statusBlock))
-                {
-                    nRefBlockTime = GetNetTime();
-                }
-                else
-                {
-                    nRefBlockTime = statusBlock.nBlockTime;
-                }
-
-                CTimeVault tv;
-                if (!pService->RetrieveTimeVault(ctxReq.hashFork, hashBlock, destFrom, tv))
-                {
-                    tv.SetNull();
-                }
-                uint256 nTvGasFee = tv.EstimateTransTvGasFee(nRefBlockTime + ESTIMATE_TIME_VAULT_TS, nAmount);
-                CTimeVault::CalcRealityTvGasFee(nGasPrice, nTvGasFee, nTvGas);
+                StdLog("CRPCMod", "RPC EthEstimateGas: Get fork context fail, to: %s", destTo.ToString().c_str());
+                throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "Get fork context fail");
             }
 
-            nGasUsed = tx.GetTxBaseGas() + nTvGas;
+            nGasUsed = tx.GetTxBaseGas();
         }
         else
         {
-            uint256 nGasLimit = 0;
-            uint256 nUsedGas = 0;
-            uint64 nGasLeft = 0;
-            int nStatus = 0;
-            bytes btResult;
-            if (!pService->CallContract(true, ctxReq.hashFork, hashBlock, destFrom, destTo, nAmount, nGasPrice, nGasLimit, btData, nUsedGas, nGasLeft, nStatus, btResult))
+            CVmCallTx vmCallTx;
+            CVmCallResult vmCallResult;
+
+            vmCallTx.fEthCall = true;
+            vmCallTx.destFrom = destFrom;
+            vmCallTx.destTo = destTo;
+            vmCallTx.nTxNonce = 0;
+            vmCallTx.nGasPrice = nGasPrice;
+            vmCallTx.nGasLimit = 0;
+            vmCallTx.nAmount = nAmount;
+            vmCallTx.btData = btData;
+
+            if (!pService->CallContract(hashFork, hashBlock, vmCallTx, vmCallResult))
             {
-                StdLog("rpcmod", "RPC EthEstimateGas: Call contract fail2");
-                nGasUsed = DEF_TX_GAS_LIMIT;
+                string strError;
+                if (GetVmExecResultInfo(vmCallResult.nStatus, vmCallResult.btResult, strError))
+                {
+                    StdLog("CRPCMod", "RPC EthEstimateGas: call execution reverted, err: %s, to: %s", strError.c_str(), destTo.ToString().c_str());
+                    throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, std::string("execution reverted: ") + strError, json_spirit::Value(ToHexString(vmCallResult.btResult)));
+                }
+                else
+                {
+                    StdLog("CRPCMod", "RPC EthEstimateGas: call fail, to: %s", destTo.ToString().c_str());
+                    throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "execution failed");
+                }
             }
             else
             {
-                nGasUsed = nUsedGas;
+                nGasUsed = vmCallResult.nGasUsed;
             }
         }
     }
