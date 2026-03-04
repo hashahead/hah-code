@@ -7624,6 +7624,53 @@
             "{\"code\":-10,\"message\":\"Fork is stopped\"}"
         ]
     },
+    "setdelegatename": {
+        "type": "command",
+        "name": "SetDelegateName",
+        "desc": "Set delegate name",
+        "request": {
+            "type": "object",
+            "content": {
+                "from": {
+                    "type": "string",
+                    "desc": "from address"
+                },
+                "delegateaddress": {
+                    "type": "string",
+                    "desc": "delegate address"
+                },
+                "name": {
+                    "type": "string",
+                    "desc": "name"
+                },
+                "describe": {
+                    "type": "string",
+                    "desc": "describe"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "result",
+            "desc": "txid"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli setdelegatename 0xb955034fcefb66112bab47483c8d243b86cb2c1d 0x888629a65cfadc11110bec2c6e3c5facda8ad433 nodename nodedescribe",
+                "response": "0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"setdelegatename\",\"jsonrpc\":\"2.0\",\"params\":{\"from\":\"0xb955034fcefb66112bab47483c8d243b86cb2c1d\",\"delegateaddress\":\"0x888629a65cfadc11110bec2c6e3c5facda8ad433\",\"name\":\"nodename\"\"describe\":\"nodedescribe\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\":\"0x416db9f989a9e0e446a88497e7da406be2586a8acb5ef8a5f7c30a48d92c4554\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid from\"}",
+            "{\"code\":-6,\"message\":\"Invalid delegateaddress\"}",
+            "{\"code\":-6,\"message\":\"Invalid name\"}",
+            "{\"code\":-6,\"message\":\"Invalid describe\"}"
+        ]
+    },
     "listtokentransaction": {
         "type": "command",
         "name": "ListTokenTransaction",
