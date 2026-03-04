@@ -5468,6 +5468,56 @@
             "{\"code\":-7,\"message\":\"Query fail\"}"
         ]
     },
+    "sendcrosstransfertx": {
+        "type": "command",
+        "name": "SendCrossTransferTx",
+        "desc": "Send crosschain transfer transaction",
+        "request": {
+            "type": "object",
+            "content": {
+                "address": {
+                    "type": "string",
+                    "desc": "transfer address"
+                },
+                "peerchainid": {
+                    "type": "uint",
+                    "desc": "peer chainid"
+                },
+                "amount": {
+                    "type": "string",
+                    "desc": "transfer amount (big float)"
+                },
+                "fork": {
+                    "type": "string",
+                    "desc": "fork hash or chainid",
+                    "required": false,
+                    "opt": "f"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "result",
+            "desc": "transaction hash"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli sendcrosstransfertx 0xcc963a4ca2a9032e41668756cc4ccb7c59f112be 201 33.67",
+                "response": "0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f"
+            },
+            {
+                "request": "curl -d '{\"id\":1,\"method\":\"sendcrosstransfertx\",\"jsonrpc\":\"2.0\",\"params\":{\"address\":\"0xcc963a4ca2a9032e41668756cc4ccb7c59f112be\",\"peerchainid\":201,\"amount\":\"33.67\"}}' http://127.0.0.1:8812",
+                "response": "{\"id\":0,\"jsonrpc\":\"2.0\",\"result\":\"0x45b154d2ab82eac6e79b8babd97abaebe2b4ae7194f3afd946dd1419f012dd3f\"}]}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid address\"}",
+            "{\"code\":-6,\"message\":\"Invalid peerchainid\"}",
+            "{\"code\":-6,\"message\":\"Invalid amount\"}",
+            "{\"code\":-6,\"message\":\"Invalid fork\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
+    },
     "listaddress": {
         "type": "command",
         "name": "ListAddress",
