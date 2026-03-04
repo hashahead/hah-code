@@ -6236,8 +6236,8 @@
                 "statistical data table",
                 "1) maker: block maker",
                 "-- time: statistical time, format: hh:mm:ss",
-                "-- powblocks: number of POA blocks produced in one minute",
-                "-- dposblocks: number of POS blocks produced in one minute",
+                "-- poablocks: number of POA blocks produced in one minute",
+                "-- posblocks: number of POS blocks produced in one minute",
                 "-- tps: number of TX produced in one second",
                 "2) p2psyn: p2p synchronization",
                 "-- time: statistical time, format: hh:mm:ss",
@@ -6263,6 +6263,47 @@
             "{\"code\" : -6, \"message\" : \"Invalid fork\"}",
             "{\"code\" : -6, \"message\" : \"Invalid count\"}",
             "{\"code\" : -32603, \"message\" : \"query error\"}"
+        ]
+    },
+    "createsnapshot": {
+        "type": "command",
+        "name": "CreateSnapshot",
+        "desc": "Create snapshot",
+        "request": {
+            "type": "object",
+            "content": {
+                "height": {
+                    "type": "uint",
+                    "desc": "snapshot height",
+                    "required": false,
+                    "opt": "h"
+                },
+                "block": {
+                    "type": "string",
+                    "desc": "snapshot block",
+                    "required": false,
+                    "opt": "b"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "snapblock",
+            "desc": "snapshot block"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli createsnapshot 5369",
+                "response": "0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8"
+            },
+            {
+                "request": "curl -d '{\"id\":15,\"method\":\"createsnapshot\",\"jsonrpc\":\"2.0\",\"params\":{\"height\":5369}}' http://127.0.0.1:8812",
+                "response": "{\"id\":15,\"jsonrpc\":\"2.0\",\"result\":\"0xf9b4af95bec6c5d504366245e0420bc3c5c78cd05ea68e4ad85a4d770e77e3e8\"}"
+            }
+        ],
+        "error": [
+            "{\"code\" : -6, \"message\" : \"Invalid height\"}",
+            "{\"code\" : -6, \"message\" : \"Invalid block\"}"
         ]
     },
     "getsnapshotstatus": {
