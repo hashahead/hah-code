@@ -9331,7 +9331,7 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionByHash(const CReqContext& ctxReq, CRP
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
         StdLog("CRPCMod", "RPC EthGetTransactionByHash: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     uint256 txid;
@@ -9385,7 +9385,7 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionByBlockNumberAndIndex(const CReqConte
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() != 2)
     {
         StdLog("CRPCMod", "RPC EthGetTransactionByBlockNumberAndIndex: Invalid paramlist");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     const uint256& hashFork = ctxReq.hashFork;
@@ -9396,10 +9396,10 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionByBlockNumberAndIndex(const CReqConte
 
     CTransaction tx;
     uint64 nBlockNumber = 0;
-    if (!pService->GetTransactionByIndex(hashBlock, nIndex, tx, nBlockNumber))
+    if (!pService->GetEthTransactionByIndex(hashBlock, nIndex, tx, nBlockNumber))
     {
         StdLog("CRPCMod", "RPC EthGetTransactionByBlockNumberAndIndex: No information available about transaction");
-        return nullptr;
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Not find transaction");
     }
     uint256 txid = tx.GetHash();
 
@@ -9433,65 +9433,7 @@ CRPCResultPtr CRPCMod::RPCEthGetTransactionReceipt(const CReqContext& ctxReq, CR
 
     auto spResult = MakeCeth_getTransactionReceiptResultPtr();
 
-    spResult->strTransactionhash = txid.GetHex();
-    spResult->nTransactionindex = receipt.nTxIndex;
-    spResult->strBlockhash = receipt.hashBlock.GetHex();
-    spResult->nBlocknumber = receipt.nBlockNumber;
-    spResult->strFrom = receipt.from.ToString();
-    spResult->strTo = receipt.to.ToString();
-    spResult->strCumulativegasused = receipt.nBlockGasUsed.GetValueHex();
-    spResult->strGasused = receipt.nTxGasUsed.GetValueHex();
-    if (!receipt.destContract.IsNull())
-    {
-        spResult->strContractaddress = receipt.destContract.ToString();
-    }
-
-    for (std::size_t i = 0; i < receipt.vLogs.size(); i++)
-    {
-        auto& txLogs = receipt.vLogs[i];
-        if (!txLogs.address.IsNull()
-            || !txLogs.data.IsNull()
-            || !txLogs.topics.empty())
-        {
-            Ceth_getTransactionReceiptResult::CLogs logs;
-
-            //__optional__ CRPCBool fRemoved;
-            logs.nLogindex = i;
-            logs.nTransactionindex = receipt.nTxIndex;
-            logs.strTransactionhash = txid.GetHex();
-            logs.strBlockhash = receipt.hashBlock.GetHex();
-            logs.nBlocknumber = receipt.nBlockNumber;
-
-            logs.strAddress = txLogs.address.ToString();
-            logs.strData = txLogs.data.ToString();
-            for (auto& d : txLogs.topics)
-            {
-                logs.vecTopics.push_back(d.ToString());
-            }
-            logs.strType = "mined"; //mined  pending
-
-            bytes btIdData;
-            btIdData.assign(txid.begin(), txid.end());
-            btIdData.insert(btIdData.end(), (char*)&i, (char*)&i + sizeof(i));
-            bytes btIdKey = CryptoKeccakSign(btIdData.data(), btIdData.size());
-            logs.strId = string("log_") + ToHexString(btIdKey).substr(2);
-
-            spResult->vecLogs.push_back(logs);
-        }
-    }
-    if (receipt.vLogs.size() == 0)
-    {
-        Ceth_getTransactionReceiptResult::CLogs logs;
-        spResult->vecLogs.push_back(logs);
-    }
-
-    spResult->strLogsbloom = receipt.nLogsBloom.ToString();
-    if (!receipt.hashStatusRoot.IsNull())
-    {
-        spResult->strRoot = receipt.hashStatusRoot.GetHex();
-    }
-    spResult->strStatus = (receipt.nContractStatus == 0 ? "0x1" : "0x0");
-    spResult->strEffectivegasprice = receipt.nEffectiveGasPrice.GetValueHex();
+    spResult->SetJsonResult(EthTxReceiptToJSON(txid, receipt));
 
     return spResult;
 }
