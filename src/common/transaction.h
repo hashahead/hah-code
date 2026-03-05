@@ -795,6 +795,40 @@ protected:
         serSize = ss.GetSize();
     }
 };
+using TxContractReceipts = std::vector<CTxContractReceipt>;
+using BlockContractReceipts = std::vector<std::pair<uint256, TxContractReceipts>>;
+typedef std::shared_ptr<BlockContractReceipts> SHP_BLOCK_CONTRACT_RECEIPTS;
+#define MAKE_SHARED_BLOCK_CONTRACT_RECEIPTS std::make_shared<BlockContractReceipts>
+
+class CTokenTransRecord
+{
+    friend class hnbase::CStream;
+
+public:
+    CTokenTransRecord()
+      : nBlockNumber(0), nBlockTime(0) {}
+
+public:
+    uint64 nBlockNumber;
+    uint64 nBlockTime;
+    uint256 txid;
+    CDestination destFrom;
+    CDestination destTo;
+    uint256 nAmount;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(nBlockNumber, opt);
+        s.Serialize(nBlockTime, opt);
+        s.Serialize(txid, opt);
+        s.Serialize(destFrom, opt);
+        s.Serialize(destTo, opt);
+        s.Serialize(nAmount, opt);
+    }
+};
+
 
 static const uint8 CODE_TYPE_TEMPLATE = 0;
 static const uint8 CODE_TYPE_CONTRACT = 1;
