@@ -350,6 +350,39 @@ protected:
     }
 };
 
+class CTokenContractAddressContext
+{
+    friend class hnbase::CStream;
+
+public:
+    CTokenContractAddressContext()
+      : nAtBlockNumber(0), nCoinDecimals(0) {}
+
+public:
+    uint256 hashCreateTxid;
+    uint64 nAtBlockNumber;
+    CDestination destCreate;
+
+    std::string strCoinName;
+    std::string strCoinSymbol;
+    uint8 nCoinDecimals;
+    uint256 nCoinTotalSupply;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashCreateTxid, opt);
+        s.Serialize(nAtBlockNumber, opt);
+        s.Serialize(destCreate, opt);
+
+        s.Serialize(strCoinName, opt);
+        s.Serialize(strCoinSymbol, opt);
+        s.Serialize(nCoinDecimals, opt);
+        s.Serialize(nCoinTotalSupply, opt);
+    }
+};
+
 } // namespace hashahead
 
 #endif // COMMON_DESTINATION_H

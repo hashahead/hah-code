@@ -196,10 +196,29 @@ uint256 CTimeVault::CalcTransTvGasFee(const uint32 nHeight, const uint256& nTran
     return (nTvAmount * nTransAmount) / nBalanceAmount;
 }
 
-uint256 CTimeVault::EstimateTransTvGasFee(const uint64 nEstimateBlockTime, const uint256& nTransAmount)
+uint256 CTimeVault::EstimateTransTvGasFee(const bool fPrimary, const uint32 nHeight, const uint64 nEstimateBlockTime, const bool fEstimate, const uint256& nTransAmount)
 {
-    SettlementTimeVault(nEstimateBlockTime);
-    return CalcTransTvGasFee(nTransAmount == 0 ? COIN : nTransAmount);
+    if (VERIFY_FHX_HEIGHT_BRANCH_003(nHeight))
+    {
+        SettlementTimeVault(nHeight, nEstimateBlockTime, fEstimate);
+    }
+    else
+    {
+        uint64 nCalcTime = nEstimateBlockTime;
+        if (fEstimate)
+        {
+            if (fPrimary)
+            {
+                nCalcTime += ESTIMATE_TIME_VAULT_TS_MAINCHAIN;
+            }
+            else
+            {
+                nCalcTime += ESTIMATE_TIME_VAULT_TS_SUBCHAIN;
+            }
+        }
+        SettlementTimeVault(nHeight, nCalcTime, false);
+    }
+    return CalcTransTvGasFee(nHeight, (nTransAmount == 0 ? COIN : nTransAmount));
 }
 
 void CTimeVault::PayTvGasFee(const uint256& nTvGasFee)
