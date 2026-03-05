@@ -93,4 +93,86 @@ void CBlockLogsFilter::GetTxReceiptLogs(const bool fAll, ReceiptLogsVec& receipt
     }
 }
 
+//////////////////////////////
+// CBlockMakerFilter
+
+bool CBlockMakerFilter::isTimeout()
+{
+    if (GetTime() - nPrevGetChangesTime >= FILTER_DEFAULT_TIMEOUT)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool CBlockMakerFilter::AddBlockHash(const uint256& hashFork, const uint256& hashBlock, const uint256& hashPrev)
+{
+    if (hashFork != hashFork)
+    {
+        return true;
+    }
+    if (mapBlockHash.size() >= MAX_FILTER_CACHE_COUNT * 2)
+    {
+        return false;
+    }
+    mapBlockHash[hashBlock] = hashPrev;
+    return true;
+}
+
+bool CBlockMakerFilter::GetFilterBlockHashs(const uint256& hashLastBlock, const bool fAll, std::vector<uint256>& vBlockhash)
+{
+    if (fAll)
+    {
+        uint256 hash = hashLastBlock;
+        while (true)
+        {
+            auto it = mapBlockHash.find(hash);
+            if (it == mapBlockHash.end())
+            {
+                break;
+            }
+            vBlockhash.push_back(hash);
+            hash = it->second;
+        }
+        while (true)
+        {
+            auto it = mapHisBlockHash.find(hash);
+            if (it == mapHisBlockHash.end())
+            {
+                break;
+            }
+            vBlockhash.push_back(hash);
+            hash = it->second;
+        }
+    }
+    else
+    {
+        if (mapBlockHash.count(hashLastBlock) == 0)
+        {
+            return true;
+        }
+        uint256 hash = hashLastBlock;
+        while (true)
+        {
+            auto it = mapBlockHash.find(hash);
+            if (it == mapBlockHash.end())
+            {
+                break;
+            }
+            vBlockhash.push_back(hash);
+            mapHisBlockHash.insert(*it);
+            hash = it->second;
+        }
+        mapBlockHash.clear();
+        nPrevGetChangesTime = GetTime();
+        std::reverse(vBlockhash.begin(), vBlockhash.end());
+
+        while (mapHisBlockHash.size() > MAX_FILTER_CACHE_COUNT * 2)
+        {
+            mapHisBlockHash.erase(mapHisBlockHash.begin());
+        }
+    }
+    return true;
+}
+
 } // namespace hashahead

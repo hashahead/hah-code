@@ -39,6 +39,31 @@ public:
     bool fNeedVerifyToAddress;
 };
 
+//////////////////////////////
+// CVmCallBlock
+
+class CVmCallBlock
+{
+public:
+    CVmCallBlock()
+      : nChainId(0), nBlockHeight(0), nBlockNumber(0), fPrimaryBlock(false), nOriBlockGasLimit(0), nBlockTimestamp(0), nPrevBlockTime(0) {}
+
+public:
+    uint256 hashFork;
+    CChainId nChainId;
+    uint256 nAgreement;
+    uint32 nBlockHeight;
+    uint64 nBlockNumber;
+    bool fPrimaryBlock;
+    CDestination destMint;
+    uint64 nOriBlockGasLimit;
+    uint256 nBlockGasLimit;
+    uint64 nBlockTimestamp;
+    uint256 hashPrevBlock;
+    uint256 hashPrevStateRoot;
+    uint64 nPrevBlockTime;
+};
+
 // CBlockLogsFilter
 
 class CBlockLogsFilter
