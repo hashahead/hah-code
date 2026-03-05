@@ -896,4 +896,37 @@ void CBlockDexOrderProve::Serialize(hnbase::CStream& s, std::size_t& serSize) co
     serSize = ss.GetSize();
 }
 
+///////////////////////////////////////////////////
+// CBlockCrosschainProve
+
+void CBlockCrosschainProve::Clear()
+{
+    hashPrevProveBlock = 0;
+    vCoinTransferProve.clear();
+    mapDexOrderProve.clear();
+    setCrossConfirmRecvBlock.clear();
+}
+
+bool CBlockCrosschainProve::IsNull() const
+{
+    return (vCoinTransferProve.empty() && mapDexOrderProve.empty() && setCrossConfirmRecvBlock.empty());
+}
+
+bool CBlockCrosschainProve::IsCrossProveNull() const
+{
+    return (vCoinTransferProve.empty() && mapDexOrderProve.empty());
+}
+
+uint256 CBlockCrosschainProve::GetHash() const
+{
+    hnbase::CBufStream ss;
+    ss << *this;
+    return crypto::CryptoHash(ss.GetData(), ss.GetSize());
+}
+
+void CBlockCrosschainProve::AddCoinTransferProve(const CDestination& destTransIn, const std::string& strCoinSymbolIn, const CChainId nOriChainIdIn, const CChainId nDestChainIdIn, const uint256& nTransferAmountIn)
+{
+    vCoinTransferProve.push_back(CBlockCoinTransferProve(destTransIn, strCoinSymbolIn, nOriChainIdIn, nDestChainIdIn, nTransferAmountIn));
+}
+
 } // namespace hashahead

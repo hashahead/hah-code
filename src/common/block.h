@@ -716,21 +716,57 @@ class CVoteContext
 
 public:
     CVoteContext()
-      : nRewardMode(0), nRewardRate(0), nFinalHeight(0) {}
+      : nVoteFlag(0), nRewardRate(0), nFinalHeight(0) {}
 
+    void SetNull()
+    {
+        destDelegate.SetNull();
+        destOwner.SetNull();
+        nVoteFlag = 0;
+        nVoteAmount = 0;
+        nRewardRate = 0;
+        nFinalHeight = 0;
+    }
+
+    void SetRewardModeFlag(const uint8 nRewardModeFlag)
+    {
+        nVoteFlag = (nVoteFlag & 0xFC) | (nRewardModeFlag & 0x03);
+    }
+    void SetUnlimitCycesFlag(const bool fFlag = true)
+    {
+        nVoteFlag = (nVoteFlag & 0xFB) | ((uint8)fFlag << 2);
+    }
+    void SetStopReVoteFlag(const bool fFlag = true)
+    {
+        nVoteFlag = (nVoteFlag & 0xF7) | ((uint8)fFlag << 3);
+    }
+
+    uint8 GetRewardModeFlag() const
+    {
+        return (nVoteFlag & 0x03);
+    }
+    bool GetUnlimitCycesFlag() const
+    {
+        return ((nVoteFlag & 0x04) > 0);
+    }
+    bool GetStopReVoteFlag() const
+    {
+        return ((nVoteFlag & 0x08) > 0);
+    }
+
+public:
     enum
     {
         REWARD_MODE_VOTE = 0,
         REWARD_MODE_OWNER = 1
     };
 
-public:
-    CDestination destDelegate;
-    CDestination destOwner;
-    uint8 nRewardMode;
-    uint256 nVoteAmount;
-    uint16 nRewardRate;  // base: 10000, example: 5000 is 50%
-    uint32 nFinalHeight; // 0: unlimit
+    CDestination destDelegate; // pos node address
+    CDestination destOwner;    // vote user address
+    uint8 nVoteFlag;           // vote flag: 0000 cbaa: aa(2 bit): reward mode flag, ref REWARD_MODE_*, b(1 bit): unlimit cyces vote flag, c(1 bit): stop revote flag,
+    uint256 nVoteAmount;       // vote amount
+    uint16 nRewardRate;        // base: 10000, example: 5000 is 50%
+    uint32 nFinalHeight;       // 0: unlimit
 
 protected:
     template <typename O>
@@ -738,7 +774,7 @@ protected:
     {
         s.Serialize(destDelegate, opt);
         s.Serialize(destOwner, opt);
-        s.Serialize(nRewardMode, opt);
+        s.Serialize(nVoteFlag, opt);
         s.Serialize(nVoteAmount, opt);
         s.Serialize(nRewardRate, opt);
         s.Serialize(nFinalHeight, opt);
