@@ -42,45 +42,66 @@ void setRunSysFlag(const uint256& hashGenesisBlock)
 }
 
 //////////////////////////////
-std::string CoinToTokenBigFloat(const uint256& nCoin)
+std::string CoinToTokenBigFloat(const uint256& nCoin, const uint32 nDecimalDigit)
 {
-    boost::multiprecision::uint256_t mc((uint64)std::pow(10, TOKEN_DECIMAL_DIGIT));
-    boost::multiprecision::uint256_t n = nCoin.GetMuint256();
-    boost::multiprecision::uint256_t nInteger = n / mc;
-    boost::multiprecision::uint256_t nDecimal = n % mc;
-    std::string strInt = nInteger.str();
-    std::string strDec = nDecimal.str();
-    int nDecCount = (int)strDec.size();
-    for (int i = nDecCount - 1; i >= 0; --i)
+    try
     {
-        if (strDec[i] != '0')
+        if (nCoin == 0)
         {
-            break;
+            return std::string("0.0");
         }
-        nDecCount--;
+        uint32 nDecimalDigitUse = nDecimalDigit;
+        if (nDecimalDigitUse == 0)
+        {
+            nDecimalDigitUse = TOKEN_DECIMAL_DIGIT;
+        }
+        boost::multiprecision::uint256_t mc((uint64)std::pow(10, nDecimalDigitUse));
+        boost::multiprecision::uint256_t n = nCoin.GetMuint256();
+        boost::multiprecision::uint256_t nInteger = n / mc;
+        boost::multiprecision::uint256_t nDecimal = n % mc;
+        std::string strInt = nInteger.str();
+        std::string strDec = nDecimal.str();
+        int nDecCount = (int)strDec.size();
+        for (int i = nDecCount - 1; i >= 0; --i)
+        {
+            if (strDec[i] != '0')
+            {
+                break;
+            }
+            nDecCount--;
+        }
+        if (nDecCount == 0)
+        {
+            return strInt + std::string(".0");
+        }
+        std::string strDecimalZero;
+        if (strDec.size() < nDecimalDigitUse)
+        {
+            strDecimalZero.resize(nDecimalDigitUse - strDec.size(), '0');
+        }
+        if (nDecCount == (int)strDec.size())
+        {
+            strDecimalZero += strDec;
+        }
+        else
+        {
+            strDecimalZero += strDec.substr(0, nDecCount);
+        }
+        return (strInt + std::string(".") + strDecimalZero);
     }
-    if (nDecCount == 0)
+    catch (std::exception& e)
     {
-        return strInt + std::string(".0");
+        return std::string("0.00");
     }
-    std::string strDecimalZero;
-    if (strDec.size() < TOKEN_DECIMAL_DIGIT)
-    {
-        strDecimalZero.resize(TOKEN_DECIMAL_DIGIT - strDec.size(), '0');
-    }
-    if (nDecCount == (int)strDec.size())
-    {
-        strDecimalZero += strDec;
-    }
-    else
-    {
-        strDecimalZero += strDec.substr(0, nDecCount);
-    }
-    return (strInt + std::string(".") + strDecimalZero);
 }
 
-bool TokenBigFloatToCoin(const std::string& strToken, uint256& nCoin)
+bool TokenBigFloatToCoin(const std::string& strToken, uint256& nCoin, const uint32 nDecimalDigit)
 {
+    uint32 nDecimalDigitUse = nDecimalDigit;
+    if (nDecimalDigitUse == 0)
+    {
+        nDecimalDigitUse = TOKEN_DECIMAL_DIGIT;
+    }
     std::string strInteger;
     std::string strDecimal;
     if (!SplitNumber(strToken, strInteger, strDecimal))
@@ -109,13 +130,13 @@ bool TokenBigFloatToCoin(const std::string& strToken, uint256& nCoin)
         }
     }
 
-    if (strDecimal.size() > TOKEN_DECIMAL_DIGIT)
+    if ((uint32)strDecimal.size() > nDecimalDigitUse)
     {
-        strDecimal = strDecimal.substr(0, TOKEN_DECIMAL_DIGIT);
+        strDecimal = strDecimal.substr(0, nDecimalDigitUse);
     }
-    else if (strDecimal.size() < TOKEN_DECIMAL_DIGIT)
+    else if ((uint32)strDecimal.size() < nDecimalDigitUse)
     {
-        strDecimal.append(TOKEN_DECIMAL_DIGIT - strDecimal.size(), '0');
+        strDecimal.append(nDecimalDigitUse - strDecimal.size(), '0');
     }
     nZeroCount = 0;
     for (std::size_t i = 0; i < strDecimal.size(); i++)
@@ -138,7 +159,7 @@ bool TokenBigFloatToCoin(const std::string& strToken, uint256& nCoin)
         }
     }
 
-    boost::multiprecision::uint256_t mc((uint64)std::pow(10, TOKEN_DECIMAL_DIGIT));
+    boost::multiprecision::uint256_t mc((uint64)std::pow(10, nDecimalDigitUse));
     boost::multiprecision::uint256_t nInt(strInteger);
     boost::multiprecision::uint256_t nDec(strDecimal);
 
