@@ -739,6 +739,61 @@ public:
             return "ERROR";
         }
     }
+
+public:
+    // call type
+    enum
+    {
+        TCR_CALL_TYPE_CALL = 0,
+        TCR_CALL_TYPE_DELEGATECALL = 1,
+        TCR_CALL_TYPE_CALLCODE = 2,
+        TCR_CALL_TYPE_STATICCALL = 3,
+        TCR_CALL_TYPE_CREATE = 4,
+        TCR_CALL_TYPE_CREATE2 = 5,
+    };
+
+    uint8 nCallType; // call type
+    CDestination destFrom;
+    CDestination destTo;
+    uint256 nValue;
+    uint64 nGasLimit;
+    uint64 nGasUsed;
+    bytes btInput;
+    bytes btOutput;
+    uint8 nStatus;
+    std::string strError;
+    std::string strRevertReason;
+
+    CDestination destParentCodeContract;
+    CDestination destCodeContract;
+    std::vector<uint16> vTraceAddress;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+    {
+        s << nCallType << destFrom << destTo << nValue.ToValidBigEndianData() << hnbase::CVarInt(nGasLimit) << hnbase::CVarInt(nGasUsed) << btInput << btOutput << nStatus << strError << strRevertReason << destParentCodeContract.GetCompressData() << destCodeContract.GetCompressData() << vTraceAddress;
+    }
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&)
+    {
+        bytes btValue;
+        bytes btParentCodeContract;
+        bytes btCodeContract;
+        hnbase::CVarInt varGasLimit;
+        hnbase::CVarInt varGasUsed;
+        s >> nCallType >> destFrom >> destTo >> btValue >> varGasLimit >> varGasUsed >> btInput >> btOutput >> nStatus >> strError >> strRevertReason >> btParentCodeContract >> btCodeContract >> vTraceAddress;
+        nValue.FromValidBigEndianData(btValue);
+        destParentCodeContract.SetCompressData(btParentCodeContract);
+        destCodeContract.SetCompressData(btCodeContract);
+        nGasLimit = varGasLimit.GetValue();
+        nGasUsed = varGasUsed.GetValue();
+    }
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const
+    {
+        (void)s;
+        hnbase::CBufStream ss;
+        ss << nCallType << destFrom << destTo << nValue.ToValidBigEndianData() << hnbase::CVarInt(nGasLimit) << hnbase::CVarInt(nGasUsed) << btInput << btOutput << nStatus << strError << strRevertReason << destParentCodeContract.GetCompressData() << destCodeContract.GetCompressData() << vTraceAddress;
+        serSize = ss.GetSize();
+    }
 };
 
 static const uint8 CODE_TYPE_TEMPLATE = 0;
