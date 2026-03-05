@@ -15,6 +15,7 @@ namespace hashahead
 extern bool TESTNET_FLAG;
 extern bool FASTTEST_FLAG;
 extern bool TESTMAINNET_FLAG;
+extern bool RUNSYS_FLAG;
 extern CChainId GENESIS_CHAINID;
 extern uint32 NETWORK_NETID;
 
@@ -41,13 +42,12 @@ inline bool RewardRange(const uint256& nValue)
     return (nValue <= MAX_REWARD_MONEY);
 }
 
-static const unsigned int MAX_BLOCK_SIZE = 1024 * 1024 * 2;
-static const unsigned int MAX_TX_SIZE = (MAX_BLOCK_SIZE / 20);
+static const unsigned int MAX_BLOCK_SIZE = 1024 * 1024 * 4;
+static const unsigned int MAX_TX_SIZE = (MAX_BLOCK_SIZE / 2);
 static const unsigned int MAX_SIGNATURE_SIZE = 2048;
-static const unsigned int MAX_TX_INPUT_COUNT = (MAX_TX_SIZE - MAX_SIGNATURE_SIZE - 4) / 33;
 static const int64 MAX_BLOCK_GAS_LIMIT = 10000 * 10000 * 10;
 
-#define BLOCK_TARGET_SPACING GET_FAST_PARAM(10, 5, 1)
+#define BLOCK_TARGET_SPACING GET_FAST_PARAM(60, 5, 1)
 #define EXTENDED_BLOCK_SPACING GET_PARAM(1, 1)
 
 #define DAY_HEIGHT_MAINNET (3600 * 24 / BLOCK_TARGET_SPACING)
