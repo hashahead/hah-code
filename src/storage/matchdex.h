@@ -146,6 +146,42 @@ public:
 };
 
 ///////////////////////////////////
+// CustomCompareSellOrder
+
+struct CustomCompareSellOrder
+{
+    bool operator()(const CDexOrderKey& a, const CDexOrderKey& b) const
+    {
+        if (a.nPrice < b.nPrice)
+        {
+            return true;
+        }
+        else if (a.nPrice == b.nPrice)
+        {
+            if (a.nHeight < b.nHeight)
+            {
+                return true;
+            }
+            else if (a.nHeight == b.nHeight)
+            {
+                if (a.nSlot < b.nSlot)
+                {
+                    return true;
+                }
+                else if (a.nSlot == b.nSlot)
+                {
+                    if (a.hashOrderRandom < b.hashOrderRandom)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+};
+
+///////////////////////////////////
     bool UpdateCompleteOrder(const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount);
 // CMatchDex
 

@@ -181,5 +181,17 @@ bool CCoinDexPair::UpdateCompleteOrder(const uint256& hashDexOrder, const uint25
     return false;
 }
 
+void CCoinDexPair::UpdatePeerCoinPairLastBlock(const uint256& hashLastProveBlock)
+{
+    if (hashLastProveBlock != 0)
+    {
+        uint64 nHeightSlot = CDexOrderKey::GetHeightSlotStatic(CBlock::GetBlockHeightByHash(hashLastProveBlock), CBlock::GetBlockSlotByHash(hashLastProveBlock));
+        if (nHeightSlot > nMatchHeightSlot)
+        {
+            nMatchHeightSlot = nHeightSlot;
+        }
+    }
+}
+
 } // namespace storage
 } // namespace hashahead
