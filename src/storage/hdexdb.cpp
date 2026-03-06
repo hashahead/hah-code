@@ -187,9 +187,48 @@ bool CHdexDB::AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, 
         }
     };
 
+    for (const auto& kv : mapCompDexOrderRecord)
     {
-        StdLog("CHdexDB", "Get dex order: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
-        return false;
+        const CDexOrderHeader& orderHeader = kv.first;
+        const std::vector<CCompDexOrderRecord>& vDexOrderRecord = kv.second;
+
+        CDexOrderSave dexOrderBody;
+        if (orderHeader.GetChainId() == nChainId)
+        {
+            if (!GetDexOrderDb(hashPrevRoot, orderHeader.GetChainId(), orderHeader.GetOrderAddress(), orderHeader.GetCoinPairHash(), orderHeader.GetOwnerCoinFlag(), orderHeader.GetOrderNumber(), dexOrderBody))
+            {
+                StdLog("CHdexDB", "Add dex order: Get dex order fail, at chainid: %d, order address: %s, owner coin flag: %d, order number: %lu, prev block: %s, block: %s",
+                       orderHeader.GetChainId(), orderHeader.GetOrderAddress().ToString().c_str(), orderHeader.GetOwnerCoinFlag(), orderHeader.GetOrderNumber(), hashPrevBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+                return false;
+            }
+        }
+        else
+        {
+            if (!GetPeerDexOrderProveDb(hashPrevRoot, orderHeader.GetChainId(), orderHeader.GetOrderAddress(), orderHeader.GetCoinPairHash(), orderHeader.GetOwnerCoinFlag(), orderHeader.GetOrderNumber(), dexOrderBody))
+            {
+                StdLog("CHdexDB", "Add dex order: Get peer dex order prove fail, at chainid: %d, order address: %s, owner coin flag: %d, order number: %lu, prev block: %s, block: %s",
+                       orderHeader.GetChainId(), orderHeader.GetOrderAddress().ToString().c_str(), orderHeader.GetOwnerCoinFlag(), orderHeader.GetOrderNumber(), hashPrevBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+                return false;
+            }
+        }
+
+        for (const CCompDexOrderRecord& orderRecord : vDexOrderRecord)
+        {
+            dexOrderBody.dexOrder.nCompleteOrderAmount += orderRecord.nCompleteAmount;
+        }
+        dexOrderBody.dexOrder.nCompleteOrderCount += vDexOrderRecord.size();
+
+        if (orderHeader.GetChainId() == nChainId)
+        {
+            funcAddLocalDexOrder(dexOrderBody.dexOrder.nCompleteOrderAmount >= dexOrderBody.dexOrder.nOrderAmount, orderHeader, dexOrderBody);
+        }
+        else
+        {
+            funcAddPeerDexOrder(dexOrderBody.dexOrder.nCompleteOrderAmount >= dexOrderBody.dexOrder.nOrderAmount, orderHeader, dexOrderBody);
+        }
+
+        mapDbDexOrder.insert(std::make_pair(orderHeader, dexOrderBody));
+        mapUpdateCompOrder.insert(std::make_pair(orderHeader.GetDexOrderHash(), std::make_tuple(orderHeader.GetCoinPairHash(), dexOrderBody.dexOrder.nCompleteOrderAmount, dexOrderBody.dexOrder.nCompleteOrderCount)));
     }
 
     const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
