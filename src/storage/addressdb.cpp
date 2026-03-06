@@ -1517,6 +1517,39 @@ bool CForkAddressDB::AddCacheTokenContractAddressData(const uint256& hashPrevBlo
     return true;
 }
 
+bool CForkAddressDB::ListHeightTrieRoot(const uint32 nLastHeight, std::vector<std::pair<uint8, uint256>>& vBlockRootType)
+{
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_ADDRESS_KEY_TYPE_TRIEROOT)
+            {
+                uint8 nRootType;
+                uint256 hashBlock;
+                ssKey >> nRootType >> hashBlock;
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockRootType.push_back(std::make_pair(nRootType, hashBlock));
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_TRIEROOT;
+
+    return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
 //////////////////////////////
 // CAddressDB
 

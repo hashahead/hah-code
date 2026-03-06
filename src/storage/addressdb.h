@@ -149,8 +149,8 @@ protected:
     bool RemoveTrieRoot(const uint8 nRootType, const uint256& hashBlock);
     void AddPrevRoot(const uint8 nRootType, const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
     bool GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
-    void AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
-    bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
+    void AddTokenPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
+    bool GetTokenPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
     bool AddAddressCount(const uint256& hashBlock, const uint64 nAddressCount, const uint64 nNewAddressCount);
     bool RemoveAddressCount(const uint256& hashBlock);
     bool AddOwnerAddressLinkTemplate(const uint256& hashBlock, const CDestination& destTemplate, const CAddressContext& ctxAddress, std::map<CDestination, std::map<CDestination, uint8>>& mapOwnerLinkTemplate, bytesmap& mapKv);
@@ -159,6 +159,7 @@ protected:
     bool ListContractAddressDb(const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
     bool ListTokenContractAddressDb(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress);
     bool AddCacheAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapIncAddress);
+    bool AddCacheTokenContractAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapIncTokenAddress, const bool fAll);
 
 protected:
     enum
