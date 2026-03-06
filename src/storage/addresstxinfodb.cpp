@@ -866,18 +866,27 @@ bool CForkAddressTxInfoDB::ReadBlockAddressTxIndex(const uint256& hashBlock, map
     return true;
 }
 
+bool CForkAddressTxInfoDB::WriteBlockAddressTokenTxIndex(const uint256& hashBlock, const map<CDestination, map<CDestination, pair<uint64, uint64>>>& mapBlockAddressTokenTxIndex)
+{
     hnbase::CBufStream ssKey, ssValue;
-    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_TRIEROOT << hashBlock;
-    if (!dbTrie.ReadExtKv(ssKey, ssValue))
-    {
-        return false;
-    }
+    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_TOKEN_ADDRESS_TX_RANGE << hashBlock;
+    ssValue << mapBlockAddressTokenTxIndex;
+    return Write(ssKey, ssValue);
+}
 
+bool CForkAddressTxInfoDB::ReadBlockAddressTokenTxIndex(const uint256& hashBlock, map<CDestination, map<CDestination, pair<uint64, uint64>>>& mapBlockAddressTokenTxIndex)
+{
     try
     {
-        ssValue >> hashTrieRoot;
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_TOKEN_ADDRESS_TX_RANGE << hashBlock;
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
+        ssValue >> mapBlockAddressTokenTxIndex;
     }
-    catch (std::exception& e)
+    catch (exception& e)
     {
         hnbase::StdError(__PRETTY_FUNCTION__, e.what());
         return false;
@@ -885,36 +894,27 @@ bool CForkAddressTxInfoDB::ReadBlockAddressTxIndex(const uint256& hashBlock, map
     return true;
 }
 
-void CForkAddressTxInfoDB::AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
+bool CForkAddressTxInfoDB::WriteAddressTxCount(const CDestination& address, const uint64 nTxCount)
 {
     hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-
-    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_PREVROOT << DB_ADDRESS_TXINFO_KEY_ID_PREVROOT;
-    ssKey.GetData(btKey);
-
-    ssValue << hashPrevRoot << hashBlock;
-    ssValue.GetData(btValue);
-
-    mapKv.insert(make_pair(btKey, btValue));
+    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_COUNT << address;
+    ssValue << nTxCount;
+    return Write(ssKey, ssValue);
 }
 
-bool CForkAddressTxInfoDB::GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock)
+bool CForkAddressTxInfoDB::ReadAddressTxCount(const CDestination& address, uint64& nTxCount)
 {
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_PREVROOT << DB_ADDRESS_TXINFO_KEY_ID_PREVROOT;
-    ssKey.GetData(btKey);
-    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
-    {
-        return false;
-    }
     try
     {
-        ssValue.Write((char*)(btValue.data()), btValue.size());
-        ssValue >> hashPrevRoot >> hashBlock;
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_ADDRESS_TX_COUNT << address;
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
+        ssValue >> nTxCount;
     }
-    catch (std::exception& e)
+    catch (exception& e)
     {
         hnbase::StdError(__PRETTY_FUNCTION__, e.what());
         return false;

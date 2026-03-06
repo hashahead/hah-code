@@ -54,7 +54,10 @@ protected:
     bool WalkThroughTokenTxInfo(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nBeginTxIndex, const uint64 nGetTxCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxInfo);
     void RemoveOldBlockData(const uint256& hashBlock);
     void ClearOldBlockData();
-    bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
+
+    bool AddLongChainBlock(const uint256& hashBlock);
+    bool RemoveLongChainlock(const uint256& hashBlock);
+
     void WriteAddressLast(const CDestination& dest, const uint64 nTxCount, bytesmap& mapKv);
     bool ReadAddressLast(const uint256& hashRoot, const CDestination& dest, uint64& nTxCount);
 
