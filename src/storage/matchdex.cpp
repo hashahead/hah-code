@@ -137,5 +137,49 @@ void CCoinDexPair::SetPrevCompletePrice(const uint256& nPrevPrice)
 {
     nPrevCompletePrice = nPrevPrice;
 }
+
+bool CCoinDexPair::UpdateCompleteOrder(const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount)
+{
+    auto it = mapDexOrderIndex.find(hashDexOrder);
+    if (it != mapDexOrderIndex.end())
+    {
+        const CDexOrderKey& keyOrder = it->second.first;
+        const uint8 nOrderType = it->second.second;
+        if (nOrderType == CDP_ORDER_TYPE_SELL)
+        {
+            auto mt = mapSellOrder.find(keyOrder);
+            if (mt != mapSellOrder.end())
+            {
+                mt->second.nCompleteAmount = nCompleteAmount;
+                mt->second.nCompleteCount = nCompleteCount;
+                if (mt->second.GetSurplusAmount() == 0)
+                {
+                    mapSellOrder.erase(mt);
+                    mapDexOrderIndex.erase(it);
+                }
+                return true;
+            }
+            StdLog("CCoinDexPair", "Update complete order: Sell order find fail, dex order hash: %s", hashDexOrder.ToString().c_str());
+        }
+        else if (nOrderType == CDP_ORDER_TYPE_BUY)
+        {
+            auto mt = mapBuyOrder.find(keyOrder);
+            if (mt != mapBuyOrder.end())
+            {
+                mt->second.nCompleteAmount = nCompleteAmount;
+                mt->second.nCompleteCount = nCompleteCount;
+                if (mt->second.GetSurplusAmount() == 0)
+                {
+                    mapBuyOrder.erase(mt);
+                    mapDexOrderIndex.erase(it);
+                }
+                return true;
+            }
+            StdLog("CCoinDexPair", "Update complete order: Buy order find fail, dex order hash: %s", hashDexOrder.ToString().c_str());
+        }
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead

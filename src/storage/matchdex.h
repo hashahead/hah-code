@@ -146,6 +146,7 @@ public:
 };
 
 ///////////////////////////////////
+    bool UpdateCompleteOrder(const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount);
 // CMatchDex
 
 class CMatchDex
