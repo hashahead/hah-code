@@ -543,6 +543,34 @@ bool CBlockState::ExecFunctionContract(const CDestination& destFromIn, const CDe
     return true;
 }
 
+bool CBlockState::Selfdestruct(const CDestination& destContractIn, const CDestination& destBeneficiaryIn)
+{
+    CDestState stateContract;
+    CDestState stateBeneficiary;
+    if (!GetDestState(destContractIn, stateContract))
+    {
+        StdLog("CBlockState", "Selfdestruct: Get contract state fail, contract address: %s", destContractIn.ToString().c_str());
+        return false;
+    }
+    if (stateContract.IsDestroy())
+    {
+        return true;
+    }
+    if (!GetDestState(destBeneficiaryIn, stateBeneficiary))
+    {
+        stateBeneficiary.SetNull();
+        stateBeneficiary.SetType(CDestination::PREFIX_PUBKEY); // WAIT_CHECK
+    }
+
+    stateBeneficiary.IncBalance(stateContract.GetBalance());
+    stateContract.SetBalance(0);
+    stateContract.SetDestroy(true);
+
+    SetCacheDestState(destContractIn, stateContract);
+    SetCacheDestState(destBeneficiaryIn, stateBeneficiary);
+    return true;
+}
+
 void CBlockState::AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv)
 {
     auto it = mapCacheContractPrevAddressState.find(address);
