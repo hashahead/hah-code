@@ -141,6 +141,35 @@ protected:
     }
 };
 
+//////////////////////////////
+// CForkStateRootKv & CForkUserStateRootKv & CForkContractRootKv
+
+class CForkUserStateRootKv
+{
+    friend class hnbase::CStream;
+
+public:
+    CForkUserStateRootKv() {}
+    CForkUserStateRootKv(const uint256& hashBlockIn, const uint256& hashRootIn)
+      : hashBlock(hashBlockIn), hashRoot(hashRootIn) {}
+    CForkUserStateRootKv(const uint256& hashBlockIn, const uint256& hashRootIn, const bytesmap& mapKvIn)
+      : hashBlock(hashBlockIn), hashRoot(hashRootIn), mapKv(mapKvIn) {}
+
+public:
+    uint256 hashBlock;
+    uint256 hashRoot;
+    bytesmap mapKv;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashBlock, opt);
+        s.Serialize(hashRoot, opt);
+        s.Serialize(mapKv, opt);
+    }
+};
+
 } // namespace storage
 } // namespace hashahead
 
