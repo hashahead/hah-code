@@ -1925,49 +1925,65 @@ bool CBlockBase::RetrieveDestState(const uint256& hashFork, const uint256& hashB
     return dbBlock.RetrieveDestState(hashFork, hashBlockRoot, dest, state);
 }
 
-    for (auto& kv : mapCacheKv)
-    {
-        cacheContract.cacheContractKv[kv.first] = kv.second;
-    }
-    for (auto& logs : vLogsIn)
-    {
-        cacheContract.cacheContractLogs.push_back(logs);
-    }
+SHP_BLOCK_STATE CBlockBase::CreateBlockStateRoot(const uint256& hashFork, const CForkContext& ctxFork, const CBlock& block, const uint256& hashPrevStateRoot, const uint32 nPrevBlockTime, uint256& hashStateRoot, uint256& hashReceiptRoot,
+                                                 uint256& hashCrosschainMerkleRoot, uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut, bool& fMoStatus, const std::map<CDestination, CAddressContext>& mapAddressContext)
+{
+    SHP_BLOCK_STATE ptrBlockState = MAKE_SHARED_BLOCK_STATE(*this, hashFork, ctxFork, block, hashPrevStateRoot, nPrevBlockTime, mapAddressContext, fCfgTraceDb);
 
-    if (mapCacheAddressContext.find(destContractIn) == mapCacheAddressContext.end())
+    CBlockRootStatus statusBlockRoot(block.nType, block.GetBlockTime(), block.txMint.GetToAddress());
+    if (!dbBlock.CreateCacheStateTrie(hashFork, hashPrevStateRoot, statusBlockRoot, ptrBlockState->mapBlockState, hashStateRoot))
     {
-        CAddressContext ctxAddress;
-        if (!GetAddressContext(destContractIn, ctxAddress))
-        {
-            StdError("CBlockState", "Save run result: Get address context fail, destContractIn: %s", destContractIn.ToString().c_str());
-        }
-        else
-        {
-            mapCacheAddressContext[destContractIn] = ctxAddress;
-        }
+        StdLog("BlockBase", "Create block state root: Create cache state trie fail, prev: %s", block.hashPrev.GetHex().c_str());
+        return nullptr;
     }
+    return ptrBlockState;
 }
 
-bool CBlockState::ContractTransfer(const CDestination& from, const CDestination& to, const uint256& amount, const uint64 nGasLimit, uint64& nGasLeft, const CAddressContext& ctxToAddress, const uint8 nTransferType)
+bool CBlockBase::ReUpdateBlockTraceData(const uint256& hashFork, const uint256& hashBlock)
 {
-    if (ctxToAddress.IsTemplate())
+    BlockIndexPtr pIndex;
+    if (!(pIndex = GetIndex(hashBlock)))
     {
-        if (ctxToAddress.GetTemplateType() == TEMPLATE_VOTE && !fEnableStakeVote)
-        {
-            return false;
-        }
-        if (ctxToAddress.GetTemplateType() == TEMPLATE_PLEDGE && !fEnableStakePledge)
-        {
-            return false;
-        }
-    }
-    if (nGasLeft < FUNCTION_TX_GAS_TRANS)
-    {
-        StdLog("CBlockState", "Contract transfer: Gas not enough, gas left: %lu, from: %s", nGasLeft, from.ToString().c_str());
-        nGasLeft = 0;
+        StdTrace("BlockBase", "ReUpdate block trace data: Get index failed, block: %s", hashBlock.ToString().c_str());
         return false;
     }
-    nGasLeft -= FUNCTION_TX_GAS_TRANS;
+    CBlockEx block;
+    if (!tsBlock.Read(block, pIndex->nFile, pIndex->nOffset, true, true))
+    {
+        StdTrace("BlockBase", "ReUpdate block trace data: Read block failed, block: %s", hashBlock.ToString().c_str());
+        return false;
+    }
+
+    CForkContext ctxFork;
+    if (block.IsOrigin())
+    {
+        CProfile profile;
+        if (block.GetForkProfile(profile))
+        {
+            ctxFork = CForkContext(hashFork, block.hashPrev, 0, profile);
+        }
+    }
+    else
+    {
+        if (!dbBlock.RetrieveForkContext(hashFork, ctxFork, pIndex->GetRefBlock()))
+        {
+            StdError("BlockBase", "ReUpdate block trace data: Retrieve fork context fail, fork: %s, ref block: %s", hashFork.ToString().c_str(), pIndex->GetRefBlock().GetBhString().c_str());
+            return false;
+        }
+    }
+    std::map<CDestination, CAddressContext> mapTempAddressContext;
+    if (!GetBlockAddress(hashFork, hashBlock, block, mapTempAddressContext))
+    {
+        StdError("BlockBase", "ReUpdate block trace data: Get block address failed, block: %s", hashBlock.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CBlockBase::RetrieveContractKvValue(const uint256& hashFork, const uint256& hashContractRoot, const uint256& key, bytes& value)
+{
+    return dbBlock.RetrieveContractKvValue(hashFork, hashContractRoot, key, value);
+}
 
     CDestState stateFrom;
     if (!GetDestState(from, stateFrom))
