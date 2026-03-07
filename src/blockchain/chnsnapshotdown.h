@@ -161,12 +161,31 @@ protected:
     bool HandleMsgFilelistReq(const uint64 nNetId, const uint256& hashFork, const uint256& hashSnapBlock);
     bool HandleMsgFilelistRsp(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgFilelistRsp& body);
     bool HandleMsgDownDataReq(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgDownDataReq& body);
+    bool HandleMsgDownDataRsp(const uint64 nNetId, const uint256& hashFork, const CSnapDownMsgDownDataRsp& body);
 
 protected:
+    const CNetworkConfig* NetworkConfig()
+    {
+        return dynamic_cast<const CNetworkConfig*>(hnbase::IBase::Config());
+    }
     const string GetPeerAddressInfo(uint64 nNonce);
+    bool RequstFileList(const uint256& hashSnapBlock);
+    void FileDownComplete(const std::string& strFileName);
+    bool RequstNextFile(const uint64 nNetId, const uint256& hashFork, const uint256& hashSnapBlock);
+
+protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
+
+    std::string strCfgSnapshotDownAddress;
+    uint256 hashCfgSnapshotDownBlock;
+
+    std::map<uint64, CSnapDownChnPeer> mapChnPeer;
+
+    uint64 nSnapshotDownNetId = 0;
+    uint256 hashSnapshotBlock;
+    std::vector<CSnapshotFileInfo> vRemoteSnapFilelist;
 };
 
 } // namespace hashahead

@@ -327,4 +327,63 @@ const string CSnapshotDownChannel::GetPeerAddressInfo(uint64 nNonce)
     return string("0.0.0.0");
 }
 
+bool CSnapshotDownChannel::RequstFileList(const uint256& hashSnapBlock)
+{
+    if (nSnapshotDownNetId == 0 || hashSnapBlock == 0)
+    {
+        return false;
+    }
+
+    CBufStream ss;
+    ss << SNAP_DOWN_MSGID_FILELIST_REQ << hashSnapBlock;
+
+    network::CEventPeerSnapshotDownData event(nSnapshotDownNetId, pCoreProtocol->GetGenesisBlockHash());
+    ss.GetData(event.data);
+    if (!pPeerNet->DispatchEvent(&event))
+    {
+        StdLog("CSnapshotDownChannel", "Requst file list: Dispatch event failed, snap block: %s", hashSnapBlock.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
+void CSnapshotDownChannel::FileDownComplete(const std::string& strFileName)
+{
+    for (auto it = vRemoteSnapFilelist.begin(); it != vRemoteSnapFilelist.end(); ++it)
+    {
+        if (it->strFileName == strFileName)
+        {
+            vRemoteSnapFilelist.erase(it);
+            break;
+        }
+    }
+    if (vRemoteSnapFilelist.empty())
+    {
+        hashSnapshotBlock = 0;
+    }
+}
+
+bool CSnapshotDownChannel::RequstNextFile(const uint64 nNetId, const uint256& hashFork, const uint256& hashSnapBlock)
+{
+    if (!vRemoteSnapFilelist.empty())
+    {
+        const std::string& strFileName = vRemoteSnapFilelist.begin()->strFileName;
+        const uint64 nLocalFileSize = pBlockChain->GetSnapshotDownFileSize(hashSnapBlock, strFileName);
+
+        CSnapDownMsgDownDataReq bodyReq(hashSnapBlock, strFileName, nLocalFileSize);
+
+        CBufStream ss;
+        ss << SNAP_DOWN_MSGID_DOWNDATA_REQ << bodyReq;
+
+        network::CEventPeerSnapshotDownData event(nNetId, hashFork);
+        ss.GetData(event.data);
+        if (!pPeerNet->DispatchEvent(&event))
+        {
+            StdLog("CSnapshotDownChannel", "Requst next file: Dispatch event failed, file name: %s, snap block: %s", strFileName.c_str(), hashSnapBlock.ToString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
 }; // namespace hashahead
