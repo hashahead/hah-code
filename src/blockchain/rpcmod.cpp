@@ -9607,8 +9607,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterLogs(const CReqContext& ctxReq, CRPCParamP
     auto spParam = CastParamPtr<Ceth_getFilterLogsParam>(param);
     if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
     {
-        StdLog("CRPCMod", "RPC EthGetFilterLogs: Param error");
-        return nullptr;
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
     }
 
     uint256 nFilterId;
@@ -9620,7 +9619,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterLogs(const CReqContext& ctxReq, CRPCParamP
         if (!pService->GetTxReceiptLogsByFilterId(nFilterId, true, vReceiptLogs))
         {
             StdLog("CRPCMod", "RPC EthGetFilterLogs: Get logs fail");
-            return nullptr;
+            return MakeCeth_getFilterLogsResultPtr();
         }
 
         auto spResult = MakeCeth_getFilterLogsResultPtr();
@@ -9637,7 +9636,14 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterLogs(const CReqContext& ctxReq, CRPCParamP
                 txLogs.strBlocknumber = ToHexString(v.nBlockNumber);
                 txLogs.strBlockhash = v.hashBlock.ToString();
                 txLogs.strAddress = d.address.ToString();
-                txLogs.strData = d.data.ToString();
+                if (d.data.empty())
+                {
+                    txLogs.strData = "0x";
+                }
+                else
+                {
+                    txLogs.strData = ToHexString(d.data);
+                }
                 for (auto& t : d.topics)
                 {
                     txLogs.vecTopics.push_back(t.ToString());
@@ -9654,7 +9660,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterLogs(const CReqContext& ctxReq, CRPCParamP
         if (!pService->GetFilterBlockHashs(ctxReq.hashFork, nFilterId, true, vBlockHash))
         {
             StdLog("CRPCMod", "RPC EthGetFilterLogs: Get block fail");
-            return nullptr;
+            return MakeCeth_getFilterBlockTxResultPtr();
         }
 
         auto spResult = MakeCeth_getFilterBlockTxResultPtr();
@@ -9670,7 +9676,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterLogs(const CReqContext& ctxReq, CRPCParamP
         if (!pService->GetFilterTxids(ctxReq.hashFork, nFilterId, true, vTxid))
         {
             StdLog("CRPCMod", "RPC EthGetFilterChanges: Get tx fail");
-            return nullptr;
+            return MakeCeth_getFilterBlockTxResultPtr();
         }
 
         auto spResult = MakeCeth_getFilterBlockTxResultPtr();
@@ -9680,7 +9686,7 @@ CRPCResultPtr CRPCMod::RPCEthGetFilterLogs(const CReqContext& ctxReq, CRPCParamP
         }
         return spResult;
     }
-    return nullptr;
+    return MakeCeth_getFilterLogsResultPtr();
 }
 
 CRPCResultPtr CRPCMod::RPCEthGetLogs(const CReqContext& ctxReq, CRPCParamPtr param)
