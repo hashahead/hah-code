@@ -349,6 +349,91 @@ void CWsServer::ParseIpPortString(const std::string& strIpPort, std::string& str
     }
 }
 
+void CWsServer::OnOpen(connection_hdl hdl)
+{
+    try
+    {
+        connection_ptr con = wsServer.get_con_from_hdl(hdl);
+        uint64 connection_id = reinterpret_cast<uint64>(con.get());
+
+        std::string strClientIp;
+        uint16 nClientPort = 0;
+        ParseIpPortString(con->get_remote_endpoint(), strClientIp, nClientPort);
+
+        StdDebug("CWsService", "OnOpen: client address: %s:%d, connect id: 0x%lx", strClientIp.c_str(), nClientPort, connection_id);
+
+        {
+            CWriteLock wlock(rwAccess);
+
+            auto it = mapWsClient.find(connection_id);
+            if (it != mapWsClient.end())
+            {
+                mapWsClient.erase(it);
+            }
+            mapWsClient.insert(std::make_pair(connection_id, CWsClient(connection_id, strClientIp, nClientPort, hdl)));
+        }
+    }
+    catch (std::exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+    }
+}
+
+void CWsServer::OnClose(connection_hdl hdl)
+{
+    try
+    {
+        connection_ptr con = wsServer.get_con_from_hdl(hdl);
+        uint64 connection_id = reinterpret_cast<uint64>(con.get());
+
+        std::string strClientIp;
+        uint16 nClientPort = 0;
+        ParseIpPortString(con->get_remote_endpoint(), strClientIp, nClientPort);
+
+        StdDebug("CWsService", "OnClose: client address: %s:%d, connect id: 0x%lx", strClientIp.c_str(), nClientPort, connection_id);
+
+        pWsService->RemoveClientAllSubscribe(nChainId, connection_id);
+    }
+    catch (std::exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+    }
+}
+
+void CWsServer::OnMessage(connection_hdl hdl, message_ptr msg)
+{
+    try
+    {
+        if (msg->get_opcode() == websocketpp::frame::opcode::TEXT)
+        {
+            connection_ptr con = wsServer.get_con_from_hdl(hdl);
+            uint64 connection_id = reinterpret_cast<uint64>(con.get());
+            const std::string& strMsg = msg->get_payload();
+
+            // std::string strClientIp;
+            // uint16 nClientPort = 0;
+            // ParseIpPortString(con->get_remote_endpoint(), strClientIp, nClientPort);
+
+            // StdDebug("CWsService", "OnMessage: TEXT: address: %s:%d, connect id: %lu, msg: %s", strClientIp.c_str(), nClientPort, connection_id, strMsg.c_str());
+
+            if (!strMsg.empty())
+            {
+                CReadLock rlock(rwAccess);
+
+                auto it = mapWsClient.find(connection_id);
+                if (it != mapWsClient.end())
+                {
+                    PostRpcModMsg(it->second, strMsg);
+                }
+            }
+        }
+    }
+    catch (std::exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+    }
+}
+
 //////////////////////////////
 // CWsService
 
