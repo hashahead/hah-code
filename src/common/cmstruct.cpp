@@ -175,4 +175,82 @@ bool CBlockMakerFilter::GetFilterBlockHashs(const uint256& hashLastBlock, const 
     return true;
 }
 
+//////////////////////////////
+// CBlockPendingTxFilter
+
+bool CBlockPendingTxFilter::isTimeout()
+{
+    if (GetTime() - nPrevGetChangesTime >= FILTER_DEFAULT_TIMEOUT)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool CBlockPendingTxFilter::AddPendingTx(const uint256& hashFork, const uint256& txid)
+{
+    if (hashFork != hashFork)
+    {
+        return true;
+    }
+    if (setTxid.size() >= MAX_FILTER_CACHE_COUNT * 2)
+    {
+        return false;
+    }
+    if (setTxid.find(txid) == setTxid.end())
+    {
+        setTxid.insert(txid);
+        if (setHisTxid.find(txid) != setHisTxid.end())
+        {
+            setHisTxid.erase(txid);
+        }
+    }
+    return true;
+}
+
+bool CBlockPendingTxFilter::GetFilterTxids(const uint256& hashFork, const bool fAll, std::vector<uint256>& vTxid)
+{
+    if (hashFork != hashFork)
+    {
+        return true;
+    }
+    if (fAll)
+    {
+        for (auto& txid : setTxid)
+        {
+            vTxid.push_back(txid);
+        }
+        for (auto& txid : setHisTxid)
+        {
+            vTxid.push_back(txid);
+        }
+    }
+    else
+    {
+        for (auto& txid : setTxid)
+        {
+            vTxid.push_back(txid);
+            setHisTxid.insert(txid);
+            if (++nSeqCreate == 0)
+            {
+                nSeqCreate++;
+                mapHisSeq.clear();
+                setHisTxid.clear();
+                setHisTxid.insert(txid);
+            }
+            mapHisSeq.insert(std::make_pair(nSeqCreate, txid));
+        }
+        setTxid.clear();
+        nPrevGetChangesTime = GetTime();
+
+        while (setHisTxid.size() > MAX_FILTER_CACHE_COUNT * 2 && mapHisSeq.size() > 0)
+        {
+            auto it = mapHisSeq.begin();
+            setHisTxid.erase(it->second);
+            mapHisSeq.erase(it);
+        }
+    }
+    return true;
+}
+
 } // namespace hashahead

@@ -64,6 +64,24 @@ public:
     uint64 nPrevBlockTime;
 };
 
+//////////////////////////////
+// CVmCallResult
+
+class CVmCallResult
+{
+public:
+    CVmCallResult()
+      : nStatus(0), nGasUsed(0), nGasLeft(0), ptrContractTraceResult(nullptr) {}
+
+public:
+    int nStatus;
+    bytes btResult;
+    uint64 nGasUsed;
+    uint64 nGasLeft;
+    SHP_CONTRACT_TRACE_RESULT ptrContractTraceResult;
+};
+
+//////////////////////////////
 // CBlockLogsFilter
 
 class CBlockLogsFilter
