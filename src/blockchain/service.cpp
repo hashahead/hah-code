@@ -1742,42 +1742,50 @@ bool CService::SubmitPoaBlock(const CTemplateMintPtr& templMint, crypto::CKey& k
     block.nGasLimit = MAX_BLOCK_GAS_LIMIT;
 
     uint256 nTotalMintReward;
+    bool fMoStatus = false;
     if (!pBlockChain->CreateBlockStateRoot(pCoreProtocol->GetGenesisBlockHash(), block, block.hashStateRoot, block.hashReceiptsRoot,
-                                           block.nGasUsed, block.btBloomData, nTotalMintReward))
+                                           block.hashCrosschainMerkleRoot, block.nGasUsed, block.btBloomData, nTotalMintReward, fMoStatus))
     {
-        StdError("CService", "Submit work: Get block state root fail, block: %s", block.GetHash().ToString().c_str());
+        StdLog("CService", "Submit poa block: Get block state root fail, prev block: %s", block.hashPrev.ToString().c_str());
         pTxPool->ClearTxPool(pCoreProtocol->GetGenesisBlockHash());
-        return FAILED;
+        return false;
     }
-    //block.txMint.SetAmount(0);
 
-    //block.AddMintCoinProof(nMintCoin);
     block.AddMintRewardProof(nTotalMintReward);
+    block.UpdateMerkleRoot();
 
-    block.hashMerkleRoot = block.CalcMerkleTreeRoot();
+    uint256 hashBlock = block.GetHash();
 
-    hashBlock = block.GetHash();
     bytes btSigData;
     if (!keyMint.Sign(hashBlock, btSigData))
     {
-        StdError("CService", "Submit work: Sign fail");
-        return ERR_BLOCK_SIGNATURE_INVALID;
+        StdLog("CService", "Submit poa block: Sign fail");
+        return false;
     }
     block.SetSignData(btSigData);
 
-    Errno err = pCoreProtocol->ValidateBlock(pCoreProtocol->GetGenesisBlockHash(), block.hashPrev, block);
-    if (err != OK)
+    if (pCoreProtocol->ValidateBlock(pCoreProtocol->GetGenesisBlockHash(), block.hashPrev, block) != OK)
     {
-        StdError("CService", "Submit work: Validate block fail");
-        return err;
+        StdLog("CService", "Submit poa block: Validate block fail");
+        return false;
     }
 
-    if (!pNetChannel->AddCacheLocalPowBlock(block))
+    if (!pNetChannel->AddCacheLocalPoaBlock(block))
     {
-        StdError("CService", "Submit work: AddCacheLocalPowBlock fail");
-        return FAILED;
+        StdLog("CService", "Submit poa block: Add cache local poa block fail");
+        return false;
     }
-    return OK;
+    return true;
+}
+
+bool CService::StartRpcSnapshot(const uint32 nSnapshotHeight, uint256& hashSnapshotBlockHash)
+{
+    return pChainSnapshot->StartHeightSnapshot(nSnapshotHeight, hashSnapshotBlockHash);
+}
+
+uint32 CService::GetSnapshotStatus(uint256& hashSnapshotBlock)
+{
+    return pChainSnapshot->GetSnapshotStatus(hashSnapshotBlock);
 }
 
 ////////////////////////////////////////////////////////////////////////
