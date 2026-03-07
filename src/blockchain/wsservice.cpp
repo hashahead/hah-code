@@ -214,6 +214,67 @@ void CWsServer::SendWsMsg(const uint64 nConnId, const std::string& strMsg)
     }
 }
 
+//-------------------------------------------------------
+void CWsServer::WsThreadFunc()
+{
+    SetThreadName((string("ws-") + std::to_string(nListenPort)).c_str());
+
+    try
+    {
+        // Start the ASIO io_service run loop
+        wsServer.run();
+    }
+    catch (websocketpp::exception const& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+    }
+    catch (...)
+    {
+        StdError(__PRETTY_FUNCTION__, "other exception");
+    }
+}
+
+bool CWsServer::StartWsListen()
+{
+    try
+    {
+        // Set logging settings
+        wsServer.set_access_channels(websocketpp::log::alevel::none);
+        //wsServer.set_access_channels(websocketpp::log::alevel::all);
+        wsServer.clear_access_channels(websocketpp::log::alevel::frame_payload);
+        wsServer.set_reuse_addr(true);
+
+        // Initialize Asio
+        wsServer.init_asio();
+
+        // Register our open handler
+        wsServer.set_open_handler(bind(&CWsServer::OnOpen, this, ::_1));
+
+        // Register our close handler
+        wsServer.set_close_handler(bind(&CWsServer::OnClose, this, ::_1));
+
+        // Register our message handler
+        wsServer.set_message_handler(bind(&CWsServer::OnMessage, this, ::_1, ::_2));
+
+        // Listen
+        wsServer.listen(addrListen, nListenPort);
+
+        // Start the server accept loop
+        wsServer.start_accept();
+    }
+    catch (websocketpp::exception const& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    catch (...)
+    {
+        StdError(__PRETTY_FUNCTION__, "other exception");
+        return false;
+    }
+    return true;
+}
+
 //////////////////////////////
 // CWsService
 
