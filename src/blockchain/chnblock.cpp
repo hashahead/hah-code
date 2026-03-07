@@ -336,28 +336,17 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockBks& eventBks)
     }
     else
     {
-        CBlock block;
-        try
+        if (pDispatcher->AddNewBlock(block, nRecvPeerNonce, true) != OK)
         {
-            CBufStream ss(eventBks.data.btBlockData);
-            ss >> block;
-        }
-        catch (std::exception& e)
-        {
-            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
-            return false;
-        }
-        if (pDispatcher->AddNewBlock(block, nRecvPeerNonce) != OK)
-        {
-            StdLog("CBlockChannel", "CEvent Peer Block Bks: Add new block fail, block: [%d] %s, fork: %s",
-                   CBlock::GetBlockHeightByHash(eventBks.data.hashBlock), eventBks.data.hashBlock.GetHex().c_str(), hashFork.ToString().c_str());
+            StdLog("CBlockChannel", "CEvent peer block bks: Add new block fail, block: %s, fork: %s",
+                   eventBks.data.hashBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
         }
         else
         {
-            StdDebug("CBlockChannel", "CEvent Peer Block Bks: Add block success, block: [%d] %s, fork: %s",
-                     CBlock::GetBlockHeightByHash(eventBks.data.hashBlock), eventBks.data.hashBlock.GetHex().c_str(), hashFork.ToString().c_str());
+            StdDebug("CBlockChannel", "CEvent peer block bks: Add block success, block: %s, fork: %s",
+                     eventBks.data.hashBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
 
-            AddNextBlock(block.GetHash());
+            AddNextBlock(hashBlock);
         }
     }
     return true;
@@ -403,6 +392,49 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockNextPrevBlock& eventData
     } while (0);
 
     pPeerNet->DispatchEvent(&eventPrevBlocks);
+    return true;
+}
+
+bool CBlockChannel::HandleEvent(network::CEventPeerBlockPrevBlocks& eventData)
+{
+    const uint256& hashFork = eventData.hashFork;
+    const uint64 nRecvPeerNonce = eventData.nNonce;
+    const std::vector<uint256>& vPrevBlockHash = eventData.data;
+
+    if (vPrevBlockHash.size() > 1)
+    {
+        const uint256& hashFirstBlock = vPrevBlockHash[vPrevBlockHash.size() - 1];
+
+        auto it = mapChnFork.find(hashFork);
+        if (it == mapChnFork.end())
+        {
+            return false;
+        }
+        CBlockChnFork& chnFork = it->second;
+
+        bool fAllExist = chnFork.AddBlockHash(vPrevBlockHash);
+
+        uint256 hashExistBlock;
+        for (auto& hash : vPrevBlockHash)
+        {
+            if (pBlockChain->Exists(hash))
+            {
+                hashExistBlock = hash;
+                break;
+            }
+        }
+        if (hashExistBlock == 0)
+        {
+            if (!fAllExist)
+            {
+                SendNextPrevBlockReq(hashFork, hashFirstBlock, nRecvPeerNonce);
+            }
+        }
+        else
+        {
+            RequestNextBlockData(hashFork, hashExistBlock, nRecvPeerNonce);
+        }
+    }
     return true;
 }
 
