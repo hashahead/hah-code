@@ -781,24 +781,76 @@ protected:
     }
 };
 
-class CReceiptMerkleTree
+class CPledgeVoteContext
 {
+    friend class hnbase::CStream;
+
 public:
-    static uint256 BuildMerkleTree(const std::vector<uint256>& vReceipt)
+    CPledgeVoteContext()
+      : nPledgeType(0), nCycles(0), nNonce(0), nVoteTime(0), nVoteHeight(0), nStopHeight(0), nRedeemHeight(0), nStatus(0) {}
+
+    void SetNull()
     {
-        std::vector<uint256> vMerkleTree;
-        vMerkleTree = vReceipt;
-        size_t j = 0;
-        for (size_t nSize = vReceipt.size(); nSize > 1; nSize = (nSize + 1) / 2)
-        {
-            for (size_t i = 0; i < nSize; i += 2)
-            {
-                size_t i2 = std::min(i + 1, nSize - 1);
-                vMerkleTree.push_back(crypto::CryptoHash(vMerkleTree[j + i], vMerkleTree[j + i2]));
-            }
-            j += nSize;
-        }
-        return (vMerkleTree.empty() ? uint64(0) : vMerkleTree.back());
+        destVote.SetNull();
+        destDelegate.SetNull();
+        destOwner.SetNull();
+        nPledgeType = 0;
+        nCycles = 0;
+        nNonce = 0;
+        nVoteAmount = 0;
+        nVoteTime = 0;
+        nVoteHeight = 0;
+        nStopHeight = 0;
+        nRedeemHeight = 0;
+        nStatus = 0;
+        nReVoteRewardAmount = 0;
+        nStopedRewardAmount = 0;
+        nTotalRewardAmount = 0;
+    }
+
+public:
+    enum
+    {
+        PLEDGE_STATUS_INIT = 0,
+        PLEDGE_STATUS_VOTING = 1,
+        PLEDGE_STATUS_REQSTOPED = 2
+    };
+
+    CDestination destVote;       // vote address
+    CDestination destDelegate;   // pos node address
+    CDestination destOwner;      // vote user address
+    uint32 nPledgeType;          // pledge type
+    uint32 nCycles;              // 0: unlimit, other: cycles
+    uint32 nNonce;               // nonce
+    uint256 nVoteAmount;         // vote amount
+    uint32 nVoteTime;            // first vote time
+    uint32 nVoteHeight;          // first vote height
+    uint32 nStopHeight;          // request stop height
+    uint32 nRedeemHeight;        // remeed height
+    uint8 nStatus;               // vote status, 0: no vote, 1: voting, 2: request stop
+    uint256 nReVoteRewardAmount; // revote reward amount
+    uint256 nStopedRewardAmount; // stoped reward amount
+    uint256 nTotalRewardAmount;  // total reward amount
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(destVote, opt);
+        s.Serialize(destDelegate, opt);
+        s.Serialize(destOwner, opt);
+        s.Serialize(nPledgeType, opt);
+        s.Serialize(nCycles, opt);
+        s.Serialize(nNonce, opt);
+        s.Serialize(nVoteAmount, opt);
+        s.Serialize(nVoteTime, opt);
+        s.Serialize(nVoteHeight, opt);
+        s.Serialize(nStopHeight, opt);
+        s.Serialize(nRedeemHeight, opt);
+        s.Serialize(nStatus, opt);
+        s.Serialize(nReVoteRewardAmount, opt);
+        s.Serialize(nStopedRewardAmount, opt);
+        s.Serialize(nTotalRewardAmount, opt);
     }
 };
 
