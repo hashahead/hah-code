@@ -9711,7 +9711,7 @@ CRPCResultPtr CRPCMod::RPCEthGetLogs(const CReqContext& ctxReq, CRPCParamPtr par
     if (!pService->GetTxReceiptsByLogsFilter(ctxReq.hashFork, logsFilter, vReceiptLogs))
     {
         StdLog("CRPCMod", "RPC EthGetLogs: Get logs fail");
-        return nullptr;
+        return MakeCeth_getLogsResultPtr();
     }
 
     auto spResult = MakeCeth_getLogsResultPtr();
@@ -9728,7 +9728,14 @@ CRPCResultPtr CRPCMod::RPCEthGetLogs(const CReqContext& ctxReq, CRPCParamPtr par
             txLogs.strBlocknumber = ToHexString(v.nBlockNumber);
             txLogs.strBlockhash = v.hashBlock.ToString();
             txLogs.strAddress = d.address.ToString();
-            txLogs.strData = d.data.ToString();
+            if (d.data.empty())
+            {
+                txLogs.strData = "0x";
+            }
+            else
+            {
+                txLogs.strData = ToHexString(d.data);
+            }
             for (auto& t : d.topics)
             {
                 txLogs.vecTopics.push_back(t.ToString());
@@ -9738,6 +9745,168 @@ CRPCResultPtr CRPCMod::RPCEthGetLogs(const CReqContext& ctxReq, CRPCParamPtr par
         }
     }
     return spResult;
+}
+
+CRPCResultPtr CRPCMod::RPCEthSubscribe(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (ctxReq.nReqSourceType != REQ_SOURCE_TYPE_WS)
+    {
+        throw CRPCException(RPC_PARSE_ERROR, "No websocket");
+    }
+
+    uint128 nSubsId;
+    uint8 nSubscibleType = 0;
+    std::set<CDestination> setSubsAddress;
+    std::set<uint256> setSubsTopics;
+
+    {
+        boost::unique_lock<boost::mutex> lock(mutexDec);
+
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
+        }
+        if (valParam.type() != json_spirit::array_type)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
+        }
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        // newHeads
+        // {"jsonrpc":"2.0", "id": 1, "method": "eth_subscribe", "params": ["newHeads"]}
+
+        // logs
+        // {"jsonrpc":"2.0", "id": 1, "method": "eth_subscribe", "params": ["logs", {"address": "0x06963e6599ae8a485491a9008bf01c778bdf80c2", "topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}]}
+
+        // newPendingTransactions
+        // {"jsonrpc":"2.0", "id": 1, "method": "eth_subscribe", "params": ["newPendingTransactions"]}
+
+        // syncing
+        // {"jsonrpc":"2.0", "id": 1, "method": "eth_subscribe", "params": ["syncing"]}
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::str_type)
+            {
+                const string str = v.get_str();
+                if (str == "newHeads")
+                {
+                    nSubscibleType = WSCS_SUBS_TYPE_NEW_BLOCK;
+                    break;
+                }
+                else if (str == "logs")
+                {
+                    nSubscibleType = WSCS_SUBS_TYPE_LOGS;
+                }
+                else if (str == "newPendingTransactions")
+                {
+                    nSubscibleType = WSCS_SUBS_TYPE_NEW_PENDING_TX;
+                    break;
+                }
+                else if (str == "syncing")
+                {
+                    nSubscibleType = WSCS_SUBS_TYPE_SYNCING;
+                    break;
+                }
+            }
+            else if (v.type() == json_spirit::obj_type)
+            {
+                const Object& obj = v.get_obj();
+
+                const json_spirit::Value& vAddress = json_spirit::find_value(obj, "address");
+                if (vAddress.type() == json_spirit::str_type)
+                {
+                    const string str = vAddress.get_str();
+                    if (!str.empty())
+                    {
+                        CDestination addr;
+                        if (addr.ParseString(str) && !addr.IsNull())
+                        {
+                            setSubsAddress.insert(addr);
+                        }
+                    }
+                }
+                else if (vAddress.type() == json_spirit::array_type)
+                {
+                    const json_spirit::Array& arrayAddress = vAddress.get_array();
+                    for (auto& m : arrayAddress)
+                    {
+                        if (m.type() == json_spirit::str_type)
+                        {
+                            const string str = m.get_str();
+                            if (!str.empty())
+                            {
+                                CDestination addr;
+                                if (addr.ParseString(str) && !addr.IsNull())
+                                {
+                                    setSubsAddress.insert(addr);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const json_spirit::Value& vTopics = json_spirit::find_value(obj, "topics");
+                if (vTopics.type() == json_spirit::str_type)
+                {
+                    const string str = vTopics.get_str();
+                    if (!str.empty())
+                    {
+                        uint256 hash(str);
+                        if (hash != 0)
+                        {
+                            setSubsTopics.insert(hash);
+                        }
+                    }
+                }
+                else if (vTopics.type() == json_spirit::array_type)
+                {
+                    const json_spirit::Array& arrayTopics = vTopics.get_array();
+                    for (auto& m : arrayTopics)
+                    {
+                        if (m.type() == json_spirit::str_type)
+                        {
+                            const string str = m.get_str();
+                            if (!str.empty())
+                            {
+                                uint256 hash(str);
+                                if (hash != 0)
+                                {
+                                    setSubsTopics.insert(hash);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    switch (nSubscibleType)
+    {
+    case WSCS_SUBS_TYPE_NEW_BLOCK:
+        pWsService->AddNewBlockSubscribe(ctxReq.nReqChainId, ctxReq.nNonce, nSubsId);
+        break;
+    case WSCS_SUBS_TYPE_LOGS:
+        pWsService->AddLogsSubscribe(ctxReq.nReqChainId, ctxReq.nNonce, setSubsAddress, setSubsTopics, nSubsId);
+        break;
+    case WSCS_SUBS_TYPE_NEW_PENDING_TX:
+        pWsService->AddNewPendingTxSubscribe(ctxReq.nReqChainId, ctxReq.nNonce, nSubsId);
+        break;
+    case WSCS_SUBS_TYPE_SYNCING:
+        pWsService->AddSyncingSubscribe(ctxReq.nReqChainId, ctxReq.nNonce, nSubsId);
+        break;
+    }
+    if (nSubsId == 0)
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "Invalid request");
+    }
+    return MakeCeth_subscribeResultPtr(nSubsId.GetHex());
 }
 
 } // namespace hashahead
