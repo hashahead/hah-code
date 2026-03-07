@@ -275,6 +275,80 @@ bool CWsServer::StartWsListen()
     return true;
 }
 
+void CWsServer::StopWsListen()
+{
+    wsServer.stop();
+}
+
+void CWsServer::ParseIpPortString(const std::string& strIpPort, std::string& strIp, uint16& nPort)
+{
+    std::string endpointString = strIpPort;
+    endpointString.erase(std::remove_if(endpointString.begin(), endpointString.end(), ::isspace), endpointString.end());
+    if (endpointString.empty())
+    {
+        strIp = "";
+        nPort = 0;
+        return;
+    }
+
+    std::string portString;
+    if (endpointString[0] == '[')
+    {
+        std::regex ipv6Regex("\\[([0-9a-fA-F:]+)\\]:(\\d+)");
+        std::smatch match;
+        if (std::regex_match(endpointString, match, ipv6Regex))
+        {
+            if (match.size() == 3)
+            {
+                strIp = match[1].str();
+                portString = match[2].str();
+            }
+            else
+            {
+                strIp = "";
+                portString = "";
+            }
+        }
+    }
+    else
+    {
+        std::regex ipv4Regex("([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):(\\d+)");
+        std::smatch match;
+        if (std::regex_match(endpointString, match, ipv4Regex))
+        {
+            if (match.size() == 3)
+            {
+                strIp = match[1].str();
+                portString = match[2].str();
+            }
+            else
+            {
+                strIp = "";
+                portString = "";
+            }
+        }
+    }
+    if (portString.empty())
+    {
+        nPort = 0;
+    }
+    else
+    {
+        try
+        {
+            nPort = std::stoi(portString);
+        }
+        catch (const std::invalid_argument& e)
+        {
+            nPort = 0;
+        }
+        catch (const std::out_of_range& e)
+        {
+            nPort = 0;
+        }
+    }
+}
+
 //////////////////////////////
 // CWsService
 
