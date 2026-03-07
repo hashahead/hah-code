@@ -2638,6 +2638,21 @@ bool CBlockChain::ListMatchDexOrder(const uint256& hashBlock, const std::string&
     return cntrBlock.ListMatchDexOrder(hashBlock, strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
 }
 
+bool CBlockChain::GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve)
+{
+    return cntrBlock.GetCrosschainProveForPrevBlock(nRecvChainId, hashRecvPrevBlock, mapBlockCrosschainProve);
+}
+
+bool CBlockChain::AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve)
+{
+    return cntrBlock.AddRecvCrosschainProve(nRecvChainId, blockProve);
+}
+
+bool CBlockChain::GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve)
+{
+    return cntrBlock.GetRecvCrosschainProve(nRecvChainId, nSendChainId, hashSendProvePrevBlock, blockProve);
+}
+
 bool CBlockChain::AddBlacklistAddress(const CDestination& dest)
 {
     return cntrBlock.AddBlacklistAddress(dest);
