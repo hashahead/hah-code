@@ -126,8 +126,11 @@ protected:
 
     bool HandleEvent(network::CEventPeerActive& eventActive) override;
     bool HandleEvent(network::CEventPeerDeactive& eventDeactive) override;
+
+    bool HandleEvent(network::CEventPeerBlockVoteProtoData& eventBvp) override;
     bool AddBlockLocalVoteSignFlag(const uint256& hashBlock, const uint256& hashFork);
     bool CommitBlockVoteResult(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const uint256& hashFork);
+    bool AddBlockVoteCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, CBlockVoteChnFork& chnFork);
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;

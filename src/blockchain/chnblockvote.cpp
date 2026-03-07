@@ -443,4 +443,25 @@ bool CBlockVoteChannel::CommitBlockVoteResult(const uint256& hashBlock, const by
     return true;
 }
 
+bool CBlockVoteChannel::AddBlockVoteCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, CBlockVoteChnFork& chnFork)
+{
+    std::vector<uint384> vCandidatePubkey;
+    if (!pBlockChain->GetPrevBlockCandidatePubkey(hashBlock, vCandidatePubkey))
+    {
+        StdLog("CBlockVoteChannel", "Add block vote candidate pubkey: Get candidate pubkey fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    if (vCandidatePubkey.empty())
+    {
+        StdDebug("CBlockVoteChannel", "Add block vote candidate pubkey: Candiadate pubkey is empty, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    if (!chnFork.AddBlockCandidatePubkey(hashBlock, nBlockHeight, nBlockTime * 1000, vCandidatePubkey))
+    {
+        StdLog("CBlockVoteChannel", "Add block vote candidate pubkey Add candidate pubkey fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
 } // namespace hashahead
