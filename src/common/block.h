@@ -861,27 +861,39 @@ public:
     {
         SetNull();
     }
-    CBlockChainUpdate(const CBlockIndex* pIndex)
+    CBlockChainUpdate(const BlockIndexPtr pIndex, const std::vector<CTransactionReceipt>& vBlockTxReceiptsIn)
     {
+        SetNull();
+
         hashFork = pIndex->GetOriginHash();
-        hashParent = pIndex->GetParentHash();
-        nOriginHeight = pIndex->pOrigin->GetBlockHeight() - 1;
         hashPrevBlock = pIndex->GetPrevHash();
         hashLastBlock = pIndex->GetBlockHash();
         nLastBlockTime = pIndex->GetBlockTime();
         nLastBlockHeight = pIndex->GetBlockHeight();
         nLastBlockNumber = pIndex->GetBlockNumber();
         nLastMintType = pIndex->nMintType;
+        nLastChainTrust = pIndex->nChainTrust;
         nMoneySupply = pIndex->GetMoneySupply();
         nMoneyDestroy = pIndex->GetMoneyDestroy();
+        vBlockTxReceipts = vBlockTxReceiptsIn;
     }
     void SetNull()
     {
         hashFork = 0;
-        nOriginHeight = -1;
+        hashPrevBlock = 0;
+        hashLastBlock = 0;
+        nLastBlockTime = 0;
         nLastBlockHeight = -1;
         nLastBlockNumber = 0;
         nLastMintType = 0;
+        nLastChainTrust = 0;
+        nMoneySupply = 0;
+        nMoneyDestroy = 0;
+        setTxUpdate.clear();
+        vBlockAddNew.clear();
+        vBlockRemove.clear();
+        mapBlockProve.clear();
+        vBlockTxReceipts.clear();
     }
     bool IsNull() const
     {
@@ -890,19 +902,20 @@ public:
 
 public:
     uint256 hashFork;
-    uint256 hashParent;
-    int nOriginHeight;
     uint256 hashPrevBlock;
     uint256 hashLastBlock;
     int64 nLastBlockTime;
     int nLastBlockHeight;
     uint32 nLastBlockNumber;
     uint16 nLastMintType;
+    uint256 nLastChainTrust;
     uint256 nMoneySupply;
     uint256 nMoneyDestroy;
     std::set<uint256> setTxUpdate;
     std::vector<CBlockEx> vBlockAddNew;
     std::vector<CBlockEx> vBlockRemove;
+    std::map<CChainId, CBlockProve> mapBlockProve;
+    std::vector<CTransactionReceipt> vBlockTxReceipts;
 };
 
 } // namespace hashahead
