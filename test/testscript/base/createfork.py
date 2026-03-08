@@ -214,7 +214,7 @@ def getmaxchainid():
             maxchainid = chainid
     return maxchainid
 
-def createfork(forktype, prev, owner, amount, name, symbol, chainid, reward, halvecycle):
+def createfork(fromAddress, forktype, prev, owner, amount, name, symbol, chainid, reward, halvecycle):
     if not checkfork(name, symbol, chainid):
         print('fork created!')
         return
@@ -225,10 +225,10 @@ def createfork(forktype, prev, owner, amount, name, symbol, chainid, reward, hal
         if testnet:
             block_list = getblockhash(height-1)
         else:
-            if height <= 30:
-                print('height not enough, height: {}'.format(height))
+            if height <= 6:
+                print('height not enough, height: {}, need height: 6'.format(height))
                 return
-            block_list = getblockhash(height-30)
+            block_list = getblockhash(height-6)
         prev_block = block_list[0]
 
     print('prev block: {}'.format(prev_block))
@@ -236,11 +236,11 @@ def createfork(forktype, prev, owner, amount, name, symbol, chainid, reward, hal
     forkid, data = makeorigin(forktype, prev_block, owner, amount, name, symbol, chainid, reward, halvecycle)
     print('makeorigin success, forkid: {}'.format(forkid))
     forkaddr = addforktemplate(owner, forkid)
-    unlockkey(owner)
+    unlockkey(fromAddress)
     transamount = 100000
     if forktype == 'clonemap':
         transamount = 0
-    txid, err = sendfrom(owner, forkaddr, transamount, data)
+    txid, err = sendfrom(fromAddress, forkaddr, transamount, data)
     if err != 0:
         return
     print('sendfrom success, forkaddr: {}, txid: {}'.format(forkaddr, txid))
@@ -263,6 +263,7 @@ if __name__ == "__main__":
         owner = '0x5962974eeb0b17b43edabfc9b747839317aa852f'
     else:
         owner = '0x885c14725a43a6bbc165b2561617c5da8162f170'
+    fromAddress = owner
     amount = 3000000000
     name = ''
     symbol = ''
@@ -272,13 +273,14 @@ if __name__ == "__main__":
     
     if len(sys.argv) >= 2 and (sys.argv[1] == '-help' or sys.argv[1] == '-h' or sys.argv[1] == '?'):
         print("usage:")
-        print("python createfork.py -type <fork type: clonemap, user> -prev <prev block or height> -owner <owner> -amount <amount> -name <name> -symbol <symbol> -chainid <chainid> -reward <reward> -halvecycle <halvecycle> -testnet -mainnet -rpcurl <rpcurl>")
+        print("python createfork.py -from <from address> -type <fork type: clonemap, user> -prev <prev block or height> -owner <owner> -amount <amount> -name <name> -symbol <symbol> -chainid <chainid> -reward <reward> -halvecycle <halvecycle> -testnet -mainnet -rpcurl <rpcurl>")
         print("default:")
         if testnet:
             print("net: testnet")
         else:
             print("net: mainnet")
         print("rpcurl: {}".format(rpcurl))
+        print("from: {}".format(fromAddress))
         print("type: {}".format(forktype))
         print("prev: {}".format(prev))
         print("owner: {}".format(owner))
@@ -298,6 +300,10 @@ if __name__ == "__main__":
                     break
                 rpcurl = sys.argv[i+1]
                 seturl = True
+            elif sys.argv[i] == '-from':
+                if i+1 >= len(sys.argv):
+                    break
+                fromAddress = sys.argv[i+1]
             elif sys.argv[i] == '-type':
                 if i+1 >= len(sys.argv):
                     break
@@ -382,6 +388,7 @@ if __name__ == "__main__":
         else:
             print("net: mainnet")
         print("rpcurl: {}".format(rpcurl))
+        print("from: {}".format(fromAddress))
         print("type: {}".format(forktype))
         print("prev: {}".format(prev))
         print("owner: {}".format(owner))
@@ -392,12 +399,13 @@ if __name__ == "__main__":
         print("reward: {}".format(reward))
         print("halvecycle: {}".format(halvecycle))
         
-        createfork(forktype, prev, owner, amount, name, symbol, chainid, reward, halvecycle)
+        createfork(fromAddress, forktype, prev, owner, amount, name, symbol, chainid, reward, halvecycle)
 
 '''
 example:
 python createfork.py -autochainid 202
 python createfork.py -mainnet
 python createfork.py -mainnet -autochainid 203
+python createfork.py -autochainid 203 -from 0x5962974eeb0b17b43edabfc9b747839317aa852f -owner 0xb955034fcefb66112bab47483c8d243b86cb2c1d
 python createfork.py -prev 0x000001d5013a391895cc53c474d1b643f298837c37ad3b32e661fa206dcec8c9 -owner 0x5962974eeb0b17b43edabfc9b747839317aa852f -amount 500000000 -name fork-02 -symbol m02 -chainid 206 -reward 600 -halvecycle 200000
 '''

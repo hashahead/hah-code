@@ -81,6 +81,19 @@ public:
         return (prev_value == value) ? EVMC_STORAGE_UNCHANGED : EVMC_STORAGE_MODIFIED;
     }
 
+    evmc::bytes32 get_transient_storage(const evmc::address& addr, const evmc::bytes32& key) const
+        noexcept final
+    {
+        return {};
+    }
+
+    evmc_storage_status set_transient_storage(const evmc::address& addr,
+                                              const evmc::bytes32& key,
+                                              const evmc::bytes32& value) noexcept final
+    {
+        return {};
+    }
+
     evmc::uint256be get_balance(const evmc::address& addr) const noexcept final
     {
         auto it = accounts.find(addr);

@@ -16,7 +16,6 @@ contract test {
         bool b;
         bytes bs;
         (b,bs) = contract_addr.delegatecall(abi.encodeWithSignature("balanceOf(address)",addr));
-        // 得到余额
         uint v = abi.decode(bs, (uint));
         (b,bs) = contract_addr.call(abi.encodeWithSignature("balanceOf(address)",addr));
         addr.transfer(100);
