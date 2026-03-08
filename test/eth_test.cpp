@@ -358,7 +358,7 @@ bool evmexec(const bytes& btCode, const bytes& btData, const bool fCreate)
         auto vm = VMFactory::create();
         auto out = vm->exec(m_gas, m_ext, _onOp);
         bytes btRet = out.toBytes();
-        printf("exec success, size: %lu : %lu\n", out.size(), btRet.size());
+        printf("exec: success, size: %lu : %lu\n", out.size(), btRet.size());
         printf("ret: [%lu] %s\n", btRet.size(), ToHexString(btRet).c_str());
     }
     catch (RevertInstruction& _e)
@@ -469,7 +469,7 @@ bool MemEvmExec(const bytes& btCode, const bytes& btData, const bool fCreate)
     }
 
     CMemVmHost memhost;
-    CEvmExec vm(memhost, uint256(5566), 10, 123);
+    CEvmExec vm(memhost, uint256(5566), 10, 0, 123);
 
     CDestination from("0x8fa079a96ce08f6e8a53c1c00566c434b248bfa4");
     CDestination to;
@@ -481,6 +481,7 @@ bool MemEvmExec(const bytes& btCode, const bytes& btData, const bool fCreate)
     CDestination destBlockMint;
     uint64 nBlockTimestamp = 0;
     int nBlockHeight = 0;
+    uint64 nBlockNumber = 0;
     uint64 nBlockGasLimit = 20000000;
     bytes btContractCode = btCode;
     bytes btRunParam = btData;
@@ -491,16 +492,6 @@ bool MemEvmExec(const bytes& btCode, const bytes& btData, const bool fCreate)
         to = CDestination("0xe7bF45E20df9F7d85433ddFf8a376a2427122362");
         destContract = to;
     }
-
-    if (!vm.evmExec(from, to, destContract, destCodeOwner, nTxGasLimit,
-                    nGasPrice, nTxAmount, destBlockMint, nBlockTimestamp,
-                    nBlockHeight, nBlockGasLimit, btContractCode, btRunParam, txcd))
-    {
-        printf("exec fail\n");
-        return false;
-    }
-    printf("exec success, gas used: %lu, ret: [%lu] %s\n",
-           nTxGasLimit - vm.nGasLeft, vm.vResult.size(), ToHexString(vm.vResult).c_str());
 
     return true;
 }
@@ -646,6 +637,159 @@ BOOST_AUTO_TEST_CASE(txsizetest)
             printf("error: %s\n", e.what());
         }
     }
+}
+
+//./build-release/test/test_big --log_level=all --run_test=eth_tests/txreceipttest
+BOOST_AUTO_TEST_CASE(txreceipttest)
+{
+    CTxContractReceiptTrie tcrt;
+    tcrt.tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CALL;
+    tcrt.tcr.destFrom = CDestination("0x0000495194ec698fcf89ccf8abb445daf01db497");
+    tcrt.tcr.destTo = CDestination("0x0000495194ec698fcf89ccf8abb445daf01db497");
+    tcrt.tcr.nValue = TokenBigFloatToCoin("56.2547");
+    tcrt.tcr.nGasLimit = 900000;
+    tcrt.tcr.nGasUsed = 65000;
+    tcrt.tcr.btInput = ParseHexString("0x2fdc7315000000000000000000000000f232d640a5700724748464ba8bd8bed21db");
+    tcrt.tcr.btOutput = ParseHexString("0x2fdc7315000000000000000000000000f232d640a5700724748464ba8bd8bed21db");
+    tcrt.tcr.strError = "gas out";
+    tcrt.tcr.strRevertReason = "reason1";
+
+    CTxContractReceiptTrie c1;
+    c1.tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_DELEGATECALL;
+    c1.tcr.destFrom = CDestination("0x0000000476fde29330084b2b0b08a9f7d2ac6f2b");
+    tcrt.vCall.push_back(c1);
+
+    CTxContractReceiptTrie c2;
+    c2.tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_DELEGATECALL;
+    c2.tcr.destFrom = CDestination("0x0000a0756737268a633cd9296f1b154cf74430b6");
+    tcrt.vCall.push_back(c2);
+
+    {
+        hnbase::CBufStream ss;
+        ss << tcrt;
+        printf("contract receipt size: %lu\n", ss.GetSize());
+    }
+
+    {
+        std::stringstream ss;
+        CTxContractReceiptTrie::TrieToJsonStream(tcrt, ss);
+        std::cout << ss.str() << std::endl;
+    }
+
+    {
+        std::stringstream ss;
+        uint256 txid("0xee5663b5c179e0c3e151442c4ba651ceb8c4027d92162f1a4002abc93beb6c07");
+        CTxContractReceiptTrie::TxToJsonStream(txid, tcrt, ss);
+        std::cout << ss.str() << std::endl;
+    }
+
+    {
+        std::stringstream ss;
+        uint256 txid("0xee5663b5c179e0c3e151442c4ba651ceb8c4027d92162f1a4002abc93beb6c07");
+        std::vector<std::pair<uint256, CTxContractReceiptTrie>> vTxReceiptList;
+        vTxReceiptList.push_back(std::make_pair(txid, tcrt));
+        vTxReceiptList.push_back(std::make_pair(txid, tcrt));
+        CTxContractReceiptTrie::TxListToJsonStream(vTxReceiptList, ss);
+        std::cout << ss.str() << std::endl;
+    }
+}
+
+void ShowTcrTrieLevel(const CTxContractReceiptTrie& trieIn)
+{
+    cout << trieIn.tcr.strRevertReason << endl;
+    for (const auto& vd : trieIn.vCall)
+    {
+        ShowTcrTrieLevel(vd);
+    }
+}
+
+//./build-release/test/test_big --log_level=all --run_test=eth_tests/txreceiptlisttest
+BOOST_AUTO_TEST_CASE(txreceiptlisttest)
+{
+    TxContractReceipts vTcrList;
+
+    uint64 nAddressId = 1;
+
+    CTxContractReceipt r;
+    r.destCodeContract = CDestination(uint160(nAddressId++));
+    r.strRevertReason = "[]";
+    vTcrList.push_back(r);
+
+    CTxContractReceipt r0;
+    r0.destParentCodeContract = r.destCodeContract;
+    r0.destCodeContract = CDestination(uint160(nAddressId++));
+    r0.strRevertReason = "[0]";
+    vTcrList.push_back(r0);
+
+    CTxContractReceipt r1;
+    r1.destParentCodeContract = r.destCodeContract;
+    r1.destCodeContract = CDestination(uint160(nAddressId++));
+    r1.strRevertReason = "[1]";
+    vTcrList.push_back(r1);
+
+    CTxContractReceipt r2;
+    r2.destParentCodeContract = r.destCodeContract;
+    r2.destCodeContract = CDestination(uint160(nAddressId++));
+    r2.strRevertReason = "[2]";
+    vTcrList.push_back(r2);
+
+    CTxContractReceipt r10;
+    r10.destParentCodeContract = r1.destCodeContract;
+    r10.destCodeContract = CDestination(uint160(nAddressId++));
+    r10.strRevertReason = "[1,0]";
+    vTcrList.push_back(r10);
+
+    CTxContractReceipt r11;
+    r11.destParentCodeContract = r1.destCodeContract;
+    r11.destCodeContract = CDestination(uint160(nAddressId++));
+    r11.strRevertReason = "[1,1]";
+    vTcrList.push_back(r11);
+
+    CTxContractReceipt r12;
+    r12.destParentCodeContract = r1.destCodeContract;
+    r12.destCodeContract = CDestination(uint160(nAddressId++));
+    r12.strRevertReason = "[1,2]";
+    vTcrList.push_back(r12);
+
+    CTxContractReceipt r110;
+    r110.destParentCodeContract = r11.destCodeContract;
+    r110.destCodeContract = CDestination(uint160(nAddressId++));
+    r110.strRevertReason = "[1,1,0]";
+    vTcrList.push_back(r110);
+
+    CTxContractReceipt r120;
+    r120.destParentCodeContract = r12.destCodeContract;
+    r120.destCodeContract = CDestination(uint160(nAddressId++));
+    r120.strRevertReason = "[1,2,0]";
+    vTcrList.push_back(r120);
+
+    CTxContractReceipt r121;
+    r121.destParentCodeContract = r12.destCodeContract;
+    r121.destCodeContract = CDestination(uint160(nAddressId++));
+    r121.strRevertReason = "[1,2,1]";
+    vTcrList.push_back(r121);
+
+    CTxContractReceipt r20;
+    r20.destParentCodeContract = r2.destCodeContract;
+    r20.destCodeContract = CDestination(uint160(nAddressId++));
+    r20.strRevertReason = "[2,0]";
+    vTcrList.push_back(r20);
+
+    CTxContractReceipt r21;
+    r21.destParentCodeContract = r2.destCodeContract;
+    r21.destCodeContract = CDestination(uint160(nAddressId++));
+    r21.strRevertReason = "[2,1]";
+    vTcrList.push_back(r21);
+
+    for (const auto& vd : vTcrList)
+    {
+        cout << vd.strRevertReason << endl;
+    }
+
+    CTxContractReceiptTrie trieTcr;
+    BOOST_CHECK(trieTcr.AddContractReceiptList(vTcrList));
+
+    ShowTcrTrieLevel(trieTcr);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

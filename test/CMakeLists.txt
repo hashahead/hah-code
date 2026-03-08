@@ -21,24 +21,29 @@ set(sources
     crypto_tests.cpp
     delegate_tests.cpp
     eth_test.cpp
+    hdexdb_tests.cpp
     storage_tests.cpp
     structure_tests.cpp
     util_tests.cpp
     slowhash_tests.cpp
     triedb_tests.cpp
     bloomfilter_tests.cpp
-    evmc/evmcTest.cpp
-    evmc/example_host.cpp
+    blockvote_tests.cpp
+    merkletree_tests.cpp
+    nat_tests.cpp
+    # evmc/evmcTest.cpp
+    # evmc/example_host.cpp
 )
 
 add_executable(test_big ${sources})
 
-include_directories(../src/blockchain ../src/hnbase ../src/crypto ../src/common ../src/storage ../src/network ../src/mpvss ../src/delegate ../src/wvm/utils ../src/heth ../src/hvm/hevm ../src/hvm/hwvm ../src/hvm/vface)
+include_directories(../src/blockchain ../src/hnbase ../src/crypto ../src/common ../src/consensus ../src/storage ../src/network ../src/mpvss ../src/delegate ../src/heth ../src/heth/evmc/include ../src/hvm/hevm ../src/hvm/vface ../src/hnc/natpmp)
 
 target_link_libraries(test_big
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_THREAD_LIBRARY}
+    ${Boost_LOG_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT}
     OpenSSL::SSL
     OpenSSL::Crypto
@@ -54,58 +59,49 @@ target_link_libraries(test_big
     ethcore
     devcommon
     evm
-    ssvmCommon
-    ssvmEVMCUtilEVMCLoader
-    ssvm-evmc
     hevm
-    hwvm
     vface
-    ${Boost_LOG_LIBRARY}
+    consensus
+    natpmp
 )
 
-add_executable(wasm_test evmc/test.cpp evmc/example_host.cpp)
+# add_executable(wasm_test evmc/test.cpp evmc/example_host.cpp)
 
-target_link_libraries(wasm_test
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${Boost_THREAD_LIBRARY}
-    ${CMAKE_THREAD_LIBS_INIT}
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    mpvss
-    delegate
-    crypto
-    common
-    blockchain
-    hnbase
-    storage
-    ssvmCommon
-    ssvmEVMCUtilEVMCLoader
-    ssvm-evmc
-    ${Boost_LOG_LIBRARY}
-)
+# target_link_libraries(wasm_test
+#     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+#     ${Boost_SYSTEM_LIBRARY}
+#     ${Boost_THREAD_LIBRARY}
+#     ${CMAKE_THREAD_LIBS_INIT}
+#     OpenSSL::SSL
+#     OpenSSL::Crypto
+#     mpvss
+#     delegate
+#     crypto
+#     common
+#     blockchain
+#     hnbase
+#     storage
+#     ${Boost_LOG_LIBRARY}
+# )
 
-add_executable(wasm_erc20 evmc/erc20.cpp evmc/example_host.cpp)
+# add_executable(wasm_erc20 evmc/erc20.cpp evmc/example_host.cpp)
 
-target_link_libraries(wasm_erc20
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${Boost_THREAD_LIBRARY}
-    ${CMAKE_THREAD_LIBS_INIT}
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    mpvss
-    delegate
-    crypto
-    common
-    blockchain
-    hnbase
-    storage
-    ssvmCommon
-    ssvmEVMCUtilEVMCLoader
-    ssvm-evmc
-    ${Boost_LOG_LIBRARY}
-)
+# target_link_libraries(wasm_erc20
+#     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+#     ${Boost_SYSTEM_LIBRARY}
+#     ${Boost_THREAD_LIBRARY}
+#     ${CMAKE_THREAD_LIBS_INIT}
+#     OpenSSL::SSL
+#     OpenSSL::Crypto
+#     mpvss
+#     delegate
+#     crypto
+#     common
+#     blockchain
+#     hnbase
+#     storage
+#     ${Boost_LOG_LIBRARY}
+# )
 
 add_executable(test_ctsdb test_big_main.cpp test_big.h test_big.cpp ctsdb_test.cpp)
 
