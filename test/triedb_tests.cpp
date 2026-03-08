@@ -6,6 +6,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "base_tests.h"
 #include "block.h"
 #include "destination.h"
 #include "test_big.h"
@@ -16,9 +17,9 @@ using namespace hashahead;
 using namespace hashahead::storage;
 using namespace boost::filesystem;
 
-//./build/test/test_big --log_level=all --run_test=triedb_tests/basetest
-//./build/test/test_big --log_level=all --run_test=triedb_tests/shorttest
-//./build/test/test_big --log_level=all --run_test=triedb_tests/stresstest
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/basetest
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/shorttest
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/stresstest
 
 BOOST_FIXTURE_TEST_SUITE(triedb_tests, BasicUtfSetup)
 
@@ -68,7 +69,7 @@ BOOST_AUTO_TEST_CASE(basetest)
 {
     cout << GetLocalTime() << "  triedb base test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
 
     CTrieDB db;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
@@ -152,7 +153,7 @@ BOOST_AUTO_TEST_CASE(shorttest)
 {
     cout << GetLocalTime() << "  triedb short test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
 
     CTrieDB db;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));

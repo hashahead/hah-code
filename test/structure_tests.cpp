@@ -192,4 +192,62 @@ BOOST_AUTO_TEST_CASE(tree)
     BOOST_CHECK(relation2.GetRelation(b4)->spParent.lock()->key == B);
 }
 
+class CA
+{
+    friend class hnbase::CStream;
+
+public:
+    CA() {}
+
+public:
+    int a = 0;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(a, opt);
+    }
+};
+
+class CB : public CA
+{
+    friend class hnbase::CStream;
+
+public:
+    CB() {}
+
+public:
+    bool b = false;
+    uint32 c = 0;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        CA::Serialize(s, opt);
+        s.Serialize(b, opt);
+        s.Serialize(c, opt);
+    }
+};
+
+BOOST_AUTO_TEST_CASE(streamtest)
+{
+    CB cb1;
+
+    cb1.a = 10;
+    cb1.b = true;
+    cb1.c = 99;
+
+    CBufStream ss;
+    ss << cb1;
+    cout << "cb1 size: " << ss.GetSize() << endl;
+
+    CBufStream vv(ss.GetBytes());
+    CB cb2;
+    vv >> cb2;
+    cout << "a: " << cb2.a << endl;
+    cout << "c: " << cb2.c << endl;
+}
+
 BOOST_AUTO_TEST_SUITE_END()

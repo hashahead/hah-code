@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "block.h"
+#include "dbstruct.h"
 #include "destination.h"
 #include "test_big.h"
 #include "timeseries.h"
@@ -63,8 +64,6 @@ BOOST_AUTO_TEST_CASE(filetest)
         BOOST_FAIL(e.what());
     }
 }
-
-#define BLOCKFILE_PREFIX "block"
 
 class CMyBlockWalker : public CTSWalker<CBlockEx>
 {
