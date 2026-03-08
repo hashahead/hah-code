@@ -122,6 +122,7 @@ protected:
     CStream& Serialize(std::string& t, ObjectType&, LoadType&);
     CStream& Serialize(std::string& t, ObjectType&, std::size_t& serSize);
     CStream& Serialize(const std::string& t, ObjectType&, SaveType&);
+    CStream& Serialize(const std::string& t, ObjectType&, std::size_t& serSize);
 
     /* std::vector */
     template <typename T, typename A>
@@ -134,6 +135,18 @@ protected:
     CStream& Serialize(const std::vector<T, A>& t, ObjectType&, std::size_t& serSize);
     template <typename T, typename A>
     CStream& Serialize(std::vector<T, A>& t, ObjectType&, std::size_t& serSize);
+
+    /* std::array */
+    template <typename T, std::size_t N>
+    CStream& Serialize(const std::array<T, N>& t, ObjectType&, SaveType&);
+    template <typename T, std::size_t N>
+    CStream& Serialize(std::array<T, N>& t, ObjectType&, SaveType&);
+    template <typename T, std::size_t N>
+    CStream& Serialize(std::array<T, N>& t, ObjectType&, LoadType&);
+    template <typename T, std::size_t N>
+    CStream& Serialize(const std::array<T, N>& t, ObjectType&, std::size_t& serSize);
+    template <typename T, std::size_t N>
+    CStream& Serialize(std::array<T, N>& t, ObjectType&, std::size_t& serSize);
 
     /* std::set */
     template <typename K, typename C, typename A>

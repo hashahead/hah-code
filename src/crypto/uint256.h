@@ -1546,6 +1546,10 @@ public:
         }
         return 0;
     }
+    std::string GetBhString() const
+    {
+        return std::string("[") + std::to_string(GetB1()) + std::string("-") + std::to_string(GetB2()) + std::string("-") + std::to_string(GetB3()) + std::string("] ") + ToString();
+    }
 };
 
 inline bool operator==(const uint256& a, uint64 b)
@@ -1927,6 +1931,153 @@ inline bool operator==(const uint224& a, const uint224& b)
 inline bool operator!=(const uint224& a, const uint224& b)
 {
     return (base_uint224)a != (base_uint224)b;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// uint384
+//
+
+/** 384-bit unsigned integer */
+class uint384 : public base_uint384
+{
+public:
+    typedef base_uint384 basetype;
+
+    uint384()
+    {
+        for (int i = 0; i < WIDTH; i++)
+            pn[i] = 0;
+    }
+
+    uint384(const basetype& b)
+    {
+        for (int i = 0; i < WIDTH; i++)
+            pn[i] = b.pn[i];
+    }
+
+    uint384(const uint384& b)
+    {
+        for (int i = 0; i < WIDTH; i++)
+            pn[i] = b.pn[i];
+    }
+
+    uint384& operator=(const basetype& b)
+    {
+        for (int i = 0; i < WIDTH; i++)
+            pn[i] = b.pn[i];
+        return *this;
+    }
+
+    uint384& operator=(const uint384& b)
+    {
+        for (int i = 0; i < WIDTH; i++)
+            pn[i] = b.pn[i];
+        return *this;
+    }
+
+    uint384(const uint64 b)
+    {
+        pn[0] = (unsigned int)b;
+        pn[1] = (unsigned int)(b >> 32);
+        for (int i = 2; i < WIDTH; i++)
+            pn[i] = 0;
+    }
+
+    uint384& operator=(uint64 b)
+    {
+        pn[0] = (unsigned int)b;
+        pn[1] = (unsigned int)(b >> 32);
+        for (int i = 2; i < WIDTH; i++)
+            pn[i] = 0;
+        return *this;
+    }
+
+    explicit uint384(const std::string& str)
+    {
+        SetHex(str);
+    }
+
+    explicit uint384(const std::vector<unsigned char>& vch)
+    {
+        if (vch.size() == sizeof(pn))
+            memcpy(pn, &vch[0], sizeof(pn));
+        else
+            *this = 0;
+    }
+};
+
+inline bool operator<(const base_uint384& a, const uint384& b)
+{
+    return (base_uint384)a < (base_uint384)b;
+}
+inline bool operator<=(const base_uint384& a, const uint384& b)
+{
+    return (base_uint384)a <= (base_uint384)b;
+}
+inline bool operator>(const base_uint384& a, const uint384& b)
+{
+    return (base_uint384)a > (base_uint384)b;
+}
+inline bool operator>=(const base_uint384& a, const uint384& b)
+{
+    return (base_uint384)a >= (base_uint384)b;
+}
+inline bool operator==(const base_uint384& a, const uint384& b)
+{
+    return (base_uint384)a == (base_uint384)b;
+}
+inline bool operator!=(const base_uint384& a, const uint384& b)
+{
+    return (base_uint384)a != (base_uint384)b;
+}
+inline bool operator<(const uint384& a, const base_uint384& b)
+{
+    return (base_uint384)a < (base_uint384)b;
+}
+inline bool operator<=(const uint384& a, const base_uint384& b)
+{
+    return (base_uint384)a <= (base_uint384)b;
+}
+inline bool operator>(const uint384& a, const base_uint384& b)
+{
+    return (base_uint384)a > (base_uint384)b;
+}
+inline bool operator>=(const uint384& a, const base_uint384& b)
+{
+    return (base_uint384)a >= (base_uint384)b;
+}
+inline bool operator==(const uint384& a, const base_uint384& b)
+{
+    return (base_uint384)a == (base_uint384)b;
+}
+inline bool operator!=(const uint384& a, const base_uint384& b)
+{
+    return (base_uint384)a != (base_uint384)b;
+}
+inline bool operator<(const uint384& a, const uint384& b)
+{
+    return (base_uint384)a < (base_uint384)b;
+}
+inline bool operator<=(const uint384& a, const uint384& b)
+{
+    return (base_uint384)a <= (base_uint384)b;
+}
+inline bool operator>(const uint384& a, const uint384& b)
+{
+    return (base_uint384)a > (base_uint384)b;
+}
+inline bool operator>=(const uint384& a, const uint384& b)
+{
+    return (base_uint384)a >= (base_uint384)b;
+}
+inline bool operator==(const uint384& a, const uint384& b)
+{
+    return (base_uint384)a == (base_uint384)b;
+}
+inline bool operator!=(const uint384& a, const uint384& b)
+{
+    return (base_uint384)a != (base_uint384)b;
 }
 
 //////////////////////////////////////////////////////////////////////////////

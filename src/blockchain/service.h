@@ -115,13 +115,15 @@ public:
     bool AddTemplate(CTemplatePtr& ptr) override;
     CTemplatePtr GetTemplate(const CDestination& dest) override;
     bool RemoveTemplate(const CDestination& dest) override;
-    bool ListTransaction(const uint256& hashFork, const uint256& hashRefBlock, const CDestination& dest, const uint64 nOffset, const uint64 nCount, const bool fReverse, std::vector<CDestTxInfo>& vTx) override;
+    bool ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nOffset, const uint64 nCount, const bool fReverse, std::vector<CDestTxInfo>& vTx) override;
+    bool ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                     const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord) override;
     boost::optional<std::string> CreateTransaction(const uint256& hashFork, const CDestination& destFrom, const CDestination& destTo, const bytes& btToData,
                                                    const uint256& nAmount, const uint64 nNonce, const uint256& nGasPriceIn, const uint256& nGasIn, const bytes& vchData,
                                                    const bytes& btFormatData, const bytes& btContractCode, const bytes& btContractParam, CTransaction& txNew) override;
     boost::optional<std::string> SignEthTransaction(const uint256& hashFork, const CDestination& destFrom, const CDestination& destTo, const uint256& nAmount,
                                                     const uint64 nNonce, const uint256& nGasPrice, const uint256& nGas, const bytes& btData, const uint64 nAddGas, uint256& txid, bytes& btSignTxData) override;
-    bool SendEthRawTransaction(const bytes& btRawTxData, uint256& txid) override;
+    bool SendEthRawTransaction(const uint256& hashAtFork, const bytes& btRawTxData, uint256& txid) override;
     bool SendEthTransaction(const uint256& hashFork, const CDestination& destFrom, const CDestination& destTo, const uint256& nAmount,
                             const uint64 nNonce, const uint256& nGasPrice, const uint256& nGas, const bytes& btData, const uint64 nAddGas, uint256& txid) override;
     void GetWalletDestinations(std::set<CDestination>& setDest) override;
