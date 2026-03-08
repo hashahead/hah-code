@@ -242,6 +242,7 @@ private:
     rpc::CRPCResultPtr RPCEthGetFilterLogs(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthGetLogs(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthSubscribe(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCEthUnsubscribe(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
 
 protected:
     hnbase::IIOProc* pHttpServer;

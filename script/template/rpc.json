@@ -9700,5 +9700,39 @@
         "error": [
             "{\"code\":-15,\"message\":\"No websocket\"}"
         ]
+    },
+    "eth_unsubscribe": {
+        "type": "command",
+        "name": "eth_unsubscribe",
+        "desc": "[ETH] unsubscribe",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "subscribe id"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result",
+            "desc": "unsubscribe result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli eth_unsubscribe [\"0x5cef478723ff08bf67fde6c64013153e\"]",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"eth_unsubscribe\",\"jsonrpc\":\"2.0\",\"params\":[\"0x5cef478723ff08bf67fde6c64013153e\"]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-15,\"message\":\"No websocket\"}",
+            "{\"code\":-15,\"message\":\"No subscribe id\"}"
+        ]
     }
 }

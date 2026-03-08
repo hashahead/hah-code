@@ -9909,4 +9909,21 @@ CRPCResultPtr CRPCMod::RPCEthSubscribe(const CReqContext& ctxReq, CRPCParamPtr p
     return MakeCeth_subscribeResultPtr(nSubsId.GetHex());
 }
 
+CRPCResultPtr CRPCMod::RPCEthUnsubscribe(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<Ceth_unsubscribeParam>(param);
+    if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
+    {
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
+    }
+
+    uint128 nSubsId;
+    nSubsId.SetHex(spParam->vecParamlist.at(0));
+    if (nSubsId == 0)
+    {
+        throw CRPCException(RPC_PARSE_ERROR, "Parse Error: subscribe id error.");
+    }
+    return MakeCeth_unsubscribeResultPtr(pWsService->RemoveSubscribe(ctxReq.nReqChainId, ctxReq.nNonce, nSubsId));
+}
+
 } // namespace hashahead
