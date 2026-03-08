@@ -9926,4 +9926,9 @@ CRPCResultPtr CRPCMod::RPCEthUnsubscribe(const CReqContext& ctxReq, CRPCParamPtr
     return MakeCeth_unsubscribeResultPtr(pWsService->RemoveSubscribe(ctxReq.nReqChainId, ctxReq.nNonce, nSubsId));
 }
 
+CRPCResultPtr CRPCMod::RPCEthBlobBaseFee(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    return MakeCEthBlobBaseFeeResultPtr("0x1");
+}
+
 } // namespace hashahead
