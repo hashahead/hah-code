@@ -245,6 +245,7 @@ private:
     rpc::CRPCResultPtr RPCEthUnsubscribe(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthBlobBaseFee(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthFeeHistory(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCEthGetAccount(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
 
 protected:
     hnbase::IIOProc* pHttpServer;

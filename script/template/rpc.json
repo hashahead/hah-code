@@ -9798,5 +9798,57 @@
         "error": [
             "{\"code\":-6,\"message\":\"Unknown fork\"}"
         ]
+    },
+    "eth_getAccount": {
+        "type": "command",
+        "name": "EthGetAccount",
+        "desc": "[ETH] Retrieve account details by specifying an address and a block number/tag",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "param"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "name": "data",
+            "content": {
+                "codeHash": {
+                    "type": "string",
+                    "desc": "hash of the code of the account"
+                },
+                "storageRoot": {
+                    "type": "string",
+                    "desc": "hash of the account's storage data"
+                },
+                "balance": {
+                    "type": "string",
+                    "desc": "current balance of the account in wei"
+                },
+                "nonce": {
+                    "type": "string",
+                    "desc": "transaction count of an account"
+                }
+            }
+        },
+        "example": [
+            {
+                "request": "hashahead-cli eth_getAccount [\"0x5962974eeb0b17b43edabfc9b747839317aa852f\", \"latest\"]",
+                "response": "{\"codeHash\": \"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470\",\"storageRoot\": \"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"balance\": \"0x7e3161993d90\",\"nonce\": \"0x20\"}"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"eth_getAccount\",\"jsonrpc\":\"2.0\",\"params\":[\"0x5962974eeb0b17b43edabfc9b747839317aa852f\", \"latest\"]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": {\"codeHash\": \"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470\",\"storageRoot\": \"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"balance\": \"0x7e3161993d90\",\"nonce\": \"0x20\"}}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid address\"}",
+            "{\"code\":-6,\"message\":\"Invalid block\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
     }
 }

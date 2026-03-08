@@ -10050,4 +10050,41 @@ CRPCResultPtr CRPCMod::RPCEthFeeHistory(const CReqContext& ctxReq, CRPCParamPtr 
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCEthGetAccount(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CEthGetAccountParam>(param);
+    if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() < 1)
+    {
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
+    }
+
+    CDestination address;
+    address.ParseString(spParam->vecParamlist.at(0));
+    if (address.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+    string strLastBlock;
+    if (spParam->vecParamlist.size() >= 2)
+    {
+        strLastBlock = spParam->vecParamlist.at(1);
+    }
+    uint256 hashLastBlock = GetRefBlock(ctxReq.hashFork, strLastBlock);
+
+    CDestState state;
+    if (!pService->RetrieveDestState(ctxReq.hashFork, hashLastBlock, address, state))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown address");
+    }
+
+    auto spResult = MakeCEthGetAccountResultPtr();
+
+    spResult->strCodehash = state.GetCodeHash().ToString();
+    spResult->strStorageroot = state.GetStorageRoot().ToString();
+    spResult->strBalance = state.GetBalance().GetValueHex();
+    spResult->strNonce = ToHexString(state.GetTxNonce());
+
+    return spResult;
+}
+
 } // namespace hashahead
