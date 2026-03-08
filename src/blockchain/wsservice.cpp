@@ -434,6 +434,37 @@ void CWsServer::OnMessage(connection_hdl hdl, message_ptr msg)
     }
 }
 
+bool CWsServer::PostRpcModMsg(const CWsClient& wsClient, const std::string& strMsg)
+{
+    CEventHttpReq* pEventHttpReq = new CEventHttpReq(wsClient.GetConnId());
+    if (pEventHttpReq == nullptr)
+    {
+        return false;
+    }
+
+    CHttpReq& req = pEventHttpReq->data;
+
+    req.nSourceType = REQ_SOURCE_TYPE_WS;
+    req.nReqChainId = nChainId;
+    req.nListenPort = nListenPort;
+    req.strPeerIp = wsClient.GetClientIp();
+    req.nPeerPort = wsClient.GetClientPort();
+
+    req.mapHeader["host"] = wsClient.GetClientIp();
+    req.mapHeader["url"] = "/" + to_string(VERSION);
+    req.mapHeader["method"] = "POST";
+    req.mapHeader["accept"] = "application/json";
+    req.mapHeader["content-type"] = "application/json";
+    req.mapHeader["user-agent"] = string("hashahead-json-rpc/");
+    req.mapHeader["connection"] = "Keep-Alive";
+
+    req.strContentType = "application/json";
+    req.strContent = strMsg;
+
+    pRpcMod->PostEvent(pEventHttpReq);
+    return true;
+}
+
 //////////////////////////////
 // CWsService
 

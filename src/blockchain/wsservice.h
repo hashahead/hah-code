@@ -159,11 +159,17 @@ public:
 
     bool HandleEvent(CEventWsServicePushNewBlock& eventPush) override;
     bool HandleEvent(CEventWsServicePushLogs& eventPush) override;
+    bool HandleEvent(CEventWsServicePushNewPendingTx& eventPush) override;
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;
     bool HandleInvoke() override;
     void HandleHalt() override;
+
+    const CRPCServerConfig* RPCServerConfig()
+    {
+        return dynamic_cast<const CRPCServerConfig*>(IBase::Config());
+    }
 
 protected:
     hnbase::IIOModule* pRpcModIOModule;
