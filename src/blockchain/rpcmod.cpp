@@ -9931,4 +9931,123 @@ CRPCResultPtr CRPCMod::RPCEthBlobBaseFee(const CReqContext& ctxReq, CRPCParamPtr
     return MakeCEthBlobBaseFeeResultPtr("0x1");
 }
 
+CRPCResultPtr CRPCMod::RPCEthFeeHistory(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    //[4, "latest", [10, 25, 50, 75, 90]],
+
+    uint32 nBlockCount = 0;
+    uint256 hashNewestBlock;
+    vector<uint32> vRewardPercentiles;
+
+    {
+        boost::unique_lock<boost::mutex> lock(mutexDec);
+
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
+        }
+        if (valParam.type() != json_spirit::array_type)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
+        }
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::int_type)
+            {
+                if (nBlockCount == 0)
+                {
+                    nBlockCount = v.get_int();
+                    if (nBlockCount < 1 || nBlockCount > 1024)
+                    {
+                        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block count");
+                    }
+                }
+            }
+            else if (v.type() == json_spirit::str_type)
+            {
+                if (hashNewestBlock == 0)
+                {
+                    hashNewestBlock = GetRefBlock(ctxReq.hashFork, v.get_str());
+                }
+            }
+            else if (v.type() == json_spirit::array_type)
+            {
+                if (vRewardPercentiles.empty())
+                {
+                    const json_spirit::Array& arParam = v.get_array();
+                    if (arParam.size() > 0)
+                    {
+                        for (auto& r : arParam)
+                        {
+                            if (r.type() == json_spirit::int_type)
+                            {
+                                vRewardPercentiles.push_back(r.get_int());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (hashNewestBlock == 0)
+    {
+        hashNewestBlock = GetRefBlock(ctxReq.hashFork, "");
+    }
+
+    CBlockStatus statusNewestBlock;
+    if (!pService->GetBlockStatus(hashNewestBlock, statusNewestBlock))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid newest block");
+    }
+    if (statusNewestBlock.nBlockNumber <= nBlockCount)
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid newest block");
+    }
+    uint64 nStartBlockNumber = statusNewestBlock.nBlockNumber - nBlockCount;
+
+    std::vector<uint256> vBlockRewardList;
+    std::vector<std::pair<uint256, uint256>> vBlockGasUsedList;
+    if (!pService->GetBlockRewardList(hashNewestBlock, nBlockCount, vBlockRewardList, vBlockGasUsedList))
+    {
+        vBlockRewardList.clear();
+        vBlockGasUsedList.clear();
+        for (int i = 0; i < nBlockCount; i++)
+        {
+            vBlockRewardList.push_back(uint256());
+            vBlockGasUsedList.push_back(std::make_pair(uint256(), uint256()));
+        }
+    }
+    std::vector<double> vBlockGasUsedRatio;
+    for (auto& vd : vBlockGasUsedList)
+    {
+        uint64 nLimit = vd.first.Get64();
+        uint64 nUsed = vd.second.Get64();
+        if (nLimit == 0 || nUsed == 0)
+        {
+            vBlockGasUsedRatio.push_back(0.0);
+        }
+        else if (nUsed >= nLimit)
+        {
+            vBlockGasUsedRatio.push_back(1.0);
+        }
+        else
+        {
+            vBlockGasUsedRatio.push_back((double)nUsed / nLimit);
+        }
+    }
+
+    auto spResult = MakeCEthFeeHistoryResultPtr();
+
+    spResult->SetJsonResult(EthFeeHistoryToJSON(nStartBlockNumber, nBlockCount, vRewardPercentiles.size(), vBlockRewardList, vBlockGasUsedRatio, MIN_GAS_PRICE));
+
+    return spResult;
+}
+
 } // namespace hashahead
