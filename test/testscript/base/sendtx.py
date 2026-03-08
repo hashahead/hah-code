@@ -527,7 +527,7 @@ def sendtx(forkid, from_addr, to_addr, amount, count, fCommonTx, fShowTxid, slee
                 if txpools < 50000:
                     break
                 print('pool tx count: {}'.format(txpools))
-                time.sleep(200/1000)
+                time.sleep(500/1000)
 
     #print('Process exit!')
 
