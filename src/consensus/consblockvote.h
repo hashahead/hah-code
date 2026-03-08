@@ -152,6 +152,7 @@ public:
 
     bool SetCandidateNodeList(const vector<uint384>& vCandidateNodePubkeyIn);
     bool IsExistCandidateNodePubkey(const uint384& pubkeyNode) const;
+    bool ExistPreVoteSign(const uint384& pubkeyNode);
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;

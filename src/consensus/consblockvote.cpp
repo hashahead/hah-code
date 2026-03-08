@@ -83,6 +83,11 @@ bool CConsBlock::IsExistCandidateNodePubkey(const uint384& pubkeyNode) const
     return (mapCandidateNodeIndex.find(pubkeyNode) != mapCandidateNodeIndex.end());
 }
 
+bool CConsBlock::ExistPreVoteSign(const uint384& pubkeyNode)
+{
+    return (mapPreVoteSig.find(pubkeyNode) != mapPreVoteSig.end());
+}
+
 
 /////////////////////////////////
 // CConsBlockVote

@@ -150,6 +150,7 @@ bool GetEthTxData(const uint256& secret, const CEthTxSkeleton& ets, uint256& has
 bytes MakeEthTxCallData(const std::string& strFunction, const std::vector<bytes>& vParamList);
 bytes MakeEthErrorResultData(const std::string& strErrInfo);
 std::string ParserEthErrorResult(const bytes& btResult);
+bool GetEthSignRsv(const bytes& btSigData, uint256& r, uint256& s, uint8& v);
 
 // assume:
 //   1. 1 <= i <= j <= n

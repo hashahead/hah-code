@@ -431,6 +431,22 @@ std::string ParserEthErrorResult(const bytes& btResult)
     return std::string((char*)pPos, (char*)(pPos + nInfoSize));
 }
 
+bool GetEthSignRsv(const bytes& btSigData, uint256& r, uint256& s, uint8& v)
+{
+    if (btSigData.size() != SIGN_DATA_SIZE)
+    {
+        return false;
+    }
+    dev::h256 rOut;
+    dev::h256 sOut;
+    dev::byte vOut;
+    dev::toSignatureRsv(btSigData, rOut, sOut, vOut);
+    r = uint256(rOut.data(), rOut.size);
+    s = uint256(sOut.data(), sOut.size);
+    v = vOut;
+    return true;
+}
+
 ///////////////////////////////////////////////////////////////
 // return the nIndex key is signed in multiple signature
 // static bool IsSigned(const uint8* pIndex, const size_t nLen, const size_t nIndex)

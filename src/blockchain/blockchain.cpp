@@ -2703,6 +2703,33 @@ uint256 CBlockChain::GetForkMintMinGasPrice(const uint256& hashFork)
     return cntrBlock.GetForkMintMinGasPrice(hashFork);
 }
 
+bool CBlockChain::GetCandidatePubkey(const uint256& hashPrimaryBlock, std::vector<uint384>& vCandidatePubkey)
+{
+    boost::unique_lock<boost::mutex> lock(mutexBlsPubkey);
+    if (!cacheBlsPubkey.GetBlsPubkey(hashPrimaryBlock, vCandidatePubkey))
+    {
+        std::set<CDestination> setVoteAddress;
+        if (!GetBlockDelegateVoteAddress(hashPrimaryBlock, setVoteAddress))
+        {
+            StdLog("CBlockChain", "Get candidate pubkey: Get block delegate vote address fail, block: %s", hashPrimaryBlock.GetBhString().c_str());
+            return false;
+        }
+        vCandidatePubkey.clear();
+        for (const CDestination& dest : setVoteAddress)
+        {
+            uint384 pubkey;
+            if (cntrBlock.RetrieveBlsPubkeyContext(pCoreProtocol->GetGenesisBlockHash(), hashPrimaryBlock, dest, pubkey))
+            {
+                vCandidatePubkey.push_back(pubkey);
+            }
+        }
+        StdDebug("CBlockChain", "Get candidate pubkey: Candidate pubkey count: %lu, Vote address count: %lu, block: %s",
+                 vCandidatePubkey.size(), setVoteAddress.size(), hashPrimaryBlock.GetBhString().c_str());
+        cacheBlsPubkey.AddBlsPubkey(hashPrimaryBlock, vCandidatePubkey);
+    }
+    return true;
+}
+
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
