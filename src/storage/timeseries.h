@@ -12,6 +12,8 @@
 #include "crc24q.h"
 #include "uint256.h"
 
+namespace fs = boost::filesystem;
+
 namespace hashahead
 {
 namespace storage
@@ -77,6 +79,7 @@ protected:
     bool GetLastFilePath(uint32& nFile, std::string& strPath, const uint32 nWriteDataSize);
     bool RemoveFollowUpFile(uint32 nBeginFile);
     bool TruncateFile(const std::string& pathFile, uint32 nOffset);
+    bool CopyFileToPath(const uint32 nFile, const uint32 nCopySize, const fs::path& pathDst);
 
 protected:
     enum
@@ -84,7 +87,7 @@ protected:
         MAX_FILE_SIZE = 0x7F000000,
         MAX_CHUNK_SIZE = 0x200000
     };
-    boost::filesystem::path pathLocation;
+    fs::path pathLocation;
     std::string strPrefix;
     uint32 nLastFile;
 };

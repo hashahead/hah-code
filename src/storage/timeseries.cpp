@@ -192,6 +192,63 @@ bool CTimeSeriesBase::RepairFile(uint32 nFile, uint32 nOffset)
     }
 }
 
+void CTimeSeriesBase::ClearAllFile()
+{
+    fs::remove_all(pathLocation);
+    fs::create_directories(pathLocation);
+    nLastFile = 1;
+}
+
+bool CTimeSeriesBase::CopyFileToPath(const uint32 nFile, const uint32 nCopySize, const fs::path& pathDst)
+{
+    std::string strSrcPath;
+    if (!GetFilePath(nFile, strSrcPath))
+    {
+        hnbase::StdError("TimeSeriesBase", "Copy file to path: Get file path failed, file: %d", nFile);
+        return false;
+    }
+    std::string strDstPath = (pathDst / FileName(nFile)).string();
+
+    FILE* pReadFd = nullptr;
+    FILE* pWriteFd = nullptr;
+    pReadFd = fopen(strSrcPath.c_str(), "rb");
+    if (pReadFd == nullptr)
+    {
+        hnbase::StdError("TimeSeriesBase", "Copy file to path: fopen src file failed, file: %s", strSrcPath.c_str());
+        return false;
+    }
+    pWriteFd = fopen(strDstPath.c_str(), "wb");
+    if (pWriteFd == nullptr)
+    {
+        hnbase::StdError("TimeSeriesBase", "Copy file to path: fopen dst file failed, file: %s", strDstPath.c_str());
+        fclose(pReadFd);
+        return false;
+    }
+    uint32 nReadLen = 0;
+    uint8 uReadBuf[4096] = { 0 };
+    while (nReadLen < nCopySize && !feof(pReadFd))
+    {
+        size_t nNeedReadLen = nCopySize - nReadLen;
+        if (nNeedReadLen > sizeof(uReadBuf))
+        {
+            nNeedReadLen = sizeof(uReadBuf);
+        }
+        size_t nLen = fread(uReadBuf, 1, nNeedReadLen, pReadFd);
+        if (nLen > 0)
+        {
+            fwrite(uReadBuf, 1, nLen, pWriteFd);
+            nReadLen += nLen;
+        }
+        if (nLen != nNeedReadLen && ferror(pReadFd))
+        {
+            break;
+        }
+    }
+    fclose(pReadFd);
+    fclose(pWriteFd);
+    return true;
+}
+
 //////////////////////////////
 // CTimeSeriesCached
 
