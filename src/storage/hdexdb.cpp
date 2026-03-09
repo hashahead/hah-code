@@ -731,14 +731,48 @@ bool CHdexDB::GetCompleteOrder(const uint256& hashBlock, const CDestination& des
     return true;
 }
 
-bool CHdexDB::GetDexOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, CDexOrderBody& dexOrder)
+bool CHdexDB::ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                                  const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
+{
+    CReadLock rlock(rwAccess);
+
+    switch (nGetStatus)
+    {
+    case CDexCompleteStatus::DCS_DEX_ORDER_UNCOMPLETED:
+    case CDexCompleteStatus::DCS_DEX_ORDER_COMPLETED:
+        if (!ListAddressDexOrderDb(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, nGetStatus, nGetCount, mapDexOrder))
+        {
+            StdLog("CHdexDB", "List address dex order: Get order fail, address: %s, block: %s", destOrder.ToString().c_str(), hashBlock.GetBhString().c_str());
+            return false;
+        }
+        break;
+    case CDexCompleteStatus::DCS_DEX_ORDER_ALL:
+        if (!ListAddressDexOrderDb(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, CDexCompleteStatus::DCS_DEX_ORDER_UNCOMPLETED, nGetCount, mapDexOrder))
+        {
+            StdLog("CHdexDB", "List address dex order: Get uncompleted order fail, address: %s, block: %s", destOrder.ToString().c_str(), hashBlock.GetBhString().c_str());
+            return false;
+        }
+        if (!ListAddressDexOrderDb(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, CDexCompleteStatus::DCS_DEX_ORDER_COMPLETED, nGetCount, mapDexOrder))
+        {
+            StdLog("CHdexDB", "List address dex order: Get completed order fail, address: %s, block: %s", destOrder.ToString().c_str(), hashBlock.GetBhString().c_str());
+            return false;
+        }
+        break;
+    default:
+        StdLog("CHdexDB", "List address dex order: Get status error, status: %d, address: %s, block: %s", nGetStatus, destOrder.ToString().c_str(), hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CHdexDB::GetDexOrderMaxNumber(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, uint64& nMaxOrderNumber)
 {
     CReadLock rlock(rwAccess);
 
     uint256 hashRoot;
     if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashRoot))
     {
-        StdLog("CHdexDB", "Get dex order: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
+        StdLog("CHdexDB", "Get dex order max number: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
         return false;
     }
 
