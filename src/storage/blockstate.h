@@ -119,8 +119,10 @@ public:
     const TxContractReceipts& GetCacheContractReceipts() const;
     const MapContractPrevState& GetCacheContractPrevAddressState() const;
 
+    bool SaveContractRunCode(const CDestination& destContractIn, const bytes& btContractRunCode, const CTxContractData& txcd, const uint256& txidCreate);
     bool ExecFunctionContract(const CDestination& destFromIn, const CDestination& destToIn, const uint256& nAmount, const bytes& btData, const uint64 nGasLimit, uint64& nGasLeft, int& nStatus, bytes& btResult);
     bool Selfdestruct(const CDestination& destContractIn, const CDestination& destBeneficiaryIn);
+    void SaveCodeOwnerGasUsed(const CDestination& destParentCodeContractIn, const CDestination& destCodeContractIn, const CDestination& destCodeOwner, const uint64 nGasUsed);
 protected:
     CBlockBase& dbBlockBase;
     const uint16 nBlockType;

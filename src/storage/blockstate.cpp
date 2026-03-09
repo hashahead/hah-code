@@ -571,7 +571,33 @@ bool CBlockState::Selfdestruct(const CDestination& destContractIn, const CDestin
     return true;
 }
 
-void CBlockState::AddCacheContractPrevState(const CDestination& address, const std::map<uint256, bytes>& mapContractKv)
+void CBlockState::SaveCodeOwnerGasUsed(const CDestination& destParentCodeContractIn, const CDestination& destCodeContractIn, const CDestination& destCodeOwner, const uint64 nGasUsed)
+{
+    if (nGasUsed > 0)
+    {
+        if (VERIFY_FHX_HEIGHT_BRANCH_002(CBlock::GetBlockHeightByHash(hashPrevBlock)))
+        {
+            if (!destParentCodeContractIn.IsNull())
+            {
+                mapCacheContractDestCodeGasUsed[destParentCodeContractIn].nSubGasUsed += nGasUsed;
+            }
+
+            auto& gasCode = mapCacheContractDestCodeGasUsed[destCodeContractIn];
+            if (gasCode.destCodeOwner.IsNull())
+            {
+                gasCode.destCodeOwner = destCodeOwner;
+            }
+            gasCode.nGasUsed += nGasUsed;
+        }
+        else
+        {
+            mapCacheOwnerDestCodeGasUsed[destCodeOwner] += nGasUsed;
+        }
+    }
+}
+
+void CBlockState::SaveRunResult(const CDestination& destContractIn, const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv,
+                                const std::map<uint256, bytes>& mapTraceKv, const std::map<CDestination, std::map<uint256, bytes>>& mapOldAddressKeyValue)
 {
     auto it = mapCacheContractPrevAddressState.find(address);
     if (it == mapCacheContractPrevAddressState.end())
