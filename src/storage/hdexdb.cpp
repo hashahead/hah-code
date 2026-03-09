@@ -339,6 +339,125 @@ bool CHdexDB::AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, 
 #endif
         }
     }
+
+    // {
+    //     hnbase::CBufStream ssKey, ssValue;
+    //     bytes btKey, btValue;
+
+    //     ssKey << DB_HDEX_KEY_TYPE_TRIE_HEIGHT_BLOCK << BSwap32(nHeight) << BSwap16(nSlot);
+    //     ssKey.GetData(btKey);
+
+    //     ssValue << hashBlock << hashRefBlock << hashPrevBlock;
+    //     ssValue.GetData(btValue);
+
+    //     mapKv[btKey] = btValue;
+    // }
+
+    for (const auto& kv : mapMaxOrderNumber)
+    {
+        const CDestination destOrder = std::get<0>(kv.first);
+        const uint256 hashCoinPair = std::get<1>(kv.first);
+        const uint8 nOwnerCoinFlag = std::get<2>(kv.first);
+
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_HDEX_KEY_TYPE_TRIE_DEX_ORDER_MAX_NUMBER << BSwap32(nChainId) << destOrder << hashCoinPair << nOwnerCoinFlag;
+        ssKey.GetData(btKey);
+
+        ssValue << kv.second;
+        ssValue.GetData(btValue);
+
+        mapKv[btKey] = btValue;
+
+#ifdef HDEX_OUT_TEST_LOG
+        StdDebug("TEST", "HdexDB Add DexOrder: Max order number: chainid: %d, order address: %s, coin pair: %s, owner coin flag: %d, max number: %ld, at block: %s",
+                 nChainId, destOrder.ToString().c_str(), hashCoinPair.ToString().c_str(), nOwnerCoinFlag, kv.second, hashBlock.GetBhString().c_str());
+#endif
+    }
+
+    for (const auto& kv : mapCoinPairCompletePrice)
+    {
+        const uint256& hashCoinPair = kv.first;
+        const uint256& nCompletePrice = kv.second;
+
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_HDEX_KEY_TYPE_TRIE_DEX_ORDER_COMPLETE_PRICE << hashCoinPair;
+        ssKey.GetData(btKey);
+
+        ssValue << nCompletePrice;
+        ssValue.GetData(btValue);
+
+        mapKv[btKey] = btValue;
+
+#ifdef HDEX_OUT_TEST_LOG
+        StdDebug("TEST", "HdexDB Add DexOrder: Complete price: coin pair: %s, complete price: %s, at block: %s",
+                 hashCoinPair.ToString().c_str(), CoinToTokenBigFloat(nCompletePrice).c_str(), hashBlock.GetBhString().c_str());
+#endif
+    }
+
+    for (const CChainId nPeerChainId : setPeerCrossChainId)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_HDEX_KEY_TYPE_TRIE_CROSS_SEND_LAST_PROVE_BLOCK << BSwap32(nPeerChainId);
+        ssKey.GetData(btKey);
+
+        ssValue << hashBlock;
+        ssValue.GetData(btValue);
+
+        mapKv[btKey] = btValue;
+
+#ifdef HDEX_OUT_TEST_LOG
+        StdDebug("TEST", "HdexDB Add DexOrder: Peer cross chainid: peer chainid: %u, block: %s",
+                 nPeerChainId, hashBlock.GetBhString().c_str());
+#endif
+    }
+
+    //     for (const auto& kv : mapCompDexOrderRecord)
+    //     {
+    //         const CDexOrderHeader& orderHeader = kv.first;
+
+    //         const CChainId nAtChainId = orderHeader.GetChainId();
+    //         const CDestination& destOrder = orderHeader.GetOrderAddress();
+    //         const uint256& hashCoinPair = orderHeader.GetCoinPairHash();
+    //         const uint8 nOwnerCoinFlag = orderHeader.GetOwnerCoinFlag();
+    //         const uint64 nOrderNumber = orderHeader.GetOrderNumber();
+
+    //         uint64 nCompRecordNumber = 0;
+    //         auto it = mapDbDexOrder.find(orderHeader);
+    //         if (it != mapDbDexOrder.end())
+    //         {
+    //             nCompRecordNumber = it->second.dexOrder.nCompleteOrderCount - kv.second.size();
+    //         }
+
+    //         for (const CCompDexOrderRecord& orderRecord : kv.second)
+    //         {
+    //             hnbase::CBufStream ssKey, ssValue;
+    //             bytes btKey, btValue;
+
+    //             ssKey << DB_HDEX_KEY_TYPE_TRIE_DEX_ORDER_COMPLETE_RECORD << BSwap32(nAtChainId) << destOrder << hashCoinPair << nOwnerCoinFlag << BSwap64(nOrderNumber) << BSwap64(nCompRecordNumber);
+    //             ssKey.GetData(btKey);
+
+    //             ssValue << orderRecord << nHeight << nSlot;
+    //             ssValue.GetData(btValue);
+
+    //             mapKv[btKey] = btValue;
+
+    // #ifdef HDEX_OUT_TEST_LOG
+    //             StdDebug("TEST", "HdexDB Add DexOrder: Complete record: at chainid: %d, order address: %s, coin pair: %s, owner coin flag: %d, order number: %lu, record number: %lu, peer address: %s, complete amount: %s, complete price: %s, at block: %s",
+    //                      nAtChainId, destOrder.ToString().c_str(), hashCoinPair.ToString().c_str(), nOwnerCoinFlag, nOrderNumber, nCompRecordNumber,
+    //                      orderRecord.destPeerOrder.ToString().c_str(), CoinToTokenBigFloat(orderRecord.nCompleteAmount).c_str(),
+    //                      CoinToTokenBigFloat(orderRecord.nCompletePrice).c_str(), hashBlock.GetBhString().c_str());
+    // #endif
+
+    //             nCompRecordNumber++;
+    //         }
+    //     }
+
     const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
     const uint8 nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
 

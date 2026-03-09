@@ -115,6 +115,9 @@ protected:
     hnbase::CRWAccess rwAccess;
     CTrieDB dbTrie;
     bool fPrune;
+
+    std::map<uint32, SHP_CACHE_BLOCK_DEX_ORDER> mapCacheForkLastDexOrder;                       // key: chainid
+    std::map<uint256, SHP_CACHE_BLOCK_DEX_ORDER, CustomBlockHashCompare> mapCacheBlockDexOrder; // key: block hash
 };
 
 } // namespace storage

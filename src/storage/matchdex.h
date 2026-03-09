@@ -182,6 +182,42 @@ struct CustomCompareSellOrder
 };
 
 ///////////////////////////////////
+// CustomCompareBuyOrder
+
+struct CustomCompareBuyOrder
+{
+    bool operator()(const CDexOrderKey& a, const CDexOrderKey& b) const
+    {
+        if (b.nPrice < a.nPrice)
+        {
+            return true;
+        }
+        else if (b.nPrice == a.nPrice)
+        {
+            if (a.nHeight < b.nHeight)
+            {
+                return true;
+            }
+            else if (a.nHeight == b.nHeight)
+            {
+                if (a.nSlot < b.nSlot)
+                {
+                    return true;
+                }
+                else if (a.nSlot == b.nSlot)
+                {
+                    if (a.hashOrderRandom < b.hashOrderRandom)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+};
+
+///////////////////////////////////
     bool UpdateCompleteOrder(const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount);
     bool MatchOrder(CMatchOrderResult& matchResult);
 // CMatchDex
