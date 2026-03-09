@@ -458,15 +458,214 @@ bool CHdexDB::AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, 
     //         }
     //     }
 
-    const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
-    const uint8 nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
-
-    CDexOrderSave dexOrderDb;
-    if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
+    for (const auto& kv : mapBlockProve)
     {
+        auto funcAddCrossTransferRecord = [&](const CBlockCoinTransferProve& transProve, const CChainId nPeerChainId, const uint256& hashPeerAtBlock, const uint32 nIndex) {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_CROSS_TRANSFER_RECV << BSwap32(nPeerChainId) << transProve.destTransfer << hashPeerAtBlock << BSwap32(nIndex);
+            ssKey.GetData(btKey);
+
+            ssValue << transProve;
+            ssValue.GetData(btValue);
+
+            mapKv[btKey] = btValue;
+
+#ifdef HDEX_OUT_TEST_LOG
+            StdDebug("TEST", "HdexDB Add DexOrder: Block prove: cross transfer recv: local chainid: %d, peer chainid: %d, address: %s, coin symbol: %s, ori chainid: %d, dest chainid: %d, amount: %s, peer at block: %s",
+                     nChainId, nPeerChainId, transProve.destTransfer.ToString().c_str(), transProve.strCoinSymbol.c_str(), transProve.nOriChainId,
+                     transProve.nDestChainId, CoinToTokenBigFloat(transProve.nTransferAmount).c_str(), hashPeerAtBlock.GetBhString().c_str());
+#endif
+        };
+        auto funcAddOrderProve = [&](const CBlockDexOrderProve& orderProve, const CChainId nPeerChainId, const uint256& hashPeerAtBlock) {
+            const CDestination& destOrder = orderProve.destOrder;
+            const CChainId nChainIdPeer = orderProve.nChainIdPeer;
+            const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(orderProve.strCoinSymbolOwner, orderProve.strCoinSymbolPeer);
+            const uint8 nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(orderProve.strCoinSymbolOwner, orderProve.strCoinSymbolPeer);
+            const uint64 nOrderNumber = orderProve.nOrderNumber;
+
+            CDexOrderHeader orderHeader(nPeerChainId, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber);
+            CDexOrderBody orderBody(orderProve.strCoinSymbolOwner, orderProve.strCoinSymbolPeer, nChainIdPeer, orderProve.nOrderAmount, orderProve.nOrderPrice);
+
+            auto mt = mapDbDexOrder.find(orderHeader);
+            if (mt == mapDbDexOrder.end())
+            {
+                CDexOrderSave dexOrderBodyDb;
+                if (GetPeerDexOrderProveDb(hashPrevRoot, orderHeader.GetChainId(), orderHeader.GetOrderAddress(), orderHeader.GetCoinPairHash(), orderHeader.GetOwnerCoinFlag(), orderHeader.GetOrderNumber(), dexOrderBodyDb))
+                {
+                    mt = mapDbDexOrder.insert(std::make_pair(orderHeader, dexOrderBodyDb)).first;
+                }
+            }
+            if (mt != mapDbDexOrder.end())
+            {
+                CDexOrderSave& dexOrderSave = mt->second;
+                CDexOrderBody& dbDexOrder = dexOrderSave.dexOrder;
+                if (orderBody.nOrderAmount != dbDexOrder.nOrderAmount && orderBody.nOrderAmount >= dbDexOrder.nCompleteOrderAmount)
+                {
+                    dbDexOrder.nOrderAmount = orderBody.nOrderAmount;
+                    dexOrderSave.nAtChainId = nPeerChainId;
+                    dexOrderSave.hashAtBlock = hashPeerAtBlock;
+
+                    funcAddPeerDexOrder(dbDexOrder.nCompleteOrderAmount >= dbDexOrder.nOrderAmount, orderHeader, dexOrderSave);
+
+                    mapAddBlockProveOrder[orderHeader] = std::make_tuple(dbDexOrder, nPeerChainId, hashPeerAtBlock);
+                }
+            }
+            else
+            {
+                CDexOrderSave dexOrderSave(orderBody, nPeerChainId, hashPeerAtBlock);
+
+                funcAddPeerDexOrder(false, orderHeader, dexOrderSave);
+
+                mapDbDexOrder[orderHeader] = dexOrderSave;
+
+                //key: order header, value: 1: order body, 2: complete amount, 3: complete count, 4: at chainid, 5: at block
+                //std::map<CDexOrderHeader, std::tuple<CDexOrderBody, CChainId, uint256>> mapAddBlockProveOrder;
+                mapAddBlockProveOrder[orderHeader] = std::make_tuple(orderBody, nPeerChainId, hashPeerAtBlock);
+            }
+
+#ifdef HDEX_OUT_TEST_LOG
+            StdDebug("TEST", "HdexDB Add DexOrder: Block prove: local chainid: %d, peer chainid: %d, order address: %s, symbol owner: %s, symbol peer: %s, owner coin flag: %d, order number: %lu, order amount: %s, order price: %s, at block: %s",
+                     nChainId, nPeerChainId, destOrder.ToString().c_str(), orderProve.strCoinSymbolOwner.c_str(), orderProve.strCoinSymbolPeer.c_str(),
+                     nOwnerCoinFlag, nOrderNumber, CoinToTokenBigFloat(orderProve.nOrderAmount).c_str(),
+                     CoinToTokenBigFloat(orderProve.nOrderPrice).c_str(), hashPeerAtBlock.GetBhString().c_str());
+#endif
+        };
+        auto funcAddConfirmRecvProve = [&](const uint256& hashPeerLastConfirmBlock, const CChainId nPeerChainId, const uint256& hashPeerAtBlock) {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_CROSS_RECV_CONFIRM_BLOCK << BSwap32(nPeerChainId);
+            ssKey.GetData(btKey);
+
+            ssValue << hashPeerAtBlock << hashPeerLastConfirmBlock;
+            ssValue.GetData(btValue);
+
+            mapKv[btKey] = btValue;
+
+#ifdef HDEX_OUT_TEST_LOG
+            StdDebug("TEST", "HdexDB Add DexOrder: Block prove: Confirm recv prove block: peer chainid: %d, hashPeerAtBlock: %s, hashPeerLastConfirmBlock: %s, hashBlock: %s",
+                     nPeerChainId, hashPeerAtBlock.GetBhString().c_str(), hashPeerLastConfirmBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+#endif
+        };
+
+        const CChainId nPeerChainId = kv.first;
+        const CBlockProve& blockProve = kv.second;
+
+        uint256 hashLastProveBlock;
+        if (blockProve.hashPrevBlock != 0 && !blockProve.vPrevBlockCcProve.empty())
+        {
+            std::vector<std::pair<uint256, CBlockPrevProve>> vCacheProve;
+            uint256 hashAtBlock = blockProve.hashPrevBlock;
+
+            for (const CBlockPrevProve& prevProve : blockProve.vPrevBlockCcProve)
+            {
+                vCacheProve.push_back(std::make_pair(hashAtBlock, prevProve));
+                hashAtBlock = prevProve.hashPrevBlock;
+            }
+
+            for (const auto& vd : boost::adaptors::reverse(vCacheProve))
+            {
+                const uint256& hashPeerAtBlock = vd.first;
+                const CBlockPrevProve& prevProve = vd.second;
+                if (!prevProve.proveCrosschain.IsNull())
+                {
+                    hashLastProveBlock = hashPeerAtBlock;
+
+#ifdef HDEX_OUT_TEST_LOG
+                    StdDebug("TEST", "HdexDB Add DexOrder: Block prove: prove block: prev prove, prev prove block: %s, peer at block: %s",
+                             prevProve.proveCrosschain.GetPrevProveBlock().GetBhString().c_str(), hashPeerAtBlock.GetBhString().c_str());
+#endif
+
+                    auto& transProve = prevProve.proveCrosschain.GetCoinTransferProve();
+                    for (uint32 i = 0; i < transProve.size(); i++)
+                    {
+                        funcAddCrossTransferRecord(transProve[i], nPeerChainId, hashPeerAtBlock, i);
+                    }
+                    for (const auto& kv : prevProve.proveCrosschain.GetDexOrderProve())
+                    {
+                        funcAddOrderProve(kv.second, nPeerChainId, hashPeerAtBlock);
+                    }
+                    for (const uint256& hashPeerLastConfirmBlock : prevProve.proveCrosschain.GetCrossConfirmRecvBlock())
+                    {
+                        funcAddConfirmRecvProve(hashPeerLastConfirmBlock, nPeerChainId, hashPeerAtBlock);
+                    }
+                }
+            }
+        }
+
+        if (!blockProve.proveCrosschain.IsNull())
+        {
+            hashLastProveBlock = blockProve.hashBlock;
+
+#ifdef HDEX_OUT_TEST_LOG
+            StdDebug("TEST", "HdexDB Add DexOrder: Block prove: prove block: local prove, confirm block size: %lu, first prove block: %s, prev prove block: %s, local block: %s",
+                     blockProve.proveCrosschain.GetCrossConfirmRecvBlock().size(), blockProve.GetFirstPrevBlockHash().GetBhString().c_str(),
+                     blockProve.proveCrosschain.GetPrevProveBlock().GetBhString().c_str(), blockProve.hashBlock.GetBhString().c_str());
+#endif
+
+            auto& transProve = blockProve.proveCrosschain.GetCoinTransferProve();
+            for (uint32 i = 0; i < transProve.size(); i++)
+            {
+                funcAddCrossTransferRecord(transProve[i], nPeerChainId, blockProve.hashBlock, i);
+            }
+            for (const auto& kv : blockProve.proveCrosschain.GetDexOrderProve())
+            {
+                funcAddOrderProve(kv.second, nPeerChainId, blockProve.hashBlock);
+            }
+            for (const uint256& hashPeerLastConfirmBlock : blockProve.proveCrosschain.GetCrossConfirmRecvBlock())
+            {
+                funcAddConfirmRecvProve(hashPeerLastConfirmBlock, nPeerChainId, blockProve.hashBlock);
+            }
+        }
+
+        if (hashLastProveBlock != 0)
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_CROSS_LAST_PROVE_BLOCK << BSwap32(nPeerChainId);
+            ssKey.GetData(btKey);
+
+            ssValue << hashLastProveBlock;
+            ssValue.GetData(btValue);
+
+            mapKv[btKey] = btValue;
+
+            mapPeerProveLastBlock[nPeerChainId] = hashLastProveBlock;
+
+#ifdef HDEX_OUT_TEST_LOG
+            StdDebug("TEST", "HdexDB Add DexOrder: Block prove: write last prove block: peer chainid: %d, last prove block: %s, prove block: %s",
+                     nPeerChainId, hashLastProveBlock.GetBhString().c_str(), blockProve.hashBlock.GetBhString().c_str());
+#endif
+        }
+    }
+
+    if (hashPrevRoot == 0 && mapKv.empty())
+    {
+        AddPrevRoot(DB_HDEX_ROOT_TYPE_TRIE, hashPrevRoot, hashBlock, mapKv);
+    }
+
+    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
+    {
+        StdLog("CHdexDB", "Add dex order: Add new trie fail, prev block: %s, block: %s",
+               hashPrevBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
         return false;
     }
-    dexOrder = dexOrderDb.dexOrder;
+
+    if (!WriteTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashNewRoot))
+    {
+        StdLog("CHdexDB", "Add dex order: Write trie root fail, prev block: %s, block: %s",
+               hashPrevBlock.GetHex().c_str(), hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    if (!UpdateDexOrderCache(hashPrevBlock, hashBlock, mapAddNewOrder, mapAddBlockProveOrder, mapCoinPairCompletePrice, mapUpdateCompOrder, mapPeerProveLastBlock))
+    {
+        StdLog("CHdexDB", "Add dex order: Update dex order cache fail,  block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
     return true;
 }
 

@@ -218,8 +218,53 @@ struct CustomCompareBuyOrder
 };
 
 ///////////////////////////////////
+// CCoinDexPair
+
+class CCoinDexPair
+{
+public:
+    CCoinDexPair(const std::string& strCoinSymbolSellIn, const std::string& strCoinSymbolBuyIn,
+                 const CChainId nSellChainIdIn, const CChainId nBuyChainIdIn,
+                 const uint256& nSellPriceAnchorIn, const uint256& nPrevCompletePriceIn)
+      : strCoinSymbolSell(strCoinSymbolSellIn), strCoinSymbolBuy(strCoinSymbolBuyIn), nSellChainId(nSellChainIdIn), nBuyChainId(nBuyChainIdIn),
+        nSellPriceAnchor(nSellPriceAnchorIn), nPrevCompletePrice(nPrevCompletePriceIn), nMatchHeightSlot(0) {}
+
+    bool AddOrder(const uint256& hashDexOrder, const std::string& strCoinSymbolOwner, const CDestination& destOrder, const uint64 nOrderNumber, const uint256& nOrderAmount, const uint256& nOrderPrice, const uint256& nCompleteAmount,
+                  const uint64 nCompleteCount, const CChainId nOrderAtChainId, const uint256& hashOrderAtBlock, const uint32 nHeight, const uint16 nSlot, const uint256& hashOrderRandom);
+    void SetPrevCompletePrice(const uint256& nPrevPrice);
     bool UpdateCompleteOrder(const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount);
+    void UpdatePeerCoinPairLastBlock(const uint256& hashLastProveBlock);
+
     bool MatchOrder(CMatchOrderResult& matchResult);
+
+    friend bool operator==(const CCoinDexPair& a, const CCoinDexPair& b);
+    friend inline bool operator!=(const CCoinDexPair& a, const CCoinDexPair& b)
+    {
+        return (!(a == b));
+    }
+
+public:
+    enum
+    {
+        CDP_ORDER_TYPE_SELL = 1,
+        CDP_ORDER_TYPE_BUY = 2
+    };
+
+    const std::string strCoinSymbolSell; // min symbol
+    const std::string strCoinSymbolBuy;  // max symbol
+    const CChainId nSellChainId;
+    const CChainId nBuyChainId;
+    const uint256 nSellPriceAnchor; // 1 sell token of coin amount
+    uint256 nPrevCompletePrice;     // sell price, 1 sell token == n buy coin
+    uint64 nMatchHeightSlot;
+
+    std::map<CDexOrderKey, CDexOrderValue, CustomCompareSellOrder> mapSellOrder;
+    std::map<CDexOrderKey, CDexOrderValue, CustomCompareBuyOrder> mapBuyOrder;
+
+    std::map<uint256, std::pair<CDexOrderKey, uint8>> mapDexOrderIndex; // key: dex order hash, value: 1: order key, 2: order type, 1-sell, 2-buy
+};
+
+///////////////////////////////////
 // CMatchDex
 
 class CMatchDex
