@@ -193,5 +193,164 @@ void CCoinDexPair::UpdatePeerCoinPairLastBlock(const uint256& hashLastProveBlock
     }
 }
 
+bool CCoinDexPair::MatchOrder(CMatchOrderResult& matchResult)
+{
+    std::set<uint64> setMatchHeightSlot;
+    std::map<CDexOrderKey, uint256, CustomCompareSellOrder> mapSellCompleteAmount;
+    std::map<CDexOrderKey, uint256, CustomCompareBuyOrder> mapBuyCompleteAmount;
+
+    auto funcMatch = [&](const uint64 nMatchEndHeightSlot) {
+        for (const auto& kv : mapSellOrder)
+        {
+            const CDexOrderKey& keyDexOrderSell = kv.first;
+            const CDexOrderValue& valueDexOrderSell = kv.second;
+
+            // nMatchEndHeightSlot == 0: all in some chain
+            if (nMatchEndHeightSlot != 0 && keyDexOrderSell.GetHeightSlotValue() > nMatchEndHeightSlot)
+            {
+                continue;
+            }
+
+            auto mt = mapSellCompleteAmount.find(keyDexOrderSell);
+            if (mt == mapSellCompleteAmount.end())
+            {
+                mt = mapSellCompleteAmount.insert(std::make_pair(keyDexOrderSell, valueDexOrderSell.nCompleteAmount)).first;
+            }
+            uint256& nSellCompAmount = mt->second;
+
+            uint256 nCalcSellOrderAmount;
+            if (valueDexOrderSell.nOrderAmount > nSellCompAmount)
+            {
+                nCalcSellOrderAmount = valueDexOrderSell.nOrderAmount - nSellCompAmount;
+            }
+            else
+            {
+                continue;
+            }
+
+            for (auto it = mapBuyOrder.begin(); it != mapBuyOrder.end(); ++it)
+            {
+                const CDexOrderKey& keyDexOrderBuy = it->first;
+                const CDexOrderValue& valueDexOrderBuy = it->second;
+
+                if (nMatchEndHeightSlot != 0 && keyDexOrderBuy.GetHeightSlotValue() > nMatchEndHeightSlot)
+                {
+                    continue;
+                }
+
+                auto nt = mapBuyCompleteAmount.find(keyDexOrderBuy);
+                if (nt == mapBuyCompleteAmount.end())
+                {
+                    nt = mapBuyCompleteAmount.insert(std::make_pair(keyDexOrderBuy, valueDexOrderBuy.nCompleteAmount)).first;
+                }
+                uint256& nBuyCompAmount = nt->second;
+
+                uint256 nCalcBuyOrderAmount;
+                if (valueDexOrderBuy.nOrderAmount > nBuyCompAmount)
+                {
+                    nCalcBuyOrderAmount = valueDexOrderBuy.nOrderAmount - nBuyCompAmount;
+                }
+                else
+                {
+                    continue;
+                }
+                if (keyDexOrderSell.nPrice > keyDexOrderBuy.nPrice)
+                {
+                    break;
+                }
+
+                uint256 nCompletePrice = CMatchTools::CalcCompletePrice(keyDexOrderBuy.nPrice, keyDexOrderSell.nPrice, nPrevCompletePrice);
+                uint256 nSellCompleteAmount = nCalcSellOrderAmount;
+                uint256 nBuyCompleteAmount = CMatchTools::CalcBuyAmount(nSellCompleteAmount, nCompletePrice, nSellPriceAnchor);
+                if (nBuyCompleteAmount > nCalcBuyOrderAmount)
+                {
+                    nBuyCompleteAmount = nCalcBuyOrderAmount;
+                    nSellCompleteAmount = CMatchTools::CalcSellAmount(nBuyCompleteAmount, nCompletePrice, nSellPriceAnchor);
+                }
+
+                CMatchOrderRecord matchOrder;
+
+                matchOrder.destSellOrder = valueDexOrderSell.destOrder;
+                matchOrder.nSellOrderNumber = valueDexOrderSell.nOrderNumber;
+                matchOrder.nSellCompleteAmount = nSellCompleteAmount;
+                matchOrder.nSellCompletePrice = keyDexOrderSell.nPrice;
+                matchOrder.nSellOrderAtChainId = valueDexOrderSell.nOrderAtChainId;
+
+                matchOrder.destBuyOrder = valueDexOrderBuy.destOrder;
+                matchOrder.nBuyOrderNumber = valueDexOrderBuy.nOrderNumber;
+                matchOrder.nBuyCompleteAmount = nBuyCompleteAmount;
+                matchOrder.nBuyCompletePrice = keyDexOrderBuy.nPrice;
+                matchOrder.nBuyOrderAtChainId = valueDexOrderBuy.nOrderAtChainId;
+
+                matchOrder.nCompletePrice = nCompletePrice;
+
+                matchResult.vMatchOrderRecord.push_back(matchOrder);
+
+                nCalcSellOrderAmount -= nSellCompleteAmount;
+                nSellCompAmount += nSellCompleteAmount;
+                nBuyCompAmount += nBuyCompleteAmount;
+                nPrevCompletePrice = nCompletePrice;
+
+                if (nCalcSellOrderAmount == 0)
+                {
+                    break;
+                }
+            }
+
+            if (nCalcSellOrderAmount != 0)
+            {
+                break;
+            }
+        }
+    };
+
+    for (const auto& kv : mapSellOrder)
+    {
+        const CDexOrderKey& keyDexOrderSell = kv.first;
+        const CDexOrderValue& valueDexOrderSell = kv.second;
+
+        uint64 nHeightSlot = keyDexOrderSell.GetHeightSlotValue();
+        if (nMatchHeightSlot != 0 && nHeightSlot > nMatchHeightSlot)
+        {
+            continue;
+        }
+        if (valueDexOrderSell.nOrderAmount > valueDexOrderSell.nCompleteAmount)
+        {
+            if (setMatchHeightSlot.find(nHeightSlot) == setMatchHeightSlot.end())
+            {
+                setMatchHeightSlot.insert(nHeightSlot);
+            }
+        }
+    }
+    for (const auto& kv : mapBuyOrder)
+    {
+        const CDexOrderKey& keyDexOrderBuy = kv.first;
+        const CDexOrderValue& valueDexOrderBuy = kv.second;
+
+        uint64 nHeightSlot = keyDexOrderBuy.GetHeightSlotValue();
+        if (nMatchHeightSlot != 0 && nHeightSlot > nMatchHeightSlot)
+        {
+            continue;
+        }
+        if (valueDexOrderBuy.nOrderAmount > valueDexOrderBuy.nCompleteAmount)
+        {
+            if (setMatchHeightSlot.find(nHeightSlot) == setMatchHeightSlot.end())
+            {
+                setMatchHeightSlot.insert(nHeightSlot);
+            }
+        }
+    }
+
+    for (const uint64 nHeightSlot : setMatchHeightSlot)
+    {
+        funcMatch(nHeightSlot);
+    }
+
+    matchResult.nSellPriceAnchor = nSellPriceAnchor;
+    matchResult.strCoinSymbolSell = strCoinSymbolSell;
+    matchResult.strCoinSymbolBuy = strCoinSymbolBuy;
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead

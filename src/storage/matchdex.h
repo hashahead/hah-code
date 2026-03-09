@@ -183,6 +183,7 @@ struct CustomCompareSellOrder
 
 ///////////////////////////////////
     bool UpdateCompleteOrder(const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount);
+    bool MatchOrder(CMatchOrderResult& matchResult);
 // CMatchDex
 
 class CMatchDex
