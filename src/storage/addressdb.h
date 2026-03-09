@@ -160,6 +160,8 @@ protected:
     bool ListTokenContractAddressDb(const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress);
     bool AddCacheAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapIncAddress);
     bool AddCacheTokenContractAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapIncTokenAddress, const bool fAll);
+    bool ListHeightTrieRoot(const uint32 nLastHeight, std::vector<std::pair<uint8, uint256>>& vBlockRootType);
+    bool ListHeightAddressCount(const uint32 nLastHeight, std::vector<uint256>& vBlockHash);
 
 protected:
     enum

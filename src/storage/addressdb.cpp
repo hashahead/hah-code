@@ -1550,6 +1550,38 @@ bool CForkAddressDB::ListHeightTrieRoot(const uint32 nLastHeight, std::vector<st
     return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
 }
 
+bool CForkAddressDB::ListHeightAddressCount(const uint32 nLastHeight, std::vector<uint256>& vBlockHash)
+{
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_ADDRESS_KEY_TYPE_ADDRESSCOUNT)
+            {
+                uint256 hashBlock;
+                ssKey >> hashBlock;
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockHash.push_back(hashBlock);
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_ADDRESS_KEY_TYPE_ADDRESSCOUNT;
+
+    return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
 //////////////////////////////
 // CAddressDB
 
