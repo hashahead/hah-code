@@ -779,6 +779,23 @@ bool CHdexDB::GetDexOrderMaxNumber(const uint256& hashBlock, const CDestination&
     const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
     const uint8 nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
 
+    return GetDexOrderMaxNumberDb(hashRoot, CBlock::GetBlockChainIdByHash(hashBlock), destOrder, hashCoinPair, nOwnerCoinFlag, nMaxOrderNumber);
+}
+
+bool CHdexDB::GetPeerCrossLastBlock(const uint256& hashBlock, const CChainId nPeerChainId, uint256& hashLastProveBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashRoot))
+    {
+        StdLog("CHdexDB", "Get peer cross last block: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return GetPeerCrossLastBlockDb(hashRoot, nPeerChainId, hashLastProveBlock);
+}
+
+
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
