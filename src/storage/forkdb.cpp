@@ -809,6 +809,32 @@ bool CForkDB::GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& st
     return true;
 }
 
+bool CForkDB::GetMaxDexCoinPair(uint32& nMaxCoinPair, const uint256& hashMainChainRefBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashLastBlock;
+    if (hashMainChainRefBlock == 0)
+    {
+        if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+        {
+            hashLastBlock = 0;
+        }
+    }
+    else
+    {
+        hashLastBlock = hashMainChainRefBlock;
+    }
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(hashLastBlock, hashRoot))
+    {
+        StdLog("CForkDB", "Get max dex coin pair: Read trie root fail, last block: %s", hashLastBlock.GetHex().c_str());
+        return false;
+    }
+    return GetMaxForkDexCoinPair(hashRoot, nMaxCoinPair);
+}
+
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);

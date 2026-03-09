@@ -170,6 +170,32 @@ protected:
     }
 };
 
+class CForkContractRootKv
+{
+    friend class hnbase::CStream;
+
+public:
+    CForkContractRootKv() {}
+
+public:
+    uint256 hashRoot;
+    uint256 hashPrevRoot;
+    bytesmap mapKv;
+    uint32 nBlockHeight = 0;
+    uint64 nBlockNumber = 0;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashRoot, opt);
+        s.Serialize(hashPrevRoot, opt);
+        s.Serialize(mapKv, opt);
+        s.Serialize(nBlockHeight, opt);
+        s.Serialize(nBlockNumber, opt);
+    }
+};
+
 } // namespace storage
 } // namespace hashahead
 
