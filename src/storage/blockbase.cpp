@@ -2038,39 +2038,42 @@ bool CBlockBase::ListFunctionAddress(const uint256& hashBlock, std::map<uint32, 
         hashLastBlock = hashBlock;
     }
 
-    CAddressContext ctxTempFromAddress;
-    if (!GetAddressContext(from, ctxTempFromAddress))
+    if (!dbBlock.ListFunctionAddress(hashGenesisBlock, hashLastBlock, mapFunctionAddress))
     {
-        StdLog("CBlockState", "Contract transfer: Get from address context failed, from: %s", from.ToString().c_str());
-        return false;
-    }
-    if (mapCacheAddressContext.count(from) == 0)
-    {
-        mapCacheAddressContext[from] = ctxTempFromAddress;
-    }
-
-    // verify reward lock
-    uint256 nLockedAmount;
-    if (!GetDestLockedAmount(from, nLockedAmount))
-    {
-        StdLog("CBlockState", "Contract transfer: Get reward locked amount failed, from: %s", from.ToString().c_str());
-        return false;
-    }
-    if (nLockedAmount > 0 && stateFrom.GetBalance() < nLockedAmount + amount)
-    {
-        StdLog("CBlockState", "Contract transfer: Balance locked, balance: %s, lock amount: %s, amount: %s, from: %s",
-               CoinToTokenBigFloat(stateFrom.GetBalance()).c_str(), CoinToTokenBigFloat(nLockedAmount).c_str(),
-               CoinToTokenBigFloat(amount).c_str(), from.ToString().c_str());
         return false;
     }
 
-    stateFrom.DecBalance(amount);
-    stateTo.IncBalance(amount);
+    if (mapFunctionAddress.find(FUNCTION_ID_PLEDGE_SURPLUS_REWARD_ADDRESS) == mapFunctionAddress.end())
+    {
+        mapFunctionAddress[FUNCTION_ID_PLEDGE_SURPLUS_REWARD_ADDRESS] = CFunctionAddressContext(PLEDGE_SURPLUS_REWARD_ADDRESS, false);
+    }
+    if (mapFunctionAddress.find(FUNCTION_ID_TIME_VAULT_TO_ADDRESS) == mapFunctionAddress.end())
+    {
+        mapFunctionAddress[FUNCTION_ID_TIME_VAULT_TO_ADDRESS] = CFunctionAddressContext(TIME_VAULT_TO_ADDRESS, false);
+    }
+    if (mapFunctionAddress.find(FUNCTION_ID_PROJECT_PARTY_REWARD_TO_ADDRESS) == mapFunctionAddress.end())
+    {
+        mapFunctionAddress[FUNCTION_ID_PROJECT_PARTY_REWARD_TO_ADDRESS] = CFunctionAddressContext(PROJECT_PARTY_REWARD_TO_ADDRESS, false);
+    }
+    if (mapFunctionAddress.find(FUNCTION_ID_FOUNDATION_REWARD_TO_ADDRESS) == mapFunctionAddress.end())
+    {
+        mapFunctionAddress[FUNCTION_ID_FOUNDATION_REWARD_TO_ADDRESS] = CFunctionAddressContext(FOUNDATION_REWARD_TO_ADDRESS, false);
+    }
+    return true;
+}
 
-    SetCacheDestState(from, stateFrom);
-    SetCacheDestState(to, stateTo);
-
-    vCacheContractTransfer.push_back(CContractTransfer(nTransferType, from, to, amount));
+bool CBlockBase::RetrieveFunctionAddress(const uint256& hashBlock, const uint32 nFuncId, CFunctionAddressContext& ctxFuncAddress)
+{
+    if (!dbBlock.RetrieveFunctionAddress(hashGenesisBlock, hashBlock, nFuncId, ctxFuncAddress))
+    {
+        CDestination destDefFunction;
+        if (!GetDefaultFunctionAddress(nFuncId, destDefFunction))
+        {
+            return false;
+        }
+        ctxFuncAddress.SetFunctionAddress(destDefFunction);
+        ctxFuncAddress.SetDisableModify(false);
+    }
     return true;
 }
 
