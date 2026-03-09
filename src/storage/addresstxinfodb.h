@@ -58,6 +58,7 @@ protected:
     bool AddLongChainBlock(const uint256& hashBlock);
     bool RemoveLongChainlock(const uint256& hashBlock);
 
+    bool WriteBlockAddressTxIndex(const uint256& hashBlock, const std::map<CDestination, std::pair<uint64, uint64>>& mapBlockAddressTxIndex);
     void WriteAddressLast(const CDestination& dest, const uint64 nTxCount, bytesmap& mapKv);
     bool ReadAddressLast(const uint256& hashRoot, const CDestination& dest, uint64& nTxCount);
 

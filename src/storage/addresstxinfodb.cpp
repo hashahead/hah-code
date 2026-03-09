@@ -922,36 +922,55 @@ bool CForkAddressTxInfoDB::ReadAddressTxCount(const CDestination& address, uint6
     return true;
 }
 
-void CForkAddressTxInfoDB::WriteAddressLast(const CDestination& dest, const uint64 nTxCount, bytesmap& mapKv)
+bool CForkAddressTxInfoDB::WriteTokenTxCount(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nTxCount)
 {
     hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-
-    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_LASTDEST << dest;
-    ssKey.GetData(btKey);
-
+    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_ADDRESS_TX_COUNT << destContractAddress << destUserAddress;
     ssValue << nTxCount;
-    ssValue.GetData(btValue);
-
-    mapKv.insert(make_pair(btKey, btValue));
+    return Write(ssKey, ssValue);
 }
 
-bool CForkAddressTxInfoDB::ReadAddressLast(const uint256& hashRoot, const CDestination& dest, uint64& nTxCount)
+bool CForkAddressTxInfoDB::ReadTokenTxCount(const CDestination& destContractAddress, const CDestination& destUserAddress, uint64& nTxCount)
 {
-    hnbase::CBufStream ssKey, ssValue;
-    bytes btKey, btValue;
-    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_LASTDEST << dest;
-    ssKey.GetData(btKey);
-    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
-    {
-        return false;
-    }
     try
     {
-        ssValue.Write((char*)(btValue.data()), btValue.size());
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_TOKEN_ADDRESS_TX_COUNT << destContractAddress << destUserAddress;
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
         ssValue >> nTxCount;
     }
-    catch (std::exception& e)
+    catch (exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CForkAddressTxInfoDB::WriteLastBlock(const uint256& hashLastBlock)
+{
+    hnbase::CBufStream ssKey, ssValue;
+    ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_LASTBLOCK << DB_ADDRESS_TXINFO_KEY_ID_LAST_BLOCK;
+    ssValue << hashLastBlock;
+    return Write(ssKey, ssValue);
+}
+
+bool CForkAddressTxInfoDB::ReadLastBlock(uint256& hashLastBlock)
+{
+    try
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        ssKey << DB_ADDRESS_TXINFO_KEY_TYPE_BLOCK_LASTBLOCK << DB_ADDRESS_TXINFO_KEY_ID_LAST_BLOCK;
+        if (!Read(ssKey, ssValue))
+        {
+            return false;
+        }
+        ssValue >> hashLastBlock;
+    }
+    catch (exception& e)
     {
         hnbase::StdError(__PRETTY_FUNCTION__, e.what());
         return false;
