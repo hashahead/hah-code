@@ -352,5 +352,82 @@ bool CCoinDexPair::MatchOrder(CMatchOrderResult& matchResult)
     return true;
 }
 
+bool operator==(const CCoinDexPair& a, const CCoinDexPair& b)
+{
+    if (a.strCoinSymbolSell != b.strCoinSymbolSell)
+    {
+        StdLog("CCoinDexPair", "Compare: strCoinSymbolSell error, a.strCoinSymbolSell: %s, b.strCoinSymbolSell: %s", a.strCoinSymbolSell.c_str(), b.strCoinSymbolSell.c_str());
+        return false;
+    }
+    if (a.strCoinSymbolBuy != b.strCoinSymbolBuy)
+    {
+        StdLog("CCoinDexPair", "Compare: strCoinSymbolBuy error, a.strCoinSymbolBuy: %s, b.strCoinSymbolBuy: %s", a.strCoinSymbolBuy.c_str(), b.strCoinSymbolBuy.c_str());
+        return false;
+    }
+    if (a.nSellPriceAnchor != b.nSellPriceAnchor)
+    {
+        StdLog("CCoinDexPair", "Compare: nSellPriceAnchor error, a.nSellPriceAnchor: %s, b.nSellPriceAnchor: %s", CoinToTokenBigFloat(a.nSellPriceAnchor).c_str(), CoinToTokenBigFloat(b.nSellPriceAnchor).c_str());
+        return false;
+    }
+    if (a.nPrevCompletePrice != b.nPrevCompletePrice)
+    {
+        StdLog("CCoinDexPair", "Compare: nPrevCompletePrice error, a.nPrevCompletePrice: %s, b.nPrevCompletePrice: %s", CoinToTokenBigFloat(a.nPrevCompletePrice).c_str(), CoinToTokenBigFloat(b.nPrevCompletePrice).c_str());
+        return false;
+    }
+    if (a.nMatchHeightSlot != b.nMatchHeightSlot)
+    {
+        StdLog("CCoinDexPair", "Compare: nMatchHeightSlot error, a.nMatchHeightSlot: %lx, b.nMatchHeightSlot: %lx", a.nMatchHeightSlot, b.nMatchHeightSlot);
+        //return false;
+    }
+
+    if (a.mapSellOrder.size() != b.mapSellOrder.size())
+    {
+        StdLog("CCoinDexPair", "Compare: mapSellOrder size error, a.mapSellOrder.size: %lu, b.mapSellOrder.size: %lu", a.mapSellOrder.size(), b.mapSellOrder.size());
+        return false;
+    }
+    if (a.mapBuyOrder.size() != b.mapBuyOrder.size())
+    {
+        StdLog("CCoinDexPair", "Compare: mapBuyOrder size error, a.mapBuyOrder.size: %lu, b.mapBuyOrder.size: %lu", a.mapBuyOrder.size(), b.mapBuyOrder.size());
+        return false;
+    }
+
+    {
+        auto it = a.mapSellOrder.begin();
+        auto mt = b.mapSellOrder.begin();
+        for (; it != a.mapSellOrder.end() && mt != b.mapSellOrder.end(); ++it, ++mt)
+        {
+            if (it->first != mt->first)
+            {
+                StdLog("CCoinDexPair", "Compare: mapSellOrder key error");
+                return false;
+            }
+            if (it->second != mt->second)
+            {
+                StdLog("CCoinDexPair", "Compare: mapSellOrder value error");
+                return false;
+            }
+        }
+    }
+
+    {
+        auto it = a.mapBuyOrder.begin();
+        auto mt = b.mapBuyOrder.begin();
+        for (; it != a.mapBuyOrder.end() && mt != b.mapBuyOrder.end(); ++it, ++mt)
+        {
+            if (it->first != mt->first)
+            {
+                StdLog("CCoinDexPair", "Compare: mapBuyOrder key error");
+                return false;
+            }
+            if (it->second != mt->second)
+            {
+                StdLog("CCoinDexPair", "Compare: mapBuyOrder value error");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead

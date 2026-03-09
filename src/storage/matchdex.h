@@ -273,6 +273,8 @@ public:
     CMatchDex() {}
 
     bool AddMatchDexOrder(const uint256& hashDexOrder, const CDestination& destOrder, const uint64 nOrderNumber, const CDexOrderBody& dexOrder,
+                          const CChainId nOrderAtChainId, const uint256& hashOrderAtBlock, const uint256& nPrevCompletePrice);
+    friend bool operator==(const CMatchDex& a, const CMatchDex& b);
 public:
     std::map<CChainId, std::set<uint256>> mapChainIdLinkCoinDexPair; // key: at chain id, value: coin dex pair hash
 };
