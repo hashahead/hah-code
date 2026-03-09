@@ -819,6 +819,19 @@ bool CHdexDB::GetMatchDexData(const uint256& hashBlock, std::map<uint256, CMatch
     return ptrDexOrderCache->GetMatchDexResult(mapMatchResult);
 }
 
+bool CHdexDB::ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder)
+{
+    CReadLock rlock(rwAccess);
+
+    SHP_CACHE_BLOCK_DEX_ORDER ptrDexOrderCache = LoadBlockDexOrderCache(hashBlock);
+    if (!ptrDexOrderCache)
+    {
+        StdLog("CHdexDB", "List match dex order: Load block dex order cache fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return ptrDexOrderCache->ListMatchDexOrder(strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
+}
+
 
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
