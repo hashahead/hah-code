@@ -1985,59 +1985,57 @@ bool CBlockBase::RetrieveContractKvValue(const uint256& hashFork, const uint256&
     return dbBlock.RetrieveContractKvValue(hashFork, hashContractRoot, key, value);
 }
 
-    CDestState stateFrom;
-    if (!GetDestState(from, stateFrom))
-    {
-        StdLog("CBlockState", "Contract transfer: Get dest state fail, from: %s", from.ToString().c_str());
-        return false;
-    }
-    if (stateFrom.GetBalance() < amount)
-    {
-        StdLog("CBlockState", "Contract transfer: nBalance < amount, nBalance: %s, amount: %s, from: %s",
-               stateFrom.GetBalance().GetHex().c_str(), amount.GetHex().c_str(), from.ToString().c_str());
-        return false;
-    }
+bool CBlockBase::CreateCacheContractKvTrie(const uint256& hashFork, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot)
+{
+    return dbBlock.CreateCacheContractKvTrie(hashFork, hashPrevRoot, mapContractState, hashNewRoot);
+}
 
-    CDestState stateTo;
-    if (!GetDestState(to, stateTo))
-    {
-        stateTo.SetNull();
+bool CBlockBase::RetrieveAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress)
+{
+    return dbBlock.RetrieveAddressContext(hashFork, hashBlock, dest, ctxAddress);
+}
 
-        CAddressContext ctxTempAddress;
-        if (!GetAddressContext(to, ctxTempAddress))
+bool CBlockBase::RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress)
+{
+    uint256 hashLastBlock = hashBlock;
+    if (hashLastBlock == 0)
+    {
+        if (!dbBlock.RetrieveForkLast(hashFork, hashLastBlock))
         {
-            mapCacheAddressContext[to] = ctxToAddress;
-            stateTo.SetType(ctxToAddress.GetDestType(), ctxToAddress.GetTemplateType()); // WAIT_CHECK
+            return false;
         }
-        else
+    }
+    return dbBlock.RetrieveTokenContractAddressContext(hashFork, hashLastBlock, dest, ctxAddress);
+}
+
+bool CBlockBase::ListContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress)
+{
+    return dbBlock.ListContractAddress(hashFork, hashBlock, mapContractAddress);
+}
+
+bool CBlockBase::ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
+{
+    return dbBlock.ListTokenContractAddress(hashFork, hashBlock, mapTokenContractAddress);
+}
+
+bool CBlockBase::GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount)
+{
+    return dbBlock.GetAddressCount(hashFork, hashBlock, nAddressCount, nNewAddressCount);
+}
+
+bool CBlockBase::ListFunctionAddress(const uint256& hashBlock, std::map<uint32, CFunctionAddressContext>& mapFunctionAddress)
+{
+    uint256 hashLastBlock;
+    if (hashBlock == 0)
+    {
+        if (!dbBlock.RetrieveForkLast(hashGenesisBlock, hashLastBlock))
         {
-            mapCacheAddressContext[to] = ctxTempAddress;
-            stateTo.SetType(ctxTempAddress.GetDestType(), ctxTempAddress.GetTemplateType());
+            return false;
         }
     }
     else
     {
-        CAddressContext ctxTempAddress;
-        if (!GetAddressContext(to, ctxTempAddress))
-        {
-            if (ctxToAddress.GetDestType() == stateTo.GetDestType()
-                && ctxToAddress.GetTemplateType() == stateTo.GetTemplateType())
-            {
-                mapCacheAddressContext[to] = ctxToAddress;
-            }
-            else
-            {
-                StdLog("CBlockState", "Contract transfer: State address context error, State address type: %d-%d, in address type: %d-%d, from: %s, to: %s",
-                       stateTo.GetDestType(), stateTo.GetTemplateType(),
-                       ctxToAddress.GetDestType(), ctxToAddress.GetTemplateType(),
-                       from.ToString().c_str(), to.ToString().c_str());
-                return false;
-            }
-        }
-        else
-        {
-            mapCacheAddressContext[to] = ctxTempAddress;
-        }
+        hashLastBlock = hashBlock;
     }
 
     CAddressContext ctxTempFromAddress;
