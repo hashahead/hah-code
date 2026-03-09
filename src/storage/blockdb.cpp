@@ -225,6 +225,36 @@ bool CBlockDB::GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& s
     return dbFork.GetSymbolPairByDexCoinPair(nCoinPair, strSymbol1, strSymbol2, hashMainChainRefBlock);
 }
 
+bool CBlockDB::ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.ListDexCoinPair(nCoinPair, strCoinSymbol, mapDexCoinPair, hashMainChainRefBlock);
+}
+
+bool CBlockDB::IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.IsTimeVaultWhitelistAddressExist(address, hashMainChainRefBlock);
+}
+
+bool CBlockDB::ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock)
+{
+    return dbFork.ListTimeVaultWhitelist(setTimeVaultWhitelist, hashMainChainRefBlock);
+}
+
+bool CBlockDB::SetPruneFlag(const bool fPrune)
+{
+    return dbFork.SetPruneFlag(fPrune);
+}
+
+bool CBlockDB::GetSnapshotForkData(const std::map<uint256, uint256>& mapForkLastBlock, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    return dbFork.GetSnapshotForkData(mapForkLastBlock, vBlockHash, btSnapData);
+}
+
+bool CBlockDB::RecoveryForkData(const bytes& btSnapData)
+{
+    return dbFork.RecoveryForkData(btSnapData);
+}
+
 bool CBlockDB::AddNewFork(const uint256& hashFork)
 {
     if (!dbFork.UpdateForkLast(hashFork, hashFork))
