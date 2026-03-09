@@ -795,6 +795,30 @@ bool CHdexDB::GetPeerCrossLastBlock(const uint256& hashBlock, const CChainId nPe
     return GetPeerCrossLastBlockDb(hashRoot, nPeerChainId, hashLastProveBlock);
 }
 
+const SHP_MATCH_DEX CHdexDB::GetBlockMatchDex(const uint256& hashBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    SHP_CACHE_BLOCK_DEX_ORDER ptrDexOrderCache = LoadBlockDexOrderCache(hashBlock);
+    if (!ptrDexOrderCache)
+    {
+        return nullptr;
+    }
+    return ptrDexOrderCache->GetMatchDex();
+}
+
+bool CHdexDB::GetMatchDexData(const uint256& hashBlock, std::map<uint256, CMatchOrderResult>& mapMatchResult)
+{
+    CReadLock rlock(rwAccess);
+
+    SHP_CACHE_BLOCK_DEX_ORDER ptrDexOrderCache = LoadBlockDexOrderCache(hashBlock);
+    if (!ptrDexOrderCache)
+    {
+        return false;
+    }
+    return ptrDexOrderCache->GetMatchDexResult(mapMatchResult);
+}
+
 
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
