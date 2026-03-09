@@ -284,6 +284,61 @@ bool CHdexDB::AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, 
             mapDbDexOrder[orderHeader] = dexOrderSave;
             mapAddNewOrder[orderHeader] = orderBody;
         }
+
+        // Update max order number
+        auto nt = mapMaxOrderNumber.find(std::make_tuple(destOrder, hashCoinPair, nOwnerCoinFlag));
+        if (nt == mapMaxOrderNumber.end())
+        {
+            uint64 nMaxOrderNumber;
+            if (!GetDexOrderMaxNumberDb(hashPrevRoot, nChainId, destOrder, hashCoinPair, nOwnerCoinFlag, nMaxOrderNumber))
+            {
+                nMaxOrderNumber = 0;
+            }
+            if (nMaxOrderNumber < nOrderNumber)
+            {
+                mapMaxOrderNumber.insert(std::make_pair(std::make_tuple(destOrder, hashCoinPair, nOwnerCoinFlag), nOrderNumber));
+            }
+        }
+        else
+        {
+            if (nt->second < nOrderNumber)
+            {
+                nt->second = nOrderNumber;
+            }
+        }
+
+#ifdef HDEX_OUT_TEST_LOG
+        StdDebug("TEST", "HdexDB Add DexOrder: Dex order: chainid: %d, order address: %s, coin pair: %s, symble owner: %s, symble peer: %s, order number: %ld, order amount: %s, order price: %s, at block: %s",
+                 nChainId, destOrder.ToString().c_str(), hashCoinPair.ToString().c_str(), orderBody.strCoinSymbolOwner.c_str(), orderBody.strCoinSymbolPeer.c_str(), nOrderNumber,
+                 CoinToTokenBigFloat(orderBody.nOrderAmount).c_str(), CoinToTokenBigFloat(orderBody.nOrderPrice).c_str(), hashBlock.GetBhString().c_str());
+#endif
+    }
+
+    for (const auto& kv : mapCrossTransferProve)
+    {
+        const CChainId nPeerChainId = kv.first;
+        uint32 nIndex = 0;
+        for (const CBlockCoinTransferProve& transProve : kv.second)
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_HDEX_KEY_TYPE_TRIE_CROSS_TRANSFER_SEND << BSwap32(nPeerChainId) << transProve.destTransfer << hashBlock << BSwap32(nIndex);
+            nIndex++;
+            ssKey.GetData(btKey);
+
+            ssValue << transProve;
+            ssValue.GetData(btValue);
+
+            mapKv[btKey] = btValue;
+
+#ifdef HDEX_OUT_TEST_LOG
+            StdDebug("TEST", "HdexDB Add DexOrder: Block prove: cross transfer send: local chainid: %d, peer chainid: %d, address: %s, coin symbol: %s, ori chainid: %d, dest chainid: %d, amount: %s, at block: %s",
+                     nChainId, nPeerChainId, transProve.destTransfer.ToString().c_str(), transProve.strCoinSymbol.c_str(), transProve.nOriChainId,
+                     transProve.nDestChainId, CoinToTokenBigFloat(transProve.nTransferAmount).c_str(), hashBlock.GetBhString().c_str());
+#endif
+        }
+    }
     const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
     const uint8 nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
 
