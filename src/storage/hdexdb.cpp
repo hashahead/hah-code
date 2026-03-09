@@ -692,26 +692,42 @@ bool CHdexDB::GetDexOrder(const uint256& hashBlock, const CDestination& destOrde
     return true;
 }
 
-bool CHdexDB::GetDexOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, CDexOrderBody& dexOrder)
+bool CHdexDB::GetDexCompletePrice(const uint256& hashBlock, const uint256& hashCoinPair, uint256& nCompletePrice)
 {
     CReadLock rlock(rwAccess);
 
     uint256 hashRoot;
     if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashRoot))
     {
-        StdLog("CHdexDB", "Get dex order: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
+        StdLog("CHdexDB", "Get dex complete price: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
         return false;
     }
 
+    return GetDexCompletePriceDb(hashRoot, hashCoinPair, nCompletePrice);
+}
+
+bool CHdexDB::GetCompleteOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, uint256& nCompleteAmount, uint64& nCompleteOrderCount)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashRoot))
+    {
+        StdLog("CHdexDB", "Get complete order: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
     const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
     const uint8 nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
 
-    CDexOrderSave dexOrderDb;
-    if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
+    CDexOrderSave dexOrder;
+    if (!GetDexOrderDb(hashRoot, nChainId, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrder))
     {
         return false;
     }
-    dexOrder = dexOrderDb.dexOrder;
+    nCompleteAmount = dexOrder.dexOrder.nCompleteOrderAmount;
+    nCompleteOrderCount = dexOrder.dexOrder.nCompleteOrderCount;
     return true;
 }
 
