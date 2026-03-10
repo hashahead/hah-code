@@ -2169,40 +2169,61 @@ bool CBlockBase::GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint
     return dbBlock.GetOwnerLinkTemplateAddress(hashFork, hashBlock, destOwner, mapTemplateAddress);
 }
 
-            if (ctxContract.IsCreate())
-            {
-                CContractCreateCodeContext ctxtContractCreateCode;
-                bool fLinkGenesisFork;
-                if (!dbBlockBase.RetrieveLinkGenesisContractCreateCodeContext(hashFork, hashPrevBlock, hashContractCreateCode, ctxtContractCreateCode, fLinkGenesisFork))
-                {
-                    StdLog("CBlockState", "Get dest contract code: find create code context fail, curr code owner: %s, create code hash: %s",
-                           ctxContract.destCodeOwner.ToString().c_str(), hashContractCreateCode.ToString().c_str());
-                    if (ctxContract.destCodeOwner.IsNull())
-                    {
-                        ctxContract.destCodeOwner = tx.GetFromAddress();
-                    }
-                }
-                else
-                {
-                    StdLog("CBlockState", "Get dest contract code: curr code owner: %s, old code owner: %s, create code hash: %s",
-                           ctxContract.destCodeOwner.ToString().c_str(),
-                           ctxtContractCreateCode.destCodeOwner.ToString().c_str(),
-                           hashContractCreateCode.ToString().c_str());
-                    ctxContract.destCodeOwner = ctxtContractCreateCode.destCodeOwner;
-                }
-            }
-            txcd = ctxContract;
-        }
-        else if (ctxContract.IsSetup())
+bool CBlockBase::GetDelegateLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress)
+{
+    return dbBlock.GetDelegateLinkTemplateAddress(hashFork, hashBlock, destDelegate, nTemplateType, nBegin, nCount, vTemplateAddress);
+}
+
+bool CBlockBase::CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult)
+{
+    BlockIndexPtr pIndex;
+    if (hashBlock == 0)
+    {
+        pIndex = RetrieveFork(hashFork);
+        if (!pIndex)
         {
-            hashContractCreateCode = ctxContract.GetContractCreateCodeHash();
-            if (!dbBlockBase.GetBlockContractCreateCodeData(hashFork, hashPrevBlock, hashContractCreateCode, txcd))
-            {
-                StdLog("CBlockState", "Get dest contract code: Get create code data fail, prev block: %s", hashPrevBlock.GetHex().c_str());
-                return false;
-            }
+            StdLog("BlockBase", "Call contract: Retrieve fork fail, fork: %s", hashFork.GetHex().c_str());
+            return false;
         }
-        else
+    }
+    else
+    {
+        pIndex = RetrieveIndex(hashBlock);
+        if (!pIndex)
+        {
+            StdLog("BlockBase", "Call contract: Retrieve index fail, block: %s", hashBlock.GetHex().c_str());
+            return false;
+        }
+    }
+
+    uint256 hashPrimaryBlock;
+    if (pIndex->IsPrimary())
+    {
+        hashPrimaryBlock = pIndex->GetBlockHash();
+    }
+    else
+    {
+        hashPrimaryBlock = pIndex->hashRefBlock;
+    }
+
+    CForkContext ctxFork;
+    if (!RetrieveForkContext(hashFork, ctxFork, hashPrimaryBlock))
+    {
+        StdLog("BlockBase", "Call contract: Retrieve forkc ontext fail, fork: %s", hashFork.GetHex().c_str());
+        return false;
+    }
+
+    uint256 nTvGas;
+    uint256 nRunGasLimit;
+    uint256 nBaseTvGas = TX_BASE_GAS + CTransaction::GetTxDataGasStatic(vmCallTx.btData.size()) + nTvGas;
+    if (vmCallTx.nGasLimit == 0)
+    {
+        // Gas is 0, Calc gas used
+        nRunGasLimit = DEF_TX_GAS_LIMIT;
+    }
+    else
+    {
+        if (vmCallTx.nGasLimit < nBaseTvGas)
         {
             StdLog("CBlockState", "Get dest contract code: Code flag error, flag: %d, prev block: %s",
                    ctxContract.nMuxType, hashPrevBlock.GetHex().c_str());
