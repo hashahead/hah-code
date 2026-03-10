@@ -832,6 +832,23 @@ bool CHdexDB::ListMatchDexOrder(const uint256& hashBlock, const std::string& str
     return ptrDexOrderCache->ListMatchDexOrder(strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
 }
 
+bool CHdexDB::AddBlockCrosschainProve(const uint256& hashBlock, const CBlockStorageProve& proveBlockCrosschain)
+{
+    CWriteLock wlock(rwAccess);
+
+#ifdef HDEX_OUT_TEST_LOG
+    for (const auto& kv : proveBlockCrosschain.mapCrossProve)
+    {
+        for (const auto& kvs : kv.second.first.GetDexOrderProve())
+        {
+            StdDebug("TEST", "AddBlockCrosschainProve: dex order prove, peer chainid: %d, nOrderNumber: %lu, prev prove block: %s, block: %s",
+                     kv.first, kvs.second.nOrderNumber, kv.second.first.GetPrevProveBlock().GetBhString().c_str(), hashBlock.GetBhString().c_str());
+        }
+    }
+#endif
+
+    return WriteBlockCrosschainProveDb(hashBlock, proveBlockCrosschain);
+}
 
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
