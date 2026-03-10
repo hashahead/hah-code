@@ -2077,15 +2077,32 @@ bool CBlockBase::RetrieveFunctionAddress(const uint256& hashBlock, const uint32 
     return true;
 }
 
-bool CBlockState::IsContractDestroy(const CDestination& destContractIn)
+bool CBlockBase::GetDefaultFunctionAddress(const uint32 nFuncId, CDestination& destDefFunction)
 {
-    CDestState stateContract;
-    if (!GetDestState(destContractIn, stateContract))
+    switch (nFuncId)
     {
-        StdLog("CBlockState", "Is contract destroy: Get contract state failed, contract address: %s", destContractIn.ToString().c_str());
-        return true;
+    case FUNCTION_ID_PLEDGE_SURPLUS_REWARD_ADDRESS:
+        destDefFunction = PLEDGE_SURPLUS_REWARD_ADDRESS;
+        break;
+    case FUNCTION_ID_TIME_VAULT_TO_ADDRESS:
+        destDefFunction = TIME_VAULT_TO_ADDRESS;
+        break;
+    case FUNCTION_ID_PROJECT_PARTY_REWARD_TO_ADDRESS:
+        destDefFunction = PROJECT_PARTY_REWARD_TO_ADDRESS;
+        break;
+    case FUNCTION_ID_FOUNDATION_REWARD_TO_ADDRESS:
+        destDefFunction = FOUNDATION_REWARD_TO_ADDRESS;
+        break;
+    default:
+        return false;
     }
-    if (stateContract.IsDestroy())
+    return true;
+}
+
+bool CBlockBase::VerifyNewFunctionAddress(const uint256& hashBlock, const CDestination& destFrom, const uint32 nFuncId, const CDestination& destNewFunction, std::string& strErr)
+{
+    CAddressContext ctxNewAddress;
+    if (!RetrieveAddressContext(hashGenesisBlock, hashBlock, destNewFunction, ctxNewAddress))
     {
         StdLog("CBlockState", "Is contract destroy: Contract has been destroyed, contract address: %s", destContractIn.ToString().c_str());
         return true;
