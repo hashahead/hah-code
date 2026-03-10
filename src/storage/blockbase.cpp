@@ -2225,41 +2225,79 @@ bool CBlockBase::CallContract(const uint256& hashFork, const uint256& hashBlock,
     {
         if (vmCallTx.nGasLimit < nBaseTvGas)
         {
-            StdLog("CBlockState", "Get dest contract code: Code flag error, flag: %d, prev block: %s",
-                   ctxContract.nMuxType, hashPrevBlock.GetHex().c_str());
+            StdLog("BlockBase", "Call contract: Gas not enough, tv gas: %lu, base+tv gas: %lu, gas limit: %lu, from: %s, fork: %s",
+                   nTvGas.Get64(), nBaseTvGas.Get64(), vmCallTx.nGasLimit.Get64(), vmCallTx.destFrom.ToString().c_str(), hashFork.GetHex().c_str());
             return false;
         }
-        btContractCode = txcd.GetCode();
-        destCodeOwner = txcd.GetCodeOwner();
+        nRunGasLimit = vmCallTx.nGasLimit - nBaseTvGas;
+    }
 
-        if (!tx.GetTxData(CTransaction::DF_CONTRACTPARAM, btRunParam))
-        {
-            btRunParam.clear();
-        }
+    CVmCallBlock vmCallBlock;
+
+    vmCallBlock.hashFork = hashFork;
+    vmCallBlock.nChainId = CBlock::GetBlockChainIdByHash(hashFork);
+    vmCallBlock.nAgreement = pIndex->GetAgreement();
+    vmCallBlock.nBlockHeight = pIndex->GetBlockHeight();
+    vmCallBlock.nBlockNumber = pIndex->GetBlockNumber();
+    vmCallBlock.fPrimaryBlock = pIndex->IsPrimary();
+    vmCallBlock.destMint = pIndex->destMint;
+    vmCallBlock.nOriBlockGasLimit = pIndex->nGasLimit.Get64();
+    vmCallBlock.nBlockGasLimit = MAX_BLOCK_GAS_LIMIT;
+    vmCallBlock.nBlockTimestamp = pIndex->GetBlockTime();
+    vmCallBlock.hashPrevBlock = pIndex->GetBlockHash();
+    vmCallBlock.hashPrevStateRoot = pIndex->GetStateRoot();
+    vmCallBlock.nPrevBlockTime = pIndex->GetBlockTime();
+
+    CVmCallTx vmRunCallTx = vmCallTx;
+    vmRunCallTx.nGasLimit = nRunGasLimit;
+
+    if (nRunGasLimit.Get64() <= vmCallResult.nGasLeft)
+    {
+        vmCallResult.nGasUsed = nBaseTvGas.Get64();
     }
     else
     {
-        destContract = tx.GetToAddress();
-        if (tx.IsEthTx())
-        {
-            if (!tx.GetTxData(CTransaction::DF_ETH_TX_DATA, btRunParam))
-            {
-                btRunParam.clear();
-            }
-        }
-        else
-        {
-            if (!tx.GetTxData(CTransaction::DF_CONTRACTPARAM, btRunParam))
-            {
-                btRunParam.clear();
-            }
-        }
-        uint256 hashContractRunCode;
-        if (!GetContractRunCode(destContract, hashContractCreateCode, destCodeOwner, hashContractRunCode, btContractCode, fDestroy))
-        {
-            StdLog("CBlockState", "Get dest contract code: Get contract run code fail, destContract: %s", destContract.ToString().c_str());
-            return false;
-        }
+        vmCallResult.nGasUsed = (nBaseTvGas + (nRunGasLimit - uint256(vmCallResult.nGasLeft))).Get64();
+    }
+    return true;
+}
+
+bool CBlockBase::GetContractCoinName(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, string& strName)
+{
+    CVmCallTx vmCallTx;
+    CVmCallResult vmCallResult;
+
+    vmCallTx.fEthCall = true;
+    //vmCallTx.destFrom = 0;
+    vmCallTx.destTo = destContract;
+    vmCallTx.nTxNonce = 0;
+    vmCallTx.nGasPrice = MIN_GAS_PRICE;
+    vmCallTx.nGasLimit = DEF_TX_GAS_LIMIT;
+    vmCallTx.nAmount = 0;
+    vmCallTx.btData = MakeEthTxCallData("name()", {});
+    vmCallTx.fNeedVerifyToAddress = fNeedVerifyConntractAddress;
+
+    if (!CallContract(hashFork, hashBlock, vmCallTx, vmCallResult))
+    {
+        StdLog("BlockBase", "Get contract coin name: Call contract fail, contract address: %s, fork: %s",
+               destContract.ToString().c_str(), hashFork.GetHex().c_str());
+        return false;
+    }
+    if (vmCallResult.btResult.size() <= 64)
+    {
+        StdLog("BlockBase", "Get contract coin name: Result error, result: %s, contract address: %s, fork: %s",
+               ToHexString(vmCallResult.btResult).c_str(), destContract.ToString().c_str(), hashFork.GetHex().c_str());
+        return false;
+    }
+
+    uint256 tempData;
+    tempData.FromBigEndian(vmCallResult.btResult.data() + 32, 32);
+    std::size_t nSize = tempData.Get64();
+    if (nSize == 0 || vmCallResult.btResult.size() < nSize + 64)
+    {
+        StdLog("BlockBase", "Get contract coin name: Result name size error, result: %s, contract address: %s, fork: %s",
+               ToHexString(vmCallResult.btResult).c_str(), destContract.ToString().c_str(), hashFork.GetHex().c_str());
+        return false;
     }
     return true;
 }
