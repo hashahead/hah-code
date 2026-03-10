@@ -54,6 +54,9 @@ public:
     bool ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock = uint256());
     bool IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock = uint256());
     bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256());
+    bool SetPruneFlag(const bool fPrune);
+    bool GetSnapshotForkData(const std::map<uint256, uint256>& mapForkLastBlock, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryForkData(const bytes& btSnapData);
 
     bool AddNewFork(const uint256& hashFork);
     bool LoadFork(const uint256& hashFork);

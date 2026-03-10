@@ -289,6 +289,14 @@ bool CBlockDB::AddNewFork(const uint256& hashFork)
             return false;
         }
     }
+    if (fCfgTraceDb)
+    {
+        if (!dbTrace.AddNewFork(hashFork))
+        {
+            RemoveFork(hashFork);
+            return false;
+        }
+    }
     return true;
 }
 
@@ -317,6 +325,13 @@ bool CBlockDB::LoadFork(const uint256& hashFork)
             return false;
         }
     }
+    if (fCfgTraceDb)
+    {
+        if (!dbTrace.LoadFork(hashFork))
+        {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -329,6 +344,10 @@ bool CBlockDB::RemoveFork(const uint256& hashFork)
     if (fCfgFullDb)
     {
         dbAddressTxInfo.RemoveFork(hashFork);
+    }
+    if (fCfgTraceDb)
+    {
+        dbTrace.RemoveFork(hashFork);
     }
     return dbFork.RemoveFork(hashFork);
 }
@@ -353,7 +372,7 @@ bool CBlockDB::ListFork(vector<pair<uint256, uint256>>& vFork)
     return true;
 }
 
-bool CBlockDB::AddNewBlockIndex(const CBlockOutline& outline)
+bool CBlockDB::AddNewBlockIndex(const CBlockIndex& outline)
 {
     return dbBlockIndex.AddNewBlockIndex(outline);
 }
@@ -363,14 +382,14 @@ bool CBlockDB::RemoveBlockIndex(const uint256& hashBlock)
     return dbBlockIndex.RemoveBlockIndex(hashBlock);
 }
 
-bool CBlockDB::RetrieveBlockIndex(const uint256& hashBlock, CBlockOutline& outline)
+bool CBlockDB::RetrieveBlockIndex(const uint256& hashBlock, CBlockIndex& outline)
 {
     return dbBlockIndex.RetrieveBlockIndex(hashBlock, outline);
 }
 
-bool CBlockDB::AddNewBlockNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint64 nBlockNumber, const uint256& hashBlock, uint256& hashNewRoot)
+bool CBlockDB::UpdateBlockNumberBlockLongChain(const uint256& hashFork, const std::vector<std::pair<uint64, uint256>>& vRemoveNumberBlock, const std::vector<std::pair<uint64, uint256>>& mapNewNumberBlock)
 {
-    return dbBlockIndex.AddBlockNumber(hashFork, nChainId, hashPrevBlock, nBlockNumber, hashBlock, hashNewRoot);
+    return dbBlockIndex.UpdateBlockNumberBlockLongChain(hashFork, vRemoveNumberBlock, mapNewNumberBlock);
 }
 
 bool CBlockDB::RetrieveBlockHashByNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashLastBlock, const uint64 nBlockNumber, uint256& hashBlock)
