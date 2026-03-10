@@ -599,7 +599,48 @@ void CBlockState::SaveCodeOwnerGasUsed(const CDestination& destParentCodeContrac
 void CBlockState::SaveRunResult(const CDestination& destContractIn, const std::vector<CTransactionLogs>& vLogsIn, const std::map<uint256, bytes>& mapCacheKv,
                                 const std::map<uint256, bytes>& mapTraceKv, const std::map<CDestination, std::map<uint256, bytes>>& mapOldAddressKeyValue)
 {
-    auto it = mapCacheContractPrevAddressState.find(address);
+    auto& cacheContract = mapCacheContractData[destContractIn];
+
+    // CDestState stateContractDest;
+    // if (GetDestState(destContractIn, stateContractDest))
+    // {
+    //     cacheContract.cacheDestState = stateContractDest;
+    // }
+
+    for (auto& kv : mapCacheKv)
+    {
+        cacheContract.cacheContractKv[kv.first] = kv.second;
+    }
+    for (auto& logs : vLogsIn)
+    {
+        cacheContract.cacheContractLogs.push_back(logs);
+    }
+
+    if (fBtTraceDb)
+    {
+        for (auto& kv : mapTraceKv)
+        {
+            cacheContract.traceContractKv[kv.first] = kv.second;
+        }
+        for (const auto& kv : mapOldAddressKeyValue)
+        {
+            AddCacheContractPrevState(kv.first, kv.second);
+        }
+    }
+
+    if (mapCacheAddressContext.find(destContractIn) == mapCacheAddressContext.end())
+    {
+        CAddressContext ctxAddress;
+        if (!GetAddressContext(destContractIn, ctxAddress))
+        {
+            StdError("CBlockState", "Save run result: Get address context fail, destContractIn: %s", destContractIn.ToString().c_str());
+        }
+        else
+        {
+            mapCacheAddressContext[destContractIn] = ctxAddress;
+        }
+    }
+}
     if (it == mapCacheContractPrevAddressState.end())
     {
         CDestState stateDest;
