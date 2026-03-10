@@ -1019,7 +1019,7 @@ bool CAddressTxInfoDB::LoadFork(const uint256& hashFork)
         return true;
     }
 
-    std::shared_ptr<CForkAddressTxInfoDB> spAddress(new CForkAddressTxInfoDB());
+    shared_ptr<CForkAddressTxInfoDB> spAddress(new CForkAddressTxInfoDB());
     if (spAddress == nullptr)
     {
         return false;
@@ -1068,26 +1068,40 @@ void CAddressTxInfoDB::Clear()
     }
 }
 
-bool CAddressTxInfoDB::AddAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber, const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, uint256& hashNewRoot)
+bool CAddressTxInfoDB::AddAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber,
+                                        const map<CDestination, vector<CDestTxInfo>>& mapAddressTxInfo,
+                                        const std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapAddressTxInfoDB.find(hashFork);
     if (it != mapAddressTxInfoDB.end())
     {
-        return it->second->AddAddressTxInfo(hashPrevBlock, hashBlock, nBlockNumber, mapAddressTxInfo, hashNewRoot);
+        return it->second->AddAddressTxInfo(hashPrevBlock, hashBlock, nBlockNumber, mapAddressTxInfo, mapTokenRecord);
     }
     return false;
 }
 
-bool CAddressTxInfoDB::GetAddressTxCount(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint64& nTxCount)
+bool CAddressTxInfoDB::UpdateAddressTxInfoBlockLongChain(const uint256& hashFork, const vector<uint256>& vRemoveBlock, const vector<uint256>& vAddBlock)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapAddressTxInfoDB.find(hashFork);
     if (it != mapAddressTxInfoDB.end())
     {
-        return it->second->GetAddressTxCount(hashBlock, dest, nTxCount);
+        return it->second->UpdateAddressTxInfoBlockLongChain(vRemoveBlock, vAddBlock);
+    }
+    return false;
+}
+
+bool CAddressTxInfoDB::GetAddressTxCount(const uint256& hashFork, const CDestination& dest, uint64& nTxCount)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressTxInfoDB.find(hashFork);
+    if (it != mapAddressTxInfoDB.end())
+    {
+        return it->second->GetAddressTxCount(dest, nTxCount);
     }
     return false;
 }
