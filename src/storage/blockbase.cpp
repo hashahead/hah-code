@@ -2299,51 +2299,50 @@ bool CBlockBase::GetContractCoinName(const uint256& hashFork, const uint256& has
                ToHexString(vmCallResult.btResult).c_str(), destContract.ToString().c_str(), hashFork.GetHex().c_str());
         return false;
     }
+    strName = string(vmCallResult.btResult.begin() + 64, vmCallResult.btResult.begin() + 64 + nSize);
     return true;
 }
 
-bool CBlockState::AddContractState(const uint256& txid, const CTransaction& tx, const int nTxIndex, const uint64 nRunGasLimit, const uint256& nTvGasUsedIn, bool& fCallResult, CTransactionReceipt& receipt)
+bool CBlockBase::GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, string& strSymbol)
 {
-    mapCacheContractData.clear();
-    mapCacheAddressContext.clear();
-    mapCacheContractCreateCodeContext.clear();
-    mapCacheContractRunCodeContext.clear();
-    vCacheContractTransfer.clear();
-    mapCacheCodeDestGasUsed.clear();
-    mapCacheModifyPledgeFinalHeight.clear();
-    mapCacheFunctionAddress.clear();
+    CVmCallTx vmCallTx;
+    CVmCallResult vmCallResult;
 
-    fCallResult = true;
-    if (isFunctionContractAddress(tx.GetToAddress()))
-    {
-        fCallResult = DoFunctionContractTx(txid, tx, nTxIndex, nRunGasLimit, nTvGasUsedIn, receipt);
-        return true;
-    }
+    vmCallTx.fEthCall = true;
+    //vmCallTx.destFrom = 0;
+    vmCallTx.destTo = destContract;
+    vmCallTx.nTxNonce = 0;
+    vmCallTx.nGasPrice = MIN_GAS_PRICE;
+    vmCallTx.nGasLimit = DEF_TX_GAS_LIMIT;
+    vmCallTx.nAmount = 0;
+    vmCallTx.btData = MakeEthTxCallData("symbol()", {});
+    vmCallTx.fNeedVerifyToAddress = fNeedVerifyConntractAddress;
 
-    CDestination destContract;
-    bytes btContractCode;
-    bytes btRunParam;
-    uint256 hashContractCreateCode;
-    CDestination destCodeOwner;
-    CTxContractData txcd;
-    bool fCall = false;
-    bool fDestroy = false;
-    if (!GetDestContractCode(tx, destContract, btContractCode, btRunParam, hashContractCreateCode, destCodeOwner, txcd, fCall, fDestroy))
+    if (!CallContract(hashFork, hashBlock, vmCallTx, vmCallResult))
     {
-        StdLog("CBlockState", "Add contract state: Get dest contract code fail, txid: %s", txid.ToString().c_str());
+        StdLog("BlockBase", "Get contract coin symbol: Call contract fail, contract address: %s, fork: %s",
+               destContract.ToString().c_str(), hashFork.GetHex().c_str());
         return false;
     }
-    if (!tx.GetToAddress().IsNull() && fDestroy)
+    if (vmCallResult.btResult.size() <= 64)
     {
-        uint64 nGasLeft = 0;
-        int nStatusCode = -2; //EVMC_REJECTED
-        if (!DoRunResult(txid, tx, nTxIndex, destContract, hashContractCreateCode, nGasLeft, nTvGasUsedIn, nStatusCode, {}, receipt))
-        {
-            StdLog("CBlockState", "Add contract state: Do run result fail, txid: %s", txid.ToString().c_str());
-            return false;
-        }
-        return true;
+        StdLog("BlockBase", "Get contract coin symbol: Result error, result: %s, contract address: %s, fork: %s",
+               ToHexString(vmCallResult.btResult).c_str(), destContract.ToString().c_str(), hashFork.GetHex().c_str());
+        return false;
     }
+
+    uint256 tempData;
+    tempData.FromBigEndian(vmCallResult.btResult.data() + 32, 32);
+    std::size_t nSize = tempData.Get64();
+    if (nSize == 0 || vmCallResult.btResult.size() < nSize + 64)
+    {
+        StdLog("BlockBase", "Get contract coin symbol: Result symbol size error, result: %s, contract address: %s, fork: %s",
+               ToHexString(vmCallResult.btResult).c_str(), destContract.ToString().c_str(), hashFork.GetHex().c_str());
+        return false;
+    }
+    strSymbol = string(vmCallResult.btResult.begin() + 64, vmCallResult.btResult.begin() + 64 + nSize);
+    return true;
+}
 
     if (fCall)
     {
