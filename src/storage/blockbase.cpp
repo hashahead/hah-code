@@ -2104,69 +2104,43 @@ bool CBlockBase::VerifyNewFunctionAddress(const uint256& hashBlock, const CDesti
     CAddressContext ctxNewAddress;
     if (!RetrieveAddressContext(hashGenesisBlock, hashBlock, destNewFunction, ctxNewAddress))
     {
-        StdLog("CBlockState", "Is contract destroy: Contract has been destroyed, contract address: %s", destContractIn.ToString().c_str());
-        return true;
+        StdLog("CBlockBase", "Verify new function address: Retrieve new function address context fail, function id: %d, new function address: %s, from: %s",
+               nFuncId, destNewFunction.ToString().c_str(), destFrom.ToString().c_str());
+        strErr = "Address context error";
+        return false;
     }
-    return false;
-}
 
-//////////////////////////////////////////
-void CBlockState::CreateFunctionContractData()
-{
-    bytes btCreateCode = getFunctionContractCreateCode();
-    bytes btRuntimeCode = getFunctionContractRuntimeCode();
-
-    uint256 hashCreateCode = crypto::CryptoKeccakHash(btCreateCode.data(), btCreateCode.size());
-    uint256 hashRuntimeCode = crypto::CryptoKeccakHash(btRuntimeCode.data(), btRuntimeCode.size());
-
-    const CDestination& destFuncContract = FUNCTION_CONTRACT_ADDRESS;
-
-    // create state
-    CContractDestCodeContext ctxDestCode(hashCreateCode, hashRuntimeCode, destFuncContract);
-    bytes btDestCodeData;
-    CBufStream ss;
-    ss << ctxDestCode;
-    ss.GetData(btDestCodeData);
-    CDestState stateContractDest;
-    stateContractDest.SetType(CDestination::PREFIX_CONTRACT);
-    stateContractDest.SetCodeHash(hashRuntimeCode);
-    SetDestState(destFuncContract, stateContractDest);
-    mapContractKvState[destFuncContract][destFuncContract.ToHash()] = btDestCodeData;
-
-    // create address context
-    CContractAddressContext ctxContract;
-    ctxContract.destCodeOwner = destFuncContract;
-    ctxContract.hashContractCreateCode = hashCreateCode;
-    ctxContract.hashContractRunCode = hashRuntimeCode;
-    mapBlockAddressContext[destFuncContract] = CAddressContext(ctxContract);
-
-    mapBlockAddressContext[FUNCTION_BLACKHOLE_ADDRESS] = CAddressContext(CPubkeyAddressContext());
-    mapBlockAddressContext[PLEDGE_SURPLUS_REWARD_ADDRESS] = CAddressContext(CPubkeyAddressContext());
-    mapBlockAddressContext[TIME_VAULT_TO_ADDRESS] = CAddressContext(CPubkeyAddressContext());
-    mapBlockAddressContext[PROJECT_PARTY_REWARD_TO_ADDRESS] = CAddressContext(CPubkeyAddressContext());
-    mapBlockAddressContext[FOUNDATION_REWARD_TO_ADDRESS] = CAddressContext(CPubkeyAddressContext());
-
-    // create create and runtime code context
-    mapBlockContractCreateCodeContext[hashCreateCode] = CContractCreateCodeContext({}, {}, {}, destFuncContract, btCreateCode, {}, {}, hashRuntimeCode);
-    mapBlockContractRunCodeContext[hashRuntimeCode] = CContractRunCodeContext(hashCreateCode, btRuntimeCode);
-}
-
-bool CBlockState::GetDestContractCode(const CTransaction& tx, CDestination& destContract, bytes& btContractCode, bytes& btRunParam, uint256& hashContractCreateCode,
-                                      CDestination& destCodeOwner, CTxContractData& txcd, bool& fCall, bool& fDestroy)
-{
-    fCall = true;
-    fDestroy = false;
-    if (tx.GetToAddress().IsNull())
+    CDestination destDefFunc;
+    if (!GetDefaultFunctionAddress(nFuncId, destDefFunc))
     {
-        //destContract.SetContractId(tx.GetFromAddress(), tx.GetNonce());
-        destContract = CreateContractAddressByNonce(tx.GetFromAddress(), tx.GetNonce());
+        StdLog("CBlockBase", "Verify new function address: Get default function address fail, function id: %d, new function address: %s, from: %s",
+               nFuncId, destNewFunction.ToString().c_str(), destFrom.ToString().c_str());
+        strErr = "Function id error";
+        return false;
+    }
+    if (destFrom != destDefFunc)
+    {
+        StdLog("CBlockBase", "Verify new function address: From address is not default function address, function id: %d, new function address: %s, default function address: %s, from: %s",
+               nFuncId, destNewFunction.ToString().c_str(), destDefFunc.ToString().c_str(), destFrom.ToString().c_str());
+        strErr = "From address is not default function address";
+        return false;
+    }
 
-        uint8 nCodeType;
-        CTemplateContext ctxTemplate;
-        CTxContractData ctxContract;
-        if (!tx.GetCreateCodeContext(nCodeType, ctxTemplate, ctxContract))
+    std::map<uint32, CFunctionAddressContext> mapFunctionAddress;
+    if (!ListFunctionAddress(hashBlock, mapFunctionAddress))
+    {
+        StdLog("CBlockBase", "Verify new function address: List function address fail, function id: %d, new function address: %s, from: %s",
+               nFuncId, destNewFunction.ToString().c_str(), destFrom.ToString().c_str());
+        strErr = "List function address fail";
+        return false;
+    }
+    for (auto& kv : mapFunctionAddress)
+    {
+        if (kv.second.GetFunctionAddress() == destNewFunction)
         {
-            StdLog("CBlockState", "Get dest contract code: Get create code context fail, prev block: %s", hashPrevBlock.GetHex().c_str());
+            StdLog("CBlockBase", "Verify new function address: Function address already exists, function id: %d, new function address: %s, repeat function id: %d, from: %s",
+                   nFuncId, destNewFunction.ToString().c_str(), kv.first, destFrom.ToString().c_str());
+            strErr = "Function address already exists";
             return false;
         }
 
