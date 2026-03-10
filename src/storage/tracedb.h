@@ -62,6 +62,10 @@ public:
 
     bool GetBlockContractReceipt(const uint256& hashBlock, BlockContractReceipts& vContractReceipts) const;
     bool GetBlockContractPrevState(const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState) const;
+
+    bool GetTxContractReceipt(const uint256& hashBlock, const uint256& txid, TxContractReceipts& tcrReceipt) const;
+    bool GetTxContractPrevState(const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState) const;
+
 protected:
     std::map<uint256, CCacheBlockContractReceipts> mapBlockContractReceipts;   // key: block hash
     std::map<uint256, CCacheBlockContractPrevState> mapBlockContractPrevState; // key: block hash

@@ -125,6 +125,26 @@ bool CCacheTraceData::GetBlockContractPrevState(const uint256& hashBlock, BlockC
     return false;
 }
 
+bool CCacheTraceData::GetTxContractReceipt(const uint256& hashBlock, const uint256& txid, TxContractReceipts& tcrReceipt) const
+{
+    auto it = mapBlockContractReceipts.find(hashBlock);
+    if (it != mapBlockContractReceipts.end())
+    {
+        return it->second.GetTxContractReceipts(txid, tcrReceipt);
+    }
+    return false;
+}
+
+bool CCacheTraceData::GetTxContractPrevState(const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState) const
+{
+    auto it = mapBlockContractPrevState.find(hashBlock);
+    if (it != mapBlockContractPrevState.end())
+    {
+        return it->second.GetTxContractPrevState(txid, mapContractPrevState);
+    }
+    return false;
+}
+
 //////////////////////////////
 // CTraceDB
 
