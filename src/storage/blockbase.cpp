@@ -2143,20 +2143,31 @@ bool CBlockBase::VerifyNewFunctionAddress(const uint256& hashBlock, const CDesti
             strErr = "Function address already exists";
             return false;
         }
+    }
 
-        if (nCodeType != CODE_TYPE_CONTRACT)
+    auto it = mapFunctionAddress.find(nFuncId);
+    if (it != mapFunctionAddress.end())
+    {
+        if (it->second.IsDisableModify())
         {
-            StdLog("CBlockState", "Get dest contract code: Code type error, prev block: %s", hashPrevBlock.GetHex().c_str());
+            StdLog("CBlockBase", "Verify new function address: Disable modify, function id: %d, new function address: %s, from: %s",
+                   nFuncId, destNewFunction.ToString().c_str(), destFrom.ToString().c_str());
+            strErr = "Disable modify";
             return false;
         }
-        if (ctxContract.IsUpcode())
-        {
-            fCall = false;
-        }
-        if (ctxContract.IsCreate() || ctxContract.IsUpcode())
-        {
-            ctxContract.UncompressCode();
-            hashContractCreateCode = ctxContract.GetContractCreateCodeHash();
+    }
+    return true;
+}
+
+bool CBlockBase::RetrieveBlsPubkeyContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint384& blsPubkey)
+{
+    return dbBlock.RetrieveBlsPubkeyContext(hashFork, hashBlock, dest, blsPubkey);
+}
+
+bool CBlockBase::GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress)
+{
+    return dbBlock.GetOwnerLinkTemplateAddress(hashFork, hashBlock, destOwner, mapTemplateAddress);
+}
 
             if (ctxContract.IsCreate())
             {
