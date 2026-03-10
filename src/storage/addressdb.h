@@ -162,15 +162,14 @@ protected:
     bool AddCacheTokenContractAddressData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapIncTokenAddress, const bool fAll);
     bool ListHeightTrieRoot(const uint32 nLastHeight, std::vector<std::pair<uint8, uint256>>& vBlockRootType);
     bool ListHeightAddressCount(const uint32 nLastHeight, std::vector<uint256>& vBlockHash);
+    bool ClearHeightAuxiliaryData(const uint32 nLastHeight);
 
 protected:
-    enum
-    {
-        MAX_CACHE_COUNT = 16
-    };
-    bool fCache;
     uint256 hashFork;
+    bool fPrune;
     CTrieDB dbTrie;
+
+    CCacheAddressData cacheAddressData;
 };
 
 class CAddressDB

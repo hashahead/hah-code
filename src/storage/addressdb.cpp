@@ -1582,6 +1582,39 @@ bool CForkAddressDB::ListHeightAddressCount(const uint32 nLastHeight, std::vecto
     return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
 }
 
+bool CForkAddressDB::ClearHeightAuxiliaryData(const uint32 nLastHeight)
+{
+    std::vector<std::pair<uint8, uint256>> vBlockRootType;
+    std::vector<uint256> vBlockHash;
+    if (!ListHeightTrieRoot(nLastHeight, vBlockRootType))
+    {
+        StdLog("CForkAddressDB", "Clear height auxiliary data: List height trie root failed, last height: %d", nLastHeight);
+        return false;
+    }
+    if (!ListHeightAddressCount(nLastHeight, vBlockHash))
+    {
+        StdLog("CForkAddressDB", "Clear height auxiliary data: List height address count failed, last height: %d", nLastHeight);
+        return false;
+    }
+    for (auto& vd : vBlockRootType)
+    {
+        if (!RemoveTrieRoot(vd.first, vd.second))
+        {
+            StdLog("CForkAddressDB", "Clear height auxiliary data: Remove trie root failed, root type: %d, block: %s, last height: %d", vd.first, vd.second.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+    for (auto& hashBlock : vBlockHash)
+    {
+        if (!RemoveAddressCount(hashBlock))
+        {
+            StdLog("CForkAddressDB", "Clear height auxiliary data: Remove address count failed, block: %s, last height: %d", hashBlock.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+    return true;
+}
+
 //////////////////////////////
 // CAddressDB
 
