@@ -175,9 +175,9 @@ protected:
 class CAddressDB
 {
 public:
-    CAddressDB(const bool fCacheIn = true)
-      : fCache(fCacheIn) {}
-    bool Initialize(const boost::filesystem::path& pathData);
+    CAddressDB()
+      : fPruneState(false) {}
+    bool Initialize(const boost::filesystem::path& pathData, const uint256& hashPrimaryForkIn, const bool fPruneStateIn);
     void Deinitialize();
 
     bool ExistFork(const uint256& hashFork);
@@ -187,7 +187,9 @@ public:
     void Clear();
 
     bool AddAddressContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapAddress, const uint64 nNewAddressCount,
-                           const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress, uint256& hashNewRoot);
+                           const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress,
+                           const std::map<CDestination, uint384>& mapBlsPubkeyContext, uint256& hashNewRoot);
+    bool AddTokenContractAddressContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddressContext, const bool fAll);
     bool RetrieveAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress);
     bool ListContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
     bool RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv);
