@@ -97,8 +97,12 @@ class CTimeSeriesCached : public CTimeSeriesBase
 public:
     CTimeSeriesCached();
     ~CTimeSeriesCached();
-    bool Initialize(const boost::filesystem::path& pathLocationIn, const std::string& strPrefixIn);
+
+    bool Initialize(const fs::path& pathLocationIn, const std::string& strPrefixIn);
     void Deinitialize();
+    bool CopyToPath(const uint32 nLastFile, const uint32 nLastFileSize, const fs::path& pathDst);
+    bool RecoveryFile(const fs::path& pathSrc);
+
     template <typename T>
     bool Write(const T& t, uint32& nFile, uint32& nOffset, uint32& nCrc, bool fWriteCache = true)
     {

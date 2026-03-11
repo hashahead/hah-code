@@ -263,7 +263,7 @@ CTimeSeriesCached::~CTimeSeriesCached()
 {
 }
 
-bool CTimeSeriesCached::Initialize(const path& pathLocationIn, const string& strPrefixIn)
+bool CTimeSeriesCached::Initialize(const fs::path& pathLocationIn, const string& strPrefixIn)
 {
 
     if (!CTimeSeriesBase::Initialize(pathLocationIn, strPrefixIn))
@@ -284,6 +284,64 @@ void CTimeSeriesCached::Deinitialize()
     boost::unique_lock<boost::mutex> lock(mtxCache);
 
     ResetCache();
+}
+
+bool CTimeSeriesCached::CopyToPath(const uint32 nLastFile, const uint32 nLastFileSize, const fs::path& pathDst)
+{
+    uint32 nCopyEndFile = nLastFile;
+    if (nLastFileSize == 0)
+    {
+        nCopyEndFile++;
+    }
+    for (uint32 i = 1; i < nCopyEndFile; i++)
+    {
+        std::string strPath;
+        if (!GetFilePath(i, strPath))
+        {
+            return false;
+        }
+        try
+        {
+            fs::copy_file(fs::path(strPath), pathDst / FileName(i), fs::copy_option::overwrite_if_exists);
+        }
+        catch (const fs::filesystem_error& e)
+        {
+            StdError(__PRETTY_FUNCTION__, e.what());
+            return false;
+        }
+    }
+    if (nLastFileSize > 0)
+    {
+        if (!CopyFileToPath(nLastFile, nLastFileSize, pathDst))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CTimeSeriesCached::RecoveryFile(const fs::path& pathSrc)
+{
+    try
+    {
+        for (const auto& entry : fs::directory_iterator(pathSrc))
+        {
+            if (fs::is_regular_file(entry.status()))
+            {
+                const std::string fileName = entry.path().filename().string();
+                if (fileName.size() >= strPrefix.size() && fileName.compare(0, strPrefix.size(), strPrefix) == 0)
+                {
+                    fs::copy_file(entry.path(), pathLocation / fileName, fs::copy_option::overwrite_if_exists);
+                }
+            }
+        }
+    }
+    catch (const fs::filesystem_error& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
 }
 
 void CTimeSeriesCached::ResetCache()
