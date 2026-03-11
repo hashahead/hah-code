@@ -641,6 +641,130 @@ void CBlockState::SaveRunResult(const CDestination& destContractIn, const std::v
         }
     }
 }
+
+bool CBlockState::ContractTransfer(const CDestination& from, const CDestination& to, const uint256& amount, const uint64 nGasLimit, uint64& nGasLeft, const CAddressContext& ctxToAddress, const uint8 nTransferType)
+{
+    if (ctxToAddress.IsTemplate())
+    {
+        if (ctxToAddress.GetTemplateType() == TEMPLATE_VOTE && !fEnableStakeVote)
+        {
+            return false;
+        }
+        if (ctxToAddress.GetTemplateType() == TEMPLATE_PLEDGE && !fEnableStakePledge)
+        {
+            return false;
+        }
+    }
+    if (nGasLeft < FUNCTION_TX_GAS_TRANS)
+    {
+        StdLog("CBlockState", "Contract transfer: Gas not enough, gas left: %lu, from: %s", nGasLeft, from.ToString().c_str());
+        nGasLeft = 0;
+        return false;
+    }
+    nGasLeft -= FUNCTION_TX_GAS_TRANS;
+
+    CDestState stateFrom;
+    if (!GetDestState(from, stateFrom))
+    {
+        StdLog("CBlockState", "Contract transfer: Get dest state fail, from: %s", from.ToString().c_str());
+        return false;
+    }
+    if (stateFrom.GetBalance() < amount)
+    {
+        StdLog("CBlockState", "Contract transfer: Balance not enough, balance: %s, amount: %s, from: %s",
+               CoinToTokenBigFloat(stateFrom.GetBalance()).c_str(), CoinToTokenBigFloat(amount).c_str(), from.ToString().c_str());
+        return false;
+    }
+
+    CDestState stateTo;
+    if (!GetDestState(to, stateTo))
+    {
+        stateTo.SetNull();
+
+        CAddressContext ctxTempAddress;
+        if (!GetAddressContext(to, ctxTempAddress))
+        {
+            mapCacheAddressContext[to] = ctxToAddress;
+            stateTo.SetType(ctxToAddress.GetDestType(), ctxToAddress.GetTemplateType()); // WAIT_CHECK
+        }
+        else
+        {
+            mapCacheAddressContext[to] = ctxTempAddress;
+            stateTo.SetType(ctxTempAddress.GetDestType(), ctxTempAddress.GetTemplateType());
+        }
+    }
+    else
+    {
+        CAddressContext ctxTempAddress;
+        if (!GetAddressContext(to, ctxTempAddress))
+        {
+            if (ctxToAddress.GetDestType() == stateTo.GetDestType()
+                && ctxToAddress.GetTemplateType() == stateTo.GetTemplateType())
+            {
+                mapCacheAddressContext[to] = ctxToAddress;
+            }
+            else
+            {
+                StdLog("CBlockState", "Contract transfer: State address context error, State address type: %d-%d, in address type: %d-%d, from: %s, to: %s",
+                       stateTo.GetDestType(), stateTo.GetTemplateType(),
+                       ctxToAddress.GetDestType(), ctxToAddress.GetTemplateType(),
+                       from.ToString().c_str(), to.ToString().c_str());
+                return false;
+            }
+        }
+        else
+        {
+            mapCacheAddressContext[to] = ctxTempAddress;
+        }
+    }
+
+    CAddressContext ctxTempFromAddress;
+    if (!GetAddressContext(from, ctxTempFromAddress))
+    {
+        StdLog("CBlockState", "Contract transfer: Get from address context failed, from: %s", from.ToString().c_str());
+        return false;
+    }
+    if (mapCacheAddressContext.count(from) == 0)
+    {
+        mapCacheAddressContext[from] = ctxTempFromAddress;
+    }
+
+    // verify reward lock
+    uint256 nLockedAmount;
+    if (!GetDestLockedAmount(from, nLockedAmount))
+    {
+        StdLog("CBlockState", "Contract transfer: Get reward locked amount failed, from: %s", from.ToString().c_str());
+        return false;
+    }
+    if (nLockedAmount > 0 && stateFrom.GetBalance() < nLockedAmount + amount)
+    {
+        StdLog("CBlockState", "Contract transfer: Balance locked, balance: %s, lock amount: %s, amount: %s, from: %s",
+               CoinToTokenBigFloat(stateFrom.GetBalance()).c_str(), CoinToTokenBigFloat(nLockedAmount).c_str(),
+               CoinToTokenBigFloat(amount).c_str(), from.ToString().c_str());
+        return false;
+    }
+
+    if (VERIFY_FHX_HEIGHT_BRANCH_002(nBlockHeight))
+    {
+        if (ctxToAddress.GetTemplateType() == TEMPLATE_PLEDGE
+            && !dbBlockBase.VerifyAddressPledgeVote(to, hashPrevBlock))
+        {
+            StdLog("CBlockState", "Contract transfer: Voting has been banned, from: %s, to: %s",
+                   from.ToString().c_str(), to.ToString().c_str());
+            return false;
+        }
+    }
+
+    stateFrom.DecBalance(amount);
+    stateTo.IncBalance(amount);
+
+    SetCacheDestState(from, stateFrom);
+    SetCacheDestState(to, stateTo);
+
+    vCacheContractTransfer.push_back(CContractTransfer(nTransferType, from, to, amount));
+    return true;
+}
+
     if (it == mapCacheContractPrevAddressState.end())
     {
         CDestState stateDest;
