@@ -2539,74 +2539,34 @@ bool CBlockBase::UpdateBlockLongChain(const uint256& hashFork, const std::vector
 
     for (const auto& blockex : vBlockAddNew)
     {
-        mapBlockFunctionAddress[kv.first] = kv.second;
-    }
-
-    mapCacheContractData.clear();
-    mapCacheAddressContext.clear();
-    mapCacheContractCreateCodeContext.clear();
-    mapCacheContractRunCodeContext.clear();
-    vCacheContractTransfer.clear();
-    mapCacheCodeDestGasUsed.clear();
-    mapCacheModifyPledgeFinalHeight.clear();
-    mapCacheFunctionAddress.clear();
-
-    uint256 nTxGasUsed;
-    if (!tx.GetFromAddress().IsNull() && tx.GetGasLimit() > 0 && tx.GetGasLimit() > nGasLeftIn)
-    {
-        nTxGasUsed = tx.GetGasLimit() - nGasLeftIn;
-    }
-    if (nTxGasUsed > 0)
-    {
-        mapBlockTxFeeUsed[txid] = nTxGasUsed * tx.GetGasPrice();
-    }
-
-    receipt.nReceiptType = CTransactionReceipt::RECEIPT_TYPE_CONTRACT;
-
-    receipt.nTxIndex = nTxIndex;
-    receipt.txid = txid;
-    receipt.nBlockNumber = nBlockNumber;
-    receipt.from = tx.GetFromAddress();
-    receipt.to = tx.GetToAddress();
-    receipt.nTxGasUsed = nTxGasUsed;
-    receipt.nTvGasUsed = nTvGasUsedIn;
-    receipt.destContract = destContract;
-    receipt.hashContractCode = hashContractCreateCode;
-    receipt.nContractStatus = nStatusCode;
-    receipt.nContractGasLeft = nGasLeftIn;
-    if (!tx.GetToAddress().IsNull())
-    {
-        receipt.btContractResult = vResult;
-    }
-
-    receipt.nEffectiveGasPrice = tx.GetGasPrice();
-
-    // receipt.CalcLogsBloom();
-    // nBlockBloom |= receipt.nLogsBloom;
-
-    // hnbase::CBufStream ss;
-    // ss << receipt;
-
-    // vReceiptHash.push_back(hashahead::crypto::CryptoHash(ss.GetData(), ss.GetSize()));
-    // mapBlockTxReceipts.insert(std::make_pair(txid, receipt));
-
-    nSurplusBlockGasLimit -= nTxGasUsed.Get64();
-    if (!tx.GetFromAddress().IsNull() && tx.GetGasLimit() > 0 && nGasLeftIn != 0)
-    {
-        CDestState stateDest;
-        if (!GetDestState(tx.GetFromAddress(), stateDest))
+        const uint256 hashBlock = blockex.GetHash();
+        mapNewTx.insert(std::make_pair(blockex.txMint.GetHash(), hashBlock));
+        for (const auto& tx : blockex.vtx)
         {
-            StdLog("CBlockState", "Set run result: Get dest state fail, txid: %s", txid.ToString().c_str());
-            return false;
+            mapNewTx.insert(std::make_pair(tx.GetHash(), hashBlock));
         }
-        stateDest.IncBalance(tx.GetGasPrice() * nGasLeftIn);
-        SetDestState(tx.GetFromAddress(), stateDest);
-
-        nBlockFeeLeft += (tx.GetGasPrice() * nGasLeftIn);
+        vNewBlock.push_back(hashBlock);
+        vNewNumberBlock.push_back(std::make_pair(blockex.GetBlockNumber(), hashBlock));
     }
-    nBlockFeeLeft += nTotalCodeFeeUsed;
-    return true;
-}
+    for (const auto& blockex : vBlockRemove)
+    {
+        const uint256 hashBlock = blockex.GetHash();
+        uint256 txid = blockex.txMint.GetHash();
+        if (mapNewTx.find(txid) == mapNewTx.end())
+        {
+            vRemoveTx.push_back(txid);
+        }
+        for (const auto& tx : blockex.vtx)
+        {
+            uint256 txid = tx.GetHash();
+            if (mapNewTx.find(txid) == mapNewTx.end())
+            {
+                vRemoveTx.push_back(txid);
+            }
+        }
+        vRemoveBlock.push_back(hashBlock);
+        vRemoveNumberBlock.push_back(std::make_pair(blockex.GetBlockNumber(), hashBlock));
+    }
 
 bool CBlockState::GetDestLockedAmount(const CDestination& dest, uint256& nLockedAmount)
 {
