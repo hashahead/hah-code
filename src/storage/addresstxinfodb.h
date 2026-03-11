@@ -60,6 +60,9 @@ protected:
 
     bool WriteBlockAddressTxIndex(const uint256& hashBlock, const std::map<CDestination, std::pair<uint64, uint64>>& mapBlockAddressTxIndex);
     bool ReadBlockAddressTxIndex(const uint256& hashBlock, std::map<CDestination, std::pair<uint64, uint64>>& mapBlockAddressTxIndex);
+
+    bool WriteBlockAddressTokenTxIndex(const uint256& hashBlock, const map<CDestination, map<CDestination, pair<uint64, uint64>>>& mapBlockAddressTokenTxIndex);
+    bool ReadBlockAddressTokenTxIndex(const uint256& hashBlock, map<CDestination, map<CDestination, pair<uint64, uint64>>>& mapBlockAddressTokenTxIndex);
     void WriteAddressLast(const CDestination& dest, const uint64 nTxCount, bytesmap& mapKv);
     bool ReadAddressLast(const uint256& hashRoot, const CDestination& dest, uint64& nTxCount);
 

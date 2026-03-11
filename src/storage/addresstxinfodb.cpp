@@ -1106,31 +1106,44 @@ bool CAddressTxInfoDB::GetAddressTxCount(const uint256& hashFork, const CDestina
     return false;
 }
 
-bool CAddressTxInfoDB::RetrieveAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo)
+bool CAddressTxInfoDB::RetrieveAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxAddressTxInfo)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapAddressTxInfoDB.find(hashFork);
     if (it != mapAddressTxInfoDB.end())
     {
-        return it->second->RetrieveAddressTxInfo(hashBlock, dest, nTxIndex, ctxtAddressTxInfo);
+        return it->second->RetrieveAddressTxInfo(dest, nTxIndex, ctxAddressTxInfo);
     }
     return false;
 }
 
-bool CAddressTxInfoDB::ListAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
+bool CAddressTxInfoDB::ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, vector<CDestTxInfo>& vAddressTxInfo)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapAddressTxInfoDB.find(hashFork);
     if (it != mapAddressTxInfoDB.end())
     {
-        return it->second->ListAddressTxInfo(hashBlock, dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
+        return it->second->ListAddressTxInfo(dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
     }
     return false;
 }
 
-bool CAddressTxInfoDB::VerifyAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
+bool CAddressTxInfoDB::ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                                   const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressTxInfoDB.find(hashFork);
+    if (it != mapAddressTxInfoDB.end())
+    {
+        return it->second->ListTokenTx(destContractAddress, destUserAddress, nPageNumber, nPageSize, fReverse, nTotalRecordCount, nPageCount, vTokenTxRecord);
+    }
+    return false;
+}
+
+bool CAddressTxInfoDB::WalkThroughSnapshotAddressTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker)
 {
     CReadLock rlock(rwAccess);
 
