@@ -2445,43 +2445,55 @@ bool CBlockBase::GetContractCoinBalance(const uint256& hashFork, const uint256& 
     return true;
 }
 
-bool CBlockState::DoRunResult(const uint256& txid, const CTransaction& tx, const int nTxIndex, const CDestination& destContract,
-                              const uint256& hashContractCreateCode, const uint64 nGasLeftIn, const uint256& nTvGasUsedIn,
-                              const int nStatusCode, const bytes& vResult, CTransactionReceipt& receipt)
+////////////////////////////////////////////////////////////////////////
+BlockIndexPtr CBlockBase::GetIndex(const uint256& hash)
 {
-    for (const auto& vd : mapCacheContractData)
+    BlockIndexPtr pIndex = GetCacheBlockIndex(hash);
+    if (pIndex)
     {
-        const CDestination& dest = vd.first;
-        const CCacheContractData& conData = vd.second;
+        return pIndex;
+    }
+    CBlockIndex outline;
+    if (!dbBlock.RetrieveBlockIndex(hash, outline))
+    {
+        return nullptr;
+    }
+    pIndex = MAKE_SHARED_BLOCK_INDEX(outline);
+    if (!pIndex)
+    {
+        return nullptr;
+    }
+    AddCacheBlockIndex(pIndex);
+    return pIndex;
+}
 
-        auto& mapSetContractKv = mapContractKvState[dest];
-        for (const auto& kv : conData.cacheContractKv)
-        {
-            mapSetContractKv[kv.first] = kv.second;
-        }
-        if (!conData.cacheDestState.IsNull())
-        {
-            SetDestState(dest, conData.cacheDestState);
-        }
+void CBlockBase::AddCacheBlockIndex(const BlockIndexPtr pIndex)
+{
+    CWriteLock wlock(rwCacheBlockIndexAccess);
+    mapCacheBlockIndex.insert(std::make_pair(pIndex->GetBlockHash(), pIndex));
+}
 
-        for (auto& logs : conData.cacheContractLogs)
-        {
-            receipt.vLogs.push_back(logs);
-        }
-    }
-    for (const auto& kv : mapCacheAddressContext)
+void CBlockBase::RemoveCacheBlockIndex(const uint256& hashBlock)
+{
+    CWriteLock wlock(rwCacheBlockIndexAccess);
+    mapCacheBlockIndex.erase(hashBlock);
+}
+
+BlockIndexPtr CBlockBase::GetCacheBlockIndex(const uint256& hashBlock)
+{
+    CReadLock rlock(rwCacheBlockIndexAccess);
+    auto it = mapCacheBlockIndex.find(hashBlock);
+    if (it != mapCacheBlockIndex.end())
     {
-        mapBlockAddressContext[kv.first] = kv.second;
+        return it->second;
     }
-    for (const auto& kv : mapCacheContractCreateCodeContext)
-    {
-        mapBlockContractCreateCodeContext[kv.first] = kv.second;
-    }
-    for (const auto& kv : mapCacheContractRunCodeContext)
-    {
-        mapBlockContractRunCodeContext[kv.first] = kv.second;
-    }
-    for (const auto& vd : vCacheContractTransfer)
+    return nullptr;
+}
+
+BlockIndexPtr CBlockBase::GetForkLastIndex(const uint256& hashFork)
+{
+    uint256 hashLastBlock;
+    if (!dbBlock.RetrieveForkLast(hashFork, hashLastBlock))
     {
         mapBlockContractTransfer[txid].push_back(vd);
         receipt.vTransfer.push_back(vd);
