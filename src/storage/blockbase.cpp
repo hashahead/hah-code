@@ -2495,53 +2495,49 @@ BlockIndexPtr CBlockBase::GetForkLastIndex(const uint256& hashFork)
     uint256 hashLastBlock;
     if (!dbBlock.RetrieveForkLast(hashFork, hashLastBlock))
     {
-        mapBlockContractTransfer[txid].push_back(vd);
-        receipt.vTransfer.push_back(vd);
+        return nullptr;
     }
-    uint256 nTotalCodeFeeUsed;
-    if (!tx.GetFromAddress().IsNull() && tx.GetGasLimit() > 0)
+    return GetIndex(hashLastBlock);
+}
+
+BlockIndexPtr CBlockBase::GetBranch(BlockIndexPtr pIndexRef, BlockIndexPtr pIndex, vector<BlockIndexPtr>& vPath)
+{
+    vPath.clear();
+    while (pIndex && pIndexRef && pIndex->GetBlockHash() != pIndexRef->GetBlockHash())
     {
-        for (const auto& kv : mapCacheCodeDestGasUsed)
+        if (pIndexRef->GetBlockTime() > pIndex->GetBlockTime())
         {
-            if (kv.second > 0)
-            {
-                const CDestination& destCodeOwner = kv.first;
-                uint256 nDestUsedGas(kv.second);
-                uint256 nCodeFeeUsed = (nDestUsedGas * tx.GetGasPrice()) * CODE_REWARD_USED / CODE_REWARD_PER;
-
-                CDestState stateCodeOwner;
-                if (!GetDestState(destCodeOwner, stateCodeOwner))
-                {
-                    stateCodeOwner.SetNull();
-                    stateCodeOwner.SetType(CDestination::PREFIX_PUBKEY); // WAIT_CHECK
-                }
-                stateCodeOwner.IncBalance(nCodeFeeUsed);
-                SetDestState(destCodeOwner, stateCodeOwner);
-
-                mapBlockCodeDestFeeUsed[txid][destCodeOwner] += nCodeFeeUsed;
-                nTotalCodeFeeUsed += nCodeFeeUsed;
-
-                if (mapBlockAddressContext.find(destCodeOwner) == mapBlockAddressContext.end())
-                {
-                    CAddressContext ctxCodeOwnerAddress;
-                    if (!GetAddressContext(destCodeOwner, ctxCodeOwnerAddress))
-                    {
-                        mapBlockAddressContext[destCodeOwner] = CAddressContext(CPubkeyAddressContext());
-                        StdLog("CBlockState", "Do run result: Get code owner address fail, destCodeOwner: %s", destCodeOwner.ToString().c_str());
-                    }
-                    else
-                    {
-                        mapBlockAddressContext[destCodeOwner] = ctxCodeOwnerAddress;
-                    }
-                }
-            }
+            pIndexRef = GetPrevBlockIndex(pIndexRef);
+        }
+        else if (pIndex->GetBlockTime() > pIndexRef->GetBlockTime())
+        {
+            vPath.push_back(pIndex);
+            pIndex = GetPrevBlockIndex(pIndex);
+        }
+        else
+        {
+            vPath.push_back(pIndex);
+            pIndex = GetPrevBlockIndex(pIndex);
+            pIndexRef = GetPrevBlockIndex(pIndexRef);
         }
     }
-    for (auto& kv : mapCacheModifyPledgeFinalHeight)
+    if (!pIndex || !pIndexRef)
     {
-        mapBlockModifyPledgeFinalHeight[kv.first] = kv.second;
+        return nullptr;
     }
-    for (auto& kv : mapCacheFunctionAddress)
+    return pIndex;
+}
+
+bool CBlockBase::UpdateBlockLongChain(const uint256& hashFork, const std::vector<CBlockEx>& vBlockRemove, const std::vector<CBlockEx>& vBlockAddNew)
+{
+    std::vector<uint256> vRemoveBlock;
+    std::vector<uint256> vNewBlock;
+    std::vector<uint256> vRemoveTx;
+    std::map<uint256, uint256> mapNewTx;
+    std::vector<std::pair<uint64, uint256>> vRemoveNumberBlock;
+    std::vector<std::pair<uint64, uint256>> vNewNumberBlock;
+
+    for (const auto& blockex : vBlockAddNew)
     {
         mapBlockFunctionAddress[kv.first] = kv.second;
     }
