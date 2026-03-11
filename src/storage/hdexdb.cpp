@@ -850,6 +850,48 @@ bool CHdexDB::AddBlockCrosschainProve(const uint256& hashBlock, const CBlockStor
     return WriteBlockCrosschainProveDb(hashBlock, proveBlockCrosschain);
 }
 
+bool CHdexDB::UpdateBlockAggSign(const uint256& hashBlock, const bytes& btAggBitmap, const bytes& btAggSig, std::map<CChainId, CBlockProve>& mapBlockProve)
+{
+    CWriteLock wlock(rwAccess);
+
+    CBlockStorageProve proveCrosschain;
+    if (!GetBlockCrosschainProveDb(hashBlock, proveCrosschain))
+    {
+        StdLog("CHdexDB", "Update block agg sign: Get block crosschain prove fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    proveCrosschain.btAggSigBitmap = btAggBitmap;
+    proveCrosschain.btAggSigData = btAggSig;
+
+    if (!WriteBlockCrosschainProveDb(hashBlock, proveCrosschain))
+    {
+        StdLog("CHdexDB", "Update block agg sign: Write block crosschain prove fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    if (!GetBlockProveDb(hashBlock, proveCrosschain, mapBlockProve))
+    {
+        StdLog("CHdexDB", "Update block agg sign: Get block prove fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    for (const auto& kv : mapBlockProve)
+    {
+        const CChainId nRecvChainId = kv.first;
+        const CBlockProve& blockProve = kv.second;
+
+        if (!AddBlockRecvCrosschainProveDb(nRecvChainId, blockProve))
+        {
+            StdLog("CHdexDB", "Update block agg sign: Add recv crosschain prove fail, recv chainid: %d, send block: %s, ref block: %s",
+                   nRecvChainId, blockProve.hashBlock.GetBhString().c_str(), proveCrosschain.hashRefBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+    StdDebug("CHdexDB", "Update block agg sign: block cross prove: %lu, prove count: %lu, block: %s",
+             proveCrosschain.mapCrossProve.size(), mapBlockProve.size(), hashBlock.GetBhString().c_str());
+    return true;
+}
+
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
