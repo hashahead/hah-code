@@ -2419,15 +2419,29 @@ bool CBlockBase::GetContractCoinBalance(const uint256& hashFork, const uint256& 
     CVmCallTx vmCallTx;
     CVmCallResult vmCallResult;
 
-            uint64 nGasLeft = 0;
-            int nStatusCode = -2; //EVMC_REJECTED
-            if (!DoRunResult(txid, tx, nTxIndex, destContract, hashContractCreateCode, nGasLeft, nTvGasUsedIn, nStatusCode, {}, receipt))
-            {
-                StdLog("CBlockState", "Add contract state: Do run result fail, txid: %s", txid.ToString().c_str());
-                return false;
-            }
-        }
+    vmCallTx.fEthCall = true;
+    vmCallTx.destFrom = destUser;
+    vmCallTx.destTo = destContract;
+    vmCallTx.nTxNonce = 0;
+    vmCallTx.nGasPrice = MIN_GAS_PRICE;
+    vmCallTx.nGasLimit = DEF_TX_GAS_LIMIT;
+    vmCallTx.nAmount = 0;
+    vmCallTx.btData = MakeEthTxCallData("balanceOf(address)", vParamList);
+    vmCallTx.fNeedVerifyToAddress = fNeedVerifyConntractAddress;
+
+    if (!CallContract(hashFork, hashBlock, vmCallTx, vmCallResult))
+    {
+        StdLog("BlockBase", "Get contract balance: Call contract fail, contract address: %s, user address: %s, fork: %s",
+               destContract.ToString().c_str(), destUser.ToString().c_str(), hashFork.GetHex().c_str());
+        return false;
     }
+    if (vmCallResult.btResult.size() != 32)
+    {
+        StdLog("BlockBase", "Get contract balance: Result error, result: %s, contract address: %s, user address: %s, fork: %s",
+               ToHexString(vmCallResult.btResult).c_str(), destContract.ToString().c_str(), destUser.ToString().c_str(), hashFork.GetHex().c_str());
+        return false;
+    }
+    nBalance.FromBigEndian(vmCallResult.btResult.data(), 32);
     return true;
 }
 
