@@ -2730,6 +2730,37 @@ bool CBlockChain::GetCandidatePubkey(const uint256& hashPrimaryBlock, std::vecto
     return true;
 }
 
+bool CBlockChain::GetPrevBlockCandidatePubkey(const uint256& hashBlock, std::vector<uint384>& vCandidatePubkey)
+{
+    CBlockStatus status;
+    if (!GetBlockStatus(hashBlock, status))
+    {
+        StdLog("CBlockChain", "Get prev block candidate pubkey: Get block status fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    uint256 hashPrevPrimaryBlock;
+    if (status.hashFork == pCoreProtocol->GetGenesisBlockHash())
+    {
+        hashPrevPrimaryBlock = status.hashPrevBlock;
+    }
+    else
+    {
+        CBlockStatus statusRefBlock;
+        if (!GetBlockStatus(status.hashRefBlock, statusRefBlock))
+        {
+            StdLog("CBlockChain", "Get prev block candidate pubkey: Get ref block status fail, ref block: %s, block: %s", status.hashRefBlock.GetHex().c_str(), hashBlock.GetHex().c_str());
+            return false;
+        }
+        hashPrevPrimaryBlock = statusRefBlock.hashPrevBlock;
+    }
+    if (!GetCandidatePubkey(hashPrevPrimaryBlock, vCandidatePubkey))
+    {
+        StdLog("CBlockChain", "Get prev block candidate pubkey: Get candidate pubkey fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

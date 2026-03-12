@@ -158,6 +158,9 @@ public:
     bool UpdateForkMintMinGasPrice(const uint256& hashFork, const uint256& nMinGasPrice) override;
     uint256 GetForkMintMinGasPrice(const uint256& hashFork) override;
 
+    bool GetCandidatePubkey(const uint256& hashPrimaryBlock, std::vector<uint384>& vCandidatePubkey) override;
+    bool GetPrevBlockCandidatePubkey(const uint256& hashBlock, std::vector<uint384>& vCandidatePubkey) override;
+
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
 
