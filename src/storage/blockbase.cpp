@@ -2568,30 +2568,23 @@ bool CBlockBase::UpdateBlockLongChain(const uint256& hashFork, const std::vector
         vRemoveNumberBlock.push_back(std::make_pair(blockex.GetBlockNumber(), hashBlock));
     }
 
-bool CBlockState::GetDestLockedAmount(const CDestination& dest, uint256& nLockedAmount)
-{
-    CAddressContext ctxAddress;
-    if (!GetAddressContext(dest, ctxAddress))
+    if (!dbBlock.UpdateBlockNumberBlockLongChain(hashFork, vRemoveNumberBlock, vNewNumberBlock))
     {
-        StdLog("CBlockState", "Get loacked amount: Get address context fail, dest: %s", dest.ToString().c_str());
+        StdLog("CBlockBase", "Update block long chain: Update block number long chain fail, fork: %s", hashFork.GetBhString().c_str());
         return false;
     }
-    CDestState stateDest;
-    if (!GetDestState(dest, stateDest))
+    if (!dbBlock.UpdateTxIndexBlockLongChain(hashFork, vRemoveTx, mapNewTx))
     {
-        StdLog("CBlockState", "Get loacked amount: Get address state fail, dest: %s", dest.ToString().c_str());
+        StdLog("CBlockBase", "Update block long chain: Update tx index long chain fail, fork: %s", hashFork.GetBhString().c_str());
         return false;
     }
-    if (!dbBlockBase.GetAddressLockedAmount(hashFork, hashPrevBlock, dest, ctxAddress, stateDest.GetBalance(), nLockedAmount))
+    if (fCfgFullDb)
     {
-        StdLog("CBlockState", "Get loacked amount: Get address locked amount fail, dest: %s", dest.ToString().c_str());
-        return false;
-    }
-
-    auto nt = mapBlockRewardLocked.find(dest);
-    if (nt != mapBlockRewardLocked.end())
-    {
-        nLockedAmount += nt->second;
+        if (!dbBlock.UpdateAddressTxInfoBlockLongChain(hashFork, vRemoveBlock, vNewBlock))
+        {
+            StdLog("CBlockBase", "Update block long chain: Update address tx long chain fail, fork: %s", hashFork.GetBhString().c_str());
+            return false;
+        }
     }
     return true;
 }
