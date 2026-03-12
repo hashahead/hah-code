@@ -2589,47 +2589,56 @@ bool CBlockBase::UpdateBlockLongChain(const uint256& hashFork, const std::vector
     return true;
 }
 
-bool CBlockState::VerifyFunctionAddressRepeat(const CDestination& destNewFunction)
+BlockIndexPtr CBlockBase::AddNewIndex(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const uint32 nFile, const uint32 nOffset, const uint32 nCrc, const uint256& nChainTrust, const uint256& hashNewStateRoot)
 {
-    for (auto& kv : mapCacheFunctionAddress)
+    BlockIndexPtr pIndexNew = GetIndex(hashBlock);
+    if (!pIndexNew)
     {
-        if (kv.second.GetFunctionAddress() == destNewFunction)
+        pIndexNew = MAKE_SHARED_BLOCK_INDEX(hashFork, hashBlock, block, nFile, nOffset, nCrc);
+        if (pIndexNew)
         {
-            return false;
-        }
-    }
-    for (auto& kv : mapBlockFunctionAddress)
-    {
-        if (kv.second.GetFunctionAddress() == destNewFunction)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool CBlockState::VerifyFunctionAddressDisable(const uint32 nFuncId)
-{
-    auto it = mapCacheFunctionAddress.find(nFuncId);
-    if (it != mapCacheFunctionAddress.end())
-    {
-        if (it->second.IsDisableModify())
-        {
-            return false;
-        }
-    }
-    else
-    {
-        auto mt = mapBlockFunctionAddress.find(nFuncId);
-        if (mt != mapBlockFunctionAddress.end())
-        {
-            if (mt->second.IsDisableModify())
+            if (!block.GetBlockMint(pIndexNew->nMoneySupply))
             {
-                return false;
+                StdError("BlockBase", "Add new index: Get block mint fail, block: %s", hashBlock.GetHex().c_str());
+                return nullptr;
             }
+            pIndexNew->nMoneyDestroy = block.GetBlockMoneyDestroy();
+            pIndexNew->nChainTrust = nChainTrust;
+            pIndexNew->hashStateRoot = hashNewStateRoot;
+
+            if (block.hashPrev != 0)
+            {
+                BlockIndexPtr pIndexPrev = GetIndex(block.hashPrev);
+                if (pIndexPrev)
+                {
+                    if (!pIndexNew->IsOrigin())
+                    {
+                        pIndexNew->nMoneySupply += pIndexPrev->nMoneySupply;
+                        pIndexNew->nMoneyDestroy += pIndexPrev->nMoneyDestroy;
+                        pIndexNew->nTxCount += pIndexPrev->nTxCount;
+                        pIndexNew->nRewardTxCount += pIndexPrev->nRewardTxCount;
+                        pIndexNew->nUserTxCount += pIndexPrev->nUserTxCount;
+                    }
+                    pIndexNew->nChainTrust += pIndexPrev->nChainTrust;
+                }
+                else
+                {
+                    StdError("BlockBase", "Add new index: Get prev block index fail, prev block: %s", block.hashPrev.GetHex().c_str());
+                    return nullptr;
+                }
+            }
+            else
+            {
+                if (!pIndexNew->IsOrigin())
+                {
+                    StdError("BlockBase", "Add new index: Prev is null, not origin block, block: %s", hashBlock.GetHex().c_str());
+                    return nullptr;
+                }
+            }
+            AddCacheBlockIndex(pIndexNew);
         }
     }
-    return true;
+    return pIndexNew;
 }
 
 //---------------------------------------------------------------------------------------------------------
