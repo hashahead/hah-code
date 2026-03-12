@@ -765,8 +765,22 @@ bool CBlockState::ContractTransfer(const CDestination& from, const CDestination&
     return true;
 }
 
-    if (it == mapCacheContractPrevAddressState.end())
+bool CBlockState::IsContractDestroy(const CDestination& destContractIn)
+{
+    CDestState stateContract;
+    if (!GetDestState(destContractIn, stateContract))
     {
+        StdLog("CBlockState", "Is contract destroy: Get contract state failed, contract address: %s", destContractIn.ToString().c_str());
+        return true;
+    }
+    if (stateContract.IsDestroy())
+    {
+        StdLog("CBlockState", "Is contract destroy: Contract has been destroyed, contract address: %s", destContractIn.ToString().c_str());
+        return true;
+    }
+    return false;
+}
+
         CDestState stateDest;
         bytes btContractRunCode;
         if (GetDestState(address, stateDest) && stateDest.IsContract())
