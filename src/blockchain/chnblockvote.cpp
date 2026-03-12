@@ -464,4 +464,14 @@ bool CBlockVoteChannel::AddBlockVoteCandidatePubkey(const uint256& hashBlock, co
     return true;
 }
 
+void CBlockVoteChannel::SubscribeFork(const uint256& hashFork, const uint64 nNonce)
+{
+    network::CEventLocalBlockvoteSubscribeFork* pEvent = new network::CEventLocalBlockvoteSubscribeFork(nNonce, hashFork);
+    if (pEvent)
+    {
+        pEvent->data.push_back(hashFork);
+        PostEvent(pEvent);
+    }
+}
+
 } // namespace hashahead

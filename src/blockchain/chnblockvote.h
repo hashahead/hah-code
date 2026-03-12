@@ -131,6 +131,8 @@ protected:
     bool AddBlockLocalVoteSignFlag(const uint256& hashBlock, const uint256& hashFork);
     bool CommitBlockVoteResult(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const uint256& hashFork);
     bool AddBlockVoteCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, CBlockVoteChnFork& chnFork);
+
+    void SubscribeFork(const uint256& hashFork, const uint64 nNonce) override;
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
