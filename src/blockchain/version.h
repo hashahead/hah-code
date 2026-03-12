@@ -51,6 +51,14 @@ inline std::string FormatSubVersion()
     return ss.str();
 }
 
+inline std::string GetClientVersion()
+{
+    std::string strGitVer = GetGitVersion();
+    std::ostringstream ss;
+    ss << "v" << FormatVersion(VERSION) << "-" << strGitVer.substr(strGitVer.size() - 16);
+    return ss.str();
+}
+
 inline void ResolveVersion(const int nVersion, int& nMajor, int& nMinor, int& nRevision)
 {
     nMajor = nVersion / 10000;

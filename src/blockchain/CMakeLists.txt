@@ -55,10 +55,18 @@ set(src
     chnblock.cpp chnblock.h
     chncerttx.cpp chncerttx.h
     chnusertx.cpp chnusertx.h
+    chnblockvote.cpp chnblockvote.h
+    chnblockcrossprove.cpp chnblockcrossprove.h
+    struct.cpp struct.h
+    wsservice.cpp wsservice.h
+    blockfilter.cpp blockfilter.h
+    prunedb.cpp prunedb.h
+    chainsnapshot.cpp chainsnapshot.h
+    chnsnapshotdown.cpp chnsnapshotdown.h
+    natportmapping.cpp natportmapping.h
 
     event.h
     base.h
-    struct.h
     storage.h
     version.h
 )
@@ -86,7 +94,7 @@ set(sources
 add_library(blockchain ${sources})
 add_executable(hashahead main.cpp)
 
-include_directories(../hnbase ../crypto ../common ../storage ../network ../delegate ../mpvss ../jsonrpc ../hvm ./)
+include_directories(../hnbase ../crypto ../common ../storage ../network ../delegate ../consensus ../mpvss ../jsonrpc ../hvm ../hnc ../hnc/natpmp ./)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_BINARY_DIR}/src/jsonrpc)
 include_directories(${Protobuf_INCLUDE_DIRS})
@@ -137,6 +145,9 @@ target_link_libraries(blockchain
     devcrypto
     ethcore
     devcommon
+    consensus
+    ${MINIUPNPC_STATIC}
+    natpmp
 )
 
 if(UNIX)
