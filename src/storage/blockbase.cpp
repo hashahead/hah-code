@@ -2688,164 +2688,111 @@ bool CBlockBase::UpdateDelegate(const uint256& hashFork, const uint256& hashBloc
             }
             it = mapDelegateVote.insert(make_pair(destDelegate, nGetVoteAmount)).first;
         }
-    }
-    for (const auto& kv : mapCacheAddressContext)
-    {
-        mapBlockAddressContext[kv.first] = kv.second;
-    }
-    for (const auto& kv : mapCacheContractCreateCodeContext)
-    {
-        mapBlockContractCreateCodeContext[kv.first] = kv.second;
-    }
-    for (const auto& kv : mapCacheContractRunCodeContext)
-    {
-        mapBlockContractRunCodeContext[kv.first] = kv.second;
-    }
-    for (const auto& vd : vCacheContractTransfer)
-    {
-        mapBlockContractTransfer[txid].push_back(vd);
-        receipt.vTransfer.push_back(vd);
-    }
-    for (const auto& kv : mapCacheModifyPledgeFinalHeight)
-    {
-        mapBlockModifyPledgeFinalHeight[kv.first] = kv.second;
-    }
-    for (auto& kv : mapCacheFunctionAddress)
-    {
-        mapBlockFunctionAddress[kv.first] = kv.second;
-    }
-
-    mapCacheContractData.clear();
-    mapCacheAddressContext.clear();
-    mapCacheContractCreateCodeContext.clear();
-    mapCacheContractRunCodeContext.clear();
-    vCacheContractTransfer.clear();
-    mapCacheCodeDestGasUsed.clear();
-    mapCacheModifyPledgeFinalHeight.clear();
-    mapCacheFunctionAddress.clear();
-
-    uint256 nTxGasUsed;
-    if (tx.GetGasLimit() > nGasLeft)
-    {
-        nTxGasUsed = tx.GetGasLimit() - nGasLeft;
-    }
-    if (nTxGasUsed > 0)
-    {
-        mapBlockTxFeeUsed[txid] = nTxGasUsed * tx.GetGasPrice();
-    }
-
-    {
-        CDestination destContract(FUNCTION_CONTRACT_ADDRESS);
-        uint256 hashContractCreateCode = crypto::CryptoKeccakHash(getFunctionContractCreateCode());
-
-        receipt.nReceiptType = CTransactionReceipt::RECEIPT_TYPE_CONTRACT;
-
-        receipt.nTxIndex = nTxIndex;
-        receipt.txid = txid;
-        receipt.nBlockNumber = nBlockNumber;
-        receipt.from = destFrom;
-        receipt.to = destTo;
-        receipt.nTxGasUsed = nTxGasUsed;
-        receipt.nTvGasUsed = nTvGasUsedIn;
-        receipt.destContract = destContract;
-        receipt.hashContractCode = hashContractCreateCode;
-        receipt.nContractStatus = (fRet ? 0 : 1);
-        receipt.nContractGasLeft = nGasLeft;
-        if (btResult.empty())
+        if (fAdd)
         {
-            receipt.btContractResult = uint256(fRet ? 1 : 0).ToBigEndian();
+            it->second += nVoteAmount;
         }
         else
         {
-            receipt.btContractResult = btResult;
+            it->second -= nVoteAmount;
         }
-        receipt.vLogs.push_back(logs);
-        receipt.nEffectiveGasPrice = tx.GetGasPrice();
+        return true;
+    };
 
-        // receipt.CalcLogsBloom();
-        // nBlockBloom |= receipt.nLogsBloom;
-
-        // hnbase::CBufStream ss;
-        // ss << receipt;
-
-        // vReceiptHash.push_back(hashahead::crypto::CryptoHash(ss.GetData(), ss.GetSize()));
-        // mapBlockTxReceipts.insert(std::make_pair(txid, receipt));
-    }
-
-    nSurplusBlockGasLimit -= nTxGasUsed.Get64();
-    if (!tx.GetFromAddress().IsNull() && nGasLeft != 0)
+    for (auto& kv : mapAccStateIn)
     {
-        CDestState stateDest;
-        if (!GetDestState(tx.GetFromAddress(), stateDest))
+        const CDestination& dest = kv.first;
+        const CDestState& state = kv.second;
+
+        CAddressContext ctxAddress;
+        auto it = mapAddressContext.find(dest);
+        if (it == mapAddressContext.end())
         {
-            StdLog("CBlockState", "Do function contract tx: Get dest state fail, txid: %s", txid.ToString().c_str());
-            return false;
+            if (!RetrieveAddressContext(hashFork, block.hashPrev, dest, ctxAddress))
+            {
+                StdError("BlockBase", "Update delegate: Find address context fail, dest: %s", dest.ToString().c_str());
+                return false;
+            }
         }
-        stateDest.IncBalance(tx.GetGasPrice() * nGasLeft);
-        SetDestState(tx.GetFromAddress(), stateDest);
-
-        nBlockFeeLeft += (tx.GetGasPrice() * nGasLeft);
-    }
-    return fRet;
-}
-
-bool CBlockState::DoFuncContractCall(const CDestination& destFrom, const CDestination& destTo, const bytes& btFuncSign, const bytes& btTxParam,
-                                     const uint64 nGasLimit, uint64& nGasLeft, CTransactionLogs& logs, bytes& btResult)
-{
-    bytes btFuncSignData;
-    btFuncSignData.resize(28);
-    btFuncSignData.insert(btFuncSignData.end(), btFuncSign.begin(), btFuncSign.end());
-    logs.data.SetBytes(btFuncSignData);
-    logs.address = destTo;
-
-    if (nGasLeft < FUNCTION_TX_GAS_BASE)
-    {
-        StdLog("CBlockState", "Do func contrac call: Gas not enough, need gas %d, gas left: %ld", FUNCTION_TX_GAS_BASE, nGasLeft);
-        nGasLeft = 0;
-        return false;
-    }
-    nGasLeft -= FUNCTION_TX_GAS_BASE;
-
-    bool fRet = false;
-
-    // delegate vote
-    if (btFuncSign == CryptoKeccakSign("delegateVote(address,uint16,uint256)"))
-    {
-        fRet = DoFuncTxDelegateVote(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("delegateRedeem(address,uint16,uint256)"))
-    {
-        fRet = DoFuncTxDelegateRedeem(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("getDelegateVotes(address,address,uint16)"))
-    {
-        fRet = DoFuncTxGetDelegateVotes(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    // user vote
-    else if (btFuncSign == CryptoKeccakSign("userVote(address,uint8,uint256)"))
-    {
-        fRet = DoFuncTxUserVote(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("userRedeem(address,uint8,uint256)"))
-    {
-        fRet = DoFuncTxUserRedeem(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("getUserVotes(address,address,uint8)"))
-    {
-        fRet = DoFuncTxGetUserVotes(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    // pledge vote
-    else if (btFuncSign == CryptoKeccakSign("pledgeVote(address,uint32,uint32,uint32,uint256)"))
-    {
-        fRet = DoFuncTxPledgeVote(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("pledgeReqRedeem(address,uint32,uint32,uint32)"))
-    {
-        fRet = DoFuncTxPledgeReqRedeem(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("getPledgeVotes(address,address,uint32,uint32,uint32)"))
-    {
-        fRet = DoFuncTxGetPledgeVotes(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
+        else
+        {
+            ctxAddress = it->second;
+        }
+        if (ctxAddress.IsTemplate()
+            && (ctxAddress.GetTemplateType() == TEMPLATE_DELEGATE
+                || ctxAddress.GetTemplateType() == TEMPLATE_VOTE
+                || ctxAddress.GetTemplateType() == TEMPLATE_PLEDGE))
+        {
+            CTemplateAddressContext ctxtTemplate;
+            if (!ctxAddress.GetTemplateAddressContext(ctxtTemplate))
+            {
+                StdLog("BlockBase", "Update delegate: Get template address context fail, dest: %s", dest.ToString().c_str());
+                return false;
+            }
+            CTemplatePtr ptr = CTemplate::Import(ctxtTemplate.btData);
+            if (!ptr)
+            {
+                StdLog("BlockBase", "Update delegate: Import template fail, dest: %s", dest.ToString().c_str());
+                return false;
+            }
+            CDestination destDelegate;
+            uint8 nTidType = ptr->GetTemplateType();
+            if (nTidType == TEMPLATE_DELEGATE)
+            {
+                destDelegate = dest;
+            }
+            else if (nTidType == TEMPLATE_VOTE)
+            {
+                if (!fEnableStakeVote)
+                {
+                    continue;
+                }
+                destDelegate = boost::dynamic_pointer_cast<CTemplateVote>(ptr)->destDelegate;
+            }
+            else if (nTidType == TEMPLATE_PLEDGE)
+            {
+                if (!fEnableStakePledge)
+                {
+                    continue;
+                }
+                destDelegate = boost::dynamic_pointer_cast<CTemplatePledge>(ptr)->destDelegate;
+            }
+            if (!destDelegate.IsNull())
+            {
+                uint256 nPrevBalance;
+                CDestState statePrev;
+                if (RetrieveDestState(hashFork, hashPrevStateRoot, dest, statePrev))
+                {
+                    if (statePrev.IsPubkey())
+                    {
+                        StdLog("BlockBase", "Update delegate: Prev state is pubkey, dest: %s, block: %s",
+                               dest.ToString().c_str(), hashBlock.GetHex().c_str());
+                        nPrevBalance = 0;
+                    }
+                    else
+                    {
+                        nPrevBalance = statePrev.GetBalance();
+                    }
+                }
+                uint256 nChangeAmount;
+                bool fAdd = false;
+                if (state.GetBalance() > nPrevBalance)
+                {
+                    nChangeAmount = state.GetBalance() - nPrevBalance;
+                    fAdd = true;
+                }
+                else
+                {
+                    nChangeAmount = nPrevBalance - state.GetBalance();
+                }
+                if (!addVote(destDelegate, nChangeAmount, fAdd))
+                {
+                    StdLog("BlockBase", "Update delegate: Add vote fail, dest: %s, block: %s",
+                           dest.ToString().c_str(), hashBlock.GetHex().c_str());
+                    return false;
+                }
+            }
+        }
     }
     else if (btFuncSign == CryptoKeccakSign("getPledgeUnlockHeight(address,address,uint32,uint32,uint32)"))
     {
