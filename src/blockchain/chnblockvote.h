@@ -133,6 +133,8 @@ protected:
     bool AddBlockVoteCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, CBlockVoteChnFork& chnFork);
 
     void SubscribeFork(const uint256& hashFork, const uint64 nNonce) override;
+    void UpdateNewBlock(const uint256& hashFork, const uint256& hashBlock, const uint256& hashRefBlock, const int64 nBlockTime, const uint64 nNonce) override;
+
 protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;

@@ -474,4 +474,20 @@ void CBlockVoteChannel::SubscribeFork(const uint256& hashFork, const uint64 nNon
     }
 }
 
+void CBlockVoteChannel::UpdateNewBlock(const uint256& hashFork, const uint256& hashBlock, const uint256& hashRefBlock, const int64 nBlockTime, const uint64 nNonce)
+{
+    network::CEventLocalBlockvoteUpdateBlock* pEvent = new network::CEventLocalBlockvoteUpdateBlock(nNonce, hashFork);
+    if (pEvent)
+    {
+        pEvent->data.push_back(network::CUpdateBlockVote(hashBlock, hashRefBlock, nBlockTime, CBlock::GetBlockHeightByHash(hashBlock)));
+        PostEvent(pEvent);
+    }
+    else
+    {
+        StdError("CBlockVoteChannel", "Update new block: New fail, fork: %s", hashFork.ToString().c_str());
+
+        AddWaitNewBlock(CUpdateBlockData(hashFork, hashBlock, hashRefBlock, nBlockTime, nNonce));
+    }
+}
+
 } // namespace hashahead
