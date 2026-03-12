@@ -191,6 +191,7 @@ public:
                            const std::map<CDestination, uint384>& mapBlsPubkeyContext, uint256& hashNewRoot);
     bool AddTokenContractAddressContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddressContext, const bool fAll);
     bool RetrieveAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress);
+    bool RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress);
     bool ListContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress);
     bool RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv);
     bool GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount);

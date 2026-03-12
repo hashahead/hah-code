@@ -1746,6 +1746,30 @@ bool CAddressDB::RetrieveAddressContext(const uint256& hashFork, const uint256& 
     return false;
 }
 
+bool CAddressDB::RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->RetrieveTokenContractAddressContext(hashBlock, dest, ctxAddress);
+    }
+    return false;
+}
+
+bool CAddressDB::ListAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->ListAddress(hashBlock, mapAddress);
+    }
+    return false;
+}
+
 bool CAddressDB::ListContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress)
 {
     CReadLock rlock(rwAccess);
