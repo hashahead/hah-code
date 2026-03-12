@@ -892,6 +892,63 @@ bool CHdexDB::UpdateBlockAggSign(const uint256& hashBlock, const bytes& btAggBit
     return true;
 }
 
+bool CHdexDB::GetBlockCrosschainProve(const uint256& hashBlock, CBlockStorageProve& proveBlockCrosschain)
+{
+    CReadLock rlock(rwAccess);
+    return GetBlockCrosschainProveDb(hashBlock, proveBlockCrosschain);
+}
+
+bool CHdexDB::GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve)
+{
+    CReadLock rlock(rwAccess);
+
+    std::map<CChainId, uint256> mapSendLastProveBlock;
+    if (!ListPeerChainSendLastProveBlockDb(hashRecvPrevBlock, mapSendLastProveBlock))
+    {
+        StdLog("CHdexDB", "Get crosschain prove for prevblock: List send last prove block fail, recv chainid: %d, recv prev block: %s", nRecvChainId, hashRecvPrevBlock.GetBhString().c_str());
+        return false;
+    }
+
+    std::map<CChainId, uint256> mapSendLastBlock;
+    if (!ListSendChainProveLastBlockDb(nRecvChainId, mapSendLastBlock))
+    {
+        StdLog("CHdexDB", "Get crosschain prove for prevblock: List send last block fail, recv chainid: %d, recv prev block: %s", nRecvChainId, hashRecvPrevBlock.GetBhString().c_str());
+        return false;
+    }
+
+    for (const auto& kv : mapSendLastBlock)
+    {
+        if (mapSendLastProveBlock.find(kv.first) == mapSendLastProveBlock.end())
+        {
+            mapSendLastProveBlock.insert(std::make_pair(kv.first, kv.second));
+        }
+    }
+
+    const uint32 nLastHeight = CBlock::GetBlockHeightByHash(hashRecvPrevBlock);
+    const uint16 nLastSlot = CBlock::GetBlockSlotByHash(hashRecvPrevBlock);
+
+    for (const auto& kv : mapSendLastProveBlock)
+    {
+        const CChainId nSendChainId = kv.first;
+        const uint256& hashLastProveBlock = kv.second;
+        CBlockProve blockProve;
+        if (GetCrosschainProveForPrevBlockDb(nRecvChainId, nSendChainId, hashLastProveBlock, nLastHeight, nLastSlot, blockProve))
+        {
+            mapBlockCrosschainProve.insert(std::make_pair(nSendChainId, blockProve));
+        }
+        // else
+        // {
+        //     StdDebug("TEST", "Get crosschain prove for prevblock: Get fail, nRecvChainId: %d, nSendChainId: %d, hashLastProveBlock: %s", nRecvChainId, nSendChainId, hashLastProveBlock.GetBhString().c_str());
+        // }
+    }
+
+    if (mapBlockCrosschainProve.empty())
+    {
+        return false;
+    }
+    return true;
+}
+
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
