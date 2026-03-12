@@ -2641,55 +2641,52 @@ BlockIndexPtr CBlockBase::AddNewIndex(const uint256& hashFork, const uint256& ha
     return pIndexNew;
 }
 
-//---------------------------------------------------------------------------------------------------------
-bool CBlockState::DoFunctionContractTx(const uint256& txid, const CTransaction& tx, const int nTxIndex, const uint64 nRunGasLimit, const uint256& nTvGasUsedIn, CTransactionReceipt& receipt)
+bool CBlockBase::LoadForkProfile(const BlockIndexPtr pIndexOrigin, CProfile& profile)
 {
-    StdDebug("CBlockState", "Do function contract tx, txid: %s", txid.ToString().c_str());
-
-    bytes btTxData;
-    if (tx.IsEthTx())
+    CForkContext ctxt;
+    if (!RetrieveForkContext(pIndexOrigin->GetBlockHash(), ctxt))
     {
-        if (!tx.GetTxData(CTransaction::DF_ETH_TX_DATA, btTxData) || btTxData.size() < 4)
+        return false;
+    }
+    profile = ctxt.GetProfile();
+    return true;
+}
+
+bool CBlockBase::UpdateDelegate(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const uint32 nFile, const uint32 nOffset,
+                                const uint256& nMinEnrollAmount, const std::map<CDestination, CAddressContext>& mapAddressContext,
+                                const std::map<CDestination, CDestState>& mapAccStateIn, uint256& hashDelegateRoot)
+{
+    //StdTrace("BlockBase", "Update delegate: height: %d, block: %s", block.GetBlockHeight(), hashBlock.GetHex().c_str());
+
+    std::map<CDestination, uint256> mapDelegateVote;
+    std::map<int, std::map<CDestination, CDiskPos>> mapEnrollTx;
+
+    uint256 hashPrevStateRoot;
+    if (!block.IsOrigin() && block.hashPrev != 0)
+    {
+        BlockIndexPtr pIndexPrev = GetIndex(block.hashPrev);
+        if (!pIndexPrev)
         {
-            StdLog("CBlockState", "Do function contract tx: Eth tx param error, txid: %s", txid.GetHex().c_str());
+            StdLog("BlockBase", "Update delegate: Get prev index fail, prev: %s", block.hashPrev.GetHex().c_str());
             return false;
         }
+        hashPrevStateRoot = pIndexPrev->GetStateRoot();
     }
-    else
-    {
-        if (!tx.GetTxData(CTransaction::DF_CONTRACTPARAM, btTxData) || btTxData.size() < 4)
+
+    auto addVote = [&](const CDestination& destDelegate, const uint256& nVoteAmount, const bool fAdd) -> bool {
+        if (nVoteAmount == 0)
         {
-            StdLog("CBlockState", "Do function contract tx: tx contract param error, txid: %s", txid.GetHex().c_str());
-            return false;
+            return true;
         }
-    }
-    bytes btTxParam;
-    if (btTxData.size() > 4)
-    {
-        btTxParam.assign(btTxData.begin() + 4, btTxData.end());
-    }
-    bytes btFuncSign(btTxData.begin(), btTxData.begin() + 4);
-
-    CDestination destFrom = tx.GetFromAddress();
-    CDestination destTo = tx.GetToAddress();
-
-    uint64 nGasLeft = nRunGasLimit;
-    CTransactionLogs logs;
-    bytes btResult;
-
-    bool fRet = DoFuncContractCall(destFrom, destTo, btFuncSign, btTxParam, nRunGasLimit, nGasLeft, logs, btResult);
-
-    for (const auto& vd : mapCacheContractData)
-    {
-        const CDestination& dest = vd.first;
-        auto& mapSetContractKv = mapContractKvState[dest];
-        for (const auto& kv : vd.second.cacheContractKv)
+        auto it = mapDelegateVote.find(destDelegate);
+        if (it == mapDelegateVote.end())
         {
-            mapSetContractKv[kv.first] = kv.second;
-        }
-        if (!vd.second.cacheDestState.IsNull())
-        {
-            SetDestState(dest, vd.second.cacheDestState);
+            uint256 nGetVoteAmount;
+            if (!dbBlock.RetrieveDestDelegateVote(block.hashPrev, destDelegate, nGetVoteAmount))
+            {
+                nGetVoteAmount = 0;
+            }
+            it = mapDelegateVote.insert(make_pair(destDelegate, nGetVoteAmount)).first;
         }
     }
     for (const auto& kv : mapCacheAddressContext)
