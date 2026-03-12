@@ -240,9 +240,9 @@ evmc::uint256be CEvmHost::get_balance(const evmc::address& addr) const noexcept
     memcpy(ret.bytes, hashBalance.begin(), hashBalance.size());
     std::reverse(std::begin(ret.bytes), std::end(ret.bytes));
 
-    StdDebug("CEvmHost", "get_balance: Get balance success, addr: %s, dest: %s, ret: %s",
-             ToHexString(&(addr.bytes[0]), sizeof(addr.bytes)).c_str(), dest.ToString().c_str(),
-             ToHexString(&(ret.bytes[0]), sizeof(ret.bytes)).c_str());
+    // StdDebug("CEvmHost", "get_balance: Get balance success, addr: %s, dest: %s, ret: %s",
+    //          ToHexString(&(addr.bytes[0]), sizeof(addr.bytes)).c_str(), dest.ToString().c_str(),
+    //          ToHexString(&(ret.bytes[0]), sizeof(ret.bytes)).c_str());
     return ret;
 }
 
@@ -344,11 +344,11 @@ void CEvmHost::selfdestruct(const evmc::address& addr, const evmc::address& bene
 
 evmc::result CEvmHost::call(const evmc_message& msg) noexcept
 {
-    StdDebug("CEvmHost", "call: sender: %s - %s", ToHexString(&(msg.sender.bytes[0]), sizeof(msg.sender.bytes)).c_str(), AddressToDestination(msg.sender).ToString().c_str());
-    StdDebug("CEvmHost", "call: destination: %s", ToHexString(&(msg.destination.bytes[0]), sizeof(msg.destination.bytes)).c_str());
-    StdDebug("CEvmHost", "call: input_data: [%lu] %s", msg.input_size, ToHexString(msg.input_data, msg.input_size).c_str());
-    StdDebug("CEvmHost", "call: depth: %u", msg.depth);
-    StdDebug("CEvmHost", "call: gas: %lu", msg.gas);
+    // StdDebug("CEvmHost", "call: sender: %s - %s", ToHexString(&(msg.sender.bytes[0]), sizeof(msg.sender.bytes)).c_str(), AddressToDestination(msg.sender).ToString().c_str());
+    // StdDebug("CEvmHost", "call: destination: %s", ToHexString(&(msg.destination.bytes[0]), sizeof(msg.destination.bytes)).c_str());
+    // StdDebug("CEvmHost", "call: input_data: [%lu] %s", msg.input_size, ToHexString(msg.input_data, msg.input_size).c_str());
+    // StdDebug("CEvmHost", "call: depth: %u", msg.depth);
+    // StdDebug("CEvmHost", "call: gas: %lu", msg.gas);
 
     CDestination to = AddressToDestination(msg.destination);
     if (isFunctionContractAddress(to))
