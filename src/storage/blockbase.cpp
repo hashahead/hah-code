@@ -2794,44 +2794,62 @@ bool CBlockBase::UpdateDelegate(const uint256& hashFork, const uint256& hashBloc
             }
         }
     }
-    else if (btFuncSign == CryptoKeccakSign("getPledgeUnlockHeight(address,address,uint32,uint32,uint32)"))
+
+    CBufStream ss;
+    CVarInt var(block.vtx.size());
+    uint32 nSetOffset = nOffset + block.GetTxSerializedOffset()
+                        + ss.GetSerializeSize(block.txMint)
+                        + ss.GetSerializeSize(var);
+    for (int i = 0; i < block.vtx.size(); i++)
     {
-        fRet = DoFuncTxGetPledgeUnlockHeight(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
+        const CTransaction& tx = block.vtx[i];
+
+        if (tx.GetTxType() == CTransaction::TX_CERT)
+        {
+            const CDestination& destToDelegateTemplate = tx.GetToAddress();
+            uint256 nDelegateVote;
+            if (!dbBlock.RetrieveDestDelegateVote(block.hashPrev, destToDelegateTemplate, nDelegateVote))
+            {
+                StdLog("BlockBase", "Update delegate: TX CERT find from vote fail, delegate address: %s, txid: %s",
+                       destToDelegateTemplate.ToString().c_str(), tx.GetHash().GetHex().c_str());
+                continue;
+            }
+            if (nDelegateVote < nMinEnrollAmount)
+            {
+                StdLog("BlockBase", "Update delegate: TX CERT not enough votes, delegate address: %s, delegate vote: %s, weight ratio: %s, txid: %s",
+                       destToDelegateTemplate.ToString().c_str(), CoinToTokenBigFloat(nDelegateVote).c_str(),
+                       CoinToTokenBigFloat(nMinEnrollAmount).c_str(), tx.GetHash().GetHex().c_str());
+                continue;
+            }
+
+            int nCertAnchorHeight = tx.GetNonce();
+            bytes btCertData;
+            if (!tx.GetTxData(CTransaction::DF_CERTTXDATA, btCertData))
+            {
+                StdLog("BlockBase", "Update delegate: TX CERT tx data error1, delegate address: %s, delegate vote: %s, weight ratio: %s, txid: %s",
+                       destToDelegateTemplate.ToString().c_str(), CoinToTokenBigFloat(nDelegateVote).c_str(),
+                       CoinToTokenBigFloat(nMinEnrollAmount).c_str(), tx.GetHash().GetHex().c_str());
+                return false;
+            }
+            mapEnrollTx[nCertAnchorHeight].insert(make_pair(destToDelegateTemplate, CDiskPos(nFile, nSetOffset)));
+            StdTrace("BlockBase", "Update delegate: Enroll cert tx, anchor height: %d, nAmount: %s, vote: %s, delegate address: %s, txid: %s",
+                     nCertAnchorHeight, CoinToTokenBigFloat(tx.GetAmount()).c_str(), CoinToTokenBigFloat(nDelegateVote).c_str(), destToDelegateTemplate.ToString().c_str(), tx.GetHash().GetHex().c_str());
+        }
+        nSetOffset += ss.GetSerializeSize(tx);
     }
-    // query
-    else if (btFuncSign == CryptoKeccakSign("getPageSize()"))
+
+    for (auto it = mapDelegateVote.begin(); it != mapDelegateVote.end(); ++it)
     {
-        fRet = DoFuncTxGetPageSize(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
+        StdTrace("BlockBase", "Update delegate: delegate address: %s, votes: %s",
+                 it->first.ToString().c_str(), CoinToTokenBigFloat(it->second).c_str());
     }
-    else if (btFuncSign == CryptoKeccakSign("getDelegateCount()"))
+
+    if (!dbBlock.UpdateDelegateContext(block.hashPrev, hashBlock, mapDelegateVote, mapEnrollTx, hashDelegateRoot))
     {
-        fRet = DoFuncTxGetDelegateCount(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
+        StdError("BlockBase", "Update delegate: Update delegate context failed, block: %s", hashBlock.ToString().c_str());
+        return false;
     }
-    else if (btFuncSign == CryptoKeccakSign("getDelegateAddress(uint32)"))
-    {
-        fRet = DoFuncTxGetDelegateAddress(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("getDelegateTotalVotes(address)"))
-    {
-        fRet = DoFuncTxGetDelegateTotalVotes(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("getVoteUnlockHeight(address)"))
-    {
-        fRet = DoFuncTxGetVoteUnlockHeight(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("setFunctionAddress(uint32,address,bool)"))
-    {
-        fRet = DoFuncTxSetFunctionAddress(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else if (btFuncSign == CryptoKeccakSign("getFunctionAddress(uint32)"))
-    {
-        fRet = DoFuncTxGetFunctionAddress(destFrom, destTo, btTxParam, nGasLimit, nGasLeft, logs, btResult);
-    }
-    else
-    {
-        StdLog("CBlockState", "Do func contrac call: Function sign error, Func sign: %s", ToHexString(btFuncSign).c_str());
-    }
-    return fRet;
+    return true;
 }
 
 //-----------------------------------------
