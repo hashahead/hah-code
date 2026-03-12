@@ -112,6 +112,7 @@ protected:
     bool HandleEvent(network::CEventPeerBlockGetBlockReq& eventData) override;
     bool HandleEvent(network::CEventPeerBlockGetBlockRsp& eventData) override;
 
+    bool HandleEvent(network::CEventLocalBlockSyncTimer& eventData) override;
     bool HandleEvent(network::CEventLocalBlockSubscribeFork& eventSubsFork) override;
     bool HandleEvent(network::CEventLocalBlockBroadcastBks& eventBroadBks) override;
 

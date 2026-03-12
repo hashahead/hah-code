@@ -438,6 +438,24 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockPrevBlocks& eventData)
     return true;
 }
 
+bool CBlockChannel::HandleEvent(network::CEventPeerBlockGetBlockReq& eventData)
+{
+    const uint256& hashFork = eventData.hashFork;
+    const uint64 nRecvPeerNonce = eventData.nNonce;
+    const uint256& hashBlock = eventData.data;
+
+    CBlock block;
+    if (pBlockChain->GetBlock(hashBlock, block))
+    {
+        CBufStream ss;
+        ss << block;
+        bytes btBlockData;
+        ss.GetData(btBlockData);
+        SendGetBlockRsp(hashFork, hashBlock, btBlockData, nRecvPeerNonce);
+    }
+    return true;
+}
+
 bool CBlockChannel::HandleEvent(network::CEventLocalBlockSubscribeFork& eventSubsFork)
 {
     network::CEventPeerBlockSubscribe eventSubscribe(0, pCoreProtocol->GetGenesisBlockHash());
