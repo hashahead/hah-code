@@ -1150,7 +1150,19 @@ bool CAddressTxInfoDB::WalkThroughSnapshotAddressTxKv(const uint256& hashFork, c
     auto it = mapAddressTxInfoDB.find(hashFork);
     if (it != mapAddressTxInfoDB.end())
     {
-        return it->second->VerifyAddressTxInfo(hashPrevBlock, hashBlock, hashRoot, fVerifyAllNode);
+        return it->second->WalkThroughSnapshotAddressTxKv(nLastBlockNumber, fnWalker);
+    }
+    return false;
+}
+
+bool CAddressTxInfoDB::WalkThroughSnapshotTokenTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerTokenTxKvFunc fnWalker)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressTxInfoDB.find(hashFork);
+    if (it != mapAddressTxInfoDB.end())
+    {
+        return it->second->WalkThroughSnapshotTokenTxKv(nLastBlockNumber, fnWalker);
     }
     return false;
 }
