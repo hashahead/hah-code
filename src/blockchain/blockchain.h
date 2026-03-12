@@ -202,6 +202,9 @@ protected:
     hnbase::CCache<uint256, CDelegateAgreement> cacheAgreement;
     hnbase::CCache<uint256, CProofOfPiggyback> cachePiggyback;
 
+    boost::mutex mutexBlsPubkey;
+    CCacheBlsPubkey cacheBlsPubkey;
+
     std::map<uint256, MapCheckPointsType> mapForkCheckPoints;
     uint32 nMaxBlockRewardTxCount;
 

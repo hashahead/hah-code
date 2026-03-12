@@ -132,11 +132,19 @@ public:
     bool ListContractAddress(const uint256& hashFork, const uint256& hashRefBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress) override;
     bool ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress) override;
     bool GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount) override;
+    bool GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress) override;
+    bool GetDelegateLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress) override;
     bool GeDestContractContext(const uint256& hashFork, const uint256& hashRefBlock, const CDestination& dest, CContractAddressContext& ctxtContract) override;
     bool GetContractSource(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashSource, bytes& btSource) override;
     bool GetContractCode(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashCode, bytes& btCode) override;
     bool GetDestTemplateData(const uint256& hashFork, const uint256& hashRefBlock, const CDestination& dest, bytes& btTemplateData) override;
     bool RetrieveAddressContext(const uint256& hashFork, const CDestination& dest, CAddressContext& ctxAddress, const uint256& hashBlock = uint256()) override;
+    bool RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress) override;
+    uint64 GetDestNextTxNonce(const uint256& hashFork, const CDestination& dest) override;
+
+    bool ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                             const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder) override;
+    bool ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder) override;
 
     bool AddBlacklistAddress(const CDestination& dest) override;
     void RemoveBlacklistAddress(const CDestination& dest) override;
@@ -149,14 +157,11 @@ public:
     bool UpdateForkMintMinGasPrice(const uint256& hashFork, const uint256& nMinGasPrice) override;
     uint256 GetForkMintMinGasPrice(const uint256& hashFork) override;
 
-    bytes MakeEthTxCallData(const std::string& strFunction, const std::vector<bytes>& vParamList) override;
+    bool GetPoaBlock(const CTemplateMintPtr& templMint, CBlock& block);
+    bool SubmitPoaBlock(const CTemplateMintPtr& templMint, crypto::CKey& keyMint) override;
 
-    /* Mint */
-    bool GetWork(std::vector<unsigned char>& vchWorkData, int& nPrevBlockHeight,
-                 uint256& hashPrev, int& nAlgo, int& nBits,
-                 const CTemplateMintPtr& templMint) override;
-    Errno SubmitWork(const std::vector<unsigned char>& vchWorkData, const CTemplateMintPtr& templMint,
-                     crypto::CKey& keyMint, uint256& hashBlock) override;
+    bool StartRpcSnapshot(const uint32 nSnapshotHeight, uint256& hashSnapshotBlockHash) override;
+    uint32 GetSnapshotStatus(uint256& hashSnapshotBlock) override;
 
 protected:
     bool HandleInitialize() override;
@@ -167,6 +172,10 @@ protected:
     bool SetContractTransaction(const uint256& hashFork, const uint256& hashLastBlock, const bytes& btFormatData, const bytes& btContractCode, const bytes& btContractParam, CTransaction& txNew, std::string& strErr);
     bool SetTemplateTransaction(const uint256& hashFork, const uint256& hashLastBlock, const uint8 nToTemplateType, const bytes& btFormatData, const bytes& vchData, const bytes& btToData, CTransaction& txNew, std::string& strErr);
 
+    const CBasicConfig* Config()
+    {
+        return dynamic_cast<const CBasicConfig*>(hnbase::IBase::Config());
+    }
     const CRPCServerConfig* RPCServerConfig()
     {
         return dynamic_cast<const CRPCServerConfig*>(IBase::Config());
@@ -181,6 +190,8 @@ protected:
     CNetwork* pNetwork;
     IForkManager* pForkManager;
     network::INetChannel* pNetChannel;
+    IBlockFilter* pBlockFilter;
+    IChainSnapshot* pChainSnapshot;
 };
 
 } // namespace hashahead

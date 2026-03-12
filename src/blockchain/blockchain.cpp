@@ -2897,8 +2897,8 @@ Errno CBlockChain::VerifyBlockTx(const uint256& hashFork, const uint256& hashBlo
 
     if (block.txMint.GetAmount() > nTotalFee + nReward)
     {
-        StdLog("BlockChain", "Verify block tx: Mint tx amount invalid : (0x%s > 0x%s + 0x%s)",
-               block.txMint.GetAmount().GetHex().c_str(), nTotalFee.GetHex().c_str(), nReward.GetHex().c_str());
+        StdLog("BlockChain", "Verify block tx: Mint tx amount invalid : (%s > %s + %s)",
+               CoinToTokenBigFloat(block.txMint.GetAmount()).c_str(), CoinToTokenBigFloat(nTotalFee).c_str(), CoinToTokenBigFloat(nReward).c_str());
         return ERR_BLOCK_TRANSACTIONS_INVALID;
     }
     return OK;
