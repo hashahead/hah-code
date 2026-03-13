@@ -2852,94 +2852,75 @@ bool CBlockBase::UpdateDelegate(const uint256& hashFork, const uint256& hashBloc
     return true;
 }
 
-//-----------------------------------------
-bool CBlockState::DoFuncTxDelegateVote(const CDestination& destFrom, const CDestination& destTo, const bytes& btTxParam,
-                                       const uint64 nGasLimit, uint64& nGasLeft, CTransactionLogs& logs, bytes& btResult)
+bool CBlockBase::UpdateVote(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block,
+                            const std::map<CDestination, CAddressContext>& mapAddressContext, const std::map<CDestination, CDestState>& mapAccStateIn,
+                            const std::map<CDestination, std::pair<uint32, uint32>>& mapBlockModifyPledgeFinalHeightIn, uint256& hashVoteRoot)
 {
-    if (hashFork != dbBlockBase.GetGenesisBlockHash())
+    uint256 hashPrevStateRoot;
+    if (!block.IsOrigin() && block.hashPrev != 0)
     {
-        StdLog("CBlockState", "Do func tx delegate vote: Fork not is genesis, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (btTxParam.size() != 32 * 3)
-    {
-        StdLog("CBlockState", "Do func tx delegate vote: Tx param error, param size: %lu", btTxParam.size());
-        return false;
-    }
-
-    uint256 tempData;
-    CDestination destMint;
-    uint16 nRewardRatio;
-    uint256 nAmount;
-
-    memcpy(tempData.begin(), btTxParam.data(), 32);
-    destMint.SetHash(tempData);
-
-    tempData.FromBigEndian(btTxParam.data() + 32, 32);
-    nRewardRatio = (uint16)(tempData.Get32());
-
-    nAmount.FromBigEndian(btTxParam.data() + 32 * 2, 32);
-
-    StdDebug("CBlockState", "Do func tx delegate vote: mint address: %s, reward ratio: %d, vote amount: %s, from: %s",
-             destMint.ToString().c_str(), nRewardRatio, CoinToTokenBigFloat(nAmount).c_str(), destFrom.ToString().c_str());
-
-    CAddressContext ctxFromAddress;
-    if (!GetAddressContext(destFrom, ctxFromAddress))
-    {
-        StdLog("CBlockState", "Do func tx delegate vote: Get from address context fail, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
-    if (!ctxFromAddress.IsPubkey() && !ctxFromAddress.IsContract())
-    {
-        StdLog("CBlockState", "Do func tx delegate vote: From address not pubkey or contract address, from: %s", destFrom.ToString().c_str());
-        return false;
+        BlockIndexPtr pIndexPrev = GetIndex(block.hashPrev);
+        if (!pIndexPrev)
+        {
+            StdLog("BlockBase", "Update vote: Get prev index fail, prev: %s", block.hashPrev.GetHex().c_str());
+            return false;
+        }
+        hashPrevStateRoot = pIndexPrev->GetStateRoot();
     }
 
-    auto ptr = CTemplate::CreateTemplatePtr(new CTemplateDelegate(destMint, destFrom, nRewardRatio));
-    if (!ptr)
-    {
-        StdLog("CBlockState", "Do func tx delegate vote: Create template fail, destMint: %s, from: %s, nRewardRatio: %d",
-               destMint.ToString().c_str(), destFrom.ToString().c_str(), nRewardRatio);
+    auto funcGetMintRewardAmount = [&](const CDestination& dest) -> uint256 {
+        uint256 nMintReward;
+        if (block.txMint.GetToAddress() == dest)
+        {
+            nMintReward += block.txMint.GetAmount();
+        }
+        for (const CTransaction& tx : block.vtx)
+        {
+            if (tx.IsRewardTx() && tx.GetToAddress() == dest)
+            {
+                nMintReward += tx.GetAmount();
+            }
+        }
+        return nMintReward;
+    };
+    auto funcCheckNewVote = [&](const CDestination& dest) -> bool {
+        const uint256 nMintReward = funcGetMintRewardAmount(dest);
+
+        auto it = mapAccStateIn.find(dest);
+        if (it == mapAccStateIn.end())
+        {
+            return false;
+        }
+        const uint256 nNewBalance = it->second.GetBalance();
+
+        uint256 nPrevBalance;
+        CDestState statePrev;
+        if (RetrieveDestState(hashFork, hashPrevStateRoot, dest, statePrev))
+        {
+            nPrevBalance = statePrev.GetBalance();
+        }
+
+        if (nNewBalance > nPrevBalance + nMintReward)
+        {
+            return true;
+        }
         return false;
-    }
-    CDestination destDelegate(ptr->GetTemplateId());
-    CAddressContext ctxToAddress(CTemplateAddressContext({}, {}, TEMPLATE_DELEGATE, ptr->Export()));
-
-    if (!ContractTransfer(destFrom, destDelegate, nAmount, nGasLimit, nGasLeft, ctxToAddress, CContractTransfer::CT_VOTE))
-    {
-        StdLog("CBlockState", "Do func tx delegate vote: Contract transfer fail, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
-
-    logs.topics.push_back(destFrom.ToHash());
-    logs.topics.push_back(destDelegate.ToHash());
-    logs.topics.push_back(uint256(nAmount.ToBigEndian()));
-
-    btResult = uint256(1).ToBigEndian();
-    return true;
-}
-
-bool CBlockState::DoFuncTxDelegateRedeem(const CDestination& destFrom, const CDestination& destTo, const bytes& btTxParam,
-                                         const uint64 nGasLimit, uint64& nGasLeft, CTransactionLogs& logs, bytes& btResult)
-{
-    if (hashFork != dbBlockBase.GetGenesisBlockHash())
-    {
-        StdLog("CBlockState", "Do func tx delegate redeem: Fork not is genesis, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (btTxParam.size() != 32 * 3)
-    {
-        StdLog("CBlockState", "Do func tx delegate redeem: Tx param error, param size: %lu", btTxParam.size());
-        return false;
-    }
-
-    uint256 tempData;
-    CDestination destMint;
-    uint16 nRewardRatio;
-    uint256 nAmount;
-
-    memcpy(tempData.begin(), btTxParam.data(), 32);
-    destMint.SetHash(tempData);
+    };
+    auto funcGetAddressContext = [&](const CDestination& dest, CAddressContext& ctxAddress) -> bool {
+        auto it = mapAddressContext.find(dest);
+        if (it != mapAddressContext.end())
+        {
+            ctxAddress = it->second;
+        }
+        else
+        {
+            if (!RetrieveAddressContext(hashFork, block.hashPrev, dest, ctxAddress))
+            {
+                return false;
+            }
+        }
+        return true;
+    };
 
     tempData.FromBigEndian(btTxParam.data() + 32, 32);
     nRewardRatio = (uint16)(tempData.Get32());
