@@ -3015,52 +3015,71 @@ bool CBlockBase::UpdateVote(const uint256& hashFork, const uint256& hashBlock, c
                     }
                     mapAddPledgeFinalHeight[dest] = std::make_pair(ctxVote.nFinalHeight, block.GetBlockHeight());
 
-bool CBlockState::DoFuncTxUserVote(const CDestination& destFrom, const CDestination& destTo, const bytes& btTxParam,
-                                   const uint64 nGasLimit, uint64& nGasLeft, CTransactionLogs& logs, bytes& btResult)
-{
-    if (!fEnableStakeVote)
-    {
-        StdLog("CBlockState", "Do func tx user vote: Disable vote, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (hashFork != dbBlockBase.GetGenesisBlockHash())
-    {
-        StdLog("CBlockState", "Do func tx user vote: Fork not is genesis, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (btTxParam.size() != 32 * 3)
-    {
-        StdLog("CBlockState", "Do func tx user vote: Tx param error, param size: %lu", btTxParam.size());
-        return false;
-    }
+                    if (VERIFY_FHX_HEIGHT_BRANCH_002(block.GetBlockHeight()))
+                    {
+                        if (state.GetBalance() >= DELEGATE_PROOF_OF_STAKE_MIN_VOTE_AMOUNT)
+                        {
+                            // first pledge vote
+                            CPledgeVoteContext& ctxPledgeVote = mapPledgeVote[dest];
 
-    uint256 tempData;
-    CDestination destDelegate;
-    uint8 nRewardMode;
-    uint256 nAmount;
-
-    memcpy(tempData.begin(), btTxParam.data(), 32);
-    destDelegate.SetHash(tempData);
-
-    tempData.FromBigEndian(btTxParam.data() + 32, 32);
-    nRewardMode = (uint8)(tempData.Get32());
-
-    nAmount.FromBigEndian(btTxParam.data() + 32 * 2, 32);
-
-    StdDebug("CBlockState", "Do func tx user vote: delegate address: %s, reward mode: %d, vote amount: %s, from: %s",
-             destDelegate.ToString().c_str(), nRewardMode, CoinToTokenBigFloat(nAmount).c_str(), destFrom.ToString().c_str());
-
-    CAddressContext ctxFromAddress;
-    if (!GetAddressContext(destFrom, ctxFromAddress))
-    {
-        StdLog("CBlockState", "Do func tx user vote: Get from address context fail, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
-    if (!ctxFromAddress.IsPubkey() && !ctxFromAddress.IsContract())
-    {
-        StdLog("CBlockState", "Do func tx user vote: From address not pubkey or contract address, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
+                            ctxPledgeVote.destVote = dest;
+                            ctxPledgeVote.destDelegate = objPledge->destDelegate;
+                            ctxPledgeVote.destOwner = objPledge->destOwner;
+                            ctxPledgeVote.nPledgeType = objPledge->nPledgeType;
+                            ctxPledgeVote.nCycles = objPledge->nCycles;
+                            ctxPledgeVote.nNonce = objPledge->nNonce;
+                            ctxPledgeVote.nVoteAmount = state.GetBalance();
+                            ctxPledgeVote.nVoteTime = block.GetBlockTime();
+                            ctxPledgeVote.nVoteHeight = block.GetBlockHeight();
+                            ctxPledgeVote.nStopHeight = 0;
+                            ctxPledgeVote.nRedeemHeight = 0;
+                            ctxPledgeVote.nStatus = CPledgeVoteContext::PLEDGE_STATUS_VOTING;
+                            ctxPledgeVote.nReVoteRewardAmount = 0;
+                            ctxPledgeVote.nStopedRewardAmount = 0;
+                            ctxPledgeVote.nTotalRewardAmount = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    ctxVote.destDelegate = dest;
+                    ctxVote.destOwner = ctxVote.destDelegate;
+                    ctxVote.SetRewardModeFlag(CVoteContext::REWARD_MODE_VOTE);
+                    ctxVote.nRewardRate = PLEDGE_REWARD_PER;
+                    ctxVote.nFinalHeight = block.GetBlockHeight() + VOTE_REDEEM_HEIGHT;
+                }
+            }
+            else
+            {
+                // vote data already exists
+                if (ctxAddress.GetTemplateType() == TEMPLATE_PLEDGE)
+                {
+                    bool fModifyPledgeHeight = false;
+                    if (VERIFY_FHX_HEIGHT_BRANCH_002(block.GetBlockHeight()))
+                    {
+                        CPledgeVoteContext ctxPledgeVote;
+                        auto mt = mapPledgeVote.find(dest);
+                        if (mt != mapPledgeVote.end())
+                        {
+                            ctxPledgeVote = mt->second;
+                        }
+                        else
+                        {
+                            if (!dbBlock.RetrieveDestPledgeVoteContext(block.hashPrev, dest, ctxPledgeVote))
+                            {
+                                CTemplateAddressContext ctxTemplate;
+                                if (!ctxAddress.GetTemplateAddressContext(ctxTemplate))
+                                {
+                                    StdError("BlockBase", "Update vote: Get template address context failed, dest: %s, block: %s", dest.ToString().c_str(), hashBlock.ToString().c_str());
+                                    return false;
+                                }
+                                CTemplatePtr ptr = CTemplate::Import(ctxTemplate.btData);
+                                if (!ptr || ptr->GetTemplateType() != TEMPLATE_PLEDGE)
+                                {
+                                    StdError("BlockBase", "Update vote: Import pledge template fail or template type error, dest: %s, block: %s", dest.ToString().c_str(), hashBlock.ToString().c_str());
+                                    return false;
+                                }
+                                auto objPledge = boost::dynamic_pointer_cast<CTemplatePledge>(ptr);
 
     auto ptr = CTemplate::CreateTemplatePtr(new CTemplateVote(destDelegate, destFrom, nRewardMode));
     if (!ptr)
