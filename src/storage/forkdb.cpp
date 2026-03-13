@@ -835,6 +835,103 @@ bool CForkDB::GetMaxDexCoinPair(uint32& nMaxCoinPair, const uint256& hashMainCha
     return GetMaxForkDexCoinPair(hashRoot, nMaxCoinPair);
 }
 
+bool CForkDB::ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock)
+{
+    if (nCoinPair != 0)
+    {
+        std::string strSymbol1, strSymbol2;
+        if (!GetSymbolPairByDexCoinPair(nCoinPair, strSymbol1, strSymbol2, hashMainChainRefBlock))
+        {
+            return false;
+        }
+        mapDexCoinPair.insert(std::make_pair(nCoinPair, std::make_pair(strSymbol1, strSymbol2)));
+        return true;
+    }
+
+    class CListDexCoinPairTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListDexCoinPairTrieDBWalker(const std::string& strCoinSymbolIn, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPairIn)
+          : strCoinSymbol(strCoinSymbolIn), mapDexCoinPair(mapDexCoinPairIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListDexCoinPairTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_FORK_KEY_TYPE_DEX_COINPAIR)
+                {
+                    hnbase::CBufStream ssValue(btValue);
+                    uint32 nCoinPair;
+                    std::string strSymbol1;
+                    std::string strSymbol2;
+                    ssKey >> nCoinPair;
+                    ssValue >> strSymbol1 >> strSymbol2;
+                    nCoinPair = BSwap32(nCoinPair);
+                    if (strCoinSymbol.empty() || strSymbol1 == strCoinSymbol || strSymbol2 == strCoinSymbol)
+                    {
+                        mapDexCoinPair.insert(std::make_pair(nCoinPair, std::make_pair(strSymbol1, strSymbol2)));
+                    }
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    protected:
+        const std::string strCoinSymbol;
+        std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair;
+    };
+
+    {
+        CReadLock rlock(rwAccess);
+
+        uint256 hashLastBlock;
+        if (hashMainChainRefBlock == 0)
+        {
+            if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+            {
+                hashLastBlock = 0;
+            }
+        }
+        else
+        {
+            hashLastBlock = hashMainChainRefBlock;
+        }
+
+        uint256 hashRoot;
+        if (!ReadTrieRoot(hashLastBlock, hashRoot))
+        {
+            StdLog("CForkDB", "List dex coin pair context: Read trie root fail, block: %s", hashLastBlock.GetHex().c_str());
+            return false;
+        }
+
+        hnbase::CBufStream ssKeyPrefix;
+        ssKeyPrefix << DB_FORK_KEY_TYPE_DEX_COINPAIR;
+        bytes btKeyPrefix;
+        ssKeyPrefix.GetData(btKeyPrefix);
+
+        CListDexCoinPairTrieDBWalker walker(strCoinSymbol, mapDexCoinPair);
+        if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+        {
+            StdLog("CForkDB", "List dex coin pair context: Walk through trie fail, block: %s", hashLastBlock.GetHex().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);
