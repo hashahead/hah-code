@@ -1151,6 +1151,40 @@ bool CVoteDB::ListVoteReward(const uint32 nChainId, const uint256& hashBlock, co
     return true;
 }
 
+bool CVoteDB::RetrieveMintReward(const uint256& hashFork, const uint256& hashBlock, const CDestination& destMint, uint8& nMintTemplateType, uint256& nMintReward)
+{
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashBlock, hashRoot))
+    {
+        StdLog("CVoteDB", "Retrieve mint reward: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    const uint32 nChainId = CBlock::GetBlockChainIdByHash(hashFork);
+
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_VOTE_KEY_TYPE_MINT_REWARD_ADDRESS << nChainId << destMint;
+    ssKey.GetData(btKey);
+
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> nMintTemplateType >> nMintReward;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 bool CVoteDB::VerifyVoteReward(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     uint64 nRewardCount = 0;
