@@ -3280,7 +3280,8 @@ bool CBlockBase::UpdateVote(const uint256& hashFork, const uint256& hashBlock, c
             mapAddPledgeFinalHeight[destPledge] = kv.second;
         }
     }
-    if (!ctxFromAddress.IsPubkey() && !ctxFromAddress.IsContract())
+
+    if (VERIFY_FHX_HEIGHT_BRANCH_002(block.GetBlockHeight()))
     {
         auto funcAddPledgeVoteReward = [&](const CDestination& destVote, const bool fReVote, const uint256& nRewardAmount) -> bool {
             CPledgeVoteContext ctxPledgeVote;
@@ -3311,121 +3312,9 @@ bool CBlockBase::UpdateVote(const uint256& hashFork, const uint256& hashBlock, c
             }
             ctxPledgeVote.nTotalRewardAmount += nRewardAmount;
 
-    btResult = uint256(1).ToBigEndian();
-    return true;
-}
-
-bool CBlockState::DoFuncTxPledgeReqRedeem(const CDestination& destFrom, const CDestination& destTo, const bytes& btTxParam, const uint64 nGasLimit, uint64& nGasLeft, CTransactionLogs& logs, bytes& btResult)
-{
-    if (!fEnableStakePledge)
-    {
-        StdLog("CBlockState", "Do func tx pledge req redeem: Disable pledge, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (hashFork != dbBlockBase.GetGenesisBlockHash())
-    {
-        StdLog("CBlockState", "Do func tx pledge req redeem: Fork not is genesis, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (btTxParam.size() != 32 * 4)
-    {
-        StdLog("CBlockState", "Do func tx pledge req redeem: Tx param error, param size: %lu", btTxParam.size());
-        return false;
-    }
-
-    uint256 tempData;
-    CDestination destDelegate;
-    uint32 nPledgeType;
-    uint32 nCycles;
-    uint32 nNonce;
-
-    const uint8* p = btTxParam.data();
-
-    memcpy(tempData.begin(), p, 32);
-    destDelegate.SetHash(tempData);
-    p += 32;
-
-    tempData.FromBigEndian(p, 32);
-    nPledgeType = tempData.Get32();
-    p += 32;
-
-    tempData.FromBigEndian(p, 32);
-    nCycles = tempData.Get32();
-    p += 32;
-
-    tempData.FromBigEndian(p, 32);
-    nNonce = tempData.Get32();
-    p += 32;
-
-    StdDebug("CBlockState", "Do func tx pledge req redeem: delegate address: %s, pledge type: %d, cycles: %d, nonce: %d, from: %s",
-             destDelegate.ToString().c_str(), nPledgeType, nCycles, nNonce, destFrom.ToString().c_str());
-
-    CAddressContext ctxFromAddress;
-    if (!GetAddressContext(destFrom, ctxFromAddress))
-    {
-        StdLog("CBlockState", "Do func tx pledge req redeem: Get from address context fail, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
-    if (!ctxFromAddress.IsPubkey() && !ctxFromAddress.IsContract())
-    {
-        StdLog("CBlockState", "Do func tx pledge req redeem: From address not pubkey or contract address, from: %s", destFrom.ToString().c_str());
-        return false;
-    }
-
-    auto ptr = CTemplate::CreateTemplatePtr(new CTemplatePledge(destDelegate, destFrom, nPledgeType, nCycles, nNonce));
-    if (!ptr)
-    {
-        StdLog("CBlockState", "Do func tx pledge req redeem: Create template fail, destDelegate: %s, from: %s, pledge type: %d, cycles: %d, nonce: %d",
-               destDelegate.ToString().c_str(), destFrom.ToString().c_str(), nPledgeType, nCycles, nNonce);
-        return false;
-    }
-    CDestination destPledge(ptr->GetTemplateId());
-
-    CVoteContext ctxVote;
-    if (!dbBlockBase.RetrieveDestVoteContext(hashPrevBlock, destPledge, ctxVote))
-    {
-        StdLog("CBlockState", "Do func tx pledge req redeem: Retrieve dest vote context fail, pledge dest: %s", destPledge.ToString().c_str());
-        return false;
-    }
-    if (ctxVote.nFinalHeight == 0 || nBlockHeight < ctxVote.nFinalHeight)
-    {
-        auto objPledge = boost::dynamic_pointer_cast<CTemplatePledge>(ptr);
-        uint32 nPledgeDays = objPledge->GetPledgeDays(nBlockHeight);
-        if (nPledgeDays == 0)
-        {
-            nPledgeDays = 1;
-        }
-        const uint32 nPledgeHeight = nPledgeDays * DAY_HEIGHT;
-        uint32 nSetHeight = 0;
-        if (ctxVote.nFinalHeight == 0)
-        {
-            nSetHeight = nBlockHeight + nPledgeHeight;
-        }
-        else
-        {
-            nSetHeight = ctxVote.nFinalHeight;
-            while (nSetHeight > nPledgeHeight && nSetHeight - nPledgeHeight > nBlockHeight)
-            {
-                nSetHeight -= nPledgeHeight;
-            }
-        }
-        mapCacheModifyPledgeFinalHeight[destPledge] = std::make_pair(nSetHeight, nBlockHeight);
-
-        StdDebug("CBlockState", "Do func tx pledge req redeem: set height: %d, pledge height: %d, old final height: %d, block height: %d, delegate address: %s, pledge type: %d, cycles: %d, nonce: %d, from: %s",
-                 nSetHeight, nPledgeHeight, ctxVote.nFinalHeight, nBlockHeight, destDelegate.ToString().c_str(), nPledgeType, nCycles, nNonce, destFrom.ToString().c_str());
-
-        btResult = uint256(1).ToBigEndian();
-    }
-    else
-    {
-        btResult = uint256(0).ToBigEndian();
-    }
-
-    logs.topics.push_back(destFrom.ToHash());
-    logs.topics.push_back(destPledge.ToHash());
-    logs.topics.push_back(destDelegate.ToHash());
-    return true;
-}
+            mapPledgeVote[destVote] = ctxPledgeVote;
+            return true;
+        };
 
 bool CBlockState::DoFuncTxGetPledgeVotes(const CDestination& destFrom, const CDestination& destTo, const bytes& btTxParam, const uint64 nGasLimit, uint64& nGasLeft, CTransactionLogs& logs, bytes& btResult)
 {
