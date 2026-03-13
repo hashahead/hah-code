@@ -3213,73 +3213,72 @@ bool CBlockBase::UpdateVote(const uint256& hashFork, const uint256& hashBlock, c
             }
         }
     }
-    CDestination destVote(ptr->GetTemplateId());
 
-    CDestState stateDest;
-    if (!GetDestState(destVote, stateDest))
+    std::map<CDestination, uint32> mapRemovePledgeFinalHeight; // key: pledge address, value: old final height
+    for (auto& kv : mapBlockModifyPledgeFinalHeightIn)
     {
-        btResult = uint256().ToBigEndian();
-    }
-    else
-    {
-        btResult = stateDest.GetBalance().ToBigEndian();
-    }
-    return true;
-}
+        const auto& destPledge = kv.first;
+        const uint32 nNewFinalHeight = kv.second.first;
+        CVoteContext ctxVote;
+        auto it = mapBlockVote.find(destPledge);
+        if (it != mapBlockVote.end())
+        {
+            ctxVote = it->second;
+        }
+        else
+        {
+            if (!dbBlock.RetrieveDestVoteContext(block.hashPrev, destPledge, ctxVote))
+            {
+                continue;
+            }
+        }
+        bool fModify = false;
+        if (VERIFY_FHX_HEIGHT_BRANCH_002(block.GetBlockHeight()))
+        {
+            if (!ctxVote.GetStopReVoteFlag() || ctxVote.nFinalHeight != nNewFinalHeight)
+            {
+                ctxVote.SetStopReVoteFlag(true);
+                fModify = true;
 
-bool CBlockState::DoFuncTxPledgeVote(const CDestination& destFrom, const CDestination& destTo, const bytes& btTxParam, const uint64 nGasLimit, uint64& nGasLeft, CTransactionLogs& logs, bytes& btResult)
-{
-    if (!fEnableStakePledge)
-    {
-        StdLog("CBlockState", "Do func tx pledge vote: Disable pledge, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (hashFork != dbBlockBase.GetGenesisBlockHash())
-    {
-        StdLog("CBlockState", "Do func tx pledge vote: Fork not is genesis, fork: %s", hashFork.ToString().c_str());
-        return false;
-    }
-    if (btTxParam.size() != 32 * 5)
-    {
-        StdLog("CBlockState", "Do func tx pledge vote: Tx param error, param size: %lu", btTxParam.size());
-        return false;
-    }
+                bool fGetPledge = false;
+                CPledgeVoteContext ctxPledgeVote;
+                auto mt = mapPledgeVote.find(destPledge);
+                if (mt != mapPledgeVote.end())
+                {
+                    ctxPledgeVote = mt->second;
+                    fGetPledge = true;
+                }
+                else
+                {
+                    if (dbBlock.RetrieveDestPledgeVoteContext(block.hashPrev, destPledge, ctxPledgeVote))
+                    {
+                        fGetPledge = true;
+                    }
+                }
+                if (fGetPledge)
+                {
+                    ctxPledgeVote.nStopHeight = block.GetBlockHeight();
+                    ctxPledgeVote.nRedeemHeight = nNewFinalHeight;
+                    ctxPledgeVote.nStatus = CPledgeVoteContext::PLEDGE_STATUS_REQSTOPED;
 
-    uint256 tempData;
-    CDestination destDelegate;
-    uint32 nPledgeType;
-    uint32 nCycles;
-    uint32 nNonce;
-    uint256 nAmount;
-
-    const uint8* p = btTxParam.data();
-
-    memcpy(tempData.begin(), p, 32);
-    destDelegate.SetHash(tempData);
-    p += 32;
-
-    tempData.FromBigEndian(p, 32);
-    nPledgeType = tempData.Get32();
-    p += 32;
-
-    tempData.FromBigEndian(p, 32);
-    nCycles = tempData.Get32();
-    p += 32;
-
-    tempData.FromBigEndian(p, 32);
-    nNonce = tempData.Get32();
-    p += 32;
-
-    nAmount.FromBigEndian(p, 32);
-
-    StdDebug("CBlockState", "Do func tx pledge vote: delegate address: %s, pledge type: %d, cycles: %d, nonce: %d, vote amount: %s, from: %s",
-             destDelegate.ToString().c_str(), nPledgeType, nCycles, nNonce, CoinToTokenBigFloat(nAmount).c_str(), destFrom.ToString().c_str());
-
-    CAddressContext ctxFromAddress;
-    if (!GetAddressContext(destFrom, ctxFromAddress))
-    {
-        StdLog("CBlockState", "Do func tx pledge vote: Get from address context fail, from: %s", destFrom.ToString().c_str());
-        return false;
+                    mapPledgeVote[destPledge] = ctxPledgeVote;
+                }
+            }
+        }
+        else
+        {
+            if (ctxVote.nFinalHeight != nNewFinalHeight)
+            {
+                fModify = true;
+            }
+        }
+        if (fModify)
+        {
+            mapRemovePledgeFinalHeight[destPledge] = ctxVote.nFinalHeight;
+            ctxVote.nFinalHeight = nNewFinalHeight;
+            mapBlockVote[destPledge] = ctxVote;
+            mapAddPledgeFinalHeight[destPledge] = kv.second;
+        }
     }
     if (!ctxFromAddress.IsPubkey() && !ctxFromAddress.IsContract())
     {
