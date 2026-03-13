@@ -62,7 +62,7 @@ public:
     bool LoadFork(const uint256& hashFork);
     bool RemoveFork(const uint256& hashFork);
     bool ListFork(std::vector<std::pair<uint256, uint256>>& vFork);
-    bool AddNewBlockIndex(const CBlockOutline& outline);
+    bool AddNewBlockIndex(const CBlockIndex& outline);
     bool RemoveBlockIndex(const uint256& hashBlock);
     bool RetrieveBlockIndex(const uint256& hashBlock, CBlockOutline& outline);
     bool AddNewBlockNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint64 nBlockNumber, const uint256& hashBlock, uint256& hashNewRoot);

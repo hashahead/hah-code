@@ -392,9 +392,9 @@ bool CBlockDB::UpdateBlockNumberBlockLongChain(const uint256& hashFork, const st
     return dbBlockIndex.UpdateBlockNumberBlockLongChain(hashFork, vRemoveNumberBlock, mapNewNumberBlock);
 }
 
-bool CBlockDB::RetrieveBlockHashByNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashLastBlock, const uint64 nBlockNumber, uint256& hashBlock)
+bool CBlockDB::RetrieveBlockHashByNumber(const uint256& hashFork, const uint64 nBlockNumber, uint256& hashBlock)
 {
-    return dbBlockIndex.RetrieveBlockHashByNumber(hashFork, nChainId, hashLastBlock, nBlockNumber, hashBlock);
+    return dbBlockIndex.RetrieveBlockHashByNumber(hashFork, nBlockNumber, hashBlock);
 }
 
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)

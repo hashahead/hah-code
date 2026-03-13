@@ -127,6 +127,7 @@ public:
                        const std::map<uint256, bytes>& mapTraceKv, const std::map<CDestination, std::map<uint256, bytes>>& mapOldAddressKeyValue);
     bool ContractTransfer(const CDestination& from, const CDestination& to, const uint256& amount, const uint64 nGasLimit, uint64& nGasLeft, const CAddressContext& ctxToAddress, const uint8 nTransferType);
     bool IsContractDestroy(const CDestination& destContractIn);
+    bool AddContractRunReceipt(const CTxContractReceipt& tcReceipt, const bool fFirstReceipt = false);
 protected:
     CBlockBase& dbBlockBase;
     const uint16 nBlockType;

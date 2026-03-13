@@ -781,6 +781,22 @@ bool CBlockState::IsContractDestroy(const CDestination& destContractIn)
     return false;
 }
 
+bool CBlockState::AddContractRunReceipt(const CTxContractReceipt& tcReceipt, const bool fFirstReceipt)
+{
+    if (fBtTraceDb)
+    {
+        if (fFirstReceipt)
+        {
+            vCacheContractReceipt.insert(vCacheContractReceipt.begin(), tcReceipt);
+        }
+        else
+        {
+            vCacheContractReceipt.push_back(tcReceipt);
+        }
+    }
+    return true;
+}
+
         CDestState stateDest;
         bytes btContractRunCode;
         if (GetDestState(address, stateDest) && stateDest.IsContract())
