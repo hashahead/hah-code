@@ -389,5 +389,44 @@ CTimeSeriesChunk::~CTimeSeriesChunk()
 {
 }
 
+//////////////////////////////
+// CTimeSeriesSnapshot
+
+const uint32 CTimeSeriesSnapshot::nMagicNum = 0x9BE70873;
+
+CTimeSeriesSnapshot::CTimeSeriesSnapshot()
+{
+}
+
+CTimeSeriesSnapshot::~CTimeSeriesSnapshot()
+{
+}
+
+bool CTimeSeriesSnapshot::Write(const uint8 nType, const char* pData, const uint32 nDataSize, CDiskPos& pos)
+{
+    boost::unique_lock<boost::mutex> lock(mtxWriter);
+
+    std::string pathFile;
+    if (!GetLastFilePath(pos.nFile, pathFile, nDataSize))
+    {
+        return false;
+    }
+    try
+    {
+        hnbase::CFileStream fs(pathFile.c_str());
+        fs.SeekToEnd();
+        uint32 nCrc = hashahead::crypto::crc24q((const unsigned char*)pData, nDataSize);
+        fs << nMagicNum << nDataSize << nCrc << nType;
+        pos.nOffset = fs.GetCurPos();
+        fs.Write(pData, nDataSize);
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead

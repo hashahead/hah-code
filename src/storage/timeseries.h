@@ -68,9 +68,10 @@ class CTimeSeriesBase
 public:
     CTimeSeriesBase();
     ~CTimeSeriesBase();
-    virtual bool Initialize(const boost::filesystem::path& pathLocationIn, const std::string& strPrefixIn);
+    virtual bool Initialize(const fs::path& pathLocationIn, const std::string& strPrefixIn);
     virtual void Deinitialize();
     bool RepairFile(uint32 nFile, uint32 nOffset);
+    void ClearAllFile();
 
 protected:
     bool CheckDiskSpace();
@@ -460,6 +461,28 @@ public:
             }
         }
         return nOffset;
+    }
+    uint32 GetBlockSize(const uint32 nFile, const uint32 nOffset)
+    {
+        std::string pathFile;
+        if (!GetFilePath(nFile, pathFile))
+        {
+            hnbase::StdError("TimeSeriesCached", "Get block size: Get file path fail, nFile: %d, nOffset: %d", nFile, nOffset);
+            return 0;
+        }
+        try
+        {
+            hnbase::CFileStream fs(pathFile.c_str());
+            fs.Seek(nOffset - sizeof(uint32) * 2);
+            uint32 nBlockSize;
+            fs >> nBlockSize;
+            return nBlockSize;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return 0;
     }
 
 protected:
