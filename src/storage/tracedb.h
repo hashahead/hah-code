@@ -72,6 +72,25 @@ protected:
     std::queue<uint256> qBlockHash;
 };
 
+class CForkTraceDB
+{
+public:
+    CForkTraceDB();
+    ~CForkTraceDB();
+
+    bool Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn = false);
+    void Deinitialize();
+    bool RemoveAll();
+
+protected:
+    hnbase::CRWAccess rwAccess;
+    uint256 hashFork;
+    bool fPrune;
+    CTrieDB dbTrie;
+    bool fUseCacheData;
+    CCacheTraceData cacheTraceData;
+};
+
 class CTraceDB
 {
 public:

@@ -146,6 +146,42 @@ bool CCacheTraceData::GetTxContractPrevState(const uint256& hashBlock, const uin
 }
 
 //////////////////////////////
+// CForkTraceDB
+
+CForkTraceDB::CForkTraceDB()
+  : fUseCacheData(false), fPrune(false)
+{
+}
+
+CForkTraceDB::~CForkTraceDB()
+{
+    dbTrie.Deinitialize();
+}
+
+bool CForkTraceDB::Initialize(const uint256& hashForkIn, const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn)
+{
+    if (!dbTrie.Initialize(pathData))
+    {
+        return false;
+    }
+    hashFork = hashForkIn;
+    fUseCacheData = fUseCacheDataIn;
+    fPrune = fPruneIn;
+    return true;
+}
+
+void CForkTraceDB::Deinitialize()
+{
+    dbTrie.Deinitialize();
+}
+
+bool CForkTraceDB::RemoveAll()
+{
+    dbTrie.RemoveAll();
+    return true;
+}
+
+//////////////////////////////
 // CTraceDB
 
 bool CTraceDB::Initialize(const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn)
