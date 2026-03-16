@@ -3329,280 +3329,34 @@ bool CBlockBase::UpdateVote(const uint256& hashFork, const uint256& hashBlock, c
                         CBufStream ss(btRewardListData);
                         ss >> mapSubReward;
 
-bool CBlockBase::RetrieveTxAndIndex(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, CTxIndex& txIndex)
-{
-    if (!GetTxIndex(hashFork, txid, hashAtFork, txIndex))
-    {
-        StdLog("BlockBase", "Retrieve Tx: Get tx index fail, txid: %s, fork: %s", txid.ToString().c_str(), hashFork.ToString().c_str());
-        return false;
-    }
-    tx.SetNull();
-    if (!tsBlock.Read(tx, txIndex.nFile, txIndex.nOffset, false, true))
-    {
-        StdLog("BlockBase", "Retrieve Tx: Read fail, txid: %s, fork: %s", txid.ToString().c_str(), hashFork.ToString().c_str());
-        return false;
-    }
-    return true;
-}
-
-bool CBlockBase::RetrieveAvailDelegate(const uint256& hash, int height, const vector<uint256>& vBlockRange,
-                                       const uint256& nMinEnrollAmount,
-                                       map<CDestination, size_t>& mapWeight,
-                                       map<CDestination, vector<unsigned char>>& mapEnrollData,
-                                       vector<pair<CDestination, uint256>>& vecAmount)
-{
-    map<CDestination, uint256> mapVote;
-    if (!dbBlock.RetrieveDelegate(hash, mapVote))
-    {
-        StdTrace("BlockBase", "Retrieve Avail Delegate: Retrieve Delegate %s block failed",
-                 hash.ToString().c_str());
-        return false;
-    }
-
-    map<CDestination, CDiskPos> mapEnrollTxPos;
-    if (!dbBlock.RetrieveRangeEnroll(height, vBlockRange, mapEnrollTxPos))
-    {
-        StdTrace("BlockBase", "Retrieve Avail Retrieve Enroll block %s height %d failed",
-                 hash.ToString().c_str(), height);
-        return false;
-    }
-
-    map<pair<uint256, CDiskPos>, pair<CDestination, vector<uint8>>> mapSortEnroll;
-    for (auto it = mapVote.begin(); it != mapVote.end(); ++it)
-    {
-        if ((*it).second >= nMinEnrollAmount)
-        {
-            const CDestination& dest = (*it).first;
-            map<CDestination, CDiskPos>::iterator mi = mapEnrollTxPos.find(dest);
-            if (mi != mapEnrollTxPos.end())
-            {
-                CTransaction tx;
-                if (!tsBlock.Read(tx, (*mi).second, false, true))
-                {
-                    StdLog("BlockBase", "Retrieve Avail Delegate::Read %s tx failed", tx.GetHash().ToString().c_str());
-                    return false;
+                        for (auto& kv : mapSubReward)
+                        {
+                            if (kv.second.second == TEMPLATE_PLEDGE)
+                            {
+                                funcAddPledgeVoteReward(kv.first, false, kv.second.first);
+                            }
+                        }
+                    }
+                    catch (std::exception& e)
+                    {
+                        StdLog("BlockBase", "Update vote: Parser tx extdata fail, to: %s, block: %s",
+                               tx.GetToAddress().ToString().c_str(), hashBlock.GetHex().c_str());
+                        return false;
+                    }
                 }
-
-                bytes btCertData;
-                if (!tx.GetTxData(CTransaction::DF_CERTTXDATA, btCertData))
+                else
                 {
-                    StdLog("BlockBase", "Retrieve Avail Delegate: tx data error1, txid: %s",
-                           tx.GetHash().ToString().c_str());
-                    return false;
-                }
-
-                mapSortEnroll.insert(make_pair(make_pair(it->second, mi->second), make_pair(dest, btCertData)));
-            }
-        }
-    }
-    // first 25 destination sorted by amount and sequence
-    for (auto it = mapSortEnroll.rbegin(); it != mapSortEnroll.rend() && mapWeight.size() < MAX_DELEGATE_THRESH; it++)
-    {
-        mapWeight.insert(make_pair(it->second.first, 1));
-        mapEnrollData.insert(make_pair(it->second.first, it->second.second));
-        vecAmount.push_back(make_pair(it->second.first, it->first.first));
-    }
-    for (const auto& d : vecAmount)
-    {
-        StdTrace("BlockBase", "Retrieve Avail Delegate: dest: %s, amount: %s",
-                 d.first.ToString().c_str(), CoinToTokenBigFloat(d.second).c_str());
-    }
-    return true;
-}
-
-bool CBlockBase::RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount)
-{
-    return dbBlock.RetrieveDestDelegateVote(hashBlock, destDelegate, nVoteAmount);
-}
-
-void CBlockBase::ListForkIndex(std::map<uint256, CBlockIndex*>& mapForkIndex)
-{
-    CReadLock rlock(rwAccess);
-
-    std::map<uint256, CForkContext> mapForkCtxt;
-    if (!dbBlock.ListForkContext(mapForkCtxt))
-    {
-        return;
-    }
-    for (const auto& kv : mapForkCtxt)
-    {
-        CBlockIndex* pIndex = GetForkLastIndex(kv.first);
-        if (pIndex)
-        {
-            mapForkIndex.insert(make_pair(kv.first, pIndex));
-        }
-    }
-}
-
-void CBlockBase::ListForkIndex(multimap<int, CBlockIndex*>& mapForkIndex)
-{
-    CReadLock rlock(rwAccess);
-
-    std::map<uint256, CForkContext> mapForkCtxt;
-    if (!dbBlock.ListForkContext(mapForkCtxt))
-    {
-        return;
-    }
-    for (const auto& kv : mapForkCtxt)
-    {
-        CBlockIndex* pIndex = GetForkLastIndex(kv.first);
-        if (pIndex)
-        {
-            mapForkIndex.insert(make_pair(pIndex->pOrigin->GetBlockHeight() - 1, pIndex));
-        }
-    }
-}
-
-bool CBlockBase::GetBlockBranchList(const uint256& hashBlock, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder)
-{
-    CReadLock rlock(rwAccess);
-
-    return GetBlockBranchListNolock(hashBlock, 0, nullptr, vRemoveBlockInvertedOrder, vAddBlockPositiveOrder);
-}
-
-bool CBlockBase::GetBlockBranchListNolock(const uint256& hashBlock, const uint256& hashForkLastBlock, const CBlockEx* pBlockex, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder)
-{
-    CBlockIndex* pIndex = GetIndex(hashBlock);
-    if (pIndex == nullptr)
-    {
-        return false;
-    }
-
-    CBlockIndex* pForkLast = nullptr;
-    if (hashForkLastBlock == 0)
-    {
-        pForkLast = GetForkLastIndex(pIndex->GetOriginHash());
-    }
-    else
-    {
-        pForkLast = GetIndex(hashForkLastBlock);
-    }
-    if (pForkLast == nullptr)
-    {
-        return false;
-    }
-
-    vector<CBlockIndex*> vPath;
-    CBlockIndex* pBranch = GetBranch(pForkLast, pIndex, vPath);
-
-    for (CBlockIndex* p = pForkLast; p != pBranch; p = p->pPrev)
-    {
-        CBlockEx block;
-        if (!tsBlock.Read(block, p->nFile, p->nOffset, true, true))
-        {
-            return false;
-        }
-        vRemoveBlockInvertedOrder.push_back(block);
-    }
-
-    for (int i = vPath.size() - 1; i >= 0; i--)
-    {
-        if (pBlockex && vPath[i]->GetBlockHash() == hashBlock)
-        {
-            vAddBlockPositiveOrder.push_back(*pBlockex);
-        }
-        else
-        {
-            CBlockEx block;
-            if (!tsBlock.Read(block, vPath[i]->nFile, vPath[i]->nOffset, true, true))
-            {
-                return false;
-            }
-            vAddBlockPositiveOrder.push_back(block);
-        }
-    }
-    return true;
-}
-
-bool CBlockBase::LoadIndex(CBlockOutline& outline)
-{
-    uint256 hash = outline.GetBlockHash();
-    CBlockIndex* pIndexNew = nullptr;
-
-    map<uint256, CBlockIndex*>::iterator mi = mapIndex.find(hash);
-    if (mi != mapIndex.end())
-    {
-        pIndexNew = (*mi).second;
-        *pIndexNew = static_cast<CBlockIndex&>(outline);
-    }
-    else
-    {
-        pIndexNew = new CBlockIndex(static_cast<CBlockIndex&>(outline));
-        if (pIndexNew == nullptr)
-        {
-            StdLog("B", "LoadIndex: new CBlockIndex fail");
-            return false;
-        }
-        mi = mapIndex.insert(make_pair(hash, pIndexNew)).first;
-    }
-
-    pIndexNew->phashBlock = &((*mi).first);
-    pIndexNew->pPrev = nullptr;
-    pIndexNew->pOrigin = pIndexNew;
-
-    if (outline.hashPrev != 0)
-    {
-        pIndexNew->pPrev = GetOrCreateIndex(outline.hashPrev);
-        if (pIndexNew->pPrev == nullptr)
-        {
-            StdLog("B", "LoadIndex: GetOrCreateIndex prev block index fail");
-            return false;
-        }
-    }
-
-    if (!pIndexNew->IsOrigin())
-    {
-        pIndexNew->pOrigin = GetOrCreateIndex(outline.hashOrigin);
-        if (pIndexNew->pOrigin == nullptr)
-        {
-            StdLog("B", "LoadIndex: GetOrCreateIndex origin block index fail");
-            return false;
-        }
-    }
-
-    UpdateBlockHeightIndex(pIndexNew->GetOriginHash(), hash, pIndexNew->GetBlockTime(), CDestination(), pIndexNew->GetRefBlock());
-    return true;
-}
-
-bool CBlockBase::LoadTx(const uint32 nTxFile, const uint32 nTxOffset, CTransaction& tx)
-{
-    tx.SetNull();
-    if (!tsBlock.Read(tx, nTxFile, nTxOffset, false, true))
-    {
-        StdTrace("BlockBase", "LoadTx::Read %s block failed", tx.GetHash().ToString().c_str());
-        return false;
-    }
-    return true;
-}
-
-bool CBlockBase::AddBlockForkContext(const uint256& hashBlock, const CBlockEx& blockex, const std::map<CDestination, CAddressContext>& mapAddressContext, uint256& hashNewRoot)
-{
-    map<uint256, CForkContext> mapNewForkCtxt;
-    if (hashBlock == GetGenesisBlockHash())
-    {
-        CProfile profile;
-        if (!blockex.GetForkProfile(profile))
-        {
-            StdError("BlockBase", "Add block fork context: Load genesis block proof failed, block: %s", hashBlock.ToString().c_str());
-            return false;
-        }
-
-        CForkContext ctxt(hashBlock, uint256(), blockex.txMint.GetHash(), profile);
-        ctxt.nJointHeight = 0;
-        mapNewForkCtxt.insert(make_pair(hashBlock, ctxt));
-    }
-    else
-    {
-        vector<pair<CDestination, CForkContext>> vForkCtxt;
-        for (size_t i = 0; i < blockex.vtx.size(); i++)
-        {
-            const CTransaction& tx = blockex.vtx[i];
-            if (!tx.GetToAddress().IsNull())
-            {
-                auto it = mapAddressContext.find(tx.GetToAddress());
-                if (it != mapAddressContext.end())
-                {
-                    if (it->second.IsTemplate() && it->second.GetTemplateType() == TEMPLATE_FORK)
+                    CAddressContext ctxAddress;
+                    if (!tx.GetToAddressData(ctxAddress))
+                    {
+                        if (!RetrieveAddressContext(hashFork, block.hashPrev, tx.GetToAddress(), ctxAddress))
+                        {
+                            StdLog("BlockBase", "Update vote: Retrieve reward address context fail, reward address: %s, block: %s",
+                                   tx.GetToAddress().ToString().c_str(), hashBlock.GetHex().c_str());
+                            return false;
+                        }
+                    }
+                    if (ctxAddress.IsTemplate() && ctxAddress.GetTemplateType() == TEMPLATE_PLEDGE)
                     {
                         if (!VerifyBlockForkTx(blockex.hashPrev, tx, vForkCtxt))
                         {
