@@ -148,6 +148,7 @@ public:
     bool RetrieveMintReward(const uint256& hashFork, const uint256& hashBlock, const CDestination& destMint, uint8& nMintTemplateType, uint256& nMintReward);
     bool VerifyVoteReward(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
+    bool ClearVoteUnavailableNode(const uint32 nClearRefHeight);
 protected:
     bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot, const uint64 nVoteCount);
     bool ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot, uint64& nVoteCount);

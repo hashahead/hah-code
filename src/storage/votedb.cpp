@@ -1187,8 +1187,7 @@ bool CVoteDB::RetrieveMintReward(const uint256& hashFork, const uint256& hashBlo
 
 bool CVoteDB::VerifyVoteReward(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
-    uint64 nRewardCount = 0;
-    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashBlock, hashRoot, nRewardCount))
+    if (!ReadTrieRoot(DB_VOTE_ROOT_TYPE_VOTE_REWARD, hashBlock, hashRoot))
     {
         StdLog("CVoteDB", "Verify vote reward: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
         return false;
@@ -1227,6 +1226,27 @@ bool CVoteDB::VerifyVoteReward(const uint256& hashFork, const uint256& hashPrevB
         StdLog("CVoteDB", "Verify vote reward: Root error, hashRootPrevDb: %s, hashPrevRoot: %s, hashBlockLocalDb: %s, hashBlock: %s",
                hashRootPrevDb.GetHex().c_str(), hashPrevRoot.GetHex().c_str(),
                hashBlockLocalDb.GetHex().c_str(), hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
+
+//----------------------------------------------------------------------------
+bool CVoteDB::ClearVoteUnavailableNode(const uint32 nClearRefHeight)
+{
+    if (!fPrune)
+    {
+        return false;
+    }
+
+    if (!ClearHeightTrieRoot(nClearRefHeight))
+    {
+        StdLog("CVoteDB", "Clear vote unavailable node: Clear height trie root failed, height: %d", nClearRefHeight);
+        return false;
+    }
+    if (!ClearHeightDelegateEnroll(nClearRefHeight))
+    {
+        StdLog("CVoteDB", "Clear vote unavailable node: Clear height delegate enroll failed, height: %d", nClearRefHeight);
         return false;
     }
     return true;
