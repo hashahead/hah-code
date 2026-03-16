@@ -3358,77 +3358,23 @@ bool CBlockBase::UpdateVote(const uint256& hashFork, const uint256& hashBlock, c
                     }
                     if (ctxAddress.IsTemplate() && ctxAddress.GetTemplateType() == TEMPLATE_PLEDGE)
                     {
-                        if (!VerifyBlockForkTx(blockex.hashPrev, tx, vForkCtxt))
-                        {
-                            StdLog("BlockBase", "Add block fork context: Verify block fork tx fail, block: %s", hashBlock.ToString().c_str());
-                        }
-                    }
-                }
-            }
-            if (!tx.GetFromAddress().IsNull())
-            {
-                auto mt = mapAddressContext.find(tx.GetFromAddress());
-                if (mt != mapAddressContext.end())
-                {
-                    if (mt->second.IsTemplate() && mt->second.GetTemplateType() == TEMPLATE_FORK)
-                    {
-                        auto it = vForkCtxt.begin();
-                        while (it != vForkCtxt.end())
-                        {
-                            if (it->first == tx.GetFromAddress())
-                            {
-                                StdLog("BlockBase", "Add block fork context: cancel fork, block: %s, fork: %s, dest: %s",
-                                       hashBlock.ToString().c_str(), it->second.hashFork.ToString().c_str(),
-                                       tx.GetFromAddress().ToString().c_str());
-                                vForkCtxt.erase(it++);
-                            }
-                            else
-                            {
-                                ++it;
-                            }
-                        }
+                        funcAddPledgeVoteReward(tx.GetToAddress(), true, tx.GetAmount());
                     }
                 }
             }
         }
-        for (const auto& vd : vForkCtxt)
-        {
-            mapNewForkCtxt.insert(make_pair(vd.second.hashFork, vd.second));
-        }
     }
 
-    if (!dbBlock.AddForkContext(blockex.hashPrev, hashBlock, mapNewForkCtxt, hashNewRoot))
-    {
-        StdLog("BlockBase", "Add block fork context: Add fork context to db fail, block: %s", hashBlock.ToString().c_str());
-        return false;
-    }
-    return true;
-}
+    // key: pledge address, value first: final height, value second: pledge height
+    // for (auto& kv : mapAddPledgeFinalHeight)
+    // {
+    //     StdDebug("BlockBase", "Update vote: Update address final height, address: %s, final height: %d, block: [%d] %s",
+    //              kv.first.ToString().c_str(), kv.second.first, CBlock::GetBlockHeightByHash(hashBlock), hashBlock.ToString().c_str());
+    // }
 
-bool CBlockBase::VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& tx, vector<pair<CDestination, CForkContext>>& vForkCtxt)
-{
-    bytes btTempData;
-    if (!tx.GetTxData(CTransaction::DF_FORKDATA, btTempData))
+    if (!dbBlock.AddBlockVote(block.hashPrev, hashBlock, mapBlockVote, mapAddPledgeFinalHeight, mapRemovePledgeFinalHeight, mapPledgeVote, hashVoteRoot))
     {
-        StdLog("BlockBase", "Verify block fork tx: tx data error, tx: %s", tx.GetHash().ToString().c_str());
-        return false;
-    }
-
-    CBlock block;
-    CProfile profile;
-    try
-    {
-        CBufStream ss(btTempData);
-        ss >> block;
-    }
-    catch (std::exception& e)
-    {
-        StdLog("BlockBase", "Verify block fork tx: invalid fork data, tx: %s", tx.GetHash().ToString().c_str());
-        return false;
-    }
-    if (!block.IsOrigin() || block.IsPrimary())
-    {
-        StdLog("BlockBase", "Verify block fork tx: invalid block, tx: %s", tx.GetHash().ToString().c_str());
+        StdError("BlockBase", "Update vote: Add block vote failed, block: %s", hashBlock.ToString().c_str());
         return false;
     }
     if (!block.GetForkProfile(profile))
