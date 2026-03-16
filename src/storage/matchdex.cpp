@@ -429,5 +429,57 @@ bool operator==(const CCoinDexPair& a, const CCoinDexPair& b)
     return true;
 }
 
+///////////////////////////////////
+// CMatchDex
+
+bool CMatchDex::AddMatchDexOrder(const uint256& hashDexOrder, const CDestination& destOrder, const uint64 nOrderNumber, const CDexOrderBody& dexOrder,
+                                 const CChainId nOrderAtChainId, const uint256& hashOrderAtBlock, const uint256& nPrevCompletePrice)
+{
+    const uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(dexOrder.strCoinSymbolOwner, dexOrder.strCoinSymbolPeer);
+    auto it = mapCoinDex.find(hashCoinPair);
+    if (it == mapCoinDex.end())
+    {
+        CChainId nSellChainId, nBuyChainId;
+        if (dexOrder.GetSellCoinSymbol() == dexOrder.strCoinSymbolOwner)
+        {
+            nSellChainId = nOrderAtChainId;
+            nBuyChainId = dexOrder.nCoinAtChainIdPeer;
+        }
+        else
+        {
+            nSellChainId = dexOrder.nCoinAtChainIdPeer;
+            nBuyChainId = nOrderAtChainId;
+        }
+        it = mapCoinDex.insert(std::make_pair(hashCoinPair, CCoinDexPair(dexOrder.GetSellCoinSymbol(), dexOrder.GetBuyCoinSymbol(), nSellChainId, nBuyChainId, COIN, nPrevCompletePrice))).first;
+    }
+    else
+    {
+        if (nPrevCompletePrice != 0)
+        {
+            it->second.SetPrevCompletePrice(nPrevCompletePrice);
+        }
+    }
+
+    if (dexOrder.nOrderAmount > dexOrder.nCompleteOrderAmount)
+    {
+        const uint32 nHeight = CBlock::GetBlockHeightByHash(hashOrderAtBlock);
+        const uint16 nSlot = CBlock::GetBlockSlotByHash(hashOrderAtBlock);
+        const uint256 hashOrderRandom = CDexOrderHeader::GetOrderRandomHashStatic(hashOrderAtBlock, hashDexOrder);
+
+        if (!it->second.AddOrder(hashDexOrder, dexOrder.strCoinSymbolOwner, destOrder, nOrderNumber, dexOrder.nOrderAmount, dexOrder.nOrderPrice,
+                                 dexOrder.nCompleteOrderAmount, dexOrder.nCompleteOrderCount, nOrderAtChainId, hashOrderAtBlock, nHeight, nSlot, hashOrderRandom))
+        {
+            return false;
+        }
+    }
+
+    auto& setCoinPair = mapChainIdLinkCoinDexPair[nOrderAtChainId];
+    if (setCoinPair.find(hashCoinPair) == setCoinPair.end())
+    {
+        setCoinPair.insert(hashCoinPair);
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead

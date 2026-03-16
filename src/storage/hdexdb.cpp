@@ -949,6 +949,13 @@ bool CHdexDB::GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const 
     return true;
 }
 
+bool CHdexDB::AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve)
+{
+    CWriteLock wlock(rwAccess);
+
+    return AddBlockRecvCrosschainProveDb(nRecvChainId, blockProve);
+}
+
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

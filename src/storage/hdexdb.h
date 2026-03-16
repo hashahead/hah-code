@@ -115,6 +115,8 @@ public:
     bool UpdateBlockAggSign(const uint256& hashBlock, const bytes& btAggBitmap, const bytes& btAggSig, std::map<CChainId, CBlockProve>& mapBlockProve);
     bool GetBlockCrosschainProve(const uint256& hashBlock, CBlockStorageProve& proveBlockCrosschain);
     bool GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve);
+
+    bool AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve);
 protected:
     enum
     {
