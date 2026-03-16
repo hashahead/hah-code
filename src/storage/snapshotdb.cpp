@@ -165,5 +165,39 @@ bool CSnapshotDB::GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<
     return true;
 }
 
+bool CSnapshotDB::ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData)
+{
+    try
+    {
+        fs::path pathSnapFile = pathSnapshot / (hashSnapBlock.ToString() + std::string("/") + strFileName);
+        if (!fs::exists(pathSnapFile))
+        {
+            btReadData.clear();
+            return true;
+        }
+        hnbase::CFileStream fs(pathSnapFile.string().c_str());
+        const uint64 nFileSize = fs.GetSize();
+        if (nOffset >= nFileSize)
+        {
+            btReadData.clear();
+            return true;
+        }
+        fs.Seek(nOffset);
+        uint64 nGetSize = nFileSize - nOffset;
+        if (nGetSize > nReadSize)
+        {
+            nGetSize = nReadSize;
+        }
+        btReadData.resize(nGetSize);
+        fs.Read((char*)btReadData.data(), nGetSize);
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
