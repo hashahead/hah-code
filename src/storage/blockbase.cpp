@@ -3418,16 +3418,11 @@ bool CBlockBase::VerifyValidBlock(const BlockIndexPtr& pIndexGenesisLast, const 
     }
 
     uint256 hashRefBlock;
-    auto it = mapForkHeightIndex.find(pIndex->GetOriginHash());
-    if (it == mapForkHeightIndex.end())
+    std::map<uint256, CBlockHeightIndex> mapHeightIndex;
+    if (GetForkBlockMintListByHeight(pIndex->GetOriginHash(), pIndex->GetBlockHeight(), mapHeightIndex))
     {
-        return false;
-    }
-    std::map<uint256, CBlockHeightIndex>* pHeightIndex = it->second.GetBlockMintList(pIndex->GetBlockHeight());
-    if (pHeightIndex)
-    {
-        auto mt = pHeightIndex->find(pIndex->GetBlockHash());
-        if (mt != pHeightIndex->end() && mt->second.hashRefBlock != 0)
+        auto mt = mapHeightIndex.find(pIndex->GetBlockHash());
+        if (mt != mapHeightIndex.end() && mt->second.hashRefBlock != 0)
         {
             hashRefBlock = mt->second.hashRefBlock;
         }
