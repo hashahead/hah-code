@@ -932,6 +932,41 @@ bool CForkDB::ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoin
     return true;
 }
 
+bool CForkDB::IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock)
+{
+    CReadLock rlock(rwAccess);
+
+    uint256 hashLastBlock;
+    if (hashMainChainRefBlock == 0)
+    {
+        if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+        {
+            hashLastBlock = 0;
+        }
+    }
+    else
+    {
+        hashLastBlock = hashMainChainRefBlock;
+    }
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(hashLastBlock, hashRoot))
+    {
+        StdLog("CForkDB", "Is timevault whitelist address exist: Read trie root fail, block: %s", hashLastBlock.GetHex().c_str());
+        return false;
+    }
+
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_FORK_KEY_TYPE_TV_WHITELIST_ADDRESS << address;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    return true;
+}
+
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);

@@ -196,6 +196,32 @@ protected:
     }
 };
 
+class CForkStateRootKv
+{
+    friend class hnbase::CStream;
+
+public:
+    CForkStateRootKv() {}
+    CForkStateRootKv(const uint256& hashForkIn, const uint256& hashLastBlockIn)
+      : hashFork(hashForkIn), hashLastBlock(hashLastBlockIn) {}
+
+public:
+    uint256 hashFork;
+    uint256 hashLastBlock;
+    std::vector<CForkUserStateRootKv> vStateKv;                   // v1: root, v2: inc kv
+    std::map<CDestination, CForkContractRootKv> mapLastStorageKv; // key: contract address
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(hashLastBlock, opt);
+        s.Serialize(vStateKv, opt);
+        s.Serialize(mapLastStorageKv, opt);
+    }
+};
+
 } // namespace storage
 } // namespace hashahead
 
