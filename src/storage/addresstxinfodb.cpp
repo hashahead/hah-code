@@ -1167,5 +1167,41 @@ bool CAddressTxInfoDB::WalkThroughSnapshotTokenTxKv(const uint256& hashFork, con
     return false;
 }
 
+bool CAddressTxInfoDB::WriteSnapshotAddressTxKvData(const uint256& hashFork, const bytes& btKey, const bytes& btValue)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressTxInfoDB.find(hashFork);
+    if (it != mapAddressTxInfoDB.end())
+    {
+        return it->second->WriteSnapshotAddressTxKvData(btKey, btValue);
+    }
+    return false;
+}
+
+bool CAddressTxInfoDB::WriteSnapshotAddressTxCount(const uint256& hashFork, const uint256& hashLastBlock, const std::map<CDestination, uint64>& mapAddressTxCount)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressTxInfoDB.find(hashFork);
+    if (it != mapAddressTxInfoDB.end())
+    {
+        return it->second->WriteSnapshotAddressTxCount(hashLastBlock, mapAddressTxCount);
+    }
+    return false;
+}
+
+bool CAddressTxInfoDB::WriteSnapshotTokenTxCount(const uint256& hashFork, const std::map<CDestination, std::map<CDestination, uint64>>& mapTokenTxCount)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressTxInfoDB.find(hashFork);
+    if (it != mapAddressTxInfoDB.end())
+    {
+        return it->second->WriteSnapshotTokenTxCount(mapTokenTxCount);
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead

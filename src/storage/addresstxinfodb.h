@@ -63,8 +63,15 @@ protected:
 
     bool WriteBlockAddressTokenTxIndex(const uint256& hashBlock, const map<CDestination, map<CDestination, pair<uint64, uint64>>>& mapBlockAddressTokenTxIndex);
     bool ReadBlockAddressTokenTxIndex(const uint256& hashBlock, map<CDestination, map<CDestination, pair<uint64, uint64>>>& mapBlockAddressTokenTxIndex);
-    void WriteAddressLast(const CDestination& dest, const uint64 nTxCount, bytesmap& mapKv);
-    bool ReadAddressLast(const uint256& hashRoot, const CDestination& dest, uint64& nTxCount);
+
+    bool WriteAddressTxCount(const CDestination& address, const uint64 nTxCount);
+    bool ReadAddressTxCount(const CDestination& address, uint64& nTxCount);
+
+    bool WriteTokenTxCount(const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nTxCount);
+    bool ReadTokenTxCount(const CDestination& destContractAddress, const CDestination& destUserAddress, uint64& nTxCount);
+
+    bool WriteLastBlock(const uint256& hashLastBlock);
+    bool ReadLastBlock(uint256& hashLastBlock);
 
 protected:
     uint256 hashFork;
@@ -76,8 +83,8 @@ protected:
 class CAddressTxInfoDB
 {
 public:
-    CAddressTxInfoDB(const bool fCacheIn = true)
-      : fCache(fCacheIn) {}
+    CAddressTxInfoDB() {}
+
     bool Initialize(const boost::filesystem::path& pathData);
     void Deinitialize();
 
@@ -87,15 +94,24 @@ public:
     bool AddNewFork(const uint256& hashFork);
     void Clear();
 
-    bool AddAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber, const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, uint256& hashNewRoot);
-    bool GetAddressTxCount(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint64& nTxCount);
-    bool RetrieveAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo);
-    bool ListAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo);
+    bool AddAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber,
+                          const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo,
+                          const std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord);
+    bool UpdateAddressTxInfoBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveBlock, const std::vector<uint256>& vAddBlock);
 
-    bool VerifyAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+    bool GetAddressTxCount(const uint256& hashFork, const CDestination& dest, uint64& nTxCount);
+    bool RetrieveAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxAddressTxInfo);
+    bool ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo);
+    bool ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                     const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord);
+
+    bool WalkThroughSnapshotAddressTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker);
+    bool WalkThroughSnapshotTokenTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerTokenTxKvFunc fnWalker);
+    bool WriteSnapshotAddressTxKvData(const uint256& hashFork, const bytes& btKey, const bytes& btValue);
+    bool WriteSnapshotAddressTxCount(const uint256& hashFork, const uint256& hashLastBlock, const std::map<CDestination, uint64>& mapAddressTxCount);
+    bool WriteSnapshotTokenTxCount(const uint256& hashFork, const std::map<CDestination, std::map<CDestination, uint64>>& mapTokenTxCount);
 
 protected:
-    bool fCache;
     boost::filesystem::path pathAddress;
     hnbase::CRWAccess rwAccess;
     std::map<uint256, std::shared_ptr<CForkAddressTxInfoDB>> mapAddressTxInfoDB;
