@@ -1782,14 +1782,14 @@ bool CAddressDB::ListContractAddress(const uint256& hashFork, const uint256& has
     return false;
 }
 
-bool CAddressDB::RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv)
+bool CAddressDB::ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapAddressDB.find(hashFork);
     if (it != mapAddressDB.end())
     {
-        return it->second->RetrieveTimeVault(hashBlock, dest, tv);
+        return it->second->ListTokenContractAddress(hashBlock, mapTokenContractAddress);
     }
     return false;
 }
@@ -1830,14 +1830,14 @@ bool CAddressDB::RetrieveFunctionAddress(const uint256& hashFork, const uint256&
     return false;
 }
 
-bool CAddressDB::CheckAddressContext(const uint256& hashFork, const std::vector<uint256>& vCheckBlock)
+bool CAddressDB::RetrieveBlsPubkeyContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint384& blsPubkey)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapAddressDB.find(hashFork);
     if (it != mapAddressDB.end())
     {
-        return it->second->CheckAddressContext(vCheckBlock);
+        return it->second->RetrieveBlsPubkeyContext(hashBlock, dest, blsPubkey);
     }
     return false;
 }
