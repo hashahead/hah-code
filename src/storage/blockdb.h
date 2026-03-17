@@ -64,9 +64,9 @@ public:
     bool ListFork(std::vector<std::pair<uint256, uint256>>& vFork);
     bool AddNewBlockIndex(const CBlockIndex& outline);
     bool RemoveBlockIndex(const uint256& hashBlock);
-    bool RetrieveBlockIndex(const uint256& hashBlock, CBlockOutline& outline);
-    bool AddNewBlockNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint64 nBlockNumber, const uint256& hashBlock, uint256& hashNewRoot);
-    bool RetrieveBlockHashByNumber(const uint256& hashFork, const uint32 nChainId, const uint256& hashLastBlock, const uint64 nBlockNumber, uint256& hashBlock);
+    bool RetrieveBlockIndex(const uint256& hashBlock, CBlockIndex& outline);
+    bool UpdateBlockNumberBlockLongChain(const uint256& hashFork, const std::vector<std::pair<uint64, uint256>>& vRemoveNumberBlock, const std::vector<std::pair<uint64, uint256>>& mapNewNumberBlock);
+    bool RetrieveBlockHashByNumber(const uint256& hashFork, const uint64 nBlockNumber, uint256& hashBlock);
     bool AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc);
     bool RetrieveBlockVerify(const uint256& hashBlock, CBlockVerify& verifyBlock);
     std::size_t GetBlockVerifyCount();

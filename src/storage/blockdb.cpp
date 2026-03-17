@@ -397,6 +397,15 @@ bool CBlockDB::RetrieveBlockHashByNumber(const uint256& hashFork, const uint64 n
     return dbBlockIndex.RetrieveBlockHashByNumber(hashFork, nBlockNumber, hashBlock);
 }
 
+bool CBlockDB::RetrieveBlockHashByHeight(const uint256& hashFork, const uint32 nBlockHeight, std::vector<uint256>& vBlockHash)
+{
+    return dbBlockIndex.RetrieveBlockHashByHeight(hashFork, nBlockHeight, vBlockHash);
+}
+
+bool CBlockDB::GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight)
+{
+    return dbBlockIndex.GetForkMaxHeight(hashFork, nMaxHeight);
+}
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);
