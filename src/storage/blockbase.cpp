@@ -3447,10 +3447,37 @@ bool CBlockBase::VerifyValidBlock(const BlockIndexPtr& pIndexGenesisLast, const 
     return IsValidBlock(pIndexGenesisLast, hashRefBlock);
 }
 
-CBlockIndex* CBlockBase::GetLongChainLastBlock(const uint256& hashFork, int nStartHeight, CBlockIndex* pIndexGenesisLast, const std::set<uint256>& setInvalidHash)
+bool CBlockBase::VerifyBlockConfirmChain(const BlockIndexPtr& pNewIndex)
 {
-    auto it = mapForkHeightIndex.find(hashFork);
-    if (it == mapForkHeightIndex.end())
+    if (!pNewIndex)
+    {
+        return false;
+    }
+    const uint256 hashFork = pNewIndex->GetOriginHash();
+    uint256 hashLastConfirmBlock;
+    if (dbBlock.GetLastConfirmBlock(hashFork, hashLastConfirmBlock))
+    {
+        BlockIndexPtr pIndex = pNewIndex;
+        while (pIndex && !pIndex->IsOrigin())
+        {
+            auto pNextIndex = GetNextBlockIndex(pIndex);
+            if (pNextIndex && VerifyBlockConfirmNoLock(hashFork, pNextIndex->GetBlockHash(), hashLastConfirmBlock))
+            {
+                return false;
+            }
+            if (VerifyBlockConfirmNoLock(hashFork, pIndex->GetBlockHash(), hashLastConfirmBlock))
+            {
+                break;
+            }
+            pIndex = GetPrevBlockIndex(pIndex);
+        }
+    }
+    return true;
+}
+
+bool CBlockBase::VerifyBlockConfirmNoLock(const uint256& hashFork, const uint256& hashBlock, const uint256& hashLastConfirmBlock)
+{
+    if (hashBlock == 0)
     {
         return nullptr;
     }
