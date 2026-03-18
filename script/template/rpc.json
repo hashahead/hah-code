@@ -9850,5 +9850,38 @@
             "{\"code\":-6,\"message\":\"Invalid block\"}",
             "{\"code\":-6,\"message\":\"Unknown fork\"}"
         ]
+    },
+    "eth_getBlockReceipts": {
+        "type": "command",
+        "name": "EthGetBlockReceipts",
+        "desc": "[ETH] Returns all transaction receipts for a given block",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "param"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli eth_getBlockReceipts [\"0x5043\"]",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"eth_getBlockReceipts\",\"jsonrpc\":\"2.0\",\"params\":[\"0x5043\"]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid block number\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
     }
 }

@@ -10087,4 +10087,44 @@ CRPCResultPtr CRPCMod::RPCEthGetAccount(const CReqContext& ctxReq, CRPCParamPtr 
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCEthGetBlockReceipts(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CEthGetBlockReceiptsParam>(param);
+    if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() != 1)
+    {
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
+    }
+    uint256 hashBlock = GetRefBlock(ctxReq.hashFork, spParam->vecParamlist.at(0));
+
+    CBlock block;
+    CChainId nChainId;
+    uint256 fork;
+    int height;
+    if (!pService->GetBlock(hashBlock, block, nChainId, fork, height))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown block");
+    }
+
+    vector<pair<uint256, CTransactionReceiptEx>> vReceipt;
+    for (const CTransaction& tx : block.vtx)
+    {
+        if (!tx.IsCertTx())
+        {
+            uint256 txid = tx.GetHash();
+            CTransactionReceiptEx receipt;
+            if (!pService->GetTransactionReceipt(ctxReq.hashFork, txid, receipt))
+            {
+                continue;
+            }
+            vReceipt.push_back(make_pair(txid, receipt));
+        }
+    }
+
+    auto spResult = MakeCEthGetBlockReceiptsResultPtr();
+
+    spResult->SetJsonResult(EthTxReceiptListToJSON(vReceipt));
+
+    return spResult;
+}
+
 } // namespace hashahead
