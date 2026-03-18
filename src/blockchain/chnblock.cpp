@@ -503,9 +503,8 @@ bool CBlockChannel::HandleEvent(network::CEventLocalBlockBroadcastBks& eventBroa
         {
             eventBks.nNonce = kv.first;
             pPeerNet->DispatchEvent(&eventBks);
-            StdDebug("CBlockChannel", "CEvent Local Block Broadcast Bks: Broadcast block, peer nonce: 0x%x, txs: %lu, block: [%d] %s",
-                     kv.first, eventBroadBks.data.block.vtx.size(), CBlock::GetBlockHeightByHash(eventBroadBks.data.hashBlock),
-                     eventBroadBks.data.hashBlock.GetHex().c_str());
+            StdDebug("CBlockChannel", "CEvent local block broadcast bks: Broadcast block, peer nonce: 0x%x, txs: %lu, block: %s",
+                     kv.first, eventBroadBks.data.block.vtx.size(), eventBroadBks.data.hashBlock.GetBhString().c_str());
         }
     }
 

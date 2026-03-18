@@ -2961,16 +2961,20 @@ bool CBlockChain::CalcEndVoteReward(const uint256& hashPrev, const uint16 nBlock
     map<CDestination, map<CDestination, pair<uint256, uint8>>> mapRewardVoteAddress; // key1: reward address, key2: vote address, value1: reward amount, value2: vote address template type
     for (const auto& kv : mapVoteReward)
     {
+        const CDestination& destVoteAddress = kv.first;
+        const CDestination& destRewardAddress = kv.second.first;
+        const uint256& nRewardAmount = kv.second.second;
+
         uint32 nFuncId = 0;
-        if (kv.second.first == PLEDGE_SURPLUS_REWARD_ADDRESS)
+        if (destRewardAddress == PLEDGE_SURPLUS_REWARD_ADDRESS)
         {
             nFuncId = FUNCTION_ID_PLEDGE_SURPLUS_REWARD_ADDRESS;
         }
-        else if (kv.second.first == PROJECT_PARTY_REWARD_TO_ADDRESS)
+        else if (destRewardAddress == PROJECT_PARTY_REWARD_TO_ADDRESS)
         {
             nFuncId = FUNCTION_ID_PROJECT_PARTY_REWARD_TO_ADDRESS;
         }
-        else if (kv.second.first == FOUNDATION_REWARD_TO_ADDRESS)
+        else if (destRewardAddress == FOUNDATION_REWARD_TO_ADDRESS)
         {
             nFuncId = FUNCTION_ID_FOUNDATION_REWARD_TO_ADDRESS;
         }

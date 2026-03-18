@@ -499,6 +499,13 @@ bool CWsService::HandleInvoke()
     {
         return false;
     }
+    for (auto& kv : mapWsServer)
+    {
+        if (!kv.second->Start())
+        {
+            return false;
+        }
+    }
     return true;
 }
 
