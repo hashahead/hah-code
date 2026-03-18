@@ -3739,7 +3739,7 @@ bool CBlockBase::RetrieveLinkGenesisContractCreateCodeContext(const uint256& has
     }
     if (hashFork != GetGenesisBlockHash())
     {
-        CBlockIndex* pSubIndex = GetIndex(hashBlock);
+        BlockIndexPtr pSubIndex = GetIndex(hashBlock);
         if (pSubIndex && pSubIndex->hashRefBlock != 0)
         {
             if (dbBlock.RetrieveContractCreateCodeContext(GetGenesisBlockHash(), pSubIndex->hashRefBlock, hashContractCreateCode, ctxtCode))
@@ -3750,11 +3750,6 @@ bool CBlockBase::RetrieveLinkGenesisContractCreateCodeContext(const uint256& has
         }
     }
     return false;
-}
-
-bool CBlockBase::RetrieveContractRunCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractRunCode, CContractRunCodeContext& ctxtCode)
-{
-    return dbBlock.RetrieveContractRunCodeContext(hashFork, hashBlock, hashContractRunCode, ctxtCode);
 }
 
 bool CBlockBase::GetForkContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCodeContext& ctxtContractCode)
