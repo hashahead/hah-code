@@ -2761,6 +2761,22 @@ bool CBlockChain::GetPrevBlockCandidatePubkey(const uint256& hashBlock, std::vec
     return true;
 }
 
+bool CBlockChain::VerifyBlockCommitVoteAggSig(const uint256& hashBlock, const bytes& btAggBitmap, const bytes& btAggSig)
+{
+    vector<uint384> vCandidatePubkeys;
+    if (!GetPrevBlockCandidatePubkey(hashBlock, vCandidatePubkeys))
+    {
+        StdLog("BlockChain", "Verify block commit vote aggsig: Get candidate pubkey fail, vote block: %s", hashBlock.ToString().c_str());
+        return false;
+    }
+    if (!consensus::consblockvote::CConsBlockVote::VerifyCommitVoteAggSig(hashBlock, btAggBitmap, btAggSig, vCandidatePubkeys))
+    {
+        StdLog("BlockChain", "Verify block commit vote aggsig: Verify commit vote fail, vote block: %s", hashBlock.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

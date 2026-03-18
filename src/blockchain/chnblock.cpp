@@ -464,12 +464,15 @@ bool CBlockChannel::HandleEvent(network::CEventLocalBlockSubscribeFork& eventSub
         CBlockStatus status;
         if (!pBlockChain->GetLastBlockStatus(hashFork, status))
         {
-            StdLog("CBlockChannel", "CEvent Local Block Subscribe Fork: Fork is not enabled, fork: %s", hashFork.GetHex().c_str());
+            StdLog("CBlockChannel", "CEvent local block subscribe fork: Fork is not enabled, fork: %s", hashFork.GetBhString().c_str());
             continue;
         }
-        StdDebug("CBlockChannel", "CEvent Local Block Subscribe Fork: Subscribe fork, fork: %s", hashFork.GetHex().c_str());
+        StdDebug("CBlockChannel", "CEvent local block subscribe fork: Subscribe fork, fork: %s", hashFork.GetBhString().c_str());
 
-        mapChnFork.insert(std::make_pair(hashFork, CBlockChnFork(hashFork)));
+        if (mapChnFork.find(hashFork) == mapChnFork.end())
+        {
+            mapChnFork.insert(std::make_pair(hashFork, CBlockChnFork(hashFork)));
+        }
         eventSubscribe.data.push_back(hashFork);
     }
 
