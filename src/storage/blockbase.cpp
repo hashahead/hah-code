@@ -3538,32 +3538,30 @@ BlockIndexPtr CBlockBase::GetLongChainLastBlock(const uint256& hashFork, const u
     BlockIndexPtr pMaxTrustIndex;
     while (1)
     {
-        std::map<uint256, CBlockHeightIndex>* pHeightIndex = indexHeight.GetBlockMintList(nStartHeight);
-        if (pHeightIndex == nullptr)
+        std::vector<uint256> vHeightBlockHash;
+        if (!dbBlock.RetrieveBlockHashByHeight(hashFork, nHeight, vHeightBlockHash))
         {
             break;
         }
-        auto mt = pHeightIndex->begin();
-        for (; mt != pHeightIndex->end(); ++mt)
+        for (const uint256& hashBlock : vHeightBlockHash)
         {
-            const uint256& hashBlock = mt->first;
             if (setInvalidHash.count(hashBlock) == 0)
             {
-                CBlockIndex* pIndex;
-                if (!(pIndex = GetIndex(hashBlock)))
+                BlockIndexPtr pIndex = GetIndex(hashBlock);
+                if (!pIndex)
                 {
-                    StdError("BlockBase", "GetLongChainLastBlock GetIndex failed, block: %s", hashBlock.ToString().c_str());
+                    StdError("BlockBase", "Get longchain last block: Get index failed, block: %s", hashBlock.ToString().c_str());
                 }
                 else if (!pIndex->IsOrigin())
                 {
                     if (VerifyValidBlock(pIndexGenesisLast, pIndex))
                     {
-                        if (pMaxTrustIndex == nullptr)
+                        if (!pMaxTrustIndex)
                         {
                             pMaxTrustIndex = pIndex;
                         }
                         else if (!(pMaxTrustIndex->nChainTrust > pIndex->nChainTrust
-                                   || (pMaxTrustIndex->nChainTrust == pIndex->nChainTrust && !pIndex->IsEquivalent(pMaxTrustIndex))))
+                                   || (pMaxTrustIndex->nChainTrust == pIndex->nChainTrust && !IsBlockIndexEquivalent(pIndex, pMaxTrustIndex))))
                         {
                             pMaxTrustIndex = pIndex;
                         }
@@ -3571,7 +3569,7 @@ BlockIndexPtr CBlockBase::GetLongChainLastBlock(const uint256& hashFork, const u
                 }
             }
         }
-        nStartHeight++;
+        nHeight++;
     }
     return pMaxTrustIndex;
 }
