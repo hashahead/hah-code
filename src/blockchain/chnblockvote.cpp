@@ -490,4 +490,15 @@ void CBlockVoteChannel::UpdateNewBlock(const uint256& hashFork, const uint256& h
     }
 }
 
+//-------------------------------------------------------------------------------------------
+const string CBlockVoteChannel::GetPeerAddressInfo(uint64 nNonce)
+{
+    auto it = mapChnPeer.find(nNonce);
+    if (it != mapChnPeer.end())
+    {
+        return it->second.GetRemoteAddress();
+    }
+    return string("0.0.0.0");
+}
+
 } // namespace hashahead

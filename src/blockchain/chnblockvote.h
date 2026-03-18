@@ -136,6 +136,11 @@ protected:
     void UpdateNewBlock(const uint256& hashFork, const uint256& hashBlock, const uint256& hashRefBlock, const int64 nBlockTime, const uint64 nNonce) override;
 
 protected:
+    const CMintConfig* MintConfig()
+    {
+        return dynamic_cast<const CMintConfig*>(hnbase::IBase::Config());
+    }
+    const string GetPeerAddressInfo(uint64 nNonce);
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
