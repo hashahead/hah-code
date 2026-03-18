@@ -3479,10 +3479,63 @@ bool CBlockBase::VerifyBlockConfirmNoLock(const uint256& hashFork, const uint256
 {
     if (hashBlock == 0)
     {
-        return nullptr;
+        return false;
     }
-    CForkHeightIndex& indexHeight = it->second;
-    CBlockIndex* pMaxTrustIndex = nullptr;
+    if (hashBlock == hashFork || hashBlock == hashLastConfirmBlock)
+    {
+        return true;
+    }
+    if (!VerifySameChainNoLock(hashBlock, hashLastConfirmBlock))
+    {
+        return false;
+    }
+    return true;
+}
+
+bool CBlockBase::VerifySameChainNoLock(const uint256& hashPrevBlock, const uint256& hashAfterBlock)
+{
+    // BlockIndexPtr pPrevIndex = GetIndex(hashPrevBlock);
+    // if (!pPrevIndex)
+    // {
+    //     return false;
+    // }
+    // BlockIndexPtr pAfterIndex = GetIndex(hashAfterBlock);
+    // if (!pAfterIndex)
+    // {
+    //     return false;
+    // }
+    // while (pAfterIndex->GetBlockHeight() >= pPrevIndex->GetBlockHeight())
+    // {
+    //     if (pAfterIndex->GetBlockHash() == pPrevIndex->GetBlockHash())
+    //     {
+    //         return true;
+    //     }
+    //     pAfterIndex = GetPrevBlockIndex(pAfterIndex);
+    // }
+
+    BlockIndexPtr pAfterIndex = GetIndex(hashAfterBlock);
+    if (!pAfterIndex)
+    {
+        return false;
+    }
+    if (hashPrevBlock != 0)
+    {
+        uint256 hashObjBlock;
+        if (GetBlockHashByHeightSlot(pAfterIndex->GetOriginHash(), pAfterIndex->GetBlockHash(),
+                                     CBlock::GetBlockHeightByHash(hashPrevBlock),
+                                     CBlock::GetBlockSlotByHash(hashPrevBlock), hashObjBlock)
+            && hashPrevBlock == hashObjBlock)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+BlockIndexPtr CBlockBase::GetLongChainLastBlock(const uint256& hashFork, const uint32 nStartHeight, const BlockIndexPtr& pIndexGenesisLast, const std::set<uint256>& setInvalidHash)
+{
+    uint32 nHeight = nStartHeight;
+    BlockIndexPtr pMaxTrustIndex;
     while (1)
     {
         std::map<uint256, CBlockHeightIndex>* pHeightIndex = indexHeight.GetBlockMintList(nStartHeight);
