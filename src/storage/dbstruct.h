@@ -222,6 +222,39 @@ protected:
     }
 };
 
+//////////////////////////////
+// CForkAddressRootKv
+
+class CForkAddressRootKv
+{
+    friend class hnbase::CStream;
+
+public:
+    CForkAddressRootKv() {}
+    CForkAddressRootKv(const uint256& hashForkIn, const std::vector<uint256>& vBlockHashIn)
+      : hashFork(hashForkIn), vBlockHash(vBlockHashIn) {}
+
+public:
+    uint256 hashFork;
+    std::vector<uint256> vBlockHash;
+    std::vector<std::pair<uint256, bytesmap>> vAddressKv; // v1: root, v2: inc kv
+    std::vector<std::pair<uint256, bytesmap>> vTokenKv;   // v1: root, v2: inc kv
+    std::vector<std::pair<uint256, bytesmap>> vCodeKv;    // v1: root, v2: inc kv
+    std::vector<std::pair<uint64, uint64>> vAddreeCount;  // v1: address count, v2: inc address count
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(vBlockHash, opt);
+        s.Serialize(vAddressKv, opt);
+        s.Serialize(vTokenKv, opt);
+        s.Serialize(vCodeKv, opt);
+        s.Serialize(vAddreeCount, opt);
+    }
+};
+
 } // namespace storage
 } // namespace hashahead
 

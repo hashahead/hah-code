@@ -967,6 +967,83 @@ bool CForkDB::IsTimeVaultWhitelistAddressExist(const CDestination& address, cons
     return true;
 }
 
+bool CForkDB::ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock)
+{
+    class CListTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListTrieDBWalker(std::set<CDestination>& setTimeVaultWhitelistIn)
+          : setTimeVaultWhitelist(setTimeVaultWhitelistIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_FORK_KEY_TYPE_TV_WHITELIST_ADDRESS)
+                {
+                    CDestination address;
+                    ssKey >> address;
+                    setTimeVaultWhitelist.insert(address);
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    protected:
+        std::set<CDestination>& setTimeVaultWhitelist;
+    };
+
+    {
+        CReadLock rlock(rwAccess);
+
+        uint256 hashLastBlock;
+        if (hashMainChainRefBlock == 0)
+        {
+            if (!GetForkLast(hashGenesisBlock, hashLastBlock))
+            {
+                hashLastBlock = 0;
+            }
+        }
+        else
+        {
+            hashLastBlock = hashMainChainRefBlock;
+        }
+
+        uint256 hashRoot;
+        if (!ReadTrieRoot(hashLastBlock, hashRoot))
+        {
+            StdLog("CForkDB", "List timevault whitelist: Read trie root fail, block: %s", hashLastBlock.GetHex().c_str());
+            return false;
+        }
+
+        hnbase::CBufStream ssKeyPrefix;
+        ssKeyPrefix << DB_FORK_KEY_TYPE_TV_WHITELIST_ADDRESS;
+        bytes btKeyPrefix;
+        ssKeyPrefix.GetData(btKeyPrefix);
+
+        CListTrieDBWalker walker(setTimeVaultWhitelist);
+        if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+        {
+            StdLog("CForkDB", "List timevault whitelist: Walk through trie fail, block: %s", hashLastBlock.GetHex().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);
