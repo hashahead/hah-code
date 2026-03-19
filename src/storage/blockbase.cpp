@@ -3806,8 +3806,8 @@ bool CBlockBase::VerifyContractAddress(const uint256& hashFork, const uint256& h
     uint256 hashStateRoot;
     {
         CReadLock rlock(rwAccess);
-        CBlockIndex* pIndex = GetIndex(hashBlock);
-        if (pIndex == nullptr)
+        BlockIndexPtr pIndex = GetIndex(hashBlock);
+        if (!pIndex)
         {
             StdLog("CBlockBase", "Verify contract address: Get index fail, hashBlock: %s", hashBlock.ToString().c_str());
             return false;
@@ -3840,14 +3840,6 @@ bool CBlockBase::VerifyContractAddress(const uint256& hashFork, const uint256& h
     catch (std::exception& e)
     {
         StdLog("CBlockBase", "Verify contract address: Parse contract code fail, block: %s, destContract: %s",
-               hashBlock.GetHex().c_str(), destContract.ToString().c_str());
-        return false;
-    }
-
-    CContractRunCodeContext ctxtRunCode;
-    if (!RetrieveContractRunCodeContext(hashFork, hashBlock, ctxDestCode.hashContractRunCode, ctxtRunCode))
-    {
-        StdLog("CBlockBase", "Verify contract address: Retrieve contract run code fail, block: %s, destContract: %s",
                hashBlock.GetHex().c_str(), destContract.ToString().c_str());
         return false;
     }
