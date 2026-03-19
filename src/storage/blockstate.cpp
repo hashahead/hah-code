@@ -797,17 +797,78 @@ bool CBlockState::AddContractRunReceipt(const CTxContractReceipt& tcReceipt, con
     return true;
 }
 
-        CDestState stateDest;
-        bytes btContractRunCode;
-        if (GetDestState(address, stateDest) && stateDest.IsContract())
+bool CBlockState::AddVmOperationTraceLog(const CVmOperationTraceLog& vmOpTraceLog)
+{
+    vCacheVmOpTraceLogs.push_back(vmOpTraceLog);
+    return true;
+}
+
+//////////////////////////////////////////
+bool CBlockState::GetDestLockedAmount(const CDestination& dest, uint256& nLockedAmount)
+{
+    CAddressContext ctxAddress;
+    if (!GetAddressContext(dest, ctxAddress))
+    {
+        StdLog("CBlockState", "Get loacked amount: Get address context fail, dest: %s", dest.ToString().c_str());
+        return false;
+    }
+    CDestState stateDest;
+    if (!GetDestState(dest, stateDest))
+    {
+        StdLog("CBlockState", "Get loacked amount: Get address state fail, dest: %s", dest.ToString().c_str());
+        return false;
+    }
+    if (!dbBlockBase.GetAddressLockedAmount(hashFork, hashPrevBlock, dest, ctxAddress, stateDest.GetBalance(), nLockedAmount))
+    {
+        StdLog("CBlockState", "Get loacked amount: Get address locked amount fail, dest: %s", dest.ToString().c_str());
+        return false;
+    }
+
+    auto nt = mapBlockRewardLocked.find(dest);
+    if (nt != mapBlockRewardLocked.end())
+    {
+        nLockedAmount += nt->second;
+    }
+    return true;
+}
+
+bool CBlockState::VerifyFunctionAddressRepeat(const CDestination& destNewFunction)
+{
+    for (auto& kv : mapCacheFunctionAddress)
+    {
+        if (kv.second.GetFunctionAddress() == destNewFunction)
         {
-            uint256 hashContractCreateCode;
-            CDestination destCodeOwner;
-            uint256 hashContractRunCode;
-            bool fDestroy;
-            if (!GetContractRunCode(address, hashContractCreateCode, destCodeOwner, hashContractRunCode, btContractRunCode, fDestroy))
+            return false;
+        }
+    }
+    for (auto& kv : mapBlockFunctionAddress)
+    {
+        if (kv.second.GetFunctionAddress() == destNewFunction)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CBlockState::VerifyFunctionAddressDisable(const uint32 nFuncId)
+{
+    auto it = mapCacheFunctionAddress.find(nFuncId);
+    if (it != mapCacheFunctionAddress.end())
+    {
+        if (it->second.IsDisableModify())
+        {
+            return false;
+        }
+    }
+    else
+    {
+        auto mt = mapBlockFunctionAddress.find(nFuncId);
+        if (mt != mapBlockFunctionAddress.end())
+        {
+            if (mt->second.IsDisableModify())
             {
-                btContractRunCode.clear();
+                return false;
             }
         }
         it = mapCacheContractPrevAddressState.insert(std::make_pair(address, CContractPrevState(stateDest.GetBalance(), stateDest.GetTxNonce() + 1, btContractRunCode))).first;

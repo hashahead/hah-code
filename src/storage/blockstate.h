@@ -128,6 +128,7 @@ public:
     bool ContractTransfer(const CDestination& from, const CDestination& to, const uint256& amount, const uint64 nGasLimit, uint64& nGasLeft, const CAddressContext& ctxToAddress, const uint8 nTransferType);
     bool IsContractDestroy(const CDestination& destContractIn);
     bool AddContractRunReceipt(const CTxContractReceipt& tcReceipt, const bool fFirstReceipt = false);
+    bool AddVmOperationTraceLog(const CVmOperationTraceLog& vmOpTraceLog);
 protected:
     CBlockBase& dbBlockBase;
     const uint16 nBlockType;
@@ -162,6 +163,35 @@ protected:
         std::vector<CTransactionLogs> cacheContractLogs;
         std::map<uint256, bytes> cacheContractKv;
         std::map<uint256, bytes> traceContractKv;
+    };
+    class CCodeGasData
+    {
+    public:
+        CCodeGasData()
+          : nGasUsed(0), nSubGasUsed(0) {}
+        CCodeGasData(const CDestination& destOwner, const uint64 nGas, const uint64 nSubGas)
+          : destCodeOwner(destOwner), nGasUsed(nGas), nSubGasUsed(nSubGas) {}
+
+    public:
+        CDestination destCodeOwner;
+        uint64 nGasUsed;
+        uint64 nSubGasUsed;
+    };
+    class CCacheTxData
+    {
+    public:
+        CCacheTxData() {}
+        void Clear()
+        {
+            destCacheTxFromAddress.SetNull();
+            nCacheTxFromTvGasFee = 0;
+            nCacheTxFromTvGas = 0;
+        }
+
+    public:
+        CDestination destCacheTxFromAddress;
+        uint256 nCacheTxFromTvGasFee;
+        uint256 nCacheTxFromTvGas;
     };
 };
 
