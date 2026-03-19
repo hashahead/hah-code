@@ -406,6 +406,12 @@ bool CBlockDB::GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight)
 {
     return dbBlockIndex.GetForkMaxHeight(hashFork, nMaxHeight);
 }
+
+bool CBlockDB::AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock)
+{
+    return dbBlockIndex.AddBlockVoteResult(hashBlock, fLongChain, btBitmap, btAggSig, fAtChain, hashAtBlock);
+}
+
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);

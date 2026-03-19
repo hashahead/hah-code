@@ -67,6 +67,9 @@ public:
     bool RetrieveBlockIndex(const uint256& hashBlock, CBlockIndex& outline);
     bool UpdateBlockNumberBlockLongChain(const uint256& hashFork, const std::vector<std::pair<uint64, uint256>>& vRemoveNumberBlock, const std::vector<std::pair<uint64, uint256>>& mapNewNumberBlock);
     bool RetrieveBlockHashByNumber(const uint256& hashFork, const uint64 nBlockNumber, uint256& hashBlock);
+    bool RetrieveBlockHashByHeight(const uint256& hashFork, const uint32 nBlockHeight, std::vector<uint256>& vBlockHash);
+    bool GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight);
+    bool AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock);
     bool AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc);
     bool RetrieveBlockVerify(const uint256& hashBlock, CBlockVerify& verifyBlock);
     std::size_t GetBlockVerifyCount();
