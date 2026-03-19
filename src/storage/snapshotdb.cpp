@@ -199,5 +199,41 @@ bool CSnapshotDB::ReadSnapshotFileData(const uint256& hashSnapBlock, const std::
     return true;
 }
 
+//------------------------------------------------------------------
+bool CSnapshotDB::GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist)
+{
+    try
+    {
+        fs::path pathSnapDown = pathDataLocation / "snapdown";
+        fs::path pathSnapBlock = pathSnapDown / hashSnapBlock.ToString();
+        if (fs::exists(pathSnapBlock) && fs::is_directory(pathSnapBlock))
+        {
+            for (auto& entry : fs::directory_iterator(pathSnapBlock))
+            {
+                fs::path file_path = entry.path();
+                if (fs::is_regular_file(file_path))
+                {
+                    const uint64 nFileSize = fs::file_size(file_path);
+                    const string strFileName = file_path.filename().string();
+                    CSnapshotFileInfo snapFileInfo;
+                    snapFileInfo.strFileName = strFileName;
+                    snapFileInfo.nFileSize = nFileSize;
+                    vSnapFilelist.push_back(snapFileInfo);
+                }
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+    catch (const fs::filesystem_error& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
