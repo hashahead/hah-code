@@ -3778,6 +3778,14 @@ bool CBlockBase::ListContractCreateCodeContext(const uint256& hashFork, const ui
     }
     for (const auto& kv : mapContractCreateCode)
     {
+        if (txid != 0)
+        {
+            if (kv.second.txidCreate != txid)
+            {
+                continue;
+            }
+        }
+
         CContractCodeContext ctxt;
 
         ctxt.hashCode = kv.second.GetContractCreateCodeHash();
