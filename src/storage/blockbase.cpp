@@ -3932,9 +3932,15 @@ bool CBlockBase::RetrieveAddressTxInfo(const uint256& hashFork, const CDestinati
     return dbBlock.RetrieveAddressTxInfo(hashFork, dest, nTxIndex, ctxtAddressTxInfo);
 }
 
-bool CBlockBase::ListAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
+bool CBlockBase::ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
 {
-    return dbBlock.ListAddressTxInfo(hashFork, hashBlock, dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
+    return dbBlock.ListAddressTxInfo(hashFork, dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
+}
+
+bool CBlockBase::ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                             const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord)
+{
+    return dbBlock.ListTokenTx(hashFork, destContractAddress, destUserAddress, nPageNumber, nPageSize, fReverse, nTotalRecordCount, nPageCount, vTokenTxRecord);
 }
 
 bool CBlockBase::GetVoteRewardLockedAmount(const uint256& hashFork, const uint256& hashPrevBlock, const CDestination& dest, uint256& nLockedAmount)
