@@ -187,6 +187,12 @@ public:
     BlockIndexPtr GetParentBlockIndex(const BlockIndexPtr pIndex);
     bool IsBlockIndexEquivalent(const BlockIndexPtr pIndex, const BlockIndexPtr pIndexCompare);
 
+    bool GetForkBlockMintListByHeight(const uint256& hashFork, const uint32 nHeight, std::map<uint256, CBlockHeightIndex>& mapBlockMint);
+    bool GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight);
+    bool IsLongchainBlock(const uint256& hashFork, const uint256& hashBlock);
+    bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock);
+    bool GetBlockHashListByHeight(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash);
+
     bool GetDelegateVotes(const uint256& hashGenesis, const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes);
     bool RetrieveDestVoteContext(const uint256& hashBlock, const CDestination& destVote, CVoteContext& ctxtVote);
     bool ListPledgeFinalHeight(const uint256& hashBlock, const uint32 nFinalHeight, std::map<CDestination, std::pair<uint32, uint32>>& mapPledgeFinalHeight);

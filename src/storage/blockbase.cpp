@@ -4296,18 +4296,27 @@ bool CBlockBase::RetrieveTxContractReceipt(const uint256& hashFork, const uint25
         {
             if (!ReUpdateBlockTraceData(hashFork, hashTxAtBlock))
             {
-                CReceiptLogs r(vLogs);
-                r.nTxIndex = i + 1;
-                r.txid = txid;
-                r.nBlockNumber = block.GetBlockNumber();
-                r.hashBlock = hashBlock;
-                vReceiptLogs.push_back(r);
+                return false;
+            }
+            if (!dbBlock.RetrieveTxContractReceipt(hashFork, hashTxAtBlock, txid, tcrReceipt))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+}
 
-                if (vReceiptLogs.size() > MAX_FILTER_CACHE_COUNT)
-                {
-                    StdLog("CBlockBase", "Get tx receipts by logs filter: Query returned more than %lu results", MAX_FILTER_CACHE_COUNT);
-                    return false;
-                }
+bool CBlockBase::ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts)
+{
+    if (fCfgTraceDb)
+    {
+        if (!dbBlock.ListBlockContractReceipt(hashFork, hashBlock, vContractReceipts))
+        {
+            if (!ReUpdateBlockTraceData(hashFork, hashBlock))
+            {
+                return false;
             }
         }
     }
