@@ -4209,49 +4209,35 @@ bool CBlockBase::GetTransactionReceipt(const uint256& hashFork, const uint256& t
     return true;
 }
 
-uint256 CBlockBase::AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter)
+bool CBlockBase::GetBlockReceiptsByBlock(const uint256& hashFork, const uint256& hashFromBlock, const uint256& hashToBlock, std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapBlockReceipts)
 {
-    return blockFilter.AddLogsFilter(hashClient, hashFork, logsFilter);
-}
-
-void CBlockBase::RemoveFilter(const uint256& nFilterId)
-{
-    blockFilter.RemoveFilter(nFilterId);
-}
-
-bool CBlockBase::GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs)
-{
-    return blockFilter.GetTxReceiptLogsByFilterId(nFilterId, fAll, receiptLogs);
-}
-
-bool CBlockBase::GetTxReceiptsByLogsFilter(const uint256& hashFork, const CLogsFilter& logsFilter, ReceiptLogsVec& vReceiptLogs)
-{
-    CBlockIndex* pIndexFrom = nullptr;
-    CBlockIndex* pIndexTo = nullptr;
-    if (logsFilter.hashFromBlock == 0)
+    BlockIndexPtr pIndexFrom;
+    BlockIndexPtr pIndexTo;
+    if (hashFromBlock == 0)
     {
-        pIndexFrom = GetIndex(hashFork);
+        pIndexFrom = RetrieveIndex(hashFork);
     }
     else
     {
-        pIndexFrom = GetIndex(logsFilter.hashFromBlock);
+        pIndexFrom = RetrieveIndex(hashFromBlock);
     }
-    if (logsFilter.hashToBlock == 0)
+    if (hashToBlock == 0)
     {
-        if (!RetrieveFork(hashFork, &pIndexTo))
+        pIndexTo = RetrieveFork(hashFork);
+        if (!pIndexTo)
         {
-            StdLog("CBlockBase", "Get tx receipts by logs filter: from or to block error, fork: %s", hashFork.ToString().c_str());
+            StdLog("CBlockBase", "Get block receipts by logs filter: from or to block error, fork: %s", hashFork.ToString().c_str());
             return false;
         }
     }
     else
     {
-        pIndexTo = GetIndex(logsFilter.hashToBlock);
+        pIndexTo = RetrieveIndex(hashToBlock);
     }
     if (!pIndexFrom || !pIndexTo)
     {
-        StdLog("CBlockBase", "Get tx receipts by logs filter: from or to block error, from: %s, to: %s",
-               logsFilter.hashFromBlock.ToString().c_str(), logsFilter.hashToBlock.ToString().c_str());
+        StdLog("CBlockBase", "Get block receipts by logs filter: from or to block error, from: %s, to: %s",
+               hashFromBlock.ToString().c_str(), hashToBlock.ToString().c_str());
         return false;
     }
 
