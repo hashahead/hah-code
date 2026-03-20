@@ -3945,7 +3945,7 @@ bool CBlockBase::ListTokenTx(const uint256& hashFork, const CDestination& destCo
 
 bool CBlockBase::GetVoteRewardLockedAmount(const uint256& hashFork, const uint256& hashPrevBlock, const CDestination& dest, uint256& nLockedAmount)
 {
-    CBlockOutline outline;
+    CBlockIndex outline;
     if (!dbBlock.RetrieveBlockIndex(hashPrevBlock, outline))
     {
         StdLog("CBlockBase", "Get Vote Reward Locked Amount: Retrieve fork context failed, prev block: %s", hashPrevBlock.ToString().c_str());
@@ -4151,8 +4151,9 @@ bool CBlockBase::GetTransactionReceipt(const uint256& hashFork, const uint256& t
     {
         CTransaction tx;
         uint256 hashAtFork;
+        uint256 hashTxAtBlock;
         CTxIndex txIndex;
-        if (!RetrieveTxAndIndex(hashFork, txid, tx, hashAtFork, txIndex))
+        if (!RetrieveTxAndIndex(hashFork, txid, tx, hashAtFork, hashTxAtBlock, txIndex))
         {
             StdLog("CBlockBase", "Get transaction receipt: Retrieve tx fail, txid: %s, fork: %s", txid.GetHex().c_str(), hashFork.GetHex().c_str());
             return false;
@@ -4172,8 +4173,9 @@ bool CBlockBase::GetTransactionReceipt(const uint256& hashFork, const uint256& t
         {
             CTransaction tx;
             uint256 hashAtFork;
+            uint256 hashTxAtBlock;
             CTxIndex txIndex;
-            if (!RetrieveTxAndIndex(hashFork, txid, tx, hashAtFork, txIndex))
+            if (!RetrieveTxAndIndex(hashFork, txid, tx, hashAtFork, hashTxAtBlock, txIndex))
             {
                 StdLog("CBlockBase", "Get transaction receipt: Retrieve tx fail, txid: %s, fork: %s", txid.GetHex().c_str(), hashFork.GetHex().c_str());
                 return false;
@@ -4189,29 +4191,16 @@ bool CBlockBase::GetTransactionReceipt(const uint256& hashFork, const uint256& t
     receipt.CalcLogsBloom();
     txReceiptex = CTransactionReceiptEx(receipt);
 
-    uint256 hashLastBlock;
-    if (!dbBlock.RetrieveForkLast(hashFork, hashLastBlock))
-    {
-        StdLog("CBlockBase", "Get transaction receipt: Retrieve fork last fail, txid: %s, fork: %s", txid.GetHex().c_str(), hashFork.GetHex().c_str());
-        return false;
-    }
-    CForkContext ctxFork;
-    if (!dbBlock.RetrieveForkContext(hashFork, ctxFork))
-    {
-        StdLog("CBlockBase", "Get transaction receipt: Retrieve fork context fail, txid: %s, fork: %s", txid.GetHex().c_str(), hashFork.GetHex().c_str());
-        return false;
-    }
-
     uint256 hashBlock;
-    if (!dbBlock.RetrieveBlockHashByNumber(hashFork, ctxFork.nChainId, hashLastBlock, txReceiptex.nBlockNumber, hashBlock))
+    if (!GetBlockIndexHashByNumberLock(hashFork, txReceiptex.nBlockNumber, hashBlock))
     {
         StdLog("CBlockBase", "Get transaction receipt: Retrieve block hash, block number: %lu, fork: %s", txReceiptex.nBlockNumber, hashFork.GetHex().c_str());
         return false;
     }
     txReceiptex.hashBlock = hashBlock;
 
-    CBlockIndex* pBlockIndex = nullptr;
-    if (!RetrieveIndex(hashBlock, &pBlockIndex))
+    BlockIndexPtr pBlockIndex = RetrieveIndex(hashBlock);
+    if (!pBlockIndex)
     {
         StdLog("CBlockBase", "Get transaction receipt: Retrieve block index fail, block: %s, fork: %s", hashBlock.ToString().c_str(), hashFork.GetHex().c_str());
         return false;
