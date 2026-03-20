@@ -181,6 +181,12 @@ public:
     bool GetForkBlockLocator(const uint256& hashFork, CBlockLocator& locator, uint256& hashDepth, int nIncStep);
     bool GetForkBlockInv(const uint256& hashFork, const CBlockLocator& locator, std::vector<uint256>& vBlockHash, size_t nMaxCount);
 
+    BlockIndexPtr GetOriginBlockIndex(const BlockIndexPtr pIndex);
+    BlockIndexPtr GetPrevBlockIndex(const BlockIndexPtr pIndex);
+    BlockIndexPtr GetNextBlockIndex(const BlockIndexPtr pIndex);
+    BlockIndexPtr GetParentBlockIndex(const BlockIndexPtr pIndex);
+    bool IsBlockIndexEquivalent(const BlockIndexPtr pIndex, const BlockIndexPtr pIndexCompare);
+
     bool GetDelegateVotes(const uint256& hashGenesis, const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes);
     bool RetrieveDestVoteContext(const uint256& hashBlock, const CDestination& destVote, CVoteContext& ctxtVote);
     bool ListPledgeFinalHeight(const uint256& hashBlock, const uint32 nFinalHeight, std::map<CDestination, std::pair<uint32, uint32>>& mapPledgeFinalHeight);

@@ -4245,30 +4245,56 @@ bool CBlockBase::GetBlockReceiptsByBlock(const uint256& hashFork, const uint256&
     while (pIndexTo && pIndexTo->GetBlockNumber() >= pIndexFrom->GetBlockNumber())
     {
         vBlockHash.push_back(pIndexTo->GetBlockHash());
-        pIndexTo = pIndexTo->pPrev;
+        pIndexTo = GetPrevBlockIndex(pIndexTo);
     }
 
     for (auto& hashBlock : vBlockHash)
     {
-        CBlockEx block;
-        if (!Retrieve(hashBlock, block))
+        std::vector<CTransactionReceipt> vTxReceipt;
+        if (!blockReceiptCache.GetBlockReceiptCache(hashBlock, vTxReceipt))
         {
-            StdLog("CBlockBase", "Get tx receipts by logs filter: Retrieve block failed, block: %s", hashBlock.ToString().c_str());
-            return false;
-        }
-        for (size_t i = 0; i < block.vtx.size(); ++i)
-        {
-            auto& tx = block.vtx[i];
-            uint256 txid = tx.GetHash();
-            CTransactionReceipt receipt;
-            if (!dbBlock.RetrieveTxReceipt(hashFork, txid, receipt))
+            CBlockEx block;
+            if (!Retrieve(hashBlock, block))
             {
-                StdLog("CBlockBase", "Get tx receipts by logs filter: Retrieve tx receipt failed, txid: %s, block: %s", txid.ToString().c_str(), hashBlock.ToString().c_str());
+                StdLog("CBlockBase", "Get block receipts by logs filter: Retrieve block failed, block: %s", hashBlock.ToString().c_str());
                 return false;
             }
-            MatchLogsVec vLogs;
-            logsFilter.matchesLogs(receipt, vLogs);
-            if (!vLogs.empty())
+            {
+                CTransactionReceipt receipt;
+                if (dbBlock.RetrieveTxReceipt(hashFork, block.txMint.GetHash(), receipt))
+                {
+                    vTxReceipt.push_back(receipt);
+                }
+            }
+            for (auto& tx : block.vtx)
+            {
+                CTransactionReceipt receipt;
+                if (dbBlock.RetrieveTxReceipt(hashFork, tx.GetHash(), receipt))
+                {
+                    vTxReceipt.push_back(receipt);
+                }
+            }
+            blockReceiptCache.AddBlockReceiptCache(hashBlock, vTxReceipt);
+        }
+        mapBlockReceipts.insert(std::make_pair(hashBlock, vTxReceipt));
+    }
+    return true;
+}
+
+bool CBlockBase::RetrieveTxContractReceipt(const uint256& hashFork, const uint256& txid, TxContractReceipts& tcrReceipt)
+{
+    if (fCfgTraceDb)
+    {
+        uint256 hashAtFork;
+        uint256 hashTxAtBlock;
+        CTxIndex txIndex;
+        if (!GetTxIndex(hashFork, txid, hashAtFork, hashTxAtBlock, txIndex))
+        {
+            return false;
+        }
+        if (!dbBlock.RetrieveTxContractReceipt(hashFork, hashTxAtBlock, txid, tcrReceipt))
+        {
+            if (!ReUpdateBlockTraceData(hashFork, hashTxAtBlock))
             {
                 CReceiptLogs r(vLogs);
                 r.nTxIndex = i + 1;
