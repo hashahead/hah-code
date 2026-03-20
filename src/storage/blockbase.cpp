@@ -4318,9 +4318,14 @@ bool CBlockBase::ListBlockContractReceipt(const uint256& hashFork, const uint256
             {
                 return false;
             }
+            if (!dbBlock.ListBlockContractReceipt(hashFork, hashBlock, vContractReceipts))
+            {
+                return false;
+            }
         }
+        return true;
     }
-    return true;
+    return false;
 }
 
 uint256 CBlockBase::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
