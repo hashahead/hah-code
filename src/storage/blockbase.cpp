@@ -3889,13 +3889,13 @@ bool CBlockBase::VerifyCreateCodeTx(const uint256& hashFork, const uint256& hash
             //     bool fLinkGenesisFork;
             //     if (!RetrieveLinkGenesisContractCreateCodeContext(hashFork, hashBlock, hashContractCreateCode, ctxtContractCreateCode, fLinkGenesisFork))
             //     {
-            //         StdLog("CBlockState", "Verify create code tx: Code not exist, code: %s, tx: %s, block: %s",
+            //         StdLog("CBlockBase", "Verify create code tx: Code not exist, code: %s, tx: %s, block: %s",
             //                hashContractCreateCode.GetHex().c_str(), tx.GetHash().GetHex().c_str(), hashBlock.GetHex().c_str());
             //         return false;
             //     }
             //     // if (!ctxtContractCreateCode.IsActivated())
             //     // {
-            //     //     StdLog("CBlockState", "Verify create code tx: Code not activate, code: %s, tx: %s, block: %s",
+            //     //     StdLog("CBlockBase", "Verify create code tx: Code not activate, code: %s, tx: %s, block: %s",
             //     //            hashContractCreateCode.GetHex().c_str(), tx.GetHash().GetHex().c_str(), hashBlock.GetHex().c_str());
             //     //     return false;
             //     // }
@@ -3922,14 +3922,14 @@ bool CBlockBase::VerifyCreateCodeTx(const uint256& hashFork, const uint256& hash
     return true;
 }
 
-bool CBlockBase::GetAddressTxCount(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint64& nTxCount)
+bool CBlockBase::GetAddressTxCount(const uint256& hashFork, const CDestination& dest, uint64& nTxCount)
 {
-    return dbBlock.GetAddressTxCount(hashFork, hashBlock, dest, nTxCount);
+    return dbBlock.GetAddressTxCount(hashFork, dest, nTxCount);
 }
 
-bool CBlockBase::RetrieveAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo)
+bool CBlockBase::RetrieveAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo)
 {
-    return dbBlock.RetrieveAddressTxInfo(hashFork, hashBlock, dest, nTxIndex, ctxtAddressTxInfo);
+    return dbBlock.RetrieveAddressTxInfo(hashFork, dest, nTxIndex, ctxtAddressTxInfo);
 }
 
 bool CBlockBase::ListAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)

@@ -174,8 +174,9 @@ public:
     bool IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock = uint256());
     bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256());
     int GetForkCreatedHeight(const uint256& hashFork, const uint256& hashRefBlock);
-    bool GetForkStorageMaxHeight(const uint256& hashFork, uint32& nMaxHeight);
-    bool GetBlockHashByNumber(const uint256& hashFork, const uint64 nBlockNumber, uint256& hashBlock);
+    bool GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock = uint256());
+    bool GetBlockIndexHashByNumberNoLock(const uint256& hashFork, const uint256& hashLastBlock, const uint64 nBlockNumber, uint256& hashBlock);
+    bool GetBlockIndexHashByNumberLock(const uint256& hashFork, const uint64 nBlockNumber, uint256& hashBlock);
 
     bool GetForkBlockLocator(const uint256& hashFork, CBlockLocator& locator, uint256& hashDepth, int nIncStep);
     bool GetForkBlockInv(const uint256& hashFork, const CBlockLocator& locator, std::vector<uint256>& vBlockHash, size_t nMaxCount);
