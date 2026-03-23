@@ -370,6 +370,7 @@ evmc::result CEvmHost::call(const evmc_message& msg) noexcept
         }
 
         uint64 nGasLeft = msg.gas;
+        int nStatus = EVMC_FAILURE;
         bytes btResult;
         bool fRet = false;
 
@@ -377,7 +378,7 @@ evmc::result CEvmHost::call(const evmc_message& msg) noexcept
         {
             CDestination from = AddressToDestination(msg.sender);
             bytes btData(msg.input_data, msg.input_data + msg.input_size);
-            fRet = dbHost.ExecFunctionContract(from, to, btData, msg.gas, nGasLeft, btResult);
+            fRet = dbHost.ExecFunctionContract(from, to, amount, btData, msg.gas, nGasLeft, nStatus, btResult);
         }
         StdDebug("CEvmHost", "call: function contract exec, ret: %s, result: %s", (fRet ? "true" : "false"), ToHexString(btResult).c_str());
 
@@ -389,7 +390,7 @@ evmc::result CEvmHost::call(const evmc_message& msg) noexcept
         }
 
         evmc_result evmcResult = {};
-        evmcResult.status_code = (fRet ? EVMC_SUCCESS : EVMC_FAILURE);
+        evmcResult.status_code = (evmc_status_code)nStatus;
         evmcResult.gas_left = nGasLeft;
         evmcResult.output_data = p;
         evmcResult.output_size = (fRet ? btResult.size() : 0);
@@ -399,15 +400,28 @@ evmc::result CEvmHost::call(const evmc_message& msg) noexcept
                 delete[] _result->output_data;
             }
         };
-        return evmc::result(evmcResult);
+        evmc::result r(evmcResult);
+        AddContractHostReceipt(msg, r, to, dbHost.GetCodeLocalAddress());
+        return r;
     }
 
-    if (msg.input_size == 0)
+    bool fTransFlag = false;
+    if (fFhxHeightBranch002)
     {
-        CDestination from = AddressToDestination(msg.sender);
-        uint256 amount(msg.value.bytes, sizeof(msg.value.bytes));
-        amount.reverse();
-
+        if (amount > 0)
+        {
+            fTransFlag = true;
+        }
+    }
+    else
+    {
+        if (msg.input_size == 0)
+        {
+            fTransFlag = true;
+        }
+    }
+    if (fTransFlag)
+    {
         uint64 nGasLeft = msg.gas;
         if (!dbHost.ContractTransfer(from, to, amount, msg.gas, nGasLeft))
         {
