@@ -338,7 +338,7 @@ void CEvmHost::selfdestruct(const evmc::address& addr, const evmc::address& bene
     //assert(fromEvmC(_addr) == m_extVM.myAddress);
     //m_extVM.selfdestruct(fromEvmC(_beneficiary));
     StdDebug("CEvmHost", "selfdestruct: addr: %s, beneficiary: %s", ToHexString(&(addr.bytes[0]), sizeof(addr.bytes)).c_str(), ToHexString(&(beneficiary.bytes[0]), sizeof(beneficiary.bytes)).c_str());
-    assert(AddressToDestination(addr) == dbHost.GetContractAddress());
+    assert(AddressToDestination(addr) == dbHost.GetStorageContractAddress());
     dbHost.Selfdestruct(AddressToDestination(beneficiary));
 }
 
@@ -351,8 +351,24 @@ evmc::result CEvmHost::call(const evmc_message& msg) noexcept
     // StdDebug("CEvmHost", "call: gas: %lu", msg.gas);
 
     CDestination to = AddressToDestination(msg.destination);
+    CDestination from = AddressToDestination(msg.sender);
+    uint256 amount(msg.value.bytes, sizeof(msg.value.bytes));
+    amount.reverse();
+
     if (isFunctionContractAddress(to))
     {
+        if (fFhxHeightBranch002 && amount > 0)
+        {
+            // uint64 nGasLeft = msg.gas;
+            // if (!dbHost.ContractTransfer(from, to, amount, msg.gas, nGasLeft))
+            // {
+            //     StdLog("CEvmHost", "call: Contract transfer fail, depth: %u, gas: %lu", msg.depth, msg.gas);
+            //     return { EVMC_REVERT, nGasLeft, nullptr, 0 };
+            // }
+            StdLog("CEvmHost", "call: Function contract amount must is 0, depth: %u, gas: %lu", msg.depth, msg.gas);
+            return { EVMC_REVERT, msg.gas, nullptr, 0 };
+        }
+
         uint64 nGasLeft = msg.gas;
         bytes btResult;
         bool fRet = false;
