@@ -426,11 +426,13 @@ evmc::result CEvmHost::call(const evmc_message& msg) noexcept
         if (!dbHost.ContractTransfer(from, to, amount, msg.gas, nGasLeft))
         {
             StdLog("CEvmHost", "call: Contract transfer fail, depth: %u, gas: %lu", msg.depth, msg.gas);
-            return { EVMC_REVERT, nGasLeft, nullptr, 0 };
+            return { EVMC_REVERT, (int64_t)nGasLeft, nullptr, 0 };
         }
         if (!dbHost.IsContractAddress(to))
         {
-            return { EVMC_SUCCESS, nGasLeft, nullptr, 0 };
+            evmc::result result = { EVMC_SUCCESS, (int64_t)nGasLeft, nullptr, 0 };
+            AddContractHostReceipt(msg, result, to, dbHost.GetCodeLocalAddress());
+            return result;
         }
     }
 
@@ -477,8 +479,9 @@ void CEvmHost::emit_log(const evmc::address& addr,
     //StdLog("CEvmHost", "emit_log: addr: %s", logs.address.ToString().c_str());
     if (data && data_size > 0)
     {
-        logs.data.SetBytes(data, data_size);
-        //StdLog("CEvmHost", "emit_log: data: %s", logs.data.ToString().c_str());
+        logs.data.assign(data, data + data_size);
+        //logs.data.SetBytes(data, data_size);
+        //StdLog("CEvmHost", "emit_log: data: %s", ToHexString(logs.data).c_str());
     }
     for (size_t i = 0; i < topics_count; i++)
     {
@@ -489,23 +492,6 @@ void CEvmHost::emit_log(const evmc::address& addr,
     }
 
     vLogs.push_back(logs);
-
-    // logAddr = addr;
-    // StdLog("CEvmHost", "emit_log: addr: %s", ToHexString(&(addr.bytes[0]), 32).c_str());
-    // for (size_t i = 0; i < topics_count; i++)
-    // {
-    //     StdLog("CEvmHost", "emit_log: topics: %s", ToHexString(&(topics[i].bytes[0]), 32).c_str());
-    //     vLogTopics.push_back(topics[i]);
-    // }
-    // if (data && data_size > 0)
-    // {
-    //     StdLog("CEvmHost", "emit_log: data: %s", ToHexString(data, data_size).c_str());
-    //     vLogData.assign(data, data + data_size);
-    // }
-    // else
-    // {
-    //     StdLog("CEvmHost", "emit_log: data: null");
-    // }
 }
 
 /////////////////////////////////////////
