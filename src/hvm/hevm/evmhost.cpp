@@ -497,30 +497,36 @@ void CEvmHost::emit_log(const evmc::address& addr,
 /////////////////////////////////////////
 evmc::result CEvmHost::Create(const evmc_message& msg)
 {
-    StdDebug("CEvmHost", "Create: sender: %s - %s", ToHexString(&(msg.sender.bytes[0]), sizeof(msg.sender.bytes)).c_str(), AddressToDestination(msg.sender).ToString().c_str());
-
     uint256 hashContractCreateCode = crypto::CryptoHash(msg.input_data, msg.input_size);
     bytes btContractCreateCode(msg.input_data, msg.input_data + msg.input_size);
     CDestination destCodeOwner = dbHost.GetCodeOwnerAddress();
     CTxContractData txcd(btContractCreateCode, false);
     txcd.destCodeOwner = dbHost.GetCodeOwnerAddress();
 
+    const Address _sender = EthFromEvmC(msg.sender);
+    const CDestination destSender = destFromAddress(_sender);
+    uint64 nAddrNonce = dbHost.GetTxNonce().Get64();
+    if (fFhxHeightBranch002)
+    {
+        nAddrNonce = dbHost.GetAddressLastTxNonce(destSender) + 1;
+        if (!dbHost.SetAddressLastTxNonce(destSender, nAddrNonce))
+        {
+            StdLog("CEvmHost", "Create: Set sender address tx nonce fail, sender: %s", destSender.ToString().c_str());
+            return { EVMC_FAILURE, msg.gas, nullptr, 0 };
+        }
+    }
+
     CDestination destNewContract;
     if (msg.kind == EVMC_CREATE)
     {
-        StdDebug("CEvmHost", "Create EVMC_CREATE");
-        Address _sender = EthFromEvmC(msg.sender);
-        u256 _nonce = dbHost.GetTxNonce().Get64(); //m_s.getNonce(_sender);
-        Address newAddress = createContractAddress(_sender, _nonce);
-        destNewContract = destFromAddress(newAddress);
+        destNewContract = destFromAddress(createContractAddress(_sender, nAddrNonce));
+        StdDebug("CEvmHost", "Create EVMC_CREATE: sender: %s, nonce: %lu, new contract address: %s", destSender.ToString().c_str(), nAddrNonce, destNewContract.ToString().c_str());
     }
     else
     {
-        StdDebug("CEvmHost", "Create EVMC_CREATE2");
-        Address _sender = EthFromEvmC(msg.sender);
-        u256 salt = u256FromEvmC(msg.create2_salt);
-        Address newAddress = createContractAddress(_sender, btContractCreateCode, salt);
-        destNewContract = destFromAddress(newAddress);
+        destNewContract = destFromAddress(createContractAddress(_sender, btContractCreateCode, u256FromEvmC(msg.create2_salt)));
+        StdDebug("CEvmHost", "Create EVMC_CREATE2: sender: %s, salt: %s, new contract address: %s",
+                 destSender.ToString().c_str(), ToHexString(&(msg.create2_salt.bytes[0]), sizeof(msg.create2_salt.bytes)).c_str(), destNewContract.ToString().c_str());
     }
     StdDebug("CEvmHost", "destNewContract: %s", destNewContract.ToString().c_str());
 
