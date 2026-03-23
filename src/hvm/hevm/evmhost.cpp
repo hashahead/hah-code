@@ -528,7 +528,6 @@ evmc::result CEvmHost::Create(const evmc_message& msg)
         StdDebug("CEvmHost", "Create EVMC_CREATE2: sender: %s, salt: %s, new contract address: %s",
                  destSender.ToString().c_str(), ToHexString(&(msg.create2_salt.bytes[0]), sizeof(msg.create2_salt.bytes)).c_str(), destNewContract.ToString().c_str());
     }
-    StdDebug("CEvmHost", "destNewContract: %s", destNewContract.ToString().c_str());
 
     uint256 nNewBalance;
     if (dbHost.GetBalance(destNewContract, nNewBalance))
@@ -537,8 +536,8 @@ evmc::result CEvmHost::Create(const evmc_message& msg)
         return { EVMC_FAILURE, msg.gas, nullptr, 0 };
     }
 
-    CVmHostFaceDBPtr ptrNewHostDB = dbHost.CloneHostDB(destNewContract);
-    shared_ptr<CEvmHost> host(new CEvmHost(tx_context, *ptrNewHostDB, pCacheKv));
+    CVmHostFaceDBPtr ptrNewHostDB = dbHost.CloneHostDB(destNewContract, dbHost.GetCodeLocalAddress(), destNewContract, destCodeOwner);
+    shared_ptr<CEvmHost> host(new CEvmHost(tx_context, *ptrNewHostDB, pCacheKv, fTraceVmLog, fFhxHeightBranch001, fFhxHeightBranch002));
     evmc::address destination = DestinationToAddress(destNewContract);
 
     evmc_message new_msg{
@@ -554,15 +553,18 @@ evmc::result CEvmHost::Create(const evmc_message& msg)
         {}              // create2_salt
     };
 
+    host->nDepth = msg.depth;
+
     evmc_host_context* context = host->to_context();
     const evmc_host_interface* host_interface = &evmc::Host::get_interface();
     struct evmc_vm* vm = evmc_create_aleth_interpreter();
 
-    StdDebug("CEvmHost", "Create contract: execute prev: gas: %ld", new_msg.gas);
-    evmc::result result = evmc::result{ vm->execute(vm, host_interface, context, EVMC_MAX_REVISION, &new_msg, btContractCreateCode.data(), btContractCreateCode.size()) };
-    StdDebug("CEvmHost", "Create contract: execute last: gas: %ld, gas_left: %ld, gas used: %ld, owner: %s",
-             new_msg.gas, result.gas_left, new_msg.gas - result.gas_left, destCodeOwner.ToString().c_str());
-    ptrNewHostDB->SaveGasUsed(destCodeOwner, new_msg.gas - result.gas_left);
+    // StdDebug("CEvmHost", "Create contract: execute prev: gas: %ld", new_msg.gas);
+    evmc::result result = evmc::result{ vm->execute(vm, host_interface, context, EVMC_MAX_REVISION, &new_msg, btContractCreateCode.data(), btContractCreateCode.size(),
+                                                    (fTraceVmLog ? onExOperation : nullptr), (fTraceVmLog ? host.get() : nullptr)) };
+    // StdDebug("CEvmHost", "Create contract: execute last: gas: %ld, gas_left: %ld, gas used: %ld, owner: %s",
+    //          new_msg.gas, result.gas_left, new_msg.gas - result.gas_left, destCodeOwner.ToString().c_str());
+    ptrNewHostDB->SaveCodeOwnerGasUsed(dbHost.GetCodeLocalAddress(), destNewContract, destCodeOwner, new_msg.gas - result.gas_left);
 
     if (result.status_code == EVMC_SUCCESS)
     {
