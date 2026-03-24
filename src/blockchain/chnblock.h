@@ -122,7 +122,8 @@ public:
 
 protected:
     const string GetPeerAddressInfo(const uint64 nNonce);
-    void AddCacheBlock(const CBlock& block, const uint64 nBlockSize, const uint64 nRecvNonce);
+    void BlockSyncTimerFunc(uint32 nTimerId);
+    void AddCacheBlock(const uint256& hashBlock, const CBlock& block, const uint64 nBlockSize, const uint64 nRecvNonce);
     void RemoveCacheBlock(const uint256& hashBlock);
     void AddNextBlock(const uint256& hashPrev);
     void ClearCacheTimeout();

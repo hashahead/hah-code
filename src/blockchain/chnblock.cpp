@@ -456,6 +456,43 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockGetBlockReq& eventData)
     return true;
 }
 
+bool CBlockChannel::HandleEvent(network::CEventPeerBlockGetBlockRsp& eventData)
+{
+    const uint256& hashFork = eventData.hashFork;
+    const uint64 nRecvPeerNonce = eventData.nNonce;
+    const bytes& btBlockData = eventData.data;
+
+    if (!btBlockData.empty())
+    {
+        CBlock block;
+        try
+        {
+            CBufStream ss(btBlockData);
+            ss >> block;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            return false;
+        }
+        uint256 hashBlock = block.GetHash();
+
+        if (pDispatcher->AddNewBlock(block, nRecvPeerNonce, true) != OK)
+        {
+            StdLog("CBlockChannel", "CEvent peer block get block rsp: Add new block fail, block: %s, fork: %s",
+                   hashBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
+            return true;
+        }
+        StdDebug("CBlockChannel", "CEvent peer block get block rsp: Add block success, block: %s, fork: %s",
+                 hashBlock.GetBhString().c_str(), hashFork.GetBhString().c_str());
+
+        AddNextBlock(hashBlock);
+
+        RequestNextBlockData(hashFork, hashBlock, nRecvPeerNonce);
+    }
+    return true;
+}
+
 bool CBlockChannel::HandleEvent(network::CEventLocalBlockSubscribeFork& eventSubsFork)
 {
     network::CEventPeerBlockSubscribe eventSubscribe(0, pCoreProtocol->GetGenesisBlockHash());
