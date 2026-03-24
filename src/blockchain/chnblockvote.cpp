@@ -501,4 +501,18 @@ const string CBlockVoteChannel::GetPeerAddressInfo(uint64 nNonce)
     return string("0.0.0.0");
 }
 
+void CBlockVoteChannel::BlockVoteTimerFunc(uint32 nTimerId)
+{
+    if (nTimerId == nBlockVoteTimerId)
+    {
+        nBlockVoteTimerId = SetTimer(BLOCK_VOTE_TIMER_TIME, boost::bind(&CBlockVoteChannel::BlockVoteTimerFunc, this, _1));
+        network::CEventLocalBlockvoteTimer* pEvent = new network::CEventLocalBlockvoteTimer(0, pCoreProtocol->GetGenesisBlockHash());
+        if (pEvent)
+        {
+            pEvent->data = nTimerId;
+            PostEvent(pEvent);
+        }
+    }
+}
+
 } // namespace hashahead

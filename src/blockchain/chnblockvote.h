@@ -131,6 +131,7 @@ protected:
 
     bool HandleEvent(network::CEventLocalBlockvoteTimer& eventTimer) override;
     bool HandleEvent(network::CEventLocalBlockvoteSubscribeFork& eventSubsFork) override;
+    bool HandleEvent(network::CEventLocalBlockvoteUpdateBlock& eventUpdateBlock) override;
     bool AddBlockLocalVoteSignFlag(const uint256& hashBlock, const uint256& hashFork);
     bool CommitBlockVoteResult(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const uint256& hashFork);
     bool AddBlockVoteCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, CBlockVoteChnFork& chnFork);
@@ -144,6 +145,7 @@ protected:
         return dynamic_cast<const CMintConfig*>(hnbase::IBase::Config());
     }
     const string GetPeerAddressInfo(uint64 nNonce);
+    void BlockVoteTimerFunc(uint32 nTimerId);
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
