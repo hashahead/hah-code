@@ -2793,6 +2793,11 @@ bool CBlockChain::VerifyBlockCommitVoteAggSig(const uint256& hashVoteBlock, cons
     return true;
 }
 
+bool CBlockChain::AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock)
+{
+    return cntrBlock.AddBlockVoteResult(hashBlock, fLongChain, btBitmap, btAggSig, fAtChain, hashAtBlock);
+}
+
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
