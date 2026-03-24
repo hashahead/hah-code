@@ -261,10 +261,9 @@ public:
     bool GetBlockAddress(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, std::map<CDestination, CAddressContext>& mapBlockAddress);
     bool GetTransactionReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceiptEx& txReceiptex);
     bool GetBlockReceiptsByBlock(const uint256& hashFork, const uint256& hashFromBlock, const uint256& hashToBlock, std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapBlockReceipts);
-    uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter);
-    void RemoveFilter(const uint256& nFilterId);
-    bool GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs);
-    bool GetTxReceiptsByLogsFilter(const uint256& hashFork, const CLogsFilter& logsFilter, ReceiptLogsVec& vReceiptLogs);
+    bool RetrieveTxContractReceipt(const uint256& hashFork, const uint256& txid, TxContractReceipts& tcrReceipt);
+    bool ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts);
+    bool RetrieveTxContractPrevState(const uint256& hashFork, const uint256& txid, MapContractPrevState& mapContractPrevState);
     uint256 AddBlockFilter(const uint256& hashClient, const uint256& hashFork);
     bool GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash);
     uint256 AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork);

@@ -4328,9 +4328,31 @@ bool CBlockBase::ListBlockContractReceipt(const uint256& hashFork, const uint256
     return false;
 }
 
-uint256 CBlockBase::AddBlockFilter(const uint256& hashClient, const uint256& hashFork)
+bool CBlockBase::RetrieveTxContractPrevState(const uint256& hashFork, const uint256& txid, MapContractPrevState& mapContractPrevState)
 {
-    return blockFilter.AddBlockFilter(hashClient, hashFork);
+    if (fCfgTraceDb)
+    {
+        uint256 hashAtFork;
+        uint256 hashTxAtBlock;
+        CTxIndex txIndex;
+        if (!GetTxIndex(hashFork, txid, hashAtFork, hashTxAtBlock, txIndex))
+        {
+            return false;
+        }
+        if (!dbBlock.RetrieveTxContractPrevState(hashFork, hashTxAtBlock, txid, mapContractPrevState))
+        {
+            if (!ReUpdateBlockTraceData(hashFork, hashTxAtBlock))
+            {
+                return false;
+            }
+            if (!dbBlock.RetrieveTxContractPrevState(hashFork, hashTxAtBlock, txid, mapContractPrevState))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
 }
 
 bool CBlockBase::GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash)
