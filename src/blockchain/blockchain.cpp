@@ -2777,6 +2777,22 @@ bool CBlockChain::VerifyBlockCommitVoteAggSig(const uint256& hashBlock, const by
     return true;
 }
 
+bool CBlockChain::VerifyBlockCommitVoteAggSig(const uint256& hashVoteBlock, const uint256& hashRefBlock, const bytes& btAggBitmap, const bytes& btAggSig)
+{
+    vector<uint384> vCandidatePubkeys;
+    if (!GetCandidatePubkey(hashRefBlock, vCandidatePubkeys))
+    {
+        StdLog("BlockChain", "Verify block commit vote aggsig: Get candidate pubkey fail, ref block: %s", hashRefBlock.ToString().c_str());
+        return false;
+    }
+    if (!consensus::consblockvote::CConsBlockVote::VerifyCommitVoteAggSig(hashVoteBlock, btAggBitmap, btAggSig, vCandidatePubkeys))
+    {
+        StdLog("BlockChain", "Verify block commit vote aggsig: Verify commit vote fail, vote block: %s", hashVoteBlock.ToString().c_str());
+        return false;
+    }
+    return true;
+}
+
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
