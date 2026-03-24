@@ -477,6 +477,113 @@ CWsService::~CWsService()
 {
 }
 
+bool CWsService::HandleEvent(CEventWsServicePushNewBlock& eventPush)
+{
+    CReadLock rlock(rwAccess);
+
+    const CWssPushNewBlock& newBlock = eventPush.data;
+    const uint256& hashBlock = newBlock.hashBlock;
+    const CBlock& block = newBlock.block;
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+    auto& subsFork = mapWsSubscribeFork[nChainId];
+
+    SHP_WS_SERVER ptrWsServer = nullptr;
+    auto it = mapWsServer.find(nChainId);
+    if (it != mapWsServer.end())
+    {
+        ptrWsServer = it->second;
+    }
+    if (ptrWsServer == nullptr)
+    {
+        return true;
+    }
+
+    // {
+    // 	"jsonrpc": "2.0",
+    // 	"method": "eth_subscription",
+    // 	"params": {
+    // 		"subscription": "0xa92f496bc55f58e548996847ed3049e2",
+    // 		"result": {
+    // 			"parentHash": "0x76ac73397d33ad728f0ae1a5e6597756a1421693e10cd25e15ab26be1778f1c4",
+    // 			"sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+    // 			"miner": "0x29b7180a5ba70c5a1c738e877731faee44fcdaa3",
+    // 			"stateRoot": "0x1ce174c14ca5dea1cf978f60e7c032a62b1d080dd89455ad0cde295c44e7a86e",
+    // 			"transactionsRoot": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+    // 			"receiptsRoot": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+    // 			"logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    // 			"difficulty": "0x80c33",
+    // 			"number": "0xd9e",
+    // 			"gasLimit": "0x1c9c380",
+    // 			"gasUsed": "0x0",
+    // 			"timestamp": "0x65950b18",
+    // 			"extraData": "0xd883010b06846765746888676f312e32302e34856c696e7578",
+    // 			"mixHash": "0xc05d70bd1b78534e53d8b2445957c0583794d524c37cb9af5ccbaa67687e35ad",
+    // 			"nonce": "0x446068dae8aa1e4f",
+    // 			"baseFeePerGas": null,
+    // 			"withdrawalsRoot": null,
+    // 			"hash": "0x8c82f5c0a375a98da3482b158870a02b4314cc55df723c6a706fc8d9f1b91a42"
+    // 		}
+    // 	}
+    // }
+
+    std::string strLogsbloom;
+    if (!block.btBloomData.empty())
+    {
+        strLogsbloom = ToHexString(block.btBloomData);
+    }
+    else
+    {
+        strLogsbloom = "0x";
+    }
+    std::string strReceiptsRoot;
+    if (!block.hashReceiptsRoot.IsNull())
+    {
+        strReceiptsRoot = block.hashReceiptsRoot.GetHex();
+    }
+    else
+    {
+        strReceiptsRoot = "0x";
+    }
+    std::string strNonceTemp = hashBlock.ToString();
+    std::string strNonce = std::string("0x") + strNonceTemp.substr(strNonceTemp.size() - 16);
+
+    for (const auto& kv : subsFork.GetSubsListByType(WSCS_SUBS_TYPE_NEW_BLOCK))
+    {
+        const uint128& nSubsId = kv.first;
+        const CClientSubscribe& clientSubs = kv.second;
+
+        std::string strMsg;
+        strMsg += "{";
+        strMsg += "\"jsonrpc\": \"2.0\",";
+        strMsg += "\"method\": \"eth_subscription\",";
+        strMsg += "\"params\": {";
+        strMsg += ("\"subscription\": \"" + nSubsId.GetHex() + "\",");
+        strMsg += "\"result\": {";
+        strMsg += ("\"parentHash\": \"" + block.hashPrev.GetHex() + "\",");
+        strMsg += "\"sha3Uncles\": \"0x\",";
+        strMsg += ("\"miner\": \"" + block.txMint.GetToAddress().ToString() + "\",");
+        strMsg += ("\"stateRoot\": \"" + block.hashStateRoot.GetHex() + "\",");
+        strMsg += ("\"transactionsRoot\": \"" + block.hashMerkleRoot.GetHex() + "\",");
+        strMsg += ("\"receiptsRoot\": \"" + strReceiptsRoot + "\",");
+        strMsg += ("\"logsBloom\": \"" + strLogsbloom + "\",");
+        strMsg += "\"difficulty\": \"0x0\",";
+        strMsg += ("\"number\": \"" + ToHexString(block.GetBlockNumber()) + "\",");
+        strMsg += ("\"gasLimit\": \"" + block.nGasLimit.GetValueHex() + "\",");
+        strMsg += ("\"gasUsed\": \"" + block.nGasUsed.GetValueHex() + "\",");
+        strMsg += ("\"timestamp\": \"" + ToHexString(block.GetBlockTime()) + "\",");
+        strMsg += "\"extraData\": \"0x\",";
+        strMsg += "\"mixHash\": \"0x\",";
+        strMsg += ("\"nonce\": \"" + strNonce + "\",");
+        strMsg += "\"baseFeePerGas\": null,";
+        strMsg += "\"withdrawalsRoot\": null,";
+        strMsg += ("\"hash\": \"" + hashBlock.GetHex() + "\"");
+        strMsg += "}}}";
+
+        ptrWsServer->SendWsMsg(clientSubs.nClientConnId, strMsg);
+    }
+    return true;
+}
+
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {
