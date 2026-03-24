@@ -829,6 +829,37 @@ protected:
     }
 };
 
+class CTxContractReceiptTrie
+{
+    friend class hnbase::CStream;
+
+public:
+    CTxContractReceiptTrie() {}
+
+    bool AddContractReceipt(const CTxContractReceipt& tcReceipt);
+    bool AddContractReceiptList(const TxContractReceipts& vTcr);
+
+    static void TrieToJsonStream(const CTxContractReceiptTrie& tcrTrie, std::stringstream& ss);
+    static void TxToJsonStream(const uint256& txid, const CTxContractReceiptTrie& tcrTrie, std::stringstream& ss);
+    static void TxListToJsonStream(const std::vector<std::pair<uint256, CTxContractReceiptTrie>>& vTxReceiptList, std::stringstream& ss);
+
+    static void ReceiptToJsonStream(const CTxContractReceipt& tcReceipt, std::stringstream& ss);
+    static void TxReceiptToJsonStream(const uint256& txid, const CTxContractReceipt& tcReceipt, std::stringstream& ss);
+    static void TxReceiptListToJsonStream(const std::vector<std::pair<uint256, CTxContractReceipt>>& vTxReceiptList, std::stringstream& ss);
+
+public:
+    CTxContractReceipt tcr;
+    std::vector<CTxContractReceiptTrie> vCall;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(tcr, opt);
+        s.Serialize(vCall, opt);
+    }
+};
+
 
 static const uint8 CODE_TYPE_TEMPLATE = 0;
 static const uint8 CODE_TYPE_CONTRACT = 1;
