@@ -10185,4 +10185,106 @@ CRPCResultPtr CRPCMod::RPCEthDebugGetBadBlocks(const CReqContext& ctxReq, CRPCPa
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCEthDebugStorageRangeAt(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (!BasicConfig()->fTraceDb)
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "If you need this function, please set config 'tracedb=true', clear data, and then restart");
+    }
+
+    string strBlockReference;  // The block hash in string format or block number as hexadecimal in the object format
+    uint32 nTxIndex = 0;       // The transaction index for the point in which we want the list of accounts
+    string strContractAddress; // The contract address
+    string strStartKey;        // The offset (hash of storage key)
+    uint32 nLimit;             // The number of storage entries to return
+
+    bool fGetTxIndex = false;
+    bool fGetLimit = false;
+
+    {
+        boost::unique_lock<boost::mutex> lock(mutexDec);
+
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
+        }
+        if (valParam.type() != json_spirit::array_type)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
+        }
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::str_type)
+            {
+                if (strBlockReference.empty())
+                {
+                    strBlockReference = v.get_str();
+                }
+                else if (strContractAddress.empty())
+                {
+                    strContractAddress = v.get_str();
+                }
+                else if (strStartKey.empty())
+                {
+                    strStartKey = v.get_str();
+                }
+            }
+            else if (v.type() == json_spirit::int_type)
+            {
+                if (!fGetTxIndex)
+                {
+                    nTxIndex = v.get_int();
+                    fGetTxIndex = true;
+                }
+                else if (!fGetLimit)
+                {
+                    nLimit = v.get_int();
+                    fGetLimit = true;
+                }
+            }
+        }
+    }
+
+    if (strBlockReference.empty())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid block");
+    }
+    uint256 hashBlock = GetRefBlock(ctxReq.hashFork, strBlockReference);
+    if (strContractAddress.empty())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+    CDestination destContract(strContractAddress);
+    if (destContract.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+    uint256 keyStart;
+    if (!strStartKey.empty())
+    {
+        keyStart.SetHex(strStartKey);
+    }
+
+    std::vector<std::pair<uint256, bytes>> vContractKv;
+    uint256 keyNext;
+
+    if (!pService->GetContractKvList(ctxReq.hashFork, hashBlock, nTxIndex, destContract, keyStart, nLimit, vContractKv, keyNext))
+    {
+        throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown address");
+    }
+
+    auto spResult = MakeCEthDebugStorageRangeAtResultPtr();
+
+    spResult->SetJsonResult(EthContractKvToJSON(vContractKv, keyNext));
+
+    return spResult;
+}
+
 } // namespace hashahead
