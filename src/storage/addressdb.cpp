@@ -1842,14 +1842,26 @@ bool CAddressDB::RetrieveBlsPubkeyContext(const uint256& hashFork, const uint256
     return false;
 }
 
-bool CAddressDB::CheckAddressContext(const uint256& hashFork, const uint256& hashLastBlock, const uint256& hashLastRoot)
+bool CAddressDB::GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress)
 {
     CReadLock rlock(rwAccess);
 
     auto it = mapAddressDB.find(hashFork);
     if (it != mapAddressDB.end())
     {
-        return it->second->CheckAddressContext(hashLastBlock, hashLastRoot);
+        return it->second->GetOwnerLinkTemplateAddress(hashBlock, destOwner, mapTemplateAddress);
+    }
+    return false;
+}
+
+bool CAddressDB::GetDelegateLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->GetDelegateLinkTemplateAddress(hashBlock, destDelegate, nTemplateType, nBegin, nCount, vTemplateAddress);
     }
     return false;
 }
