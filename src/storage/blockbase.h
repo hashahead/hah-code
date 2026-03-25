@@ -208,7 +208,7 @@ public:
     bool GetBlockDelegateVote(const uint256& hashBlock, std::map<CDestination, uint256>& mapVote);
     bool GetRangeDelegateEnroll(int height, const std::vector<uint256>& vBlockRange, std::map<CDestination, CDiskPos>& mapEnrollTxPos);
     bool VerifyRefBlock(const uint256& hashGenesis, const uint256& hashRefBlock);
-    CBlockIndex* GetForkValidLast(const uint256& hashGenesis, const uint256& hashFork);
+    BlockIndexPtr GetForkValidLast(const uint256& hashGenesis, const uint256& hashFork);
     bool VerifySameChain(const uint256& hashPrevBlock, const uint256& hashAfterBlock);
     bool GetLastRefBlockHash(const uint256& hashFork, const uint256& hashBlock, uint256& hashRefBlock, bool& fOrigin);
     bool GetBlockForRefBlockNoLock(const uint256& hashBlock, uint256& hashRefBlock);

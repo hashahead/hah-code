@@ -4355,14 +4355,24 @@ bool CBlockBase::RetrieveTxContractPrevState(const uint256& hashFork, const uint
     return false;
 }
 
-bool CBlockBase::GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash)
+bool CBlockBase::ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState)
 {
-    CBlockIndex* pLastIndex = nullptr;
-    if (!RetrieveFork(hashFork, &pLastIndex))
+    if (fCfgTraceDb)
     {
-        return false;
+        if (!dbBlock.ListBlockContractPrevState(hashFork, hashBlock, vBlockContractPrevState))
+        {
+            if (!ReUpdateBlockTraceData(hashFork, hashBlock))
+            {
+                return false;
+            }
+            if (!dbBlock.ListBlockContractPrevState(hashFork, hashBlock, vBlockContractPrevState))
+            {
+                return false;
+            }
+        }
+        return true;
     }
-    return blockFilter.GetFilterBlockHashs(nFilterId, pLastIndex->GetBlockHash(), fAll, vBlockHash);
+    return false;
 }
 
 uint256 CBlockBase::AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork)
