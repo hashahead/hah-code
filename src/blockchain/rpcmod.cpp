@@ -10132,4 +10132,43 @@ CRPCResultPtr CRPCMod::RPCEthMaxPriorityFeePerGas(const CReqContext& ctxReq, CRP
     return MakeCEthMaxPriorityFeePerGasResultPtr("0x0");
 }
 
+CRPCResultPtr CRPCMod::RPCEthTraceBlock(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (!BasicConfig()->fTraceDb)
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "If you need this function, please set config 'tracedb=true', clear data, and then restart");
+    }
+
+    auto spParam = CastParamPtr<CEthTraceBlockParam>(param);
+    if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() == 0)
+    {
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
+    }
+
+    const uint256& hashFork = ctxReq.hashFork;
+    const uint256 hashBlock = GetRefBlock(hashFork, spParam->vecParamlist.at(0));
+
+    CBlock block;
+    CChainId nChainId;
+    uint256 fork;
+    int height;
+    if (!pService->GetBlock(hashBlock, block, nChainId, fork, height))
+    {
+        StdLog("CRPCMod", "RPC EthTraceBlock: Get block fail, block: %s", hashBlock.ToString().c_str());
+        throw CRPCException(RPC_ETH_ERROR_NOT_FOUND_BLOCK, "Not find block");
+    }
+
+    auto spResult = MakeCEthTraceBlockResultPtr();
+
+    uint32 nTxIndex = 0;
+    for (const CTransaction& tx : block.vtx)
+    {
+        const uint256 txid = tx.GetHash();
+        spResult->vecResult.push_back(EthTxToTraceJSON(txid, tx, hashBlock, block.GetBlockNumber(), nTxIndex));
+        nTxIndex++;
+    }
+
+    return spResult;
+}
+
 } // namespace hashahead
