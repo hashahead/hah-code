@@ -9883,5 +9883,37 @@
             "{\"code\":-6,\"message\":\"Invalid block number\"}",
             "{\"code\":-6,\"message\":\"Unknown fork\"}"
         ]
+    },
+    "eth_maxPriorityFeePerGas": {
+        "type": "command",
+        "name": "EthMaxPriorityFeePerGas",
+        "desc": "[ETH] Get the priority fee needed to be included in a block",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "param"
+                }
+            }
+        },
+        "response": {
+            "type": "string",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli eth_maxPriorityFeePerGas []",
+                "response": "0x0"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"eth_maxPriorityFeePerGas\",\"jsonrpc\":\"2.0\",\"params\":[]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": \"0x0\"}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
     }
 }

@@ -10127,4 +10127,9 @@ CRPCResultPtr CRPCMod::RPCEthGetBlockReceipts(const CReqContext& ctxReq, CRPCPar
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCEthMaxPriorityFeePerGas(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    return MakeCEthMaxPriorityFeePerGasResultPtr("0x0");
+}
+
 } // namespace hashahead
