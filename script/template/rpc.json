@@ -9954,5 +9954,37 @@
             "{\"code\":-6,\"message\":\"Invalid number\"}"
         ]
     },
+    "debug_getBadBlocks": {
+        "type": "command",
+        "name": "EthDebugGetBadBlocks",
+        "desc": "[ETH] debug get bad blocks",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "param"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli debug_getBadBlocks []",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"debug_getBadBlocks\",\"jsonrpc\":\"2.0\",\"params\":[]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid block\"}"
+        ]
+    },
     }
 }

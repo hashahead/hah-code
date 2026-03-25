@@ -10171,4 +10171,18 @@ CRPCResultPtr CRPCMod::RPCEthTraceBlock(const CReqContext& ctxReq, CRPCParamPtr 
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCEthDebugGetBadBlocks(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (!BasicConfig()->fTraceDb)
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "If you need this function, please set config 'tracedb=true', clear data, and then restart");
+    }
+
+    auto spResult = MakeCEthDebugGetBadBlocksResultPtr();
+
+    spResult->SetJsonResult("[]");
+
+    return spResult;
+}
+
 } // namespace hashahead
