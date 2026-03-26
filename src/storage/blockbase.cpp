@@ -4464,7 +4464,19 @@ bool CBlockBase::GetCreateForkLockedAmount(const CDestination& dest, const uint2
             nForkValidHeight = 0;
         }
     }
+
     nLockedAmount = CTemplateFork::LockedCoin(nForkValidHeight);
+    return true;
+}
+
+bool CBlockBase::VerifyAddressPledgeVote(const CDestination& dest, const uint256& hashPrevBlock)
+{
+    CVoteContext ctxVote;
+    if (RetrieveDestVoteContext(hashPrevBlock, dest, ctxVote) && ctxVote.GetStopReVoteFlag() && ctxVote.nVoteAmount > 0)
+    {
+        StdLog("CBlockBase", "Verify pledge vote redeem: The resumption of investment has been stopped but has not yet ended, dest: %s", dest.ToString().c_str());
+        return false;
+    }
     return true;
 }
 
