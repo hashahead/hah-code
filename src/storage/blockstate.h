@@ -132,6 +132,12 @@ public:
 
 protected:
     bool GetDestLockedAmount(const CDestination& dest, uint256& nLockedAmount);
+    bool VerifyFunctionAddressRepeat(const CDestination& destNewFunction);
+    bool VerifyFunctionAddressDisable(const uint32 nFuncId);
+    bool GetContractStringParam(const uint8* pParamBeginPos, const std::size_t nParamSize, const uint8* pCurrParamPos, const std::size_t nSurplusParamLen, std::string& strParamOut);
+    uint64 GetMaxDexCoinOrderNumber(const CDestination& destFrom, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer);
+
+protected:
     CBlockBase& dbBlockBase;
     const uint16 nBlockType;
     const CChainId nLocalChainId;

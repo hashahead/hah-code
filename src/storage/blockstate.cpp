@@ -938,9 +938,23 @@ uint64 CBlockState::GetMaxDexCoinOrderNumber(const CDestination& destFrom, const
     {
         for (auto& kv : mapBlockDexOrder)
         {
-            prevState.mapStorage[kv.first] = kv.second;
+            if (kv.first.GetOrderAddress() == destFrom && kv.first.GetCoinPairHash() == hashCoinPair && kv.first.GetOwnerCoinFlag() == nOwnerCoinFlag)
+            {
+                if (kv.first.GetOrderNumber() > nMaxNumber)
+                {
+                    nMaxNumber = kv.first.GetOrderNumber();
+                }
+            }
         }
     }
+    if (nMaxNumber == 0)
+    {
+        if (!dbBlockBase.GetDexOrderMaxNumber(hashPrevBlock, destFrom, strCoinSymbolOwner, strCoinSymbolPeer, nMaxNumber))
+        {
+            nMaxNumber = 0;
+        }
+    }
+    return nMaxNumber;
 }
 
 } // namespace storage
