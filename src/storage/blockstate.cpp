@@ -871,10 +871,60 @@ bool CBlockState::VerifyFunctionAddressDisable(const uint32 nFuncId)
                 return false;
             }
         }
-        it = mapCacheContractPrevAddressState.insert(std::make_pair(address, CContractPrevState(stateDest.GetBalance(), stateDest.GetTxNonce() + 1, btContractRunCode))).first;
     }
-    CContractPrevState& prevState = it->second;
-    for (const auto& kv : mapContractKv)
+    return true;
+}
+
+bool CBlockState::GetContractStringParam(const uint8* pParamBeginPos, const std::size_t nParamSize, const uint8* pCurrParamPos, const std::size_t nSurplusParamLen, std::string& strParamOut)
+{
+    if (nSurplusParamLen < 32)
+    {
+        StdLog("CBlockState", "Get contract string param: Param var pos error, surplus param len: %lu, param size: %lu", nSurplusParamLen, nParamSize);
+        return false;
+    }
+    uint256 tempData;
+    tempData.FromBigEndian(pCurrParamPos, 32);
+    std::size_t nVarPos = tempData.Get64();
+
+    if (nParamSize < nVarPos)
+    {
+        StdLog("CBlockState", "Get contract string param: Param var pos error, var pos: %lu, param size: %lu", nVarPos, nParamSize);
+        return false;
+    }
+    const uint8* p = pParamBeginPos + nVarPos;
+    std::size_t nSurplusSize = nParamSize - nVarPos;
+
+    if (nSurplusSize < 32)
+    {
+        StdLog("CBlockState", "Get contract string param: Surplus size not enough1, surplus size: %lu", nSurplusSize);
+        return false;
+    }
+    tempData.FromBigEndian(p, 32);
+    uint64 nStringSize = tempData.Get64();
+    p += 32;
+    nSurplusSize -= 32;
+
+    if (nStringSize == 0)
+    {
+        StdLog("CBlockState", "Get contract string param: String size is 0, surplus size: %lu", nSurplusSize);
+        return false;
+    }
+    const std::size_t nSectByteCount = (nStringSize / 32 + ((nStringSize % 32) == 0 ? 0 : 1)) * 32;
+    if (nSurplusSize < nSectByteCount)
+    {
+        StdLog("CBlockState", "Get contract string param: Surplus size not enough2, surplus size: %lu, sect size: %lu, string size: %lu", nSurplusSize, nSectByteCount, nStringSize);
+        return false;
+    }
+    strParamOut.assign(p, p + nStringSize);
+    return true;
+}
+
+uint64 CBlockState::GetMaxDexCoinOrderNumber(const CDestination& destFrom, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer)
+{
+    uint256 hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+    uint8 nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+    uint64 nMaxNumber = 0;
+    for (auto& kv : mapCacheDexOrder)
     {
         if (prevState.mapStorage.count(kv.first) == 0)
         {

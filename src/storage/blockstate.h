@@ -129,7 +129,9 @@ public:
     bool IsContractDestroy(const CDestination& destContractIn);
     bool AddContractRunReceipt(const CTxContractReceipt& tcReceipt, const bool fFirstReceipt = false);
     bool AddVmOperationTraceLog(const CVmOperationTraceLog& vmOpTraceLog);
+
 protected:
+    bool GetDestLockedAmount(const CDestination& dest, uint256& nLockedAmount);
     CBlockBase& dbBlockBase;
     const uint16 nBlockType;
     const CChainId nLocalChainId;
