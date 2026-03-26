@@ -216,19 +216,9 @@ public:
     bool VerifyPrimaryHeightRefBlockTime(const int nHeight, const int64 nTime);
     bool UpdateForkNext(const uint256& hashFork, BlockIndexPtr pIndexLast, const std::vector<CBlockEx>& vBlockRemove, const std::vector<CBlockEx>& vBlockAddNew);
     bool RetrieveDestState(const uint256& hashFork, const uint256& hashBlockRoot, const CDestination& dest, CDestState& state);
-    SHP_BLOCK_STATE CreateBlockStateRoot(const uint256& hashFork, const CBlock& block, const uint256& hashPrevStateRoot, const uint32 nPrevBlockTime, uint256& hashStateRoot, uint256& hashReceiptRoot,
-                                         uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut, const std::map<CDestination, CAddressContext>& mapAddressContext);
-    bool UpdateBlockState(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const std::map<CDestination, CAddressContext>& mapAddressContext, uint256& hashNewStateRoot, SHP_BLOCK_STATE& ptrBlockStateOut);
-    bool UpdateBlockTxIndex(const uint256& hashFork, const CBlockEx& block, const uint32 nFile, const uint32 nOffset, const std::map<uint256, CTransactionReceipt>& mapBlockTxReceipts, uint256& hashNewRoot);
-    bool UpdateBlockAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CBlock& block,
-                                  const std::map<uint256, std::vector<CContractTransfer>>& mapContractTransferIn,
-                                  const std::map<uint256, uint256>& mapBlockTxFeeUsedIn, const std::map<uint256, std::map<CDestination, uint256>>& mapBlockCodeDestFeeUsedIn,
-                                  uint256& hashNewRoot);
-    bool UpdateBlockAddress(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const std::map<CDestination, CAddressContext>& mapAddressContextIn, const std::map<CDestination, CDestState>& mapBlockStateIn,
-                            const std::map<CDestination, uint256>& mapBlockPayTvFeeIn, const std::map<uint32, CFunctionAddressContext>& mapBlockFunctionAddressIn, uint256& hashNewRoot);
-    bool UpdateBlockCode(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const uint32 nFile, const uint32 nBlockOffset, const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCodeContextIn,
-                         const std::map<uint256, CContractRunCodeContext>& mapContractRunCodeContextIn, const std::map<CDestination, CAddressContext>& mapAddressContext, uint256& hashCodeRoot);
-    bool UpdateBlockVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashBlock, const CBlockEx& block, uint256& hashNewRoot);
+    SHP_BLOCK_STATE CreateBlockStateRoot(const uint256& hashFork, const CForkContext& ctxFork, const CBlock& block, const uint256& hashPrevStateRoot, const uint32 nPrevBlockTime, uint256& hashStateRoot, uint256& hashReceiptRoot,
+                                         uint256& hashCrosschainMerkleRoot, uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut, bool& fMoStatus, const std::map<CDestination, CAddressContext>& mapAddressContext);
+    bool ReUpdateBlockTraceData(const uint256& hashFork, const uint256& hashBlock);
     bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashContractRoot, const uint256& key, bytes& value);
     bool CreateCacheContractKvTrie(const uint256& hashFork, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot);
     bool RetrieveAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress);
