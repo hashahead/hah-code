@@ -4375,19 +4375,47 @@ bool CBlockBase::ListBlockContractPrevState(const uint256& hashFork, const uint2
     return false;
 }
 
-uint256 CBlockBase::AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork)
+bool CBlockBase::GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext)
 {
-    return blockFilter.AddPendingTxFilter(hashClient, hashFork);
-}
+    std::vector<std::pair<uint256, uint256>> vContractKvPair;
+    if (!dbBlock.GetContractKvPairList(hashFork, hashBlock, destContract, keyStart, nLimit, vContractKvPair, keyNext))
+    {
+        StdLog("CBlockBase", "Get contract kv list: Get contract kv pair list fail, contract address: %s, block: %s", destContract.ToString().c_str(), hashBlock.ToString().c_str());
+        return false;
+    }
 
-void CBlockBase::AddPendingTx(const uint256& hashFork, const uint256& txid)
-{
-    blockFilter.AddPendingTx(hashFork, txid);
-}
+    uint256 hashStateRoot;
+    {
+        CReadLock rlock(rwAccess);
+        BlockIndexPtr pIndex = GetIndex(hashBlock);
+        if (!pIndex)
+        {
+            StdLog("CBlockBase", "Get contract kv list: Get index fail, block: %s", hashBlock.ToString().c_str());
+            return false;
+        }
+        hashStateRoot = pIndex->hashStateRoot;
+    }
+    CDestState stateDest;
+    if (!RetrieveDestState(hashFork, hashStateRoot, destContract, stateDest))
+    {
+        StdLog("CBlockBase", "Get contract kv list: Retrieve dest state fail, state root: %s, contract address: %s, block: %s",
+               hashStateRoot.GetHex().c_str(), destContract.ToString().c_str(), hashBlock.ToString().c_str());
+        return false;
+    }
+    const uint256 hashStorageRoot = stateDest.GetStorageRoot();
 
-bool CBlockBase::GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid)
-{
-    return blockFilter.GetFilterTxids(hashFork, nFilterId, fAll, vTxid);
+    for (auto& kv : vContractKvPair)
+    {
+        bytes btValue;
+        if (!dbBlock.RetrieveContractKvValue(hashFork, hashStorageRoot, kv.second, btValue))
+        {
+            StdLog("CBlockBase", "Get contract kv list: Get contract kv value fail, state root: %s, contract address: %s, key: %s, block: %s",
+                   hashStateRoot.GetHex().c_str(), destContract.ToString().c_str(), kv.second.ToString().c_str(), hashBlock.ToString().c_str());
+            return false;
+        }
+        vContractKv.push_back(std::make_pair(kv.second, btValue));
+    }
+    return true;
 }
 
 bool CBlockBase::GetCreateForkLockedAmount(const CDestination& dest, const uint256& hashPrevBlock, const bytes& btAddressData, uint256& nLockedAmount)
