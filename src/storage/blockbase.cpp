@@ -4508,7 +4508,7 @@ bool CBlockBase::GetAddressLockedAmount(const uint256& hashFork, const uint256& 
             CTemplateAddressContext ctxTemplate;
             if (!ctxAddress.GetTemplateAddressContext(ctxTemplate))
             {
-                StdLog("CBlockState", "Get address loacked amount: Get template address context fail, dest: %s", dest.ToString().c_str());
+                StdLog("CBlockBase", "Get address loacked amount: Get template address context fail, dest: %s", dest.ToString().c_str());
                 nLockedAmount = nBalance;
                 return true;
             }
@@ -4543,6 +4543,11 @@ bool CBlockBase::GetAddressLockedAmount(const uint256& hashFork, const uint256& 
     }
     nLockedAmount += nLocked;
     return true;
+}
+
+bool CBlockBase::GetDexOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, CDexOrderBody& dexOrder)
+{
+    return dbBlock.GetDexOrder(hashBlock, destOrder, nChainIdOwner, strCoinSymbolOwner, strCoinSymbolPeer, nOrderNumber, dexOrder);
 }
 
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)

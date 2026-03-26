@@ -264,15 +264,14 @@ public:
     bool RetrieveTxContractReceipt(const uint256& hashFork, const uint256& txid, TxContractReceipts& tcrReceipt);
     bool ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts);
     bool RetrieveTxContractPrevState(const uint256& hashFork, const uint256& txid, MapContractPrevState& mapContractPrevState);
-    uint256 AddBlockFilter(const uint256& hashClient, const uint256& hashFork);
-    bool GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash);
-    uint256 AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork);
-    void AddPendingTx(const uint256& hashFork, const uint256& txid);
-    bool GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid);
+    bool ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState);
+    bool GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext);
     bool GetCreateForkLockedAmount(const CDestination& dest, const uint256& hashPrevBlock, const bytes& btAddressData, uint256& nLockedAmount);
+    bool VerifyAddressPledgeVote(const CDestination& dest, const uint256& hashPrevBlock);
     bool VerifyAddressVoteRedeem(const CDestination& dest, const uint256& hashPrevBlock);
     bool GetAddressLockedAmount(const uint256& hashFork, const uint256& hashPrevBlock, const CDestination& dest, const CAddressContext& ctxAddress, const uint256& nBalance, uint256& nLockedAmount);
 
+    bool GetDexOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, CDexOrderBody& dexOrder);
     bool AddBlacklistAddress(const CDestination& dest);
     void RemoveBlacklistAddress(const CDestination& dest);
     bool IsExistBlacklistAddress(const CDestination& dest);
