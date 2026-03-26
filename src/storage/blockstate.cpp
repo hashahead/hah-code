@@ -926,7 +926,17 @@ uint64 CBlockState::GetMaxDexCoinOrderNumber(const CDestination& destFrom, const
     uint64 nMaxNumber = 0;
     for (auto& kv : mapCacheDexOrder)
     {
-        if (prevState.mapStorage.count(kv.first) == 0)
+        if (kv.first.GetOrderAddress() == destFrom && kv.first.GetCoinPairHash() == hashCoinPair && kv.first.GetOwnerCoinFlag() == nOwnerCoinFlag)
+        {
+            if (kv.first.GetOrderNumber() > nMaxNumber)
+            {
+                nMaxNumber = kv.first.GetOrderNumber();
+            }
+        }
+    }
+    if (nMaxNumber == 0)
+    {
+        for (auto& kv : mapBlockDexOrder)
         {
             prevState.mapStorage[kv.first] = kv.second;
         }
