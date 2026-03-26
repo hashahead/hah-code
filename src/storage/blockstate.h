@@ -195,6 +195,61 @@ protected:
         uint256 nCacheTxFromTvGasFee;
         uint256 nCacheTxFromTvGas;
     };
+    std::map<CDestination, CCacheContractData> mapCacheContractData;
+    std::map<CDestination, CAddressContext> mapCacheAddressContext;
+    std::map<uint256, CContractCreateCodeContext> mapCacheContractCreateCodeContext;
+    std::map<uint256, CContractRunCodeContext> mapCacheContractRunCodeContext;
+    std::vector<CContractTransfer> vCacheContractTransfer;
+    std::map<CDestination, uint64> mapCacheOwnerDestCodeGasUsed;
+    std::map<CDestination, CCodeGasData> mapCacheContractDestCodeGasUsed;
+    std::map<CDestination, std::pair<uint32, uint32>> mapCacheModifyPledgeFinalHeight;
+    std::map<uint32, CFunctionAddressContext> mapCacheFunctionAddress;
+    std::map<std::string, CCoinContext> mapCacheSymbolCoin;
+    std::map<CDexOrderHeader, CDexOrderBody> mapCacheDexOrder;
+    std::map<CChainId, CBlockCrosschainProve> mapCacheCrossProve; // key is peer chainid
+    std::map<CDestination, std::map<uint256, bytes>> mapCacheTransientStorage;
+    std::set<CDestination> setCacheTimeVaultWhitelist;
+    std::set<uint256> setCacheStopFork;
+    TxContractReceipts vCacheContractReceipt;
+    MapContractPrevState mapCacheContractPrevAddressState;
+    VmOperationTraceLogs vCacheVmOpTraceLogs;
+    CCacheTxData cacheTxData;
+
+    uint64 nSurplusBlockGasLimit;
+
+    std::map<CDestination, uint256> mapBlockRewardLocked;
+
+public:
+    std::map<CDestination, CDestState> mapBlockState;
+    std::map<CDestination, uint256> mapContractKvPrevRoot;
+    std::map<CDestination, std::map<uint256, bytes>> mapContractKvState;
+    std::map<CDestination, std::map<uint256, bytes>> mapBlockTraceContractKvData;
+    std::map<CDestination, CAddressContext> mapBlockAddressContext;
+    std::map<CDestination, uint256> mapBlockPayTvFee;
+    std::map<uint256, CContractCreateCodeContext> mapBlockContractCreateCodeContext;
+    std::map<uint256, CContractRunCodeContext> mapBlockContractRunCodeContext;
+    std::map<uint256, std::vector<CContractTransfer>> mapBlockContractTransfer; // key is txid
+    std::map<uint256, uint256> mapBlockTxFeeUsed;
+    std::map<uint256, std::map<CDestination, uint256>> mapBlockCodeDestFeeUsed; // key is txid
+    std::map<CDestination, std::pair<uint32, uint32>> mapBlockModifyPledgeFinalHeight;
+    std::vector<uint256> vReceiptHash;
+    std::vector<CTransactionReceipt> vBlockTxReceipts;
+    std::map<uint256, std::size_t> mapBlockTxReceipts; // key: txid, value: vBlockTxReceipts index
+    CTransactionReceipt receiptMintTx;
+    std::map<uint32, CFunctionAddressContext> mapBlockFunctionAddress;
+    std::map<std::string, CCoinContext> mapBlockSymbolCoin;
+    std::map<CDexOrderHeader, CDexOrderBody> mapBlockDexOrder;
+    std::set<CDestination> setBlockTimeVaultWhitelist;
+    std::set<uint256> setBlockStopFork;
+    CBlockStorageProve proveBlockCrosschain;
+    std::map<uint256, uint256> mapCoinPairCompletePrice; // key: coin pair hash, value: complete price
+    std::map<CDexOrderHeader, std::vector<CCompDexOrderRecord>> mapCompDexOrderRecord;
+    BlockContractReceipts vBlockContractReceipt;                                     // first is txid
+    BlockContractPrevState vBlockContractPrevAddressState;                           // first is txid
+    std::vector<std::pair<uint256, VmOperationTraceLogs>> vBlockVmOpTraceLogs;       // first is txid
+    std::map<CDestination, std::vector<CTokenTransRecord>> mapBlockTokenTransRecord; // key: contract address
+    uint256 nBlockFeeLeft;
+    std::set<bytes> setBlockBloomData;
 };
 
 typedef std::shared_ptr<CBlockState> SHP_BLOCK_STATE;
