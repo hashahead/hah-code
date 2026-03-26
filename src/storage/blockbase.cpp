@@ -4426,6 +4426,7 @@ bool CBlockBase::GetCreateForkLockedAmount(const CDestination& dest, const uint2
                dest.ToString().c_str(), hashPrevBlock.GetHex().c_str());
         return false;
     }
+
     CTemplatePtr ptr = CTemplate::Import(btAddressData);
     if (!ptr || ptr->GetTemplateType() != TEMPLATE_FORK)
     {
@@ -4434,17 +4435,34 @@ bool CBlockBase::GetCreateForkLockedAmount(const CDestination& dest, const uint2
         return false;
     }
     uint256 hashForkLocked = boost::dynamic_pointer_cast<CTemplateFork>(ptr)->hashFork;
-    int nCreateHeight = GetForkCreatedHeight(hashForkLocked, hashPrevBlock);
-    if (nCreateHeight < 0)
+
+    CForkCtxStatus forkStatus;
+    if (!dbBlock.GetForkCtxStatus(hashForkLocked, forkStatus, hashPrevBlock))
     {
-        StdLog("CBlockBase", "Get fork lock amount: Get fork created height fail, dest: %s, fork: %s",
+        StdLog("CBlockBase", "Get fork lock amount: Get fork status fail, dest: %s, fork: %s",
                dest.ToString().c_str(), hashForkLocked.GetHex().c_str());
         return false;
     }
-    int nForkValidHeight = CBlock::GetBlockHeightByHash(hashPrevBlock) - nCreateHeight;
-    if (nForkValidHeight < 0)
+
+    int nForkValidHeight = 0;
+    if (forkStatus.IsRunning())
     {
         nForkValidHeight = 0;
+    }
+    else
+    {
+        // int nCreateHeight = GetForkCreatedHeight(hashForkLocked, hashPrevBlock);
+        // if (nCreateHeight < 0)
+        // {
+        //     StdLog("CBlockBase", "Get fork lock amount: Get fork created height fail, dest: %s, fork: %s",
+        //            dest.ToString().c_str(), hashForkLocked.GetHex().c_str());
+        //     return false;
+        // }
+        nForkValidHeight = CBlock::GetBlockHeightByHash(hashPrevBlock) - forkStatus.GetStopHeight();
+        if (nForkValidHeight < 0)
+        {
+            nForkValidHeight = 0;
+        }
     }
     nLockedAmount = CTemplateFork::LockedCoin(nForkValidHeight);
     return true;
