@@ -4550,6 +4550,11 @@ bool CBlockBase::GetDexOrder(const uint256& hashBlock, const CDestination& destO
     return dbBlock.GetDexOrder(hashBlock, destOrder, nChainIdOwner, strCoinSymbolOwner, strCoinSymbolPeer, nOrderNumber, dexOrder);
 }
 
+bool CBlockBase::GetDexCompletePrice(const uint256& hashBlock, const uint256& hashCoinPair, uint256& nCompletePrice)
+{
+    return dbBlock.GetDexCompletePrice(hashBlock, hashCoinPair, nCompletePrice);
+}
+
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)
 {
     return dbBlock.AddBlacklistAddress(dest);
