@@ -1898,5 +1898,17 @@ bool CAddressDB::AddCodeContext(const uint256& hashFork, const uint256& hashPrev
     return false;
 }
 
+bool CAddressDB::RetrieveSourceCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->RetrieveSourceCodeContext(hashBlock, hashSourceCode, ctxtCode);
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead

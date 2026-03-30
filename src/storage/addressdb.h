@@ -208,6 +208,8 @@ public:
                         const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
                         const std::map<uint256, CContractRunCodeContext>& mapContractRunCode,
                         const std::map<uint256, CTemplateContext>& mapTemplateData,
+                        uint256& hashCodeRoot);
+    bool RetrieveSourceCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode);
 protected:
     bool fCache;
     boost::filesystem::path pathAddress;
