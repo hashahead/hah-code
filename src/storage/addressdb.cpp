@@ -1878,5 +1878,25 @@ bool CAddressDB::VerifyAddressContext(const uint256& hashFork, const uint256& ha
     return false;
 }
 
+////////////////////////////////////////////
+// contract code
+
+bool CAddressDB::AddCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock,
+                                const std::map<uint256, CContractSourceCodeContext>& mapSourceCode,
+                                const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
+                                const std::map<uint256, CContractRunCodeContext>& mapContractRunCode,
+                                const std::map<uint256, CTemplateContext>& mapTemplateData,
+                                uint256& hashCodeRoot)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->AddCodeContext(hashPrevBlock, hashBlock, mapSourceCode, mapContractCreateCode, mapContractRunCode, mapTemplateData, hashCodeRoot);
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead
