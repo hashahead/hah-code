@@ -255,6 +255,35 @@ protected:
     }
 };
 
+//////////////////////////////
+// CHdexFirstPrevBlock & CHdexLastProveBlock & CHdexRecvCrosschainProve
+
+class CHdexFirstPrevBlock
+{
+    friend class hnbase::CStream;
+
+public:
+    CHdexFirstPrevBlock()
+      : nRecvChainId(0), nSendChainId(0) {}
+    CHdexFirstPrevBlock(const uint32 nRecvChainIdIn, const uint32 nSendChainIdIn, const uint256& hashBlockIn, const uint256& hashFirstPrevBlockIn)
+      : nRecvChainId(nRecvChainIdIn), nSendChainId(nSendChainIdIn), hashBlock(hashBlockIn), hashFirstPrevBlock(hashFirstPrevBlockIn) {}
+
+public:
+    uint32 nRecvChainId;
+    uint32 nSendChainId;
+    uint256 hashBlock;
+    uint256 hashFirstPrevBlock;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(nRecvChainId, opt);
+        s.Serialize(nSendChainId, opt);
+        s.Serialize(hashBlock, opt);
+        s.Serialize(hashFirstPrevBlock, opt);
+    }
+};
 } // namespace storage
 } // namespace hashahead
 
