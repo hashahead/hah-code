@@ -515,4 +515,9 @@ void CBlockVoteChannel::BlockVoteTimerFunc(uint32 nTimerId)
     }
 }
 
+void CBlockVoteChannel::AddWaitNewBlock(const CUpdateBlockData& newBlock)
+{
+    boost::unique_lock<boost::mutex> lock(mutexWaitBlock);
+    vWaitNewBlock.push_back(newBlock);
+}
 } // namespace hashahead
