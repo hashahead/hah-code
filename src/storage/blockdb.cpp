@@ -412,6 +412,10 @@ bool CBlockDB::AddBlockVoteResult(const uint256& hashBlock, const bool fLongChai
     return dbBlockIndex.AddBlockVoteResult(hashBlock, fLongChain, btBitmap, btAggSig, fAtChain, hashAtBlock);
 }
 
+bool CBlockDB::RemoveBlockVoteResult(const uint256& hashBlock)
+{
+    return dbBlockIndex.RemoveBlockVoteResult(hashBlock);
+}
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);

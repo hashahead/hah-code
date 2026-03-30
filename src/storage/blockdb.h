@@ -70,6 +70,7 @@ public:
     bool RetrieveBlockHashByHeight(const uint256& hashFork, const uint32 nBlockHeight, std::vector<uint256>& vBlockHash);
     bool GetForkMaxHeight(const uint256& hashFork, uint32& nMaxHeight);
     bool AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock);
+    bool RemoveBlockVoteResult(const uint256& hashBlock);
     bool AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc);
     bool RetrieveBlockVerify(const uint256& hashBlock, CBlockVerify& verifyBlock);
     std::size_t GetBlockVerifyCount();
