@@ -4555,6 +4555,10 @@ bool CBlockBase::GetDexCompletePrice(const uint256& hashBlock, const uint256& ha
     return dbBlock.GetDexCompletePrice(hashBlock, hashCoinPair, nCompletePrice);
 }
 
+bool CBlockBase::GetCompleteOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, uint256& nCompleteAmount, uint64& nCompleteOrderCount)
+{
+    return dbBlock.GetCompleteOrder(hashBlock, destOrder, nChainIdOwner, strCoinSymbolOwner, strCoinSymbolPeer, nOrderNumber, nCompleteAmount, nCompleteOrderCount);
+}
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)
 {
     return dbBlock.AddBlacklistAddress(dest);
