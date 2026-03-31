@@ -251,6 +251,7 @@ private:
     rpc::CRPCResultPtr RPCEthTraceBlock(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthDebugGetBadBlocks(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthDebugStorageRangeAt(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCEthDebugGetTrieFlushInterval(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
 
 protected:
     hnbase::IIOProc* pHttpServer;

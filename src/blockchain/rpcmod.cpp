@@ -10287,4 +10287,18 @@ CRPCResultPtr CRPCMod::RPCEthDebugStorageRangeAt(const CReqContext& ctxReq, CRPC
     return spResult;
 }
 
+CRPCResultPtr CRPCMod::RPCEthDebugGetTrieFlushInterval(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (!BasicConfig()->fTraceDb)
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "If you need this function, please set config 'tracedb=true', clear data, and then restart");
+    }
+
+    auto spResult = MakeCEthDebugGetTrieFlushIntervalResultPtr();
+
+    spResult->SetJsonResult("0"); // 1h0m0s
+
+    return spResult;
+}
+
 } // namespace hashahead
