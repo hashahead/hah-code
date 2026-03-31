@@ -201,6 +201,14 @@ void CryptoKeyFromPassphrase(int version, const CCryptoString& passphrase, const
 bool CryptoEncryptSecret(int version, const CCryptoString& passphrase, const CCryptoKey& key, CCryptoCipher& cipher);
 bool CryptoDecryptSecret(int version, const CCryptoString& passphrase, const CCryptoCipher& cipher, CCryptoKey& key);
 
+// bls sign & verify
+struct CCryptoBlsKey
+{
+    uint256 secret;
+    uint384 pubkey;
+};
+
+bool CryptoBlsMakeNewKey(CCryptoBlsKey& key);
 } // namespace crypto
 } // namespace hashahead
 

@@ -864,5 +864,17 @@ bool CryptoDecryptSecret(int version, const CCryptoString& passphrase, const CCr
             == 0);
 }
 
+/////////////////////////////
+// bls sign & verify
+
+bool CryptoBlsMakeNewKey(CCryptoBlsKey& key)
+{
+    CCryptoKey skey;
+    if (CryptoMakeNewKey(skey).IsNull())
+    {
+        return false;
+    }
+    return CryptoBlsMakeNewKey(key, skey.secret);
+}
 } // namespace crypto
 } // namespace hashahead
