@@ -493,6 +493,22 @@ bool CBlockChannel::HandleEvent(network::CEventPeerBlockGetBlockRsp& eventData)
     return true;
 }
 
+bool CBlockChannel::HandleEvent(network::CEventLocalBlockSyncTimer& eventData)
+{
+    for (auto& kv : mapChnFork)
+    {
+        const uint256& hashFork = kv.first;
+        for (auto& kvs : mapChnPeer)
+        {
+            if (kvs.second.IsSubscribe(hashFork))
+            {
+                SendNextPrevBlockReq(hashFork, 0, kvs.first);
+            }
+        }
+    }
+    return true;
+}
+
 bool CBlockChannel::HandleEvent(network::CEventLocalBlockSubscribeFork& eventSubsFork)
 {
     network::CEventPeerBlockSubscribe eventSubscribe(0, pCoreProtocol->GetGenesisBlockHash());

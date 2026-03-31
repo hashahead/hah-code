@@ -141,6 +141,7 @@ protected:
 
     uint64 nPrevCheckCacheTimeoutTime;
     uint64 nCacheBlockByteCount;
+    uint32 nBlockSyncTimerId;
 };
 
 } // namespace hashahead
