@@ -520,4 +520,16 @@ void CBlockVoteChannel::AddWaitNewBlock(const CUpdateBlockData& newBlock)
     boost::unique_lock<boost::mutex> lock(mutexWaitBlock);
     vWaitNewBlock.push_back(newBlock);
 }
+
+bool CBlockVoteChannel::GetWaitNewBlock(std::vector<CUpdateBlockData>& vNewBlock)
+{
+    boost::unique_lock<boost::mutex> lock(mutexWaitBlock);
+    if (!vWaitNewBlock.empty())
+    {
+        vNewBlock = vWaitNewBlock;
+        vWaitNewBlock.clear();
+        return true;
+    }
+    return false;
+}
 } // namespace hashahead

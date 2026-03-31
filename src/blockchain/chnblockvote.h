@@ -148,9 +148,12 @@ protected:
     }
     const string GetPeerAddressInfo(uint64 nNonce);
     void BlockVoteTimerFunc(uint32 nTimerId);
+    bool GetWaitNewBlock(std::vector<CUpdateBlockData>& vNewBlock);
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
+    boost::mutex mutexWaitBlock;
+    std::vector<CUpdateBlockData> vWaitNewBlock;
 };
 
 } // namespace hashahead
