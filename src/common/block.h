@@ -918,6 +918,8 @@ public:
     std::vector<CTransactionReceipt> vBlockTxReceipts;
 };
 
+    void AddDexOrderProve(const CDestination& destOrderIn, const CChainId nChainIdOwnerIn, const CChainId nChainIdPeerIn, const std::string& strCoinSymbolOwnerIn,
+                          const std::string& strCoinSymbolPeerIn, const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn);
 } // namespace hashahead
 
 #endif //COMMON_BLOCK_H

@@ -929,4 +929,9 @@ void CBlockCrosschainProve::AddCoinTransferProve(const CDestination& destTransIn
     vCoinTransferProve.push_back(CBlockCoinTransferProve(destTransIn, strCoinSymbolIn, nOriChainIdIn, nDestChainIdIn, nTransferAmountIn));
 }
 
+void CBlockCrosschainProve::AddDexOrderProve(const CDestination& destOrderIn, const CChainId nChainIdOwnerIn, const CChainId nChainIdPeerIn, const std::string& strCoinSymbolOwnerIn,
+                                             const std::string& strCoinSymbolPeerIn, const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn)
+{
+    mapDexOrderProve[CDexOrderHeader(nChainIdOwnerIn, destOrderIn, strCoinSymbolOwnerIn, strCoinSymbolPeerIn, nOrderNumberIn)] = CBlockDexOrderProve(destOrderIn, nChainIdOwnerIn, nChainIdPeerIn, strCoinSymbolOwnerIn, strCoinSymbolPeerIn, nOrderNumberIn, nOrderAmountIn, nOrderPriceIn);
+}
 } // namespace hashahead
