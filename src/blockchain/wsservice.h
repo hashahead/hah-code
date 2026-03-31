@@ -173,6 +173,10 @@ protected:
 
 protected:
     hnbase::IIOModule* pRpcModIOModule;
+
+    hnbase::CRWAccess rwAccess;
+    std::map<CChainId, SHP_WS_SERVER> mapWsServer;
+    std::map<CChainId, CWsSubscribeFork> mapWsSubscribeFork;
 };
 
 } // namespace hashahead

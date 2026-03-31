@@ -584,6 +584,93 @@ bool CWsService::HandleEvent(CEventWsServicePushNewBlock& eventPush)
     return true;
 }
 
+bool CWsService::HandleEvent(CEventWsServicePushLogs& eventPush)
+{
+    CReadLock rlock(rwAccess);
+
+    const uint256& hashBlock = eventPush.data.hashBlock;
+    const CTransactionReceipt& receipt = eventPush.data.receipt;
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+    auto& subsFork = mapWsSubscribeFork[nChainId];
+
+    SHP_WS_SERVER ptrWsServer = nullptr;
+    auto it = mapWsServer.find(nChainId);
+    if (it != mapWsServer.end())
+    {
+        ptrWsServer = it->second;
+    }
+    if (ptrWsServer == nullptr)
+    {
+        return true;
+    }
+
+    // {
+    // 	"jsonrpc": "2.0",
+    // 	"method": "eth_subscription",
+    // 	"params": {
+    // 		"subscription": "0x96f43d778ad928079559dfa7bcb1d830",
+    // 		"result": {
+    // 			"address": "0xab6a1a01d8a6b8b6cbabc1f4e4e955da9d83b287",
+    // 			"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "0x000000000000000000000000b955034fcefb66112bab47483c8d243b86cb2c1d", "0x0000000000000000000000009835c12d95f059eb4eaecb4b00f2ea2c99b2a0d4"],
+    // 			"data": "0x000000000000000000000000000000000000000000000000000000000000014d",
+    // 			"blockNumber": "0xf3d",
+    // 			"transactionHash": "0x20ebf76d8ff2d91cf80500a928a5da8f92be7d7024295edc921ce9312e547fcb",
+    // 			"transactionIndex": "0x0",
+    // 			"blockHash": "0xbfe8a92555e7a151d59c3a4e4030a5854850c2a919a429f05fe6cb3864d93069",
+    // 			"logIndex": "0x0",
+    // 			"removed": false
+    // 		}
+    // 	}
+    // }
+
+    for (const auto& kv : subsFork.GetSubsListByType(WSCS_SUBS_TYPE_LOGS))
+    {
+        const uint128& nSubsId = kv.first;
+        const CClientSubscribe& clientSubs = kv.second;
+
+        MatchLogsVec vLogs;
+        clientSubs.matchesLogs(receipt, vLogs);
+
+        for (const CMatchLogs& v : vLogs)
+        {
+            std::string strMsg;
+
+            strMsg += "{";
+            strMsg += "\"jsonrpc\": \"2.0\",";
+            strMsg += "\"method\": \"eth_subscription\",";
+            strMsg += "\"params\": {";
+            strMsg += ("\"subscription\": \"" + nSubsId.GetHex() + "\",");
+            strMsg += "\"result\": {";
+            strMsg += ("\"address\": \"" + v.address.ToString() + "\",");
+            strMsg += "\"topics\": [";
+            for (uint64 i = 0; i < v.topics.size(); i++)
+            {
+                const uint256& h = v.topics[i];
+                if (i == 0)
+                {
+                    strMsg += ("\"" + h.GetHex() + "\"");
+                }
+                else
+                {
+                    strMsg += (", \"" + h.GetHex() + "\"");
+                }
+            }
+            strMsg += "],";
+            strMsg += ("\"data\": \"" + ToHexString(v.data) + "\",");
+            strMsg += ("\"blockNumber\": \"" + ToHexString(receipt.nBlockNumber) + "\",");
+            strMsg += ("\"transactionHash\": \"" + receipt.txid.GetHex() + "\",");
+            strMsg += ("\"transactionIndex\": \"" + ToHexString(receipt.nTxIndex) + "\",");
+            strMsg += ("\"blockHash\": \"" + hashBlock.GetHex() + "\",");
+            strMsg += ("\"logIndex\": \"" + ToHexString(v.nLogIndex) + "\",");
+            strMsg += ("\"removed\": " + (v.fRemoved ? string("true") : string("false")));
+            strMsg += "}}}";
+
+            ptrWsServer->SendWsMsg(clientSubs.nClientConnId, strMsg);
+        }
+    }
+    return true;
+}
+
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {
