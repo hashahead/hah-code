@@ -129,6 +129,40 @@ private:
     std::map<uint64, CMthWait*> mapWait;
 };
 
+class CMthWait
+{
+public:
+    CMthWait()
+      : ui32WaitPos(0)
+    {
+        ui64WaitId = CBaseUniqueId::CreateUniqueId(0, 0, 0xEF);
+    }
+    ~CMthWait();
+
+    uint64 GetWaitId() const
+    {
+        return ui64WaitId;
+    }
+    bool AddEvent(CMthEvent* pEvent, const int iEventFlag);
+    void DelEvent(CMthEvent* pEvent);
+    void SetSignal(CMthEvent* pEvent);
+    int Wait(const uint32 ui32Timeout); /* ui32Timeout is milliseconds */
+
+private:
+    boost::mutex lockWait;
+    boost::condition_variable_any condWait;
+    uint64 ui64WaitId;
+
+    typedef struct _NM_EVENT
+    {
+        int iEventFlag;
+        bool fSignalFlag;
+        CMthEvent* pEvent;
+    } NM_EVENT, *PNM_EVENT;
+
+    std::map<uint64, PNM_EVENT> mapEvent;
+    uint32 ui32WaitPos;
+};
 } // namespace hnbase
 
 #endif // __HSM_MTHBASE_H

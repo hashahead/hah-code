@@ -45,4 +45,34 @@ uint64 CBaseUniqueId::CreateUniqueId(const uint8 ucPortType, const uint8 ucDirec
     return ui64UniqueId;
 }
 
+//----------------------------------------------------------------------------------------
+void CMthEvent::SetEvent()
+{
+    boost::unique_lock<boost::mutex> lock(lockEvent);
+
+    if (!fSingleFlag)
+    {
+        fSingleFlag = true;
+
+        if (fManualReset)
+        {
+            condEvent.notify_all();
+        }
+        else
+        {
+            condEvent.notify_one();
+        }
+
+        CMthWait* pWait;
+        std::map<uint64, CMthWait*>::iterator it;
+        for (it = mapWait.begin(); it != mapWait.end(); it++)
+        {
+            pWait = it->second;
+            if (pWait)
+            {
+                pWait->SetSignal(this);
+            }
+        }
+    }
+}
 } // namespace hnbase
