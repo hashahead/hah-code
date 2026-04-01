@@ -934,4 +934,14 @@ void CBlockCrosschainProve::AddDexOrderProve(const CDestination& destOrderIn, co
 {
     mapDexOrderProve[CDexOrderHeader(nChainIdOwnerIn, destOrderIn, strCoinSymbolOwnerIn, strCoinSymbolPeerIn, nOrderNumberIn)] = CBlockDexOrderProve(destOrderIn, nChainIdOwnerIn, nChainIdPeerIn, strCoinSymbolOwnerIn, strCoinSymbolPeerIn, nOrderNumberIn, nOrderAmountIn, nOrderPriceIn);
 }
+
+void CBlockCrosschainProve::AddDexOrderProve(const CBlockDexOrderProve& orderProve)
+{
+    mapDexOrderProve[orderProve.GetDexOrderHeader()] = orderProve;
+}
+
+void CBlockCrosschainProve::AddCrossConfirmRecvBlock(const uint256& hashRecvBlock)
+{
+    setCrossConfirmRecvBlock.insert(hashRecvBlock);
+}
 } // namespace hashahead

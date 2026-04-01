@@ -918,6 +918,42 @@ public:
     std::vector<CTransactionReceipt> vBlockTxReceipts;
 };
 
+class CBlockCoinTransferProve
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockCoinTransferProve()
+      : nOriChainId(0), nDestChainId(0) {}
+    CBlockCoinTransferProve(const CDestination& destTransferIn, const std::string& strCoinSymbolIn, const CChainId nOriChainIdIn, const CChainId nDestChainIdIn, const uint256& nTransferAmountIn)
+      : destTransfer(destTransferIn), strCoinSymbol(strCoinSymbolIn), nOriChainId(nOriChainIdIn), nDestChainId(nDestChainIdIn), nTransferAmount(nTransferAmountIn) {}
+
+public:
+    CDestination destTransfer;
+    std::string strCoinSymbol;
+    CChainId nOriChainId;
+    CChainId nDestChainId;
+    uint256 nTransferAmount;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+    {
+        s << destTransfer << strCoinSymbol << nOriChainId << nDestChainId << nTransferAmount.ToValidBigEndianData();
+    }
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&)
+    {
+        bytes btTransferAmount;
+        s >> destTransfer >> strCoinSymbol >> nOriChainId >> nDestChainId >> btTransferAmount;
+        nTransferAmount.FromValidBigEndianData(btTransferAmount);
+    }
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const
+    {
+        (void)s;
+        hnbase::CBufStream ss;
+        ss << destTransfer << strCoinSymbol << nOriChainId << nDestChainId << nTransferAmount.ToValidBigEndianData();
+        serSize = ss.GetSize();
+    }
+};
     void AddDexOrderProve(const CDestination& destOrderIn, const CChainId nChainIdOwnerIn, const CChainId nChainIdPeerIn, const std::string& strCoinSymbolOwnerIn,
                           const std::string& strCoinSymbolPeerIn, const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn);
 } // namespace hashahead
