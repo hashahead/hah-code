@@ -123,6 +123,39 @@ protected:
     }
 };
 
+//////////////////////////////
+// CBlockMakerFilter
+
+class CBlockMakerFilter
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockMakerFilter() {}
+    CBlockMakerFilter(const uint256& hashForkIn)
+      : hashFork(hashForkIn), nPrevGetChangesTime(hnbase::GetTime()) {}
+
+    bool isTimeout();
+    bool AddBlockHash(const uint256& hashFork, const uint256& hashBlock, const uint256& hashPrev);
+    bool GetFilterBlockHashs(const uint256& hashLastBlock, const bool fAll, std::vector<uint256>& vBlockhash);
+
+protected:
+    uint256 hashFork;
+    int64 nPrevGetChangesTime;
+
+    std::map<uint256, uint256> mapBlockHash;
+    std::map<uint256, uint256, CustomBlockHashCompare> mapHisBlockHash;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(nPrevGetChangesTime, opt);
+        s.Serialize(mapBlockHash, opt);
+        s.Serialize(mapHisBlockHash, opt);
+    }
+};
 } // namespace hashahead
 
 #endif // COMMON_CMSTRUCT_H
