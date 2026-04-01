@@ -2802,6 +2802,11 @@ bool CBlockChain::RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBit
 {
     return cntrBlock.RetrieveBlockVoteResult(hashBlock, btBitmap, btAggSig, fAtChain, hashAtBlock);
 }
+
+bool CBlockChain::GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap, bytes& btAggSig, uint256& hashVoteBlock)
+{
+    return cntrBlock.GetMakerVoteBlock(hashPrevBlock, btBitmap, btAggSig, hashVoteBlock);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

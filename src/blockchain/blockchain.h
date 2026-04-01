@@ -137,10 +137,16 @@ public:
     bool ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts) override;
     bool RetrieveTxContractPrevState(const uint256& hashFork, const uint256& txid, MapContractPrevState& mapContractPrevState) override;
     bool ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState) override;
-    bool CallContract(const bool fEthCall, const uint256& hashFork, const uint256& hashBlock, const CDestination& from, const CDestination& to, const uint256& nAmount, const uint256& nGasPrice,
-                      const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult) override;
+    bool GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext) override;
+    bool CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult) override;
+    bool GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, string& strSymbol) override;
+    bool GetContractCoinDecimals(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, uint8& nDecimals) override;
+    bool GetContractCoinBalance(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const CDestination& destUser, uint256& nBalance) override;
     bool VerifyContractAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract) override;
     bool VerifyCreateCodeTx(const uint256& hashFork, const uint256& hashBlock, const CTransaction& tx) override;
+
+    bool ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                             const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder) override;
     bool ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder) override;
     bool GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve) override;
     bool AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve) override;
@@ -165,6 +171,7 @@ public:
 
     bool AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock) override;
     bool RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock) override;
+    bool GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap, bytes& btAggSig, uint256& hashVoteBlock) override;
 
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
