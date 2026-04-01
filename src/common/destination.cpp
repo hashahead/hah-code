@@ -272,4 +272,19 @@ void CTimeVault::CalcRealityTvGasFee(const uint256& nGasPrice, uint256& nTvGasFe
     }
 }
 
+uint64 CTimeVault::EstimateBlockTime(const uint64 nTime, const bool fEstimate)
+{
+    const uint64 nDayTs = GET_PARAM(3600 * 24, 60 * 5);
+    uint64 nEstCalcTime = nTime / nDayTs * nDayTs;
+    if (fEstimate)
+    {
+        const uint64 nTickTs = GET_PARAM(60 * 10, 20);
+        if (nEstCalcTime > nTickTs && (nEstCalcTime + nDayTs - nTime) <= nTickTs)
+        {
+            nEstCalcTime += nDayTs;
+        }
+    }
+    return nEstCalcTime;
+}
+
 } // namespace hashahead
