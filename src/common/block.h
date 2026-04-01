@@ -954,6 +954,39 @@ protected:
         serSize = ss.GetSize();
     }
 };
+
+class CBlockDexOrderProve
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockDexOrderProve()
+      : nChainIdOwner(0), nChainIdPeer(0), nOrderNumber(0) {}
+    CBlockDexOrderProve(const CDestination& destOrderIn, const CChainId nChainIdOwnerIn, const CChainId nChainIdPeerIn, const std::string& strCoinSymbolOwnerIn, const std::string& strCoinSymbolPeerIn,
+                        const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn)
+      : destOrder(destOrderIn), nChainIdOwner(nChainIdOwnerIn), nChainIdPeer(nChainIdPeerIn), strCoinSymbolOwner(strCoinSymbolOwnerIn), strCoinSymbolPeer(strCoinSymbolPeerIn),
+        nOrderNumber(nOrderNumberIn), nOrderAmount(nOrderAmountIn), nOrderPrice(nOrderPriceIn) {}
+
+    CDexOrderHeader GetDexOrderHeader() const
+    {
+        return CDexOrderHeader(nChainIdOwner, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nOrderNumber);
+    }
+
+public:
+    CDestination destOrder;
+    CChainId nChainIdOwner;
+    CChainId nChainIdPeer;
+    std::string strCoinSymbolOwner;
+    std::string strCoinSymbolPeer;
+    uint64 nOrderNumber;
+    uint256 nOrderAmount;
+    uint256 nOrderPrice;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const;
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&);
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
+};
     void AddDexOrderProve(const CDestination& destOrderIn, const CChainId nChainIdOwnerIn, const CChainId nChainIdPeerIn, const std::string& strCoinSymbolOwnerIn,
                           const std::string& strCoinSymbolPeerIn, const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn);
 } // namespace hashahead
