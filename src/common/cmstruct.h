@@ -86,10 +86,41 @@ public:
 
 class CBlockLogsFilter
 {
+    friend class hnbase::CStream;
+
 public:
     CBlockLogsFilter() {}
+    CBlockLogsFilter(const uint256& hashForkIn, const CLogsFilter& logFilterIn)
+      : hashFork(hashForkIn), logFilter(logFilterIn), nLogsCount(0), nHisLogsCount(0), nPrevGetChangesTime(hnbase::GetTime()) {}
 
     bool isTimeout();
+
+    bool AddTxReceipt(const uint256& hashFork, const uint256& hashBlock, const CTransactionReceipt& receipt);
+    void GetTxReceiptLogs(const bool fAll, ReceiptLogsVec& receiptLogs);
+
+protected:
+    uint256 hashFork;
+    CLogsFilter logFilter;
+
+    int64 nPrevGetChangesTime;
+    uint64 nLogsCount;
+    uint64 nHisLogsCount;
+
+    ReceiptLogsVec vReceiptLogs;
+    ReceiptLogsVec vHisReceiptLogs;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(logFilter, opt);
+        s.Serialize(nPrevGetChangesTime, opt);
+        s.Serialize(nLogsCount, opt);
+        s.Serialize(nHisLogsCount, opt);
+        s.Serialize(vReceiptLogs, opt);
+        s.Serialize(vHisReceiptLogs, opt);
+    }
 };
 
 } // namespace hashahead
