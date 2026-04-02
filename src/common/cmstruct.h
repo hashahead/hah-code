@@ -156,6 +156,44 @@ protected:
         s.Serialize(mapHisBlockHash, opt);
     }
 };
+
+//////////////////////////////
+// CBlockPendingTxFilter
+
+class CBlockPendingTxFilter
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockPendingTxFilter() {}
+    CBlockPendingTxFilter(const uint256& hashForkIn)
+      : hashFork(hashForkIn), nPrevGetChangesTime(hnbase::GetTime()), nSeqCreate(0) {}
+
+    bool isTimeout();
+    bool AddPendingTx(const uint256& hashFork, const uint256& txid);
+    bool GetFilterTxids(const uint256& hashFork, const bool fAll, std::vector<uint256>& vTxid);
+
+protected:
+    uint256 hashFork;
+    int64 nPrevGetChangesTime;
+    uint64 nSeqCreate;
+
+    std::set<uint256> setTxid;
+    std::set<uint256> setHisTxid;
+    std::map<uint64, uint256> mapHisSeq;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(nPrevGetChangesTime, opt);
+        s.Serialize(nSeqCreate, opt);
+        s.Serialize(setTxid, opt);
+        s.Serialize(setHisTxid, opt);
+        s.Serialize(mapHisSeq, opt);
+    }
+};
 } // namespace hashahead
 
 #endif // COMMON_CMSTRUCT_H
