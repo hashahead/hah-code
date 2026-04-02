@@ -987,6 +987,21 @@ protected:
     void Serialize(hnbase::CStream& s, hnbase::LoadType&);
     void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
 };
+
+class CBlockCrosschainProve
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockCrosschainProve(const uint256& hashPrevProveBlockIn = uint256())
+      : nProveVersion(CP_PROVE_VERSION_1), hashPrevProveBlock(hashPrevProveBlockIn) {}
+
+    void Clear();
+    bool IsNull() const;
+    bool IsCrossProveNull() const;
+    uint256 GetHash() const;
+
+    void AddCoinTransferProve(const CDestination& destTransIn, const std::string& strCoinSymbolIn, const CChainId nOriChainIdIn, const CChainId nDestChainIdIn, const uint256& nTransferAmountIn);
     void AddDexOrderProve(const CDestination& destOrderIn, const CChainId nChainIdOwnerIn, const CChainId nChainIdPeerIn, const std::string& strCoinSymbolOwnerIn,
                           const std::string& strCoinSymbolPeerIn, const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn);
 } // namespace hashahead

@@ -944,4 +944,14 @@ void CBlockCrosschainProve::AddCrossConfirmRecvBlock(const uint256& hashRecvBloc
 {
     setCrossConfirmRecvBlock.insert(hashRecvBlock);
 }
+
+void CBlockCrosschainProve::SetPrevProveBlock(const uint256& hashBlock)
+{
+    hashPrevProveBlock = hashBlock;
+}
+
+const uint256& CBlockCrosschainProve::GetPrevProveBlock() const
+{
+    return hashPrevProveBlock;
+}
 } // namespace hashahead
