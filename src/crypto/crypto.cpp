@@ -876,5 +876,22 @@ bool CryptoBlsMakeNewKey(CCryptoBlsKey& key)
     }
     return CryptoBlsMakeNewKey(key, skey.secret);
 }
+
+bool CryptoBlsMakeNewKey(CCryptoBlsKey& key, const uint256& random)
+{
+    try
+    {
+        PrivateKey sk = PopSchemeMPL().KeyGen(random.GetBytes());
+        G1Element pk = sk.GetG1Element();
+        key.secret.SetBytes(sk.Serialize());
+        key.pubkey.SetBytes(pk.Serialize());
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 } // namespace crypto
 } // namespace hashahead

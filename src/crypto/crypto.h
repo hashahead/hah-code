@@ -209,6 +209,7 @@ struct CCryptoBlsKey
 };
 
 bool CryptoBlsMakeNewKey(CCryptoBlsKey& key);
+bool CryptoBlsMakeNewKey(CCryptoBlsKey& key, const uint256& random);
 } // namespace crypto
 } // namespace hashahead
 
