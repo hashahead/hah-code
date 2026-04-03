@@ -998,4 +998,30 @@ void CBlockCrosschainProve::SetProveData(const std::map<uint8, bytes>& mapProveD
         }
     }
 }
+
+void CBlockCrosschainProve::GetProveData(std::map<uint8, bytes>& mapProveData) const
+{
+    if (!vCoinTransferProve.empty())
+    {
+        hnbase::CBufStream ss;
+        ss << vCoinTransferProve;
+        mapProveData.insert(std::make_pair(CP_PROVE_TYPE_COIN_TRANSFER_PROVE, ss.GetBytes()));
+    }
+    if (!mapDexOrderProve.empty())
+    {
+        hnbase::CBufStream ss;
+        ss << hnbase::CVarInt(mapDexOrderProve.size());
+        for (const auto& kv : mapDexOrderProve)
+        {
+            ss << kv.second;
+        }
+        mapProveData.insert(std::make_pair(CP_PROVE_TYPE_DEX_ORDER_PROVE, ss.GetBytes()));
+    }
+    if (!setCrossConfirmRecvBlock.empty())
+    {
+        hnbase::CBufStream ss;
+        ss << setCrossConfirmRecvBlock;
+        mapProveData.insert(std::make_pair(CP_PROVE_TYPE_CROSS_CONFIRM_RECV_BLOCK_PROVE, ss.GetBytes()));
+    }
+}
 } // namespace hashahead
