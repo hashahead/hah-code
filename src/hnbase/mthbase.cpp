@@ -75,4 +75,43 @@ void CMthEvent::SetEvent()
         }
     }
 }
+
+void CMthEvent::ResetEvent()
+{
+    boost::unique_lock<boost::mutex> lock(lockEvent);
+    fSingleFlag = false;
+}
+
+bool CMthEvent::AddWait(CMthWait* pWait)
+{
+    boost::unique_lock<boost::mutex> lock(lockEvent);
+    if (pWait == NULL)
+    {
+        return false;
+    }
+
+    if (mapWait.count(pWait->GetWaitId()) == 0)
+    {
+        if (!mapWait.insert(make_pair(pWait->GetWaitId(), pWait)).second)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void CMthEvent::DelWait(CMthWait* pWait)
+{
+    boost::unique_lock<boost::mutex> lock(lockEvent);
+    if (pWait == NULL)
+    {
+        return;
+    }
+
+    if (mapWait.count(pWait->GetWaitId()))
+    {
+        mapWait.erase(pWait->GetWaitId());
+    }
+}
 } // namespace hnbase

@@ -163,6 +163,61 @@ private:
     std::map<uint64, PNM_EVENT> mapEvent;
     uint32 ui32WaitPos;
 };
+
+class CMthDataBuf
+{
+public:
+    CMthDataBuf()
+      : pDataBuf(NULL), ui32BufSize(0), ui32DataLen(0) {}
+    CMthDataBuf(const uint32 ui32AllocSize)
+    {
+        ui32BufSize = ui32AllocSize;
+        ui32DataLen = 0;
+        pDataBuf = new char[ui32BufSize];
+    }
+    CMthDataBuf(const char* pInBuf, const uint32 ui32InLen)
+    {
+        pDataBuf = NULL;
+        ui32BufSize = 0;
+        ui32DataLen = 0;
+
+        assign(pInBuf, ui32InLen);
+    }
+    CMthDataBuf(const std::string& strIn)
+    {
+        pDataBuf = NULL;
+        ui32BufSize = 0;
+        ui32DataLen = 0;
+
+        assign(strIn.data(), strIn.size());
+    }
+    CMthDataBuf(const bytes& btData)
+    {
+        pDataBuf = NULL;
+        ui32BufSize = 0;
+        ui32DataLen = 0;
+
+        assign((const char*)(btData.data()), btData.size());
+    }
+    CMthDataBuf(const CMthDataBuf& mbuf)
+    {
+        pDataBuf = NULL;
+        ui32BufSize = 0;
+        ui32DataLen = 0;
+
+        assign(mbuf.GetDataBuf(), mbuf.GetDataLen());
+    }
+    ~CMthDataBuf()
+    {
+        clear();
+    }
+
+
+protected:
+    char* pDataBuf;
+    uint32 ui32BufSize;
+    uint32 ui32DataLen;
+};
 } // namespace hnbase
 
 #endif // __HSM_MTHBASE_H
