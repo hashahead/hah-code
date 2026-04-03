@@ -397,6 +397,11 @@ inline std::string ReverseHexNumericString(const std::string& strIn)
     return strOut;
 }
 
+inline void StringToUpper(std::string& s)
+{
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+}
+
 #ifdef __GNUG__
 #include <cxxabi.h>
 inline const char* TypeName(const std::type_info& info)

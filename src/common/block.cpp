@@ -954,4 +954,19 @@ const uint256& CBlockCrosschainProve::GetPrevProveBlock() const
 {
     return hashPrevProveBlock;
 }
+
+const std::vector<CBlockCoinTransferProve>& CBlockCrosschainProve::GetCoinTransferProve() const
+{
+    return vCoinTransferProve;
+}
+
+const std::map<CDexOrderHeader, CBlockDexOrderProve>& CBlockCrosschainProve::GetDexOrderProve() const
+{
+    return mapDexOrderProve;
+}
+
+const std::set<uint256>& CBlockCrosschainProve::GetCrossConfirmRecvBlock() const
+{
+    return setCrossConfirmRecvBlock;
+}
 } // namespace hashahead
