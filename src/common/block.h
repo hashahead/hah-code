@@ -1006,6 +1006,9 @@ public:
                           const std::string& strCoinSymbolPeerIn, const uint64 nOrderNumberIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn);
     void AddDexOrderProve(const CBlockDexOrderProve& orderProve);
     void AddCrossConfirmRecvBlock(const uint256& hashRecvBlock);
+
+    void SetPrevProveBlock(const uint256& hashBlock);
+    const uint256& GetPrevProveBlock() const;
 } // namespace hashahead
 
 #endif //COMMON_BLOCK_H
