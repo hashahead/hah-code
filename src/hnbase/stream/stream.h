@@ -709,6 +709,97 @@ inline CStream& CStream::Serialize(std::vector<T, A>& t, ObjectType&, std::size_
     return (*this);
 }
 
+/* CStream array serialize impl */
+template <typename T, std::size_t N>
+inline CStream& CStream::Serialize(const std::array<T, N>& t, ObjectType&, SaveType&)
+{
+    if (boost::is_fundamental<T>::value)
+    {
+        Write((char*)&t[0], sizeof(T) * N);
+    }
+    else
+    {
+        for (uint64 i = 0; i < N; i++)
+        {
+            *this << t[i];
+        }
+    }
+    return (*this);
+}
+
+template <typename T, std::size_t N>
+inline CStream& CStream::Serialize(std::array<T, N>& t, ObjectType&, SaveType&)
+{
+    if (boost::is_fundamental<T>::value)
+    {
+        Write((char*)&t[0], sizeof(T) * N);
+    }
+    else
+    {
+        for (uint64 i = 0; i < N; i++)
+        {
+            *this << t[i];
+        }
+    }
+    return (*this);
+}
+
+template <typename T, std::size_t N>
+inline CStream& CStream::Serialize(std::array<T, N>& t, ObjectType&, LoadType&)
+{
+    if (boost::is_fundamental<T>::value)
+    {
+        size_t length = sizeof(T) * N;
+        if (GetSize() < length)
+        {
+            throw std::runtime_error((std::string("stream read size error. left size: ") + std::to_string(GetSize()) + " < read size: " + std::to_string(length)).c_str());
+        }
+        Read((char*)&t[0], length);
+    }
+    else
+    {
+        for (uint64 i = 0; i < N; i++)
+        {
+            *this >> t[i];
+        }
+    }
+    return (*this);
+}
+
+template <typename T, std::size_t N>
+inline CStream& CStream::Serialize(const std::array<T, N>& t, ObjectType&, std::size_t& serSize)
+{
+    if (boost::is_fundamental<T>::value)
+    {
+        serSize += sizeof(T) * N;
+    }
+    else
+    {
+        for (uint64 i = 0; i < N; i++)
+        {
+            serSize += GetSerializeSize(t[i]);
+        }
+    }
+    return (*this);
+}
+
+template <typename T, std::size_t N>
+inline CStream& CStream::Serialize(std::array<T, N>& t, ObjectType&, std::size_t& serSize)
+{
+    if (boost::is_fundamental<T>::value)
+    {
+        serSize += sizeof(T) * N;
+    }
+    else
+    {
+        for (uint64 i = 0; i < N; i++)
+        {
+            serSize += GetSerializeSize(t[i]);
+        }
+    }
+    return (*this);
+}
+
 /* CStream set serialize impl */
 template <typename K, typename C, typename A>
 inline CStream& CStream::Serialize(const std::set<K, C, A>& t, ObjectType&, SaveType&)
