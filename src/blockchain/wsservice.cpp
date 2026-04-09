@@ -671,6 +671,37 @@ bool CWsService::HandleEvent(CEventWsServicePushLogs& eventPush)
     return true;
 }
 
+bool CWsService::HandleEvent(CEventWsServicePushNewPendingTx& eventPush)
+{
+    CReadLock rlock(rwAccess);
+
+    const uint256& txid = eventPush.data.txid;
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(eventPush.data.hashFork);
+    auto& subsFork = mapWsSubscribeFork[nChainId];
+
+    SHP_WS_SERVER ptrWsServer = nullptr;
+    auto it = mapWsServer.find(nChainId);
+    if (it != mapWsServer.end())
+    {
+        ptrWsServer = it->second;
+    }
+    if (ptrWsServer == nullptr)
+    {
+        return true;
+    }
+
+    //{"jsonrpc":"2.0","method":"eth_subscription","params":{"subscription":"0x2723d1f08be37d59f0ef54767fb0a84d","result":"0xf5623f516a8190ab0ccb940890ec13a46f504f131987332aacd9adcb7c744a7c"}}
+
+    for (const auto& kv : subsFork.GetSubsListByType(WSCS_SUBS_TYPE_NEW_PENDING_TX))
+    {
+        const uint128& nSubsId = kv.first;
+        const CClientSubscribe& clientSubs = kv.second;
+
+        std::string strMsg = ("{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"" + nSubsId.GetHex() + "\",\"result\":\"" + txid.ToString() + "\"}}");
+        ptrWsServer->SendWsMsg(clientSubs.nClientConnId, strMsg);
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {
