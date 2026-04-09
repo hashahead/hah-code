@@ -532,4 +532,39 @@ bool CBlockVoteChannel::GetWaitNewBlock(std::vector<CUpdateBlockData>& vNewBlock
     }
     return false;
 }
+
+void CBlockVoteChannel::OnWaitNewBlock()
+{
+    std::vector<CUpdateBlockData> vNewBlock;
+    if (GetWaitNewBlock(vNewBlock))
+    {
+        for (auto& newBlock : vNewBlock)
+        {
+            const uint256& hashFork = newBlock.hashFork;
+            const uint256& hashBlock = newBlock.hashBlock;
+
+            auto it = mapChnFork.find(hashFork);
+            if (it != mapChnFork.end())
+            {
+                CBlockVoteChnFork& chnFork = it->second;
+
+                if (!AddBlockVoteCandidatePubkey(hashBlock, CBlock::GetBlockHeightByHash(hashBlock), newBlock.nBlockTime, chnFork))
+                {
+                    StdLog("CBlockVoteChannel", "On wait new block: Add candidate pubkey fail, block: %s", hashBlock.GetBhString().c_str());
+                }
+                else
+                {
+                    StdDebug("CBlockVoteChannel", "On wait new block: Add block candidate pubkey success, block: %s, fork: %s", hashBlock.GetBhString().c_str(), hashFork.ToString().c_str());
+
+                    chnFork.CheckBlockVoteState(hashBlock);
+                }
+            }
+            else
+            {
+                StdLog("CBlockVoteChannel", "On wait new block: Fork not exist, fork: %s", hashFork.ToString().c_str());
+            }
+        }
+    }
+}
+
 } // namespace hashahead

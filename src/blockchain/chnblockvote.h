@@ -105,6 +105,11 @@ public:
     bool AddBlockCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, const vector<uint384>& vPubkey);
     void CheckBlockVoteState(const uint256& hashBlock);
     bool GetBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig);
+    bool AddPeerNode(const uint64 nPeerNonce);
+    void RemovePeerNode(const uint64 nPeerNonce);
+    void OnNetData(const uint64 nPeerNonce, const bytes& btNetData);
+    void OnTimer();
+    void SetVoteResult(const uint256& hashBlock, const bytes& btBitmapIn, const bytes& btAggSigIn);
 
 protected:
     const uint256 hashFork;
@@ -134,6 +139,9 @@ protected:
     bool HandleEvent(network::CEventLocalBlockvoteUpdateBlock& eventUpdateBlock) override;
     bool HandleEvent(network::CEventLocalBlockvoteCommitVoteResult& eventVoteResult) override;
 
+public:
+    bool SendNetData(const uint64 nNetId, const uint8 nTunnelId, const bytes& btData, const uint256& hashFork);
+    bool GetVoteBlockCandidatePubkey(const uint256& hashBlock, uint32& nBlockHeight, int64& nBlockTime, vector<uint384>& vPubkey, bytes& btAggBitmap, bytes& btAggSig, const uint256& hashFork);
     bool AddBlockLocalVoteSignFlag(const uint256& hashBlock, const uint256& hashFork);
     bool CommitBlockVoteResult(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const uint256& hashFork);
     bool AddBlockVoteCandidatePubkey(const uint256& hashBlock, const uint32 nBlockHeight, const int64 nBlockTime, CBlockVoteChnFork& chnFork);
@@ -148,10 +156,19 @@ protected:
     }
     const string GetPeerAddressInfo(uint64 nNonce);
     void BlockVoteTimerFunc(uint32 nTimerId);
+    void AddWaitNewBlock(const CUpdateBlockData& newBlock);
     bool GetWaitNewBlock(std::vector<CUpdateBlockData>& vNewBlock);
+    void OnWaitNewBlock();
+
+protected:
     network::CBbPeerNet* pPeerNet;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
+
+    std::map<uint64, CBlockVoteChnPeer> mapChnPeer;
+    std::map<uint256, CBlockVoteChnFork> mapChnFork;
+    uint32 nBlockVoteTimerId;
+
     boost::mutex mutexWaitBlock;
     std::vector<CUpdateBlockData> vWaitNewBlock;
 };
