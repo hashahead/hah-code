@@ -2812,6 +2812,11 @@ bool CBlockChain::IsBlockConfirm(const uint256& hashBlock)
 {
     return cntrBlock.IsBlockConfirm(hashBlock);
 }
+
+bool CBlockChain::AddBlockLocalVoteSignFlag(const uint256& hashBlock)
+{
+    return cntrBlock.AddBlockLocalVoteSignFlag(hashBlock);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

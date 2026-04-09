@@ -172,15 +172,11 @@ public:
     virtual bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256()) = 0;
     virtual bool GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock = uint256()) = 0;
     virtual bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value) = 0;
-    virtual uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter) = 0;
-    virtual void RemoveFilter(const uint256& nFilterId) = 0;
-    virtual bool GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs) = 0;
-    virtual bool GetTxReceiptsByLogsFilter(const uint256& hashFork, const CLogsFilter& logsFilter, ReceiptLogsVec& vReceiptLogs) = 0;
-    virtual uint256 AddBlockFilter(const uint256& hashClient, const uint256& hashFork) = 0;
-    virtual bool GetFilterBlockHashs(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vBlockHash) = 0;
-    virtual uint256 AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork) = 0;
-    virtual void AddPendingTx(const uint256& hashFork, const uint256& txid) = 0;
-    virtual bool GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid) = 0;
+    virtual bool GetBlockRewardList(const uint256& hashLastBlock, const uint32 nBlockCount, std::vector<uint256>& vBlockRewardList, std::vector<std::pair<uint256, uint256>>& vBlockGasUsedList) = 0;
+    virtual bool GetBlockReceiptsByBlock(const uint256& hashFork, const uint256& hashFromBlock, const uint256& hashToBlock, std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapBlockReceipts) = 0;
+    virtual bool VerifySameChain(const uint256& hashPrevBlock, const uint256& hashAfterBlock) = 0;
+    virtual bool GetPrevBlockHashList(const uint256& hashBlock, const uint32 nGetCount, std::vector<uint256>& vPrevBlockhash) = 0;
+    virtual uint32 GetAllForkMinLastBlockHeight(std::vector<uint256>* pForkHash = nullptr) = 0;
 
     /////////////    CheckPoints    /////////////////////
     virtual bool HasCheckPoints(const uint256& hashFork) const = 0;
