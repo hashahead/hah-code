@@ -172,6 +172,7 @@ public:
     bool AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock) override;
     bool RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock) override;
     bool GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap, bytes& btAggSig, uint256& hashVoteBlock) override;
+    bool IsBlockConfirm(const uint256& hashBlock) override;
 
 public:
     static int64 GetBlockInvestRewardTxMaxCount();

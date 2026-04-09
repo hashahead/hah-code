@@ -164,6 +164,13 @@ public:
     virtual bool VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainIdIn, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashBlock = uint256()) = 0;
     virtual bool GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock = uint256()) = 0;
     virtual bool GetForkHashByChainId(const CChainId nChainId, uint256& hashFork, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& strSymbol1, std::string& strSymbol2, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock = uint256()) = 0;
     virtual bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value) = 0;
     virtual uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter) = 0;
     virtual void RemoveFilter(const uint256& nFilterId) = 0;
