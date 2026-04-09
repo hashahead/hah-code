@@ -127,17 +127,19 @@ protected:
     void RemoveCacheBlock(const uint256& hashBlock);
     void AddNextBlock(const uint256& hashPrev);
     void ClearCacheTimeout();
+    void RequestNextBlockData(const uint256& hashFork, const uint256& hashPrevBlock, const uint64 nNonce);
 
 protected:
     network::CBbPeerNet* pPeerNet;
     IDispatcher* pDispatcher;
     ICoreProtocol* pCoreProtocol;
     IBlockChain* pBlockChain;
+    IBlockFilter* pBlockFilter;
 
-    std::map<uint64, CBlockChnPeer> mapChnPeer;
-    std::map<uint256, CBlockChnFork> mapChnFork;
-    std::map<uint256, CChnCacheBlock> mapChnBlock;        // key: block hash
-    std::map<uint256, std::set<uint256>> mapChnPrevBlock; // key: prev block, value: next block
+    std::map<uint64, CBlockChnPeer> mapChnPeer;                                   // key: peer nonce
+    std::map<uint256, CBlockChnFork> mapChnFork;                                  // key: fork hash
+    std::map<uint256, CChnCacheBlock, CustomBlockHashCompare> mapChnBlock;        // key: block hash
+    std::map<uint256, std::set<uint256>, CustomBlockHashCompare> mapChnPrevBlock; // key: prev block, value: next block
 
     uint64 nPrevCheckCacheTimeoutTime;
     uint64 nCacheBlockByteCount;

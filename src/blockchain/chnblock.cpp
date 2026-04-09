@@ -598,9 +598,22 @@ const string CBlockChannel::GetPeerAddressInfo(const uint64 nNonce)
     return string("0.0.0.0");
 }
 
-void CBlockChannel::AddCacheBlock(const CBlock& block, const uint64 nBlockSize, const uint64 nRecvNonce)
+void CBlockChannel::BlockSyncTimerFunc(uint32 nTimerId)
 {
-    const uint256 hashBlock = block.GetHash();
+    if (nTimerId == nBlockSyncTimerId)
+    {
+        nBlockSyncTimerId = SetTimer(BLOCK_SYNC_TIMER_TIME, boost::bind(&CBlockChannel::BlockSyncTimerFunc, this, _1));
+        network::CEventLocalBlockSyncTimer* pEvent = new network::CEventLocalBlockSyncTimer(0, pCoreProtocol->GetGenesisBlockHash());
+        if (pEvent)
+        {
+            pEvent->data = nTimerId;
+            PostEvent(pEvent);
+        }
+    }
+}
+
+void CBlockChannel::AddCacheBlock(const uint256& hashBlock, const CBlock& block, const uint64 nBlockSize, const uint64 nRecvNonce)
+{
     if (mapChnBlock.find(hashBlock) == mapChnBlock.end())
     {
         while (mapChnBlock.size() >= MAX_CACHE_CHN_BLOCK_COUNT || (nCacheBlockByteCount >= MAX_CACHE_CHN_BLOCK_SIZE && mapChnBlock.size() > 0))
@@ -612,9 +625,9 @@ void CBlockChannel::AddCacheBlock(const CBlock& block, const uint64 nBlockSize, 
             mapChnPrevBlock[block.hashPrev].insert(hashBlock);
             nCacheBlockByteCount += nBlockSize;
 
-            StdDebug("CBlockChannel", "Add cache block: Add cache block success, cache count: %lu, bytes: %lu KB, type: %s, number: %lu, block: [%d] %s, prev: %s",
+            StdDebug("CBlockChannel", "Add cache block: Add cache block success, cache count: %lu, bytes: %lu KB, type: %s, number: %lu, block: %s, prev: %s",
                      mapChnBlock.size(), nCacheBlockByteCount / 1024, GetBlockTypeStr(block.nType, block.txMint.GetTxType()).c_str(), block.nNumber,
-                     CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetHex().c_str(), block.hashPrev.ToString().c_str());
+                     hashBlock.GetBhString().c_str(), block.hashPrev.GetBhString().c_str());
         }
     }
 }
