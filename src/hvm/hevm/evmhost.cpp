@@ -711,13 +711,17 @@ evmc::result CEvmHost::Call(const evmc_message& msg)
     bool fDestroy = false;
     if (!dbHost.GetContractRunCode(destCodeContract, hashContractCreateCode, destCodeOwner, hashContractRunCode, btContractRunCode, fDestroy))
     {
-        StdLog("CEvmHost", "Call contract: Get contract run code fail, destCodeContract: %s", destCodeContract.ToString().c_str());
-        return { EVMC_INTERNAL_ERROR, msg.gas, nullptr, 0 };
+        StdLog("CEvmHost", "Call contract: Get contract run code fail, code contract address: %s", destCodeContract.ToString().c_str());
+        evmc::result r = { EVMC_INTERNAL_ERROR, msg.gas, nullptr, 0 };
+        AddContractHostReceipt(msg, r, to, destCodeContract);
+        return r;
     }
     if (fDestroy)
     {
-        StdLog("CEvmHost", "Call contract: Contract has been destroyed, destContract: %s", destContract.ToString().c_str());
-        return { EVMC_REJECTED, msg.gas, nullptr, 0 };
+        StdLog("CEvmHost", "Call contract: Contract has been destroyed, code contract address: %s", destCodeContract.ToString().c_str());
+        evmc::result r = { EVMC_REJECTED, msg.gas, nullptr, 0 };
+        AddContractHostReceipt(msg, r, to, destCodeContract);
+        return r;
     }
 
     CVmHostFaceDBPtr ptrNewHostDB;
@@ -726,19 +730,35 @@ evmc::result CEvmHost::Call(const evmc_message& msg)
     shared_ptr<CEvmHost> hostNew;
     CEvmHost* host = nullptr;
 
+    uint32 nOldDepth = 0;
+    CDestination destOldParent;
+    CDestination destOldLocal;
+    CDestination destOldCodeOwner;
     if (msg.kind == EVMC_DELEGATECALL)
     {
         pHostDB = static_cast<CVmHostFaceDB*>(&dbHost);
         host = this;
-        destContract = dbHost.GetContractAddress();
-        destination = DestinationToAddress(destContract);
+        destination = DestinationToAddress(dbHost.GetStorageContractAddress());
+        nOldDepth = nDepth;
+        destOldParent = dbHost.GetCodeParentAddress();
+        destOldLocal = dbHost.GetCodeLocalAddress();
+        destOldCodeOwner = dbHost.GetCodeOwnerAddress();
+        dbHost.ModifyHostAddress(dbHost.GetCodeLocalAddress(), destCodeContract, destCodeOwner);
     }
     else
     {
-        ptrNewHostDB = dbHost.CloneHostDB(destContract);
-        hostNew = shared_ptr<CEvmHost>(new CEvmHost(tx_context, *ptrNewHostDB, pCacheKv));
+        ptrNewHostDB = dbHost.CloneHostDB(to, dbHost.GetCodeLocalAddress(), destCodeContract, destCodeOwner);
+        hostNew = shared_ptr<CEvmHost>(new CEvmHost(tx_context, *ptrNewHostDB, pCacheKv, fTraceVmLog, fFhxHeightBranch001, fFhxHeightBranch002));
         pHostDB = ptrNewHostDB.get();
         host = hostNew.get();
+    }
+
+    host->nDepth = msg.depth;
+
+    evmc_uint256be value = { 0 };
+    if (fFhxHeightBranch001)
+    {
+        value = msg.value;
     }
 
     evmc_host_context* context = host->to_context();
