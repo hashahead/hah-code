@@ -646,11 +646,14 @@ evmc::result CEvmHost::Create(const evmc_message& msg)
 
 evmc::result CEvmHost::Call(const evmc_message& msg)
 {
-    StdDebug("CEvmHost", "Call: sender: %s - %s", ToHexString(&(msg.sender.bytes[0]), sizeof(msg.sender.bytes)).c_str(), AddressToDestination(msg.sender).ToString().c_str());
-    StdDebug("CEvmHost", "Call: destination: %s - %s", ToHexString(&(msg.destination.bytes[0]), sizeof(msg.destination.bytes)).c_str(), AddressToDestination(msg.destination).ToString().c_str());
-    StdDebug("CEvmHost", "Call: GetContractAddress: %s", dbHost.GetContractAddress().ToString().c_str());
+    StdDebug("CEvmHost", "Call: kind: %u, sender: %s, destination: %s, value: %s, storage contract address: %s",
+             (uint32)(msg.kind), AddressToDestination(msg.sender).ToString().c_str(), AddressToDestination(msg.destination).ToString().c_str(),
+             hnbase::ToHexString(msg.value.bytes, sizeof(msg.value.bytes)).c_str(), dbHost.GetStorageContractAddress().ToString().c_str());
 
     Address _addr = addressFromEvmC(msg.destination);
+    const CDestination to = AddressToDestination(msg.destination);
+    const CDestination destCodeContract = to;
+
     bytes _out;
     uint64_t _usedgas = 0;
     bool _result = false;
@@ -694,11 +697,11 @@ evmc::result CEvmHost::Call(const evmc_message& msg)
                 delete[] _result->output_data;
             }
         };
-        return evmc::result(evmcResult);
+        evmc::result r(evmcResult);
+        AddContractHostReceipt(msg, r, to, destCodeContract);
+        return r;
     }
 
-    CDestination destCodeContract = AddressToDestination(msg.destination);
-    CDestination destContract = destCodeContract;
     evmc::address destination = msg.destination;
 
     uint256 hashContractCreateCode;
