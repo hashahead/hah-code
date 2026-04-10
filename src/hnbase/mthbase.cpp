@@ -156,4 +156,20 @@ bool CMthEvent::Wait(const uint32 ui32Timeout)
 
     return fIfHasSig;
 }
+
+//----------------------------------------------------------------------------------
+CMthWait::~CMthWait()
+{
+    PNM_EVENT pNmEvent;
+    std::map<uint64, PNM_EVENT>::iterator it;
+
+    for (it = mapEvent.begin(); it != mapEvent.end(); it++)
+    {
+        pNmEvent = it->second;
+        if (pNmEvent)
+        {
+            delete pNmEvent;
+        }
+    }
+}
 } // namespace hnbase

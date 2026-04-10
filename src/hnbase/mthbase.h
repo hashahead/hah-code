@@ -232,6 +232,14 @@ public:
         }
     }
 
+    CMthDataBuf& operator=(const CMthDataBuf& mbuf)
+    {
+        if (mbuf.GetDataBuf() && mbuf.GetDataLen() > 0)
+        {
+            assign(mbuf.GetDataBuf(), mbuf.GetDataLen());
+        }
+        return *this;
+    }
 protected:
     char* pDataBuf;
     uint32 ui32BufSize;
