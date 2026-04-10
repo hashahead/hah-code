@@ -571,14 +571,12 @@ evmc::result CEvmHost::Create(const evmc_message& msg)
         if (result.output_data && result.output_size >= 32)
         {
             bytes btContractRunCode;
-            std::map<uint256, bytes> mapCacheKv;
             //CTransactionLogs logs;
 
             if (result.output_data && result.output_size > 0)
             {
                 btContractRunCode.assign(result.output_data, result.output_data + result.output_size);
             }
-            host->GetCacheKv(mapCacheKv);
             // if (addressFromEvmC(host->logAddr) != ZeroAddress)
             // {
             //     logs.address.assign(&(host->logAddr.bytes[0]), &(host->logAddr.bytes[0]) + sizeof(host->logAddr.bytes));
@@ -601,35 +599,48 @@ evmc::result CEvmHost::Create(const evmc_message& msg)
             {
                 StdLog("CEvmHost", "Create contract: fetch create code fail, run code size: %lu", btContractRunCode.size());
             }
-            if (btContractRunCode.empty() || !ptrNewHostDB->SaveContractRunCode(destNewContract, btContractRunCode, txcd))
+            if (btContractRunCode.empty() || !ptrNewHostDB->SaveContractRunCode(btContractRunCode, txcd))
             {
                 StdLog("CEvmHost", "Create contract: Save run code fail, destNewContract: %s", destNewContract.ToString().c_str());
-                return { EVMC_FAILURE, result.gas_left, nullptr, 0 };
+                result = { EVMC_FAILURE, result.gas_left, nullptr, 0 };
             }
-            for (auto& kv : mapCacheKv)
+            else
             {
-                StdDebug("CEvmHost", "Create contract: key: %s, value: %s",
-                         kv.first.ToString().c_str(), ToHexString(kv.second).c_str());
+                std::map<uint256, bytes> mapCacheKv;
+                std::map<uint256, bytes> mapTraceKv;
+                host->GetCacheKv(mapCacheKv);
+                host->GetTraceKv(mapTraceKv);
+
+                // for (auto& kv : mapCacheKv)
+                // {
+                //     StdDebug("CEvmHost", "Create contract: key: %s, value: %s",
+                //              kv.first.ToString().c_str(), ToHexString(kv.second).c_str());
+                // }
+
+                ptrNewHostDB->SaveRunResult(host->vLogs, mapCacheKv, mapTraceKv, host->mapOldKeyValue);
+                host->vLogs.clear();
+                host->mapOldKeyValue.clear();
+
+                result.create_address = DestinationToAddress(destNewContract);
+
+                StdDebug("CEvmHost", "Create contract: Create success, destNewContract: %s, hashContractCreateCode: %s",
+                         destNewContract.ToString().c_str(), hashContractCreateCode.GetHex().c_str());
             }
-            ptrNewHostDB->SaveRunResult(destNewContract, host->vLogs, mapCacheKv);
-            host->vLogs.clear();
         }
         else
         {
             StdLog("CEvmHost", "Create contract: output data error, output_size: %ld, destNewContract: %s", result.output_size, destNewContract.ToString().c_str());
-            return { EVMC_INTERNAL_ERROR, result.gas_left, nullptr, 0 };
+            result = { EVMC_INTERNAL_ERROR, result.gas_left, nullptr, 0 };
         }
     }
     else
     {
-        StdLog("CEvmHost", "Create contract: Execute fail, status: [%ld] %s, destNewContract: %s", result.status_code, GetStatusInfo(result.status_code).c_str(), destNewContract.ToString().c_str());
-        return result;
+        StdLog("CEvmHost", "Create contract: Execute fail, status: [%ld] %s, destNewContract: %s, revert info: %s",
+               result.status_code, GetStatusInfo(result.status_code).c_str(), destNewContract.ToString().c_str(), GetRevertInfo(result).c_str());
     }
 
-    StdDebug("CEvmHost", "Create contract: Create success, destNewContract: %s, hashContractCreateCode: %s",
-             destNewContract.ToString().c_str(), hashContractCreateCode.GetHex().c_str());
+    AddContractHostReceipt(msg, result, CDestination(), destNewContract);
 
-    result.create_address = DestinationToAddress(destNewContract);
     return result;
 }
 
