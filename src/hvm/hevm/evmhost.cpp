@@ -822,5 +822,48 @@ evmc::result CEvmHost::Call(const evmc_message& msg)
     return result;
 }
 
+void CEvmHost::AddContractFirstReceipt(const CDestination& from, const CDestination& to, const CDestination& destContractIn, const uint64 nTxGasLimit,
+                                       const uint256& nTxAmount, const bytes& btInput, const bool fCreateContract, const evmc::result& result)
+{
+    CTxContractReceipt tcr;
+
+    if (fCreateContract)
+    {
+        tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CREATE;
+    }
+    else
+    {
+        tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CALL;
+    }
+    tcr.destFrom = from;
+    tcr.destTo = to;
+    tcr.nValue = nTxAmount;
+    tcr.nGasLimit = nTxGasLimit;
+    if (nTxGasLimit >= result.gas_left)
+    {
+        tcr.nGasUsed = nTxGasLimit - result.gas_left;
+    }
+    else
+    {
+        tcr.nGasUsed = 0;
+    }
+    tcr.btInput = btInput;
+    if (result.output_data && result.output_size > 0)
+    {
+        tcr.btOutput.assign(result.output_data, result.output_data + result.output_size);
+    }
+    tcr.nStatus = result.status_code;
+    if (result.status_code != 0)
+    {
+        tcr.strError = GetStatusInfo(result.status_code);
+        if (result.status_code == EVMC_REVERT)
+        {
+            tcr.strRevertReason = GetRevertInfo(result);
+        }
+    }
+    tcr.destCodeContract = destContractIn;
+
+    dbHost.AddContractRunReceipt(tcr, true);
+}
 } // namespace hvm
 } // namespace hashahead

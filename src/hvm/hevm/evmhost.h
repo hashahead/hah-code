@@ -115,8 +115,19 @@ public:
     void AddContractFirstReceipt(const CDestination& from, const CDestination& to, const CDestination& destContractIn, const uint64 nTxGasLimit,
                                  const uint256& nTxAmount, const bytes& btInput, const bool fCreateContract, const evmc::result& result);
 
+    void onHostOperation(const uint64_t steps,
+                         const uint64_t pc,
+                         const uint8_t instr,
+                         const uint64_t newMemSize,
+                         const uint64_t gasCost,
+                         const uint64_t gas,
+                         const evmc_bytes32 stack[],
+                         const size_t stack_count,
+                         const evmc_bytes32 mem[],
+                         const size_t mem_count);
+
 public:
-    CEvmHost(const evmc_tx_context& _tx_context, CVmHostFaceDB& dbHostIn, SHP_HOST_CACHE_KV pCacheKvIn = nullptr);
+    CEvmHost(const evmc_tx_context& _tx_context, CVmHostFaceDB& dbHostIn, SHP_HOST_CACHE_KV pCacheKvIn = nullptr, const bool fTraceVmLogIn = false, const bool fFhxHeightBranch001In = false, const bool fFhxHeightBranch002In = false);
 
     bool account_exists(const evmc::address& addr) const noexcept final;
 
@@ -125,6 +136,12 @@ public:
     evmc_storage_status set_storage(const evmc::address& addr,
                                     const evmc::bytes32& key,
                                     const evmc::bytes32& value) noexcept final;
+
+    evmc::bytes32 get_transient_storage(const evmc::address& addr, const evmc::bytes32& key) const noexcept final;
+
+    evmc_storage_status set_transient_storage(const evmc::address& addr,
+                                              const evmc::bytes32& key,
+                                              const evmc::bytes32& value) noexcept final;
 
     evmc::uint256be get_balance(const evmc::address& addr) const noexcept final;
 
@@ -154,6 +171,7 @@ public:
 protected:
     evmc::result Create(const evmc_message& msg);
     evmc::result Call(const evmc_message& msg);
+    void AddContractHostReceipt(const evmc_message& msg, const evmc::result& result, const CDestination& to, const CDestination& destCodeContract);
 };
 
 } // namespace hvm
