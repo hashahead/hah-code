@@ -774,18 +774,25 @@ evmc::result CEvmHost::Call(const evmc_message& msg)
         msg.sender,     // sender,
         msg.input_data, // input_data,
         msg.input_size, // input_size,
-        {},             // value,
+        value,          // value,
         {}              // create2_salt
     };
 
-    StdDebug("CEvmHost", "Call contract: execute depth: %d, prev: gas: %ld", msg.depth, msg.gas);
-    evmc::result result = evmc::result{ vm->execute(vm, host_interface, context, EVMC_MAX_REVISION, &new_msg, btContractRunCode.data(), btContractRunCode.size()) };
-    StdDebug("CEvmHost", "Call contract: execute depth: %d, last: gas: %ld, gas_left: %ld, gas used: %ld, owner: %s",
-             msg.depth, msg.gas, result.gas_left, msg.gas - result.gas_left, destCodeOwner.ToString().c_str());
+    // StdDebug("CEvmHost", "Call contract: execute depth: %d, prev: gas: %ld", msg.depth, msg.gas);
+    evmc::result result = evmc::result{ vm->execute(vm, host_interface, context, EVMC_MAX_REVISION, &new_msg, btContractRunCode.data(), btContractRunCode.size(),
+                                                    (fTraceVmLog ? onExOperation : nullptr), (fTraceVmLog ? host : nullptr)) };
+    // StdDebug("CEvmHost", "Call contract: execute depth: %d, last: gas: %ld, gas_left: %ld, gas used: %ld, owner: %s",
+    //          msg.depth, msg.gas, result.gas_left, msg.gas - result.gas_left, destCodeOwner.ToString().c_str());
+
+    if (msg.kind == EVMC_DELEGATECALL)
+    {
+        nDepth = nOldDepth;
+        dbHost.ModifyHostAddress(destOldParent, destOldLocal, destOldCodeOwner);
+    }
 
     if (msg.gas >= result.gas_left)
     {
-        pHostDB->SaveGasUsed(destCodeOwner, msg.gas - result.gas_left);
+        pHostDB->SaveCodeOwnerGasUsed(dbHost.GetCodeLocalAddress(), destCodeContract, destCodeOwner, msg.gas - result.gas_left);
     }
 
     if (result.status_code == EVMC_SUCCESS)
@@ -796,27 +803,22 @@ evmc::result CEvmHost::Call(const evmc_message& msg)
                  hnbase::ToHexString(msg.value.bytes, sizeof(msg.value.bytes)).c_str(),
                  result.output_size, ToHexString(result.output_data, result.output_size).c_str());
 
-        //CTransactionLogs logs;
         std::map<uint256, bytes> mapCacheKv;
-
+        std::map<uint256, bytes> mapTraceKv;
         host->GetCacheKv(mapCacheKv);
-        // if (addressFromEvmC(host->logAddr) != ZeroAddress)
-        // {
-        //     logs.address.assign(&(host->logAddr.bytes[0]), &(host->logAddr.bytes[0]) + sizeof(host->logAddr.bytes));
-        // }
-        // logs.data = host->vLogData;
-        // for (auto& vd : host->vLogTopics)
-        // {
-        //     logs.topics.push_back(bytes(&(vd.bytes[0]), &(vd.bytes[0]) + sizeof(vd.bytes)));
-        // }
+        host->GetTraceKv(mapTraceKv);
 
-        pHostDB->SaveRunResult(destContract, host->vLogs, mapCacheKv);
+        pHostDB->SaveRunResult(host->vLogs, mapCacheKv, mapTraceKv, host->mapOldKeyValue);
         host->vLogs.clear();
+        host->mapOldKeyValue.clear();
     }
     else
     {
-        StdLog("CEvmHost", "Call contract: execute fail, err: [%ld] %s", result.status_code, GetStatusInfo(result.status_code).c_str());
+        StdLog("CEvmHost", "Call contract: execute fail, err: [%ld] %s, revert info: %s",
+               result.status_code, GetStatusInfo(result.status_code).c_str(), GetRevertInfo(result).c_str());
     }
+
+    AddContractHostReceipt(msg, result, to, destCodeContract);
     return result;
 }
 
