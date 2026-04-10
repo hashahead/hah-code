@@ -114,4 +114,46 @@ void CMthEvent::DelWait(CMthWait* pWait)
         mapWait.erase(pWait->GetWaitId());
     }
 }
+
+bool CMthEvent::Wait(const uint32 ui32Timeout)
+{
+    boost::unique_lock<boost::mutex> lock(lockEvent);
+    bool fIfHasSig = false;
+
+    if (!fSingleFlag)
+    {
+        uint64 ui64BeginTime;
+        uint64 ui64WaitTime;
+
+        ui64BeginTime = GetTimeMillis();
+
+        do
+        {
+            if (ui32Timeout > 0)
+            {
+                ui64WaitTime = ui32Timeout - (GetTimeMillis() - ui64BeginTime);
+                if (ui64WaitTime <= 0)
+                {
+                    return false;
+                }
+
+                if (!condEvent.timed_wait(lock, boost::posix_time::milliseconds(ui64WaitTime)))
+                {
+                    return false;
+                }
+            }
+        } while (ui32Timeout > 0 && !fSingleFlag);
+    }
+
+    if (fSingleFlag)
+    {
+        fIfHasSig = true;
+        if (!fManualReset)
+        {
+            fSingleFlag = false;
+        }
+    }
+
+    return fIfHasSig;
+}
 } // namespace hnbase

@@ -212,6 +212,25 @@ public:
         clear();
     }
 
+    inline char* GetDataBuf() const
+    {
+        return pDataBuf;
+    }
+    inline uint32 GetBufSize() const
+    {
+        return ui32BufSize;
+    }
+    inline uint32 GetDataLen() const
+    {
+        return ui32DataLen;
+    }
+    void GetData(bytes& btData)
+    {
+        if (pDataBuf && ui32DataLen > 0)
+        {
+            btData.assign(pDataBuf, pDataBuf + ui32DataLen);
+        }
+    }
 
 protected:
     char* pDataBuf;
