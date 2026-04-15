@@ -218,6 +218,8 @@ public:
         = 0;
     virtual bool RetrieveDestState(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CDestState& state) = 0;
     virtual bool GetTransactionReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceiptEx& receiptex) = 0;
+    virtual bool RetrieveTxContractReceipt(const uint256& hashFork, const uint256& txid, TxContractReceipts& tcrReceipt) = 0;
+    virtual bool ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts) = 0;
     virtual bool CallContract(const bool fEthCall, const uint256& hashFork, const uint256& hashBlock, const CDestination& from, const CDestination& to, const uint256& nAmount, const uint256& nGasPrice,
                               const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult)
         = 0;
@@ -378,7 +380,7 @@ class IDispatcher : public hnbase::IBase
 public:
     IDispatcher()
       : IBase("dispatcher") {}
-    virtual Errno AddNewBlock(const CBlock& block, uint64 nNonce = 0) = 0;
+    virtual Errno AddNewBlock(const CBlock& block, const uint64 nNonce = 0, const bool fCheckSyncHeight = false) = 0;
     virtual Errno AddNewTx(const uint256& hashFork, const CTransaction& tx, uint64 nNonce = 0) = 0;
     virtual bool AddNewDistribute(const uint256& hashAnchor, const CDestination& dest,
                                   const std::vector<unsigned char>& vchDistribute)
@@ -388,6 +390,12 @@ public:
         = 0;
     virtual void SetConsensus(const CAgreementBlock& agreeBlock) = 0;
     virtual void CheckAllSubForkLastBlock() = 0;
+    virtual void NotifyBlockVoteChnNewBlock(const uint256& hashBlock, const uint64 nNonce = 0) = 0;
+
+    const CNetworkConfig* NetworkConfig()
+    {
+        return dynamic_cast<const CNetworkConfig*>(hnbase::IBase::Config());
+    }
 };
 
 class IService : public hnbase::IBase

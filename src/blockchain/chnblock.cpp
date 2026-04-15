@@ -670,16 +670,16 @@ void CBlockChannel::AddNextBlock(const uint256& hashPrev)
             if (mt != mapChnBlock.end())
             {
                 const CBlock& block = mt->second.block;
-                Errno err = pDispatcher->AddNewBlock(block, mt->second.nRecvNonce);
+                Errno err = pDispatcher->AddNewBlock(block, mt->second.nRecvNonce, true);
                 if (err != OK)
                 {
-                    StdLog("CBlockChannel", "Add next block: Add new block fail, block: [%d] %s, err: [%d] %s",
-                           CBlock::GetBlockHeightByHash(hashBlock), hashBlock.GetHex().c_str(), err, ErrorString(err));
+                    StdLog("CBlockChannel", "Add next block: Add new block fail, block: %s, err: [%d] %s",
+                           hashBlock.GetBhString().c_str(), err, ErrorString(err));
                 }
                 else
                 {
-                    StdDebug("CBlockChannel", "Add next block: Add new block success, type: %s, block: [%d-%lu] %s",
-                             GetBlockTypeStr(block.nType, block.txMint.GetTxType()).c_str(), CBlock::GetBlockHeightByHash(hashBlock), block.nNumber, hashBlock.GetHex().c_str());
+                    StdDebug("CBlockChannel", "Add next block: Add new block success, type: %s, block: %s",
+                             GetBlockTypeStr(block.nType, block.txMint.GetTxType()).c_str(), hashBlock.GetBhString().c_str());
                 }
                 vRemoveHash.push_back(hashBlock);
             }
