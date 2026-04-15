@@ -163,6 +163,7 @@ public:
     bool HandleEvent(CEventWsServicePushSyncing& eventPush) override;
 
     void AddNewBlockSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) override;
+    void AddLogsSubscribe(const CChainId nChainId, const uint64 nClientConnId, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics, uint128& nSubsId) override;
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;

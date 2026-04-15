@@ -512,6 +512,19 @@ public:
         = 0;
 };
 
+class IWsService : public hnbase::CEventProc
+{
+public:
+    IWsService()
+      : CEventProc("wsservice") {}
+
+    virtual void AddNewBlockSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) = 0;
+    virtual void AddLogsSubscribe(const CChainId nChainId, const uint64 nClientConnId, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics, uint128& nSubsId) = 0;
+    virtual void AddNewPendingTxSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) = 0;
+
+    virtual void SendWsMsg(const CChainId nChainId, const uint64 nNonce, const std::string& strMsg) = 0;
+};
+
 class IDataStat : public hnbase::IIOModule
 {
 public:

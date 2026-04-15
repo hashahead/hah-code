@@ -766,6 +766,12 @@ bool CWsService::HandleEvent(CEventWsServicePushSyncing& eventPush)
     }
     return true;
 }
+
+void CWsService::AddNewBlockSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId)
+{
+    CWriteLock wlock(rwAccess);
+    nSubsId = mapWsSubscribeFork[nChainId].AddSubscribe(nClientConnId, WSCS_SUBS_TYPE_NEW_BLOCK, {}, {});
+}
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {
