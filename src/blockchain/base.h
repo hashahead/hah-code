@@ -243,7 +243,9 @@ public:
 
     virtual bool AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock) = 0;
     }
-    const CStorageConfig* StorageConfig()
+    virtual bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
+    virtual bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit) = 0;
+    virtual bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
     {
         return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
     }
@@ -260,9 +262,9 @@ public:
     virtual std::size_t Count(const uint256& hashFork) const = 0;
     virtual Errno Push(const uint256& hashFork, const CTransaction& tx) = 0;
     virtual bool Get(const uint256& hashFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork) const = 0;
-    virtual void ListTx(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool) = 0;
+    virtual void ListTx(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true) = 0;
     virtual void ListTx(const uint256& hashFork, std::vector<uint256>& vTxPool) = 0;
-    virtual bool ListTx(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0) = 0;
+    virtual bool ListTx(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0, const bool fContainCertTx = true) = 0;
     virtual bool FetchArrangeBlockTx(const uint256& hashFork, const uint256& hashPrev, const int64 nBlockTime,
                                      const std::size_t nMaxSize, std::vector<CTransaction>& vtx, uint256& nTotalTxFee)
         = 0;
@@ -304,7 +306,6 @@ public:
     {
         return dynamic_cast<const CMintConfig*>(hnbase::IBase::Config());
     }
-    virtual void PrimaryUpdate(const CBlockChainUpdate& update, CDelegateRoutine& routine) = 0;
     virtual bool AddNewDistribute(const uint256& hashDistributeAnchor, const CDestination& destFrom, const std::vector<unsigned char>& vchDistribute) = 0;
     virtual bool AddNewPublish(const uint256& hashDistributeAnchor, const CDestination& destFrom, const std::vector<unsigned char>& vchPublish) = 0;
     virtual void GetAgreement(int nTargetHeight, uint256& nAgreement, std::size_t& nWeight, std::vector<CDestination>& vBallot) = 0;
@@ -318,6 +319,10 @@ class IBlockMaker : public hnbase::CEventProc
 public:
     IBlockMaker()
       : CEventProc("blockmaker") {}
+    const CBasicConfig* Config()
+    {
+        return dynamic_cast<const CBasicConfig*>(hnbase::IBase::Config());
+    }
     const CMintConfig* MintConfig()
     {
         return dynamic_cast<const CMintConfig*>(hnbase::IBase::Config());

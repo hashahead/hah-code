@@ -2855,6 +2855,11 @@ bool CBlockChain::VerifyPrimaryBlockConfirm(const uint256& hashBlock)
     }
     return true;
 }
+
+bool CBlockChain::PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight)
+{
+    return cntrBlock.PruneForkStateData(hashFork, nPruneReserveLastHeight);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

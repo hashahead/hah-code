@@ -176,6 +176,7 @@ public:
     bool AddBlockLocalVoteSignFlag(const uint256& hashBlock) override;
     bool VerifyPrimaryBlockConfirm(const uint256& hashBlock) override;
 
+    bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
 
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
