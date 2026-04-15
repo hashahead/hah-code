@@ -177,6 +177,7 @@ public:
     bool VerifyPrimaryBlockConfirm(const uint256& hashBlock) override;
 
     bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
+    bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit) override;
 
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
@@ -194,6 +195,7 @@ protected:
     Errno VerifyBlock(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const BlockIndexPtr& pIndexPrev,
                       uint256& nReward, CDelegateAgreement& agreement, uint256& nEnrollTrust, BlockIndexPtr& ppIndexRef);
     bool VerifyBlockCertTx(const uint256& hashBlock, const CBlock& block);
+    bool VerifyBlockVoteResult(const uint256& hashBlock, const CBlock& block);
 
     void InitCheckPoints();
     void InitCheckPoints(const uint256& hashFork, const std::map<int, uint256>& mapCheckPointsIn);

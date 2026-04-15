@@ -202,8 +202,9 @@ public:
     virtual bool GetBlockDelegateEnrolled(const uint256& hashBlock, CDelegateEnrolled& enrolled) = 0;
     virtual bool GetBlockDelegateAgreement(const uint256& hashBlock, CDelegateAgreement& agreement) = 0;
     virtual uint256 GetBlockMoneySupply(const uint256& hashBlock) = 0;
+    virtual bool GetBlockDelegateVoteAddress(const uint256& hashBlock, std::set<CDestination>& setVoteAddress) = 0;
     virtual uint64 GetNextBlockTimestamp(const uint256& hashPrev) = 0;
-    virtual Errno VerifyPowBlock(const CBlock& block, bool& fLongChain) = 0;
+    virtual Errno VerifyPoaBlock(const CBlock& block, bool& fLongChain) = 0;
     virtual bool VerifyBlockForkTx(const uint256& hashPrev, const CTransaction& tx, std::vector<std::pair<CDestination, CForkContext>>& vForkCtxt) = 0;
     virtual bool CheckForkValidLast(const uint256& hashFork, CBlockChainUpdate& update) = 0;
     virtual bool VerifyForkRefLongChain(const uint256& hashFork, const uint256& hashForkBlock, const uint256& hashPrimaryBlock) = 0;
@@ -213,7 +214,7 @@ public:
     virtual bool CalcBlockVoteRewardTx(const uint256& hashPrev, const uint16 nBlockType, const int nBlockHeight, const uint32 nBlockTime, vector<CTransaction>& vVoteRewardTx) = 0;
     virtual uint256 GetPrimaryBlockReward(const uint256& hashPrev) = 0;
     virtual bool CreateBlockStateRoot(const uint256& hashFork, const CBlock& block, uint256& hashStateRoot, uint256& hashReceiptRoot,
-                                      uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut)
+                                      uint256& hashCrosschainMerkleRoot, uint256& nBlockGasUsed, bytes& btBloomDataOut, uint256& nTotalMintRewardOut, bool& fMoStatus)
         = 0;
     virtual bool RetrieveDestState(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CDestState& state) = 0;
     virtual bool GetTransactionReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceiptEx& receiptex) = 0;

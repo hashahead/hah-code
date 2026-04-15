@@ -2860,6 +2860,11 @@ bool CBlockChain::PruneForkStateData(const uint256& hashFork, const uint32 nPrun
 {
     return cntrBlock.PruneForkStateData(hashFork, nPruneReserveLastHeight);
 }
+
+bool CBlockChain::PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit)
+{
+    return cntrBlock.PruneForkContractKvData(hashFork, nPruneReserveLastHeight, fExit);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
