@@ -702,6 +702,70 @@ bool CWsService::HandleEvent(CEventWsServicePushNewPendingTx& eventPush)
     }
     return true;
 }
+
+bool CWsService::HandleEvent(CEventWsServicePushSyncing& eventPush)
+{
+    CReadLock rlock(rwAccess);
+
+    const CWssPushSyncing& pushSyncing = eventPush.data;
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(pushSyncing.hashFork);
+    auto& subsFork = mapWsSubscribeFork[nChainId];
+
+    SHP_WS_SERVER ptrWsServer = nullptr;
+    auto it = mapWsServer.find(nChainId);
+    if (it != mapWsServer.end())
+    {
+        ptrWsServer = it->second;
+    }
+    if (ptrWsServer == nullptr)
+    {
+        return true;
+    }
+
+    // {
+    //     "jsonrpc":"2.0",
+    //     "subscription":"0xe2ffeb2703bcf602d42922385829ce96",
+    //     "result": {
+    //         "syncing":true,
+    //         "status": {
+    //             "startingBlock":673427,
+    //             "currentBlock":67400,
+    //             "highestBlock":674432,
+    //             "pulledStates":0,
+    //             "knownStates":0
+    //         }
+    //     }
+    // }
+
+    for (const auto& kv : subsFork.GetSubsListByType(WSCS_SUBS_TYPE_SYNCING))
+    {
+        const uint128& nSubsId = kv.first;
+        const CClientSubscribe& clientSubs = kv.second;
+
+        std::string strMsg;
+
+        strMsg += "{";
+        strMsg += "\"jsonrpc\": \"2.0\",";
+        strMsg += ("\"subscription\": \"" + nSubsId.GetHex() + "\",");
+        strMsg += "\"result\": {";
+        strMsg += ("\"syncing\": " + std::string(pushSyncing.fSyncing ? "true" : "false"));
+        if (pushSyncing.fSyncing)
+        {
+            strMsg += ",";
+            strMsg += "\"status\": {";
+            strMsg += ("\"startingBlock\": " + std::to_string(pushSyncing.nStartingBlockNumber) + ",");
+            strMsg += ("\"currentBlock\": " + std::to_string(pushSyncing.nCurrentBlockNumber) + ",");
+            strMsg += ("\"highestBlock\": " + std::to_string(pushSyncing.nHighestBlockNumber) + ",");
+            strMsg += ("\"pulledStates\": " + std::to_string(pushSyncing.nPulledStates) + ",");
+            strMsg += ("\"knownStates\": " + std::to_string(pushSyncing.nKnownStates));
+            strMsg += "}";
+        }
+        strMsg += "}}";
+
+        ptrWsServer->SendWsMsg(clientSubs.nClientConnId, strMsg);
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {

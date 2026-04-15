@@ -161,6 +161,8 @@ public:
     bool HandleEvent(CEventWsServicePushLogs& eventPush) override;
     bool HandleEvent(CEventWsServicePushNewPendingTx& eventPush) override;
     bool HandleEvent(CEventWsServicePushSyncing& eventPush) override;
+
+    void AddNewBlockSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) override;
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;
