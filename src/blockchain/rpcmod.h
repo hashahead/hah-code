@@ -254,6 +254,7 @@ private:
     rpc::CRPCResultPtr RPCEthDebugGetTrieFlushInterval(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthDebugTraceBlock(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthDebugTraceBlockByHash(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCEthDebugTraceBlockByNumber(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
 
 protected:
     hnbase::IIOProc* pHttpServer;
@@ -262,6 +263,8 @@ protected:
     IDataStat* pDataStat;
     IForkManager* pForkManager;
     IBlockMaker* pBlockMaker;
+    IWsService* pWsService;
+
     boost::mutex mutexDec;
 
 private:

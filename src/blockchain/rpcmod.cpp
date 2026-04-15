@@ -10584,4 +10584,138 @@ CRPCResultPtr CRPCMod::RPCEthDebugTraceBlockByHash(const CReqContext& ctxReq, CR
 
     return spResult;
 }
+
+CRPCResultPtr CRPCMod::RPCEthDebugTraceBlockByNumber(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (!BasicConfig()->fTraceDb)
+    {
+        throw CRPCException(RPC_INVALID_REQUEST, "If you need this function, please set config 'tracedb=true', clear data, and then restart");
+    }
+
+    string strNumber;
+    bool fCallTracer = false;
+    bool fPrestateTracer = false;
+    bool fOnlyTopCall = false;
+
+    {
+        boost::unique_lock<boost::mutex> lock(mutexDec);
+
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
+        }
+        if (valParam.type() != json_spirit::array_type)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
+        }
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::str_type)
+            {
+                strNumber = v.get_str();
+            }
+            else if (v.type() == json_spirit::obj_type)
+            {
+                const Object& obj = v.get_obj();
+
+                const json_spirit::Value& vTracer = json_spirit::find_value(obj, "tracer");
+                if (vTracer.type() == json_spirit::str_type)
+                {
+                    const string str = vTracer.get_str();
+                    if (str == "callTracer")
+                    {
+                        if (!fPrestateTracer)
+                        {
+                            fCallTracer = true;
+                        }
+                    }
+                    else if (str == "prestateTracer")
+                    {
+                        if (!fCallTracer)
+                        {
+                            fPrestateTracer = true;
+                        }
+                    }
+                }
+
+                const json_spirit::Value& vTracerConfig = json_spirit::find_value(obj, "tracerConfig");
+                if (vTracerConfig.type() == json_spirit::obj_type)
+                {
+                    const json_spirit::Value& vOnlyTopCall = json_spirit::find_value(vTracerConfig.get_obj(), "onlyTopCall");
+                    if (vOnlyTopCall.type() == json_spirit::bool_type)
+                    {
+                        fOnlyTopCall = vOnlyTopCall.get_bool();
+                    }
+                }
+            }
+        }
+    }
+
+    if (strNumber.empty())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid number");
+    }
+    uint256 hashBlock = GetRefBlock(ctxReq.hashFork, strNumber);
+
+    if (!fCallTracer && !fPrestateTracer)
+    {
+        fCallTracer = true;
+    }
+
+    std::stringstream ss;
+    if (fPrestateTracer)
+    {
+        BlockContractPrevState vBlockContractPrevState;
+        if (!pService->ListBlockContractPrevState(ctxReq.hashFork, hashBlock, vBlockContractPrevState))
+        {
+            throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown block");
+        }
+        CContractPrevState::BlockPrevStateToJsonStream(vBlockContractPrevState, ss);
+    }
+    else
+    {
+        BlockContractReceipts vContractReceipts;
+        if (!pService->ListBlockContractReceipt(ctxReq.hashFork, hashBlock, vContractReceipts))
+        {
+            throw CRPCException(RPC_INVALID_ADDRESS_OR_KEY, "Unknown block");
+        }
+
+        if (fOnlyTopCall)
+        {
+            std::vector<std::pair<uint256, CTxContractReceipt>> vTxReceiptList;
+            for (const auto& vd : vContractReceipts)
+            {
+                if (!vd.second.empty())
+                {
+                    vTxReceiptList.push_back(std::make_pair(vd.first, vd.second[0]));
+                }
+            }
+            CTxContractReceiptTrie::TxReceiptListToJsonStream(vTxReceiptList, ss);
+        }
+        else
+        {
+            std::vector<std::pair<uint256, CTxContractReceiptTrie>> vTxReceiptList;
+            for (const auto& vd : vContractReceipts)
+            {
+                CTxContractReceiptTrie trieTcr;
+                trieTcr.AddContractReceiptList(vd.second);
+                vTxReceiptList.push_back(std::make_pair(vd.first, trieTcr));
+            }
+            CTxContractReceiptTrie::TxListToJsonStream(vTxReceiptList, ss);
+        }
+    }
+
+    auto spResult = MakeCEthDebugTraceBlockByNumberResultPtr();
+
+    spResult->SetJsonResult(ss.str());
+
+    return spResult;
+}
 } // namespace hashahead
