@@ -186,11 +186,13 @@ public:
     virtual CCheckPoint UpperBoundCheckPoint(const uint256& hashFork, int nHeight) const = 0;
     virtual bool VerifyCheckPoint(const uint256& hashFork, int nHeight, const uint256& nBlockHash) = 0;
     virtual bool FindPreviousCheckPointBlock(const uint256& hashFork, CBlock& block) = 0;
-    virtual bool IsSameBranch(const uint256& hashFork, const CBlock& block) = 0;
 
     virtual bool GetDelegateVotes(const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes) = 0;
+    virtual bool RetrieveDelegateEnrollStatus(const uint256& hashBlock, std::map<CDestination, std::pair<uint32, uint64>>& mapDelegateEnrollStatus) = 0;
+    virtual bool RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDestination, std::pair<uint256, double>>& mapDelegateRewardApy) = 0;
     virtual bool GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight) = 0;
     virtual bool ListDelegate(const uint256& hashRefBlock, const uint32 nStartIndex, const uint32 nCount, std::multimap<uint256, CDestination>& mapVotes) = 0;
+    virtual bool GetPledgeVotes(const uint256& hashRefBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote) = 0;
     virtual bool VerifyRepeatBlock(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const uint256& hashBlockRef) = 0;
     virtual bool GetBlockDelegateVote(const uint256& hashBlock, std::map<CDestination, uint256>& mapVote) = 0;
     virtual bool RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount) = 0;

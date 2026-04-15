@@ -2817,6 +2817,44 @@ bool CBlockChain::AddBlockLocalVoteSignFlag(const uint256& hashBlock)
 {
     return cntrBlock.AddBlockLocalVoteSignFlag(hashBlock);
 }
+
+bool CBlockChain::VerifyPrimaryBlockConfirm(const uint256& hashBlock)
+{
+    if (hashBlock == pCoreProtocol->GetGenesisBlockHash())
+    {
+        return true;
+    }
+
+    std::vector<uint384> vCandidatePubkey;
+    if (!GetPrevBlockCandidatePubkey(hashBlock, vCandidatePubkey))
+    {
+        StdLog("BlockChain", "Verify primary block confirm: Get prev block candidate pubkey fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    if (vCandidatePubkey.empty())
+    {
+        CBlockStatus status;
+        if (!GetBlockStatus(hashBlock, status))
+        {
+            StdLog("BlockChain", "Verify primary block confirm: Get block status fail, block: %s", hashBlock.GetHex().c_str());
+            return false;
+        }
+        if (status.nMintType == CTransaction::TX_POA)
+        {
+            return true;
+        }
+    }
+
+    bytes btDbBitmap;
+    bytes btDbAggSig;
+    bool fDbAtChain = false;
+    uint256 hashDbAtBlock;
+    if (!RetrieveBlockVoteResult(hashBlock, btDbBitmap, btDbAggSig, fDbAtChain, hashDbAtBlock) && !fDbAtChain)
+    {
+        return false;
+    }
+    return true;
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
