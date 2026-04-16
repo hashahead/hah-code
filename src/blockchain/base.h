@@ -231,6 +231,10 @@ public:
     virtual bool ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
                                      const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
         = 0;
+    virtual bool ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder) = 0;
+    virtual bool GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve) = 0;
+    virtual bool AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve) = 0;
+    virtual bool GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve) = 0;
 
     virtual bool AddBlacklistAddress(const CDestination& dest) = 0;
     virtual void RemoveBlacklistAddress(const CDestination& dest) = 0;
@@ -251,7 +255,11 @@ public:
 
     virtual bool AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock) = 0;
     virtual bool RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock) = 0;
-    }
+    virtual bool GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap, bytes& btAggSig, uint256& hashVoteBlock) = 0;
+    virtual bool IsBlockConfirm(const uint256& hashBlock) = 0;
+    virtual bool AddBlockLocalVoteSignFlag(const uint256& hashBlock) = 0;
+    virtual bool VerifyPrimaryBlockConfirm(const uint256& hashBlock) = 0;
+
     virtual bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
     virtual bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit) = 0;
     virtual bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
@@ -573,6 +581,24 @@ public:
     }
 };
 
+
+class IChainSnapshot : public hnbase::IBase
+{
+public:
+    IChainSnapshot()
+      : IBase("chainsnapshot") {}
+
+    const CBasicConfig* Config()
+    {
+        return dynamic_cast<const CBasicConfig*>(hnbase::IBase::Config());
+    }
+    const CStorageConfig* StorageConfig()
+    {
+        return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
+    }
+    virtual bool StartHeightSnapshot(const uint32 nSnapshotHeight, uint256& hashSnapshotBlock) = 0;
+    virtual uint32 GetSnapshotStatus(uint256& hashSnapshotBlock) = 0;
+};
 } // namespace hashahead
 
 #endif //HASHAHEAD_BASE_H
