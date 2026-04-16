@@ -599,6 +599,42 @@ public:
     virtual bool StartHeightSnapshot(const uint32 nSnapshotHeight, uint256& hashSnapshotBlock) = 0;
     virtual uint32 GetSnapshotStatus(uint256& hashSnapshotBlock) = 0;
 };
+
+class INatPortMapping : public hnbase::IBase
+{
+public:
+    INatPortMapping()
+      : IBase("natportmapping") {}
+
+    const CNetworkConfig* NetworkConfig()
+    {
+        return dynamic_cast<const CNetworkConfig*>(hnbase::IBase::Config());
+    }
+};
+
+class IBlockFilter : public hnbase::IBase
+{
+public:
+    IBlockFilter()
+      : IBase("blockfilter") {}
+
+    virtual void RemoveFilter(const uint256& nFilterId) = 0;
+
+    virtual uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logFilterIn, const std::map<uint256, std::vector<CTransactionReceipt>, CustomBlockHashCompare>& mapHisBlockReceiptsIn) = 0;
+    virtual void AddTxReceipt(const uint256& hashForkIn, const uint256& hashBlock, const CTransactionReceipt& receipt) = 0;
+    virtual bool GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs) = 0;
+
+    virtual uint256 AddBlockFilter(const uint256& hashClient, const uint256& hashFork) = 0;
+    virtual void AddNewBlockInfo(const uint256& hashForkIn, const uint256& hashBlock, const CBlock& block) = 0;
+    virtual bool GetFilterBlockHashs(const uint256& nFilterId, const uint256& hashLastBlock, const bool fAll, std::vector<uint256>& vBlockHash) = 0;
+
+    virtual uint256 AddPendingTxFilter(const uint256& hashClient, const uint256& hashFork) = 0;
+    virtual void AddPendingTx(const uint256& hashFork, const uint256& txid) = 0;
+    virtual bool GetFilterTxids(const uint256& hashFork, const uint256& nFilterId, const bool fAll, std::vector<uint256>& vTxid) = 0;
+
+    virtual void AddMaxPeerBlockNumber(const uint256& hashFork, const uint64 nMaxPeerBlockNumber) = 0;
+};
+
 } // namespace hashahead
 
 #endif //HASHAHEAD_BASE_H
