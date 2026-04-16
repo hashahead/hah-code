@@ -575,12 +575,34 @@ class IRecovery : public hnbase::IBase
 public:
     IRecovery()
       : IBase("recovery") {}
+
+    virtual bool IsRecoverying() = 0;
+
+    const CStorageConfig* StorageConfig()
+    {
+        return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
+    }
+    const CNetworkConfig* NetworkConfig()
+    {
+        return dynamic_cast<const CNetworkConfig*>(hnbase::IBase::Config());
+    }
+};
+
+class IPruneDb : public hnbase::IBase
+{
+public:
+    IPruneDb()
+      : IBase("prunedb") {}
+
+    const CBasicConfig* Config()
+    {
+        return dynamic_cast<const CBasicConfig*>(hnbase::IBase::Config());
+    }
     const CStorageConfig* StorageConfig()
     {
         return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
     }
 };
-
 
 class IChainSnapshot : public hnbase::IBase
 {
