@@ -178,6 +178,7 @@ public:
 
     bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
     bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit) override;
+    bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
 
 public:
     static int64 GetBlockInvestRewardTxMaxCount();

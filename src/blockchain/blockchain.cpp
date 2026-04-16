@@ -2865,6 +2865,11 @@ bool CBlockChain::PruneForkContractKvData(const uint256& hashFork, const uint32 
 {
     return cntrBlock.PruneForkContractKvData(hashFork, nPruneReserveLastHeight, fExit);
 }
+
+bool CBlockChain::PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight)
+{
+    return cntrBlock.PruneForkAddressData(hashFork, nPruneReserveLastHeight);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
