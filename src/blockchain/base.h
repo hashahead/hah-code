@@ -222,7 +222,8 @@ public:
     virtual bool ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts) = 0;
     virtual bool RetrieveTxContractPrevState(const uint256& hashFork, const uint256& txid, MapContractPrevState& mapContractPrevState) = 0;
     virtual bool ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState) = 0;
-    virtual bool CallContract(const bool fEthCall, const uint256& hashFork, const uint256& hashBlock, const CDestination& from, const CDestination& to, const uint256& nAmount, const uint256& nGasPrice,
+    virtual bool GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext) = 0;
+    virtual bool CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult) = 0;
                               const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult)
         = 0;
     virtual bool VerifyContractAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract) = 0;
@@ -263,6 +264,7 @@ public:
     virtual bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
     virtual bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit) = 0;
     virtual bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
+    virtual bool PruneHdexData(const uint32 nPruneReserveLastHeight) = 0;
     {
         return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
     }

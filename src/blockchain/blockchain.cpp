@@ -2870,6 +2870,11 @@ bool CBlockChain::PruneForkAddressData(const uint256& hashFork, const uint32 nPr
 {
     return cntrBlock.PruneForkAddressData(hashFork, nPruneReserveLastHeight);
 }
+
+bool CBlockChain::PruneHdexData(const uint32 nPruneReserveLastHeight)
+{
+    return cntrBlock.PruneHdexData(nPruneReserveLastHeight);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
