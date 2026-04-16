@@ -425,14 +425,16 @@ public:
     virtual bool GetForkLastBlock(const uint256& hashFork, int& nLastHeight, uint256& hashLastBlock) = 0;
     virtual void ListFork(std::vector<std::pair<uint256, CProfile>>& vFork, bool fAll = false) = 0;
     virtual bool GetForkContext(const uint256& hashFork, CForkContext& ctxtFork, const uint256& hashMainChainRefBlock = uint256()) = 0;
-    virtual bool VerifyForkNameAndChainId(const uint256& hashFork, const CChainId nChainIdIn, const std::string& strForkName, const uint256& hashBlock = uint256()) = 0;
+    virtual bool GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainIdIn, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashBlock = uint256()) = 0;
+    virtual bool GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock = uint256()) = 0;
     virtual bool GetForkGenealogy(const uint256& hashFork, std::vector<std::pair<uint256, int>>& vAncestry,
                                   std::vector<std::pair<int, uint256>>& vSubline)
         = 0;
     virtual bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight) = 0;
     virtual int GetBlockCount(const uint256& hashFork) = 0;
-    virtual bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) = 0;
-    virtual bool GetBlockHashList(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) = 0;
+    virtual bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) = 0;
+    virtual bool GetBlockHashListByHeight(const uint256& hashFork, const uint32 nHeight, std::vector<uint256>& vBlockHash) = 0;
     virtual bool GetBlockNumberHash(const uint256& hashFork, const uint64 nNumber, uint256& hashBlock) = 0;
     virtual bool GetBlock(const uint256& hashBlock, CBlock& block, CChainId& nChainId, uint256& hashFork, int& nHeight) = 0;
     virtual bool GetBlockEx(const uint256& hashBlock, CBlockEx& block, CChainId& nChainId, uint256& hashFork, int& nHeight) = 0;

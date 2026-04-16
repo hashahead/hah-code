@@ -734,4 +734,5 @@ void CBlockChannel::ClearCacheTimeout()
     }
 }
 
+void CBlockChannel::RequestNextBlockData(const uint256& hashFork, const uint256& hashPrevBlock, const uint64 nNonce)
 } // namespace hashahead
