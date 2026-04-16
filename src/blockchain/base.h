@@ -532,16 +532,10 @@ public:
     virtual bool UpdateForkMintMinGasPrice(const uint256& hashFork, const uint256& nMinGasPrice) = 0;
     virtual uint256 GetForkMintMinGasPrice(const uint256& hashFork) = 0;
 
-    virtual bytes MakeEthTxCallData(const std::string& strFunction, const std::vector<bytes>& vParamList) = 0;
+    virtual bool SubmitPoaBlock(const CTemplateMintPtr& templMint, crypto::CKey& keyMint) = 0;
 
-    /* Mint */
-    virtual bool GetWork(std::vector<unsigned char>& vchWorkData, int& nPrevBlockHeight,
-                         uint256& hashPrev, int& nAlgo, int& nBits,
-                         const CTemplateMintPtr& templMint)
-        = 0;
-    virtual Errno SubmitWork(const std::vector<unsigned char>& vchWorkData, const CTemplateMintPtr& templMint,
-                             crypto::CKey& keyMint, uint256& hashBlock)
-        = 0;
+    virtual bool StartRpcSnapshot(const uint32 nSnapshotHeight, uint256& hashSnapshotBlockHash) = 0;
+    virtual uint32 GetSnapshotStatus(uint256& hashSnapshotBlock) = 0;
 };
 
 class IWsService : public hnbase::CEventProc
@@ -553,6 +547,8 @@ public:
     virtual void AddNewBlockSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) = 0;
     virtual void AddLogsSubscribe(const CChainId nChainId, const uint64 nClientConnId, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics, uint128& nSubsId) = 0;
     virtual void AddNewPendingTxSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) = 0;
+    virtual void AddSyncingSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) = 0;
+    virtual bool RemoveSubscribe(const CChainId nChainId, const uint64 nClientConnId, const uint128& nSubsId) = 0;
 
     virtual void SendWsMsg(const CChainId nChainId, const uint64 nNonce, const std::string& strMsg) = 0;
 };
