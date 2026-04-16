@@ -513,13 +513,22 @@ public:
     virtual bool GetForkContractCodeContext(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashContractCode, CContractCodeContext& ctxtContractCode) = 0;
     virtual bool ListContractCodeContext(const uint256& hashFork, const uint256& hashRefBlock, const uint256& txid, std::map<uint256, CContractCodeContext>& mapContractCode) = 0;
     virtual bool ListContractAddress(const uint256& hashFork, const uint256& hashRefBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress) = 0;
-    virtual bool RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv) = 0;
+    virtual bool ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress) = 0;
+    virtual bool GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress) = 0;
+    virtual bool GetDelegateLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress) = 0;
     virtual bool GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount) = 0;
     virtual bool GeDestContractContext(const uint256& hashFork, const uint256& hashRefBlock, const CDestination& dest, CContractAddressContext& ctxtContract) = 0;
     virtual bool GetContractSource(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashSource, bytes& btSource) = 0;
     virtual bool GetContractCode(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashCode, bytes& btCode) = 0;
     virtual bool GetDestTemplateData(const uint256& hashFork, const uint256& hashRefBlock, const CDestination& dest, bytes& btTemplateData) = 0;
     virtual bool RetrieveAddressContext(const uint256& hashFork, const CDestination& dest, CAddressContext& ctxAddress, const uint256& hashBlock = uint256()) = 0;
+    virtual bool RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress) = 0;
+    virtual uint64 GetDestNextTxNonce(const uint256& hashFork, const CDestination& dest) = 0;
+
+    virtual bool ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                                     const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
+        = 0;
+    virtual bool ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder) = 0;
 
     virtual bool AddBlacklistAddress(const CDestination& dest) = 0;
     virtual void RemoveBlacklistAddress(const CDestination& dest) = 0;
