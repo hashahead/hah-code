@@ -1302,5 +1302,55 @@ bool CVoteDB::ClearHeightTrieRoot(const uint32 nLastHeight)
     StdDebug("CVoteDB", "Clear height trie root: Remove trie root success, remove block count: %lu, last height: %d", vBlockRootType.size(), nLastHeight);
     return true;
 }
+
+bool CVoteDB::ClearHeightDelegateEnroll(const uint32 nLastHeight)
+{
+    std::vector<uint256> vBlockHash;
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL)
+            {
+                uint256 hashBlock;
+                ssKey >> hashBlock;
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockHash.push_back(hashBlock);
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_VOTE_ROOT_TYPE_DELEGATE_ENROLL;
+
+    if (!dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker))
+    {
+        StdLog("CVoteDB", "Clear height delegate enroll: Walk through ext kv failed, last height: %d", nLastHeight);
+        return false;
+    }
+
+    for (auto& hashBlock : vBlockHash)
+    {
+        if (!RemoveDelegateEnroll(hashBlock))
+        {
+            StdLog("CVoteDB", "Clear height delegate enroll: Remove failed, block: %s, last height: %d", hashBlock.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+
+    StdDebug("CVoteDB", "Clear height delegate enroll: Remove success, remove block count: %lu, last height: %d", vBlockHash.size(), nLastHeight);
+    return true;
+}
 } // namespace storage
 } // namespace hashahead
