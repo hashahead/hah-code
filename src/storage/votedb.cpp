@@ -1252,5 +1252,55 @@ bool CVoteDB::ClearVoteUnavailableNode(const uint32 nClearRefHeight)
     return true;
 }
 
+bool CVoteDB::ClearHeightTrieRoot(const uint32 nLastHeight)
+{
+    std::vector<std::pair<uint8, uint256>> vBlockRootType;
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_VOTE_KEY_ID_TRIEROOT)
+            {
+                uint8 nRootType;
+                uint256 hashBlock;
+                ssKey >> nRootType >> hashBlock;
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockRootType.push_back(std::make_pair(nRootType, hashBlock));
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_VOTE_KEY_ID_TRIEROOT;
+
+    if (!dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker))
+    {
+        StdLog("CVoteDB", "Clear height trie root: Walk through ext kv failed, last height: %d", nLastHeight);
+        return false;
+    }
+
+    for (auto& vd : vBlockRootType)
+    {
+        if (!RemoveTrieRoot(vd.first, vd.second))
+        {
+            StdLog("CVoteDB", "Clear height trie root: Remove trie root failed, root type: %d, block: %s, last height: %d", vd.first, vd.second.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+
+    StdDebug("CVoteDB", "Clear height trie root: Remove trie root success, remove block count: %lu, last height: %d", vBlockRootType.size(), nLastHeight);
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

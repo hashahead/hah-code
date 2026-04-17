@@ -149,6 +149,7 @@ public:
     bool VerifyVoteReward(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
     bool ClearVoteUnavailableNode(const uint32 nClearRefHeight);
+    bool GetSnapshotVoteData(const uint256& hashFork, const bool fPrimaryChain, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
 protected:
     bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot, const uint64 nVoteCount);
     bool ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot, uint64& nVoteCount);
