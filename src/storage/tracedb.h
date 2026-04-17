@@ -82,6 +82,7 @@ public:
     void Deinitialize();
     bool RemoveAll();
 
+    bool AddBlockContractTraceData(const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState);
 protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;

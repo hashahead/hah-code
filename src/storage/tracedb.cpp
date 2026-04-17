@@ -181,6 +181,41 @@ bool CForkTraceDB::RemoveAll()
     return true;
 }
 
+bool CForkTraceDB::AddBlockContractTraceData(const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState)
+{
+    CWriteLock wlock(rwAccess);
+
+    if (!fUseCacheData)
+    {
+        for (const auto& vd : vContractReceipts)
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            ssKey << DB_TRACE_KEY_NAME_CONTRACT_RECEIPT << hashBlock << vd.first;
+            ssValue << vd.second;
+
+            if (!dbTrie.WriteExtKv(ssKey, ssValue))
+            {
+                StdLog("CForkTraceDB", "Add block contract trace data: Write contract receipt fail, block: %s, txid: %s", hashBlock.GetBhString().c_str(), vd.first.ToString().c_str());
+                return false;
+            }
+        }
+        for (const auto& vd : vContractPrevAddressState)
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            ssKey << DB_TRACE_KEY_NAME_CONTRACT_PREV_STATE << hashBlock << vd.first;
+            ssValue << vd.second;
+
+            if (!dbTrie.WriteExtKv(ssKey, ssValue))
+            {
+                StdLog("CForkTraceDB", "Add block contract trace data: Write contract prev state fail, block: %s, txid: %s", hashBlock.GetBhString().c_str(), vd.first.ToString().c_str());
+                return false;
+            }
+        }
+    }
+
+    cacheTraceData.AddCacheBlockContractTraceData(hashBlock, vContractReceipts, vContractPrevAddressState);
+    return true;
+}
 //////////////////////////////
 // CTraceDB
 
