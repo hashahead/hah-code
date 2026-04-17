@@ -216,6 +216,62 @@ bool CForkTraceDB::AddBlockContractTraceData(const uint256& hashBlock, const Blo
     cacheTraceData.AddCacheBlockContractTraceData(hashBlock, vContractReceipts, vContractPrevAddressState);
     return true;
 }
+
+bool CForkTraceDB::AddBlockContractKvData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, std::map<uint256, bytes>>& mapTraceContractKvData)
+{
+    CWriteLock wlock(rwAccess);
+
+    uint256 hashPrevRoot;
+    if (hashBlock != hashFork)
+    {
+        if (!ReadTrieRoot(DB_TRACE_KEY_TYPE_TRIEROOT_CONTRACT_KV, hashPrevBlock, hashPrevRoot))
+        {
+            StdLog("CForkTraceDB", "Add block contract kv data: Read trie root fail, prev block: %s", hashPrevBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+
+    bytesmap mapKv;
+    for (const auto& kv : mapTraceContractKvData)
+    {
+        for (const auto& kv2 : kv.second)
+        {
+            CBufStream ss;
+            ss.Write((char*)(kv.first.begin()), kv.first.size());
+            ss.Write((char*)(kv2.first.begin()), kv2.first.size());
+            const uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
+
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << DB_TRACE_KEY_NAME_CONTRACT_ADDRESS_KV_PAIR << kv.first << kv2.first;
+            ssKey.GetData(btKey);
+
+            ssValue << hash;
+            ssValue.GetData(btValue);
+
+            mapKv.insert(make_pair(btKey, btValue));
+        }
+    }
+    if (hashPrevRoot == 0)
+    {
+        AddPrevRoot(hashPrevRoot, hashBlock, mapKv);
+    }
+
+    uint256 hashBlockRoot;
+    if (!dbTrie.AddNewTrie(hashPrevRoot, mapKv, hashBlockRoot))
+    {
+        StdLog("CForkTraceDB", "Add block contract kv data: Add new trie fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    if (!WriteTrieRoot(DB_TRACE_KEY_TYPE_TRIEROOT_CONTRACT_KV, hashBlock, hashBlockRoot))
+    {
+        StdLog("CForkTraceDB", "Add block contract kv data: Write trie root fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
 //////////////////////////////
 // CTraceDB
 
