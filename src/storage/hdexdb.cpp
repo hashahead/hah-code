@@ -956,6 +956,12 @@ bool CHdexDB::AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockPr
     return AddBlockRecvCrosschainProveDb(nRecvChainId, blockProve);
 }
 
+bool CHdexDB::GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve)
+{
+    CReadLock rlock(rwAccess);
+
+    return GetRecvCrosschainProveDb(nRecvChainId, nSendChainId, hashSendProvePrevBlock, blockProve);
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

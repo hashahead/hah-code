@@ -284,6 +284,31 @@ protected:
         s.Serialize(hashFirstPrevBlock, opt);
     }
 };
+
+class CHdexLastProveBlock
+{
+    friend class hnbase::CStream;
+
+public:
+    CHdexLastProveBlock()
+      : nRecvChainId(0), nSendChainId(0) {}
+    CHdexLastProveBlock(const uint32 nRecvChainIdIn, const uint32 nSendChainIdIn, const uint256& nLastProveBlockIn)
+      : nRecvChainId(nRecvChainIdIn), nSendChainId(nSendChainIdIn), nLastProveBlock(nLastProveBlockIn) {}
+
+public:
+    uint32 nRecvChainId;
+    uint32 nSendChainId;
+    uint256 nLastProveBlock;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(nRecvChainId, opt);
+        s.Serialize(nSendChainId, opt);
+        s.Serialize(nLastProveBlock, opt);
+    }
+};
 } // namespace storage
 } // namespace hashahead
 

@@ -117,6 +117,7 @@ public:
     bool GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve);
 
     bool AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve);
+    bool GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve);
 protected:
     enum
     {
