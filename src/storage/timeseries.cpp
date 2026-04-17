@@ -428,5 +428,41 @@ bool CTimeSeriesSnapshot::Write(const uint8 nType, const char* pData, const uint
     return true;
 }
 
+bool CTimeSeriesSnapshot::Read(const uint32 nFile, const uint32 nOffset, uint8& nType, bytes& btData)
+{
+    std::string pathFile;
+    if (!GetFilePath(nFile, pathFile))
+    {
+        hnbase::StdError("CTimeSeriesSnapshot", "Read: Get file path fail, nFile: %d, nOffset: %d", nFile, nOffset);
+        return false;
+    }
+    try
+    {
+        hnbase::CFileStream fs(pathFile.c_str());
+        fs.Seek(nOffset - sizeof(uint32) * 3 - 1);
+        uint32 nReadMagicNum, nReadSize, nReadCrc;
+        fs >> nReadMagicNum >> nReadSize >> nReadCrc >> nType;
+        if (nReadMagicNum != nMagicNum || nReadSize == 0 || nReadSize >= MAX_FILE_SIZE)
+        {
+            hnbase::StdError("CTimeSeriesSnapshot", "Read: nMagicNum or nReadSize error, nReadMagicNum: 0x%x, nMagicNum: 0x%x, nReadSize: %d, nFile: %d, nOffset: %d",
+                             nReadMagicNum, nMagicNum, nReadSize, nFile, nOffset);
+            return false;
+        }
+        btData.resize(nReadSize);
+        fs.Read((char*)btData.data(), nReadSize);
+        if (nReadCrc != hashahead::crypto::crc24q(btData.data(), nReadSize))
+        {
+            hnbase::StdError("CTimeSeriesSnapshot", "Read: Crc error, read crc: 0x%8.8x, calc crc: 0x%8.8x, nFile: %d, nOffset: %d",
+                             nReadCrc, hashahead::crypto::crc24q(btData.data(), nReadSize), nFile, nOffset);
+            return false;
+        }
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

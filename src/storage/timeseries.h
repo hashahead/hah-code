@@ -665,6 +665,23 @@ protected:
     static const uint32 nMagicNum;
 };
 
+typedef boost::function<bool(const uint8 nType, const bytes& btData)> WalkerSnapshotFunc;
+
+class CTimeSeriesSnapshot : public CTimeSeriesBase
+{
+public:
+    CTimeSeriesSnapshot();
+    ~CTimeSeriesSnapshot();
+
+    bool Write(const uint8 nType, const char* pData, const uint32 nDataSize, CDiskPos& pos);
+    bool Read(const uint32 nFile, const uint32 nOffset, uint8& nType, bytes& btData);
+    bool WalkThrough(WalkerSnapshotFunc walker, uint32& nLastFileRet, uint32& nLastPosRet);
+
+protected:
+    boost::mutex mtxWriter;
+    static const uint32 nMagicNum;
+};
+
 } // namespace storage
 } // namespace hashahead
 

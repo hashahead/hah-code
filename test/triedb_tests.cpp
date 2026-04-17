@@ -211,6 +211,80 @@ BOOST_AUTO_TEST_CASE(shorttest)
     db.Deinitialize();
 }
 
+BOOST_AUTO_TEST_CASE(removetest)
+{
+    cout << GetLocalTime() << "  triedb remove test.........." << endl;
+
+    std::string fullpath = GetOutPath("triedb_tests");
+
+    CTrieDB db;
+    BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
+
+    //---------------------------------------------------
+    uint256 hashPrevRoot;
+    uint256 hashNewRoot;
+
+    {
+        printf("=========================[ Add ]================================\n");
+
+        bytesmap mapKv;
+        mapKv.insert(make_pair(GetBytes("000001"), GetBytes("000001")));
+
+        mapKv.insert(make_pair(GetBytes("000011"), GetBytes("000011")));
+        mapKv.insert(make_pair(GetBytes("000012"), GetBytes("000012")));
+        mapKv.insert(make_pair(GetBytes("000013"), GetBytes("000013")));
+
+        mapKv.insert(make_pair(GetBytes("002010"), GetBytes("002010")));
+
+        BOOST_CHECK(db.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot));
+
+        printf("=========================[ Remove prev walk through trie: %s ]================================\n", hashNewRoot.ToString().c_str());
+        {
+            std::vector<std::pair<bytes, bytes>> vKv;
+            CListOrderTrieDBWalker walker(0, vKv);
+            BOOST_CHECK(db.WalkThroughTrie(hashNewRoot, walker));
+            for (const auto& vd : vKv)
+            {
+                string strKey(vd.first.begin(), vd.first.end());
+                string strValue(vd.second.begin(), vd.second.end());
+                printf("WalkThroughTrie: key: %s, value: %s\n", strKey.c_str(), strValue.c_str());
+            }
+        }
+
+        printf("=========================[ Remove ]================================\n");
+        {
+            std::set<bytes> setRemoveKeys;
+            setRemoveKeys.insert(GetBytes("000012"));
+            setRemoveKeys.insert(GetBytes("000013"));
+
+            bytesmap mapKv;
+            mapKv.insert(make_pair(GetBytes("003007"), GetBytes("003007")));
+            mapKv.insert(make_pair(GetBytes("003008"), GetBytes("003008")));
+
+            printf("Remove key: 000012\n");
+            printf("Remove key: 000013\n");
+
+            BOOST_CHECK(db.AddNewTrie(hashNewRoot, mapKv, hashNewRoot));
+        }
+
+        printf("=========================[ Remove last walk through trie: %s ]================================\n", hashNewRoot.ToString().c_str());
+        {
+            std::vector<std::pair<bytes, bytes>> vKv;
+            CListOrderTrieDBWalker walker(0, vKv);
+            BOOST_CHECK(db.WalkThroughTrie(hashNewRoot, walker));
+            for (const auto& vd : vKv)
+            {
+                string strKey(vd.first.begin(), vd.first.end());
+                string strValue(vd.second.begin(), vd.second.end());
+                printf("WalkThroughTrie: key: %s, value: %s\n", strKey.c_str(), strValue.c_str());
+            }
+        }
+    }
+
+    //---------------------------------------------------
+    db.Clear();
+    db.Deinitialize();
+}
 BOOST_AUTO_TEST_CASE(stresstest)
 {
     cout << GetLocalTime() << "  triedb stress test.........." << endl;
