@@ -355,9 +355,13 @@ BOOST_AUTO_TEST_CASE(sethashtest)
         {
             printf("%d:0x%2.2x: %s\n", kv.second, kv.second, kv.first.ToString().c_str());
         }
-        uint256 h(0x12345678);
-        printf("%s\n", h.ToString().c_str());
-        printf("%s\n", h.GetValueHex().c_str());
+        uint256 h(0x2345678);
+        printf("ToString: %s\n", h.ToString().c_str());
+        printf("ToBigEndian: %s\n", ToHexString(h.ToBigEndian()).c_str());
+        printf("GetValueHex: %s\n", h.GetValueHex().c_str());
+        uint256 k;
+        k.SetValueHex(h.GetValueHex());
+        BOOST_CHECK(k == h);
     }
 
     {

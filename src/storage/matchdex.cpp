@@ -481,5 +481,14 @@ bool CMatchDex::AddMatchDexOrder(const uint256& hashDexOrder, const CDestination
     return true;
 }
 
+bool CMatchDex::UpdateMatchCompleteOrder(const uint256& hashCoinPair, const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount)
+{
+    auto it = mapCoinDex.find(hashCoinPair);
+    if (it != mapCoinDex.end())
+    {
+        return it->second.UpdateCompleteOrder(hashDexOrder, nCompleteAmount, nCompleteCount);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
