@@ -421,6 +421,11 @@ bool CBlockDB::RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBitmap
 {
     return dbBlockIndex.RetrieveBlockVoteResult(hashBlock, btBitmap, btAggSig, fAtChain, hashAtBlock);
 }
+
+bool CBlockDB::GetLastBlockVoteResult(const uint256& hashFork, uint256& hashLastBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock)
+{
+    return dbBlockIndex.GetLastBlockVoteResult(hashFork, hashLastBlock, btBitmap, btAggSig, fAtChain, hashAtBlock);
+}
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);
