@@ -646,7 +646,15 @@ bool CBbPeerNet::HandlePeerRecvMessage(CPeer* pPeer, int nChannel, int nCommand,
             RetrieveGoodNode(vNode, NODE_ACTIVE_TIME, 499);
 
             vector<CAddress> vAddr;
-            vAddr.push_back(GetGateWayAddress(confNetwork.gateWayAddr));
+            if (confNetwork.gateWayAddr.nPort != 0 && (confNetwork.gateWayAddr.strHost.empty() || confNetwork.gateWayAddr.strHost == NODE_DEFAULT_GATEWAY))
+            {
+                const CNetHost defaultGateWay(NODE_DEFAULT_GATEWAY, confNetwork.gateWayAddr.nPort, "", boost::any(uint64(network::NODE_NETWORK)));
+                vAddr.push_back(CAddress(boost::any_cast<uint64>(defaultGateWay.data), defaultGateWay.ToEndPoint()));
+            }
+            else
+            {
+                vAddr.push_back(GetGateWayAddress(confNetwork.gateWayAddr));
+            }
 
             for (const CNodeAvail& node : vNode)
             {
@@ -686,7 +694,15 @@ bool CBbPeerNet::HandlePeerRecvMessage(CPeer* pPeer, int nChannel, int nCommand,
                     tcp::endpoint ep;
                     boost::system::error_code ec;
                     addr.ssEndpoint.GetEndpoint(ep);
-                    if ((i == 0 && ep.address().to_string(ec) == NODE_DEFAULT_GATEWAY) || (fHaveGateway && ep == epGateway))
+                    if (i == 0 && ep.address().to_string(ec) == NODE_DEFAULT_GATEWAY)
+                    {
+                        if (ep.port() == 0)
+                        {
+                            continue;
+                        }
+                        ep.address(pBbPeer->GetRemote().address());
+                    }
+                    else if (fHaveGateway && ep == epGateway)
                     {
                         continue;
                     }
