@@ -235,5 +235,11 @@ bool CSnapshotDB::GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vec
     return true;
 }
 
+bool CSnapshotDB::RemoveSnapshotDownBlock(const uint256& hashSnapBlock)
+{
+    fs::path pathSnapDown = pathDataLocation / "snapdown";
+    fs::remove_all(pathSnapDown / hashSnapBlock.ToString());
+    return true;
+}
 } // namespace storage
 } // namespace hashahead
