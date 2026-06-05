@@ -490,5 +490,21 @@ bool CMatchDex::UpdateMatchCompleteOrder(const uint256& hashCoinPair, const uint
     }
     return false;
 }
+
+void CMatchDex::UpdatePeerProveLastBlock(const CChainId nPeerChainId, const uint256& hashLastProveBlock)
+{
+    auto it = mapChainIdLinkCoinDexPair.find(nPeerChainId);
+    if (it != mapChainIdLinkCoinDexPair.end())
+    {
+        for (const uint256& hashCoinPair : it->second)
+        {
+            auto mt = mapCoinDex.find(hashCoinPair);
+            if (mt != mapCoinDex.end())
+            {
+                mt->second.UpdatePeerCoinPairLastBlock(hashLastProveBlock);
+            }
+        }
+    }
+}
 } // namespace storage
 } // namespace hashahead
