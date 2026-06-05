@@ -1910,5 +1910,16 @@ bool CAddressDB::RetrieveSourceCodeContext(const uint256& hashFork, const uint25
     return false;
 }
 
+bool CAddressDB::RetrieveContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->RetrieveContractCreateCodeContext(hashBlock, hashContractCreateCode, ctxtCode);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
