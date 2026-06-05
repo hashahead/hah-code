@@ -1044,6 +1044,33 @@ bool CForkDB::ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhiteli
     return true;
 }
 
+bool CForkDB::SetPruneFlag(const bool fPrune)
+{
+    try
+    {
+        CBufStream ssKey, ssValue;
+        ssKey << DB_FORK_KEY_TYPE_PRUNE_FLAG << DB_FORK_KEY_VALUE_PRUNE_FLAG;
+        if (dbTrie.ReadExtKv(ssKey, ssValue))
+        {
+            bool fPruneDb = false;
+            ssValue >> fPruneDb;
+            if (fPruneDb != fPrune)
+            {
+                StdLog("CForkDB", "Set prune flag: Prune flag error, fPruneDb: %d, fPrune: %d", fPruneDb, fPrune);
+                return false;
+            }
+        }
+    }
+    catch (std::exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+    }
+
+    CBufStream ssKey, ssValue;
+    ssKey << DB_FORK_KEY_TYPE_PRUNE_FLAG << DB_FORK_KEY_VALUE_PRUNE_FLAG;
+    ssValue << fPrune;
+    return dbTrie.WriteExtKv(ssKey, ssValue);
+}
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);
