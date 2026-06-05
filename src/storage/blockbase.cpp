@@ -4565,6 +4565,11 @@ bool CBlockBase::ListAddressDexOrder(const uint256& hashBlock, const CDestinatio
 {
     return dbBlock.ListAddressDexOrder(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, nGetStatus, nGetCount, mapDexOrder);
 }
+
+bool CBlockBase::GetDexOrderMaxNumber(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, uint64& nMaxOrderNumber)
+{
+    return dbBlock.GetDexOrderMaxNumber(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nMaxOrderNumber);
+}
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)
 {
     return dbBlock.AddBlacklistAddress(dest);

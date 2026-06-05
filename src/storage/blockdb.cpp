@@ -426,6 +426,11 @@ bool CBlockDB::GetLastBlockVoteResult(const uint256& hashFork, uint256& hashLast
 {
     return dbBlockIndex.GetLastBlockVoteResult(hashFork, hashLastBlock, btBitmap, btAggSig, fAtChain, hashAtBlock);
 }
+
+bool CBlockDB::GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    return dbBlockIndex.GetSnapshotBlockVoteData(vBlockHash, btSnapData);
+}
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);
