@@ -1273,48 +1273,16 @@ bool CForkDB::GetForkLast(const uint256& hashFork, uint256& hashLastBlock)
 
 bool CForkDB::AddCacheForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapNewForkCtxt)
 {
-    set<uint256> setRemoveFullFork;
-    while (mapCacheFork.size() >= MAX_CACHE_CONTEXT_COUNT)
+    if (hashPrevBlock == 0)
     {
-        auto it = mapCacheFork.begin();
-        if (it == mapCacheFork.end())
-        {
-            break;
-        }
-        if (it->second.hashRef == 0)
-        {
-            setRemoveFullFork.insert(it->first);
-        }
-        mapCacheFork.erase(it);
+        AddForkContextCache(hashBlock, mapNewForkCtxt);
     }
-    if (!setRemoveFullFork.empty())
+    else
     {
-        for (auto it = mapCacheFork.begin(); it != mapCacheFork.end();)
+        SHP_CACHE_FORK_DATA ptr = LoadCacheForkContext(hashPrevBlock);
+        if (!ptr)
         {
-            if (it->second.hashRef != 0 && setRemoveFullFork.count(it->second.hashRef) > 0)
-            {
-                mapCacheFork.erase(it++);
-            }
-            else
-            {
-                ++it;
-            }
-        }
-    }
-
-    bool fAddFull = false;
-    if (CBlock::GetBlockHeightByHash(hashBlock) % (MAX_CACHE_CONTEXT_COUNT / 4) == 0)
-    {
-        fAddFull = true;
-    }
-
-    auto it = mapCacheFork.find(hashPrevBlock);
-    if (fAddFull || it == mapCacheFork.end())
-    {
-        std::map<uint256, CForkContext> mapForkCtxt;
-        if (!ListDbForkContext(hashPrevBlock, mapForkCtxt))
-        {
-            StdLog("CForkDB", "Add Cache Fork Context: List db fork context fail, prev block: %s", hashPrevBlock.GetHex().c_str());
+            StdLog("CForkDB", "Add Cache Fork Context: Load fork context fail, prev block: %s", hashPrevBlock.GetHex().c_str());
             return false;
         }
         if (!mapNewForkCtxt.empty())
@@ -1325,32 +1293,23 @@ bool CForkDB::AddCacheForkContext(const uint256& hashPrevBlock, const uint256& h
             {
                 mapForkCtxt[kv.first] = kv.second;
             }
-        }
-        mapCacheFork[hashBlock] = CCacheFork(mapForkCtxt);
-    }
-    else
-    {
-        if (!mapNewForkCtxt.empty())
-        {
-            std::map<uint256, CForkContext> mapForkCtxt;
-            mapForkCtxt = it->second.mapForkContext;
-            for (const auto& kv : mapNewForkCtxt)
-            {
-                mapForkCtxt[kv.first] = kv.second;
-            }
-            mapCacheFork[hashBlock] = CCacheFork(mapForkCtxt);
+            AddForkContextCache(hashBlock, mapForkCtxt);
         }
         else
         {
-            if (it->second.hashRef == 0)
-            {
-                mapCacheFork[hashBlock] = CCacheFork(hashPrevBlock);
-            }
-            else
-            {
-                mapCacheFork[hashBlock] = CCacheFork(it->second.hashRef);
-            }
+            mapCacheForkBlockPtr[hashBlock] = ptr;
         }
+    }
+    return true;
+}
+
+SHP_CACHE_FORK_DATA CForkDB::AddForkContextCache(const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxtIn)
+{
+    uint256 hashForkContext = CCacheFork::CalcForkContextHash(mapForkCtxtIn);
+    auto it = mapCacheForkContext.find(hashForkContext);
+    if (it == mapCacheForkContext.end())
+    {
+        it = mapCacheForkContext.insert(std::make_pair(hashForkContext, MAKE_SHARED_CACHE_FORK_DATA(mapForkCtxtIn))).first;
     }
     return true;
 }
