@@ -1071,6 +1071,34 @@ bool CForkDB::SetPruneFlag(const bool fPrune)
     ssValue << fPrune;
     return dbTrie.WriteExtKv(ssKey, ssValue);
 }
+
+bool CForkDB::GetSnapshotForkData(const std::map<uint256, uint256>& mapForkLastBlock, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    CSnapForkRootKv forkRootKv(mapForkLastBlock, vBlockHash);
+
+    forkRootKv.vKv.reserve(vBlockHash.size());
+    for (auto& hashBlock : vBlockHash)
+    {
+        uint256 hashRoot;
+        if (!ReadTrieRoot(hashBlock, hashRoot))
+        {
+            StdLog("CForkDB", "Get snapshot fork data: Read trie root failed, block: %s", hashBlock.ToString().c_str());
+            return false;
+        }
+        forkRootKv.vKv.push_back(std::make_pair(hashRoot, bytesmap()));
+    }
+
+    CBufStream ss;
+    ss << forkRootKv;
+    ss.GetData(btSnapData);
+    return true;
+}
+
+bool CForkDB::RecoveryForkData(const bytes& btSnapData)
+{
+    return true;
+}
+
 bool CForkDB::VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
 {
     CReadLock rlock(rwAccess);

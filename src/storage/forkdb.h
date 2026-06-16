@@ -87,6 +87,9 @@ public:
     bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256());
 
     bool SetPruneFlag(const bool fPrune);
+    bool GetSnapshotForkData(const std::map<uint256, uint256>& mapForkLastBlock, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryForkData(const bytes& btSnapData);
+
     bool VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
 protected:
