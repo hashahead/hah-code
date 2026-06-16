@@ -302,6 +302,52 @@ bool CForkTraceDB::RetrieveTxContractReceipt(const uint256& hashBlock, const uin
     }
     return false;
 }
+
+bool CForkTraceDB::ListBlockContractReceipt(const uint256& hashBlock, BlockContractReceipts& vContractReceipts)
+{
+    CReadLock rlock(rwAccess);
+
+    if (cacheTraceData.GetBlockContractReceipt(hashBlock, vContractReceipts))
+    {
+        return true;
+    }
+
+    if (!fUseCacheData)
+    {
+        auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+            try
+            {
+                uint8 nExtKey;
+                uint8 nKeyType;
+                ssKey >> nExtKey >> nKeyType;
+                if (nKeyType == DB_TRACE_KEY_NAME_CONTRACT_RECEIPT)
+                {
+                    uint256 hashBlockDb;
+                    uint256 txid;
+                    ssKey >> hashBlockDb >> txid;
+
+                    TxContractReceipts tcrReceipt;
+                    ssValue >> tcrReceipt;
+
+                    vContractReceipts.push_back(std::make_pair(txid, tcrReceipt));
+                }
+                return true;
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            }
+            return false;
+        };
+
+        CBufStream ssKeyBegin, ssKeyPrefix;
+        ssKeyBegin << DB_TRACE_KEY_NAME_CONTRACT_RECEIPT << hashBlock;
+        ssKeyPrefix << DB_TRACE_KEY_NAME_CONTRACT_RECEIPT << hashBlock;
+
+        return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
+    }
+    return false;
+}
 //////////////////////////////
 // CTraceDB
 
