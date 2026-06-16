@@ -252,5 +252,39 @@ uint64 CSnapshotDB::GetSnapshotDownFileSize(const uint256& hashSnapBlock, const 
     }
     return (uint64)(fs::file_size(pathSnapFile));
 }
+
+bool CSnapshotDB::WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData)
+{
+    try
+    {
+        fs::path pathSnapDown = pathDataLocation / "snapdown";
+        fs::path pathSnapBlock = pathSnapDown / hashSnapBlock.ToString();
+        if (!fs::exists(pathSnapBlock))
+        {
+            fs::create_directories(pathSnapBlock);
+        }
+        if (!fs::is_directory(pathSnapBlock))
+        {
+            StdLog("CSnapshotDB", "Write snapshot file data: Directory error, snapshot block: %s", hashSnapBlock.ToString().c_str());
+            return false;
+        }
+        fs::path pathSnapFile = pathSnapBlock / strFileName;
+
+        FILE* f = fopen(pathSnapFile.string().c_str(), "a+");
+        if (!f)
+        {
+            StdLog("CSnapshotDB", "Write snapshot file data: Open file failed, file: %s", pathSnapFile.string().c_str());
+            return false;
+        }
+        fwrite((char*)btWriteData.data(), 1, btWriteData.size(), f);
+        fclose(f);
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead
