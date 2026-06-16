@@ -4580,6 +4580,11 @@ bool CBlockBase::GetMatchDexData(const uint256& hashBlock, std::map<uint256, CMa
 {
     return dbBlock.GetMatchDexData(hashBlock, mapMatchResult);
 }
+
+bool CBlockBase::ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder)
+{
+    return dbBlock.ListMatchDexOrder(hashBlock, strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
+}
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)
 {
     return dbBlock.AddBlacklistAddress(dest);

@@ -441,7 +441,13 @@ bool CBlockDB::GetLastConfirmBlock(const uint256& hashFork, uint256& hashLastCon
 {
     return dbBlockIndex.GetLastConfirmBlock(hashFork, hashLastConfirmBlock);
 }
-bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
+
+bool CBlockDB::AddBlockLocalVoteSignFlag(const uint256& hashBlock)
+{
+    return dbBlockIndex.AddBlockLocalVoteSignFlag(hashBlock);
+}
+
+bool CBlockDB::AddBlockVerify(const CBlockIndex& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);
 }
