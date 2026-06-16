@@ -75,6 +75,7 @@ public:
     bool GetLastBlockVoteResult(const uint256& hashFork, uint256& hashLastBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock);
     bool GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockHash, bytes& btSnapData);
     bool RecoverySnapshotBlockVoteData(bytes& btSnapData);
+    bool GetLastConfirmBlock(const uint256& hashFork, uint256& hashLastConfirmBlock);
     bool AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc);
     bool RetrieveBlockVerify(const uint256& hashBlock, CBlockVerify& verifyBlock);
     std::size_t GetBlockVerifyCount();

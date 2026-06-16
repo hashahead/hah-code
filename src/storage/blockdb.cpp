@@ -436,6 +436,11 @@ bool CBlockDB::RecoverySnapshotBlockVoteData(bytes& btSnapData)
 {
     return dbBlockIndex.RecoverySnapshotBlockVoteData(btSnapData);
 }
+
+bool CBlockDB::GetLastConfirmBlock(const uint256& hashFork, uint256& hashLastConfirmBlock)
+{
+    return dbBlockIndex.GetLastConfirmBlock(hashFork, hashLastConfirmBlock);
+}
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);

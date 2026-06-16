@@ -4575,6 +4575,11 @@ bool CBlockBase::GetPeerCrossLastBlock(const uint256& hashBlock, const CChainId 
 {
     return dbBlock.GetPeerCrossLastBlock(hashBlock, nPeerChainId, hashLastProveBlock);
 }
+
+bool CBlockBase::GetMatchDexData(const uint256& hashBlock, std::map<uint256, CMatchOrderResult>& mapMatchResult)
+{
+    return dbBlock.GetMatchDexData(hashBlock, mapMatchResult);
+}
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)
 {
     return dbBlock.AddBlacklistAddress(dest);
