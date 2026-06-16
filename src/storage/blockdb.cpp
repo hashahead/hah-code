@@ -431,6 +431,11 @@ bool CBlockDB::GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockHash, 
 {
     return dbBlockIndex.GetSnapshotBlockVoteData(vBlockHash, btSnapData);
 }
+
+bool CBlockDB::RecoverySnapshotBlockVoteData(bytes& btSnapData)
+{
+    return dbBlockIndex.RecoverySnapshotBlockVoteData(btSnapData);
+}
 bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);

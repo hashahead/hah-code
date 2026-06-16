@@ -4570,6 +4570,11 @@ bool CBlockBase::GetDexOrderMaxNumber(const uint256& hashBlock, const CDestinati
 {
     return dbBlock.GetDexOrderMaxNumber(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nMaxOrderNumber);
 }
+
+bool CBlockBase::GetPeerCrossLastBlock(const uint256& hashBlock, const CChainId nPeerChainId, uint256& hashLastProveBlock)
+{
+    return dbBlock.GetPeerCrossLastBlock(hashBlock, nPeerChainId, hashLastProveBlock);
+}
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)
 {
     return dbBlock.AddBlacklistAddress(dest);
