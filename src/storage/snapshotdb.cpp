@@ -241,5 +241,16 @@ bool CSnapshotDB::RemoveSnapshotDownBlock(const uint256& hashSnapBlock)
     fs::remove_all(pathSnapDown / hashSnapBlock.ToString());
     return true;
 }
+
+uint64 CSnapshotDB::GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName)
+{
+    fs::path pathSnapDown = pathDataLocation / "snapdown";
+    fs::path pathSnapFile = pathSnapDown / (hashSnapBlock.ToString() + std::string("/") + strFileName);
+    if (!fs::exists(pathSnapFile))
+    {
+        return 0;
+    }
+    return (uint64)(fs::file_size(pathSnapFile));
+}
 } // namespace storage
 } // namespace hashahead

@@ -41,6 +41,7 @@ public:
 
     bool GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist);
     bool RemoveSnapshotDownBlock(const uint256& hashSnapBlock);
+    uint64 GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName);
 protected:
     hnbase::CRWAccess rwAccess;
 
