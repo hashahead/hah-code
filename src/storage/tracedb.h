@@ -84,6 +84,8 @@ public:
 
     bool AddBlockContractTraceData(const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState);
     bool AddBlockContractKvData(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, std::map<uint256, bytes>>& mapTraceContractKvData);
+
+    bool RetrieveTxContractReceipt(const uint256& hashBlock, const uint256& txid, TxContractReceipts& tcrReceipt);
 protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;

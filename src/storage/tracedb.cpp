@@ -272,6 +272,36 @@ bool CForkTraceDB::AddBlockContractKvData(const uint256& hashPrevBlock, const ui
     }
     return true;
 }
+
+bool CForkTraceDB::RetrieveTxContractReceipt(const uint256& hashBlock, const uint256& txid, TxContractReceipts& tcrReceipt)
+{
+    CReadLock rlock(rwAccess);
+
+    if (cacheTraceData.GetTxContractReceipt(hashBlock, txid, tcrReceipt))
+    {
+        return true;
+    }
+
+    if (!fUseCacheData)
+    {
+        try
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            ssKey << DB_TRACE_KEY_NAME_CONTRACT_RECEIPT << hashBlock << txid;
+            if (dbTrie.ReadExtKv(ssKey, ssValue))
+            {
+                ssValue >> tcrReceipt;
+                return true;
+            }
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            return false;
+        }
+    }
+    return false;
+}
 //////////////////////////////
 // CTraceDB
 
