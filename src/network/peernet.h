@@ -124,6 +124,7 @@ protected:
     bool HandleEvent(CEventPeerBlockUnsubscribe& eventUnsubscribe) override;
     bool HandleEvent(CEventPeerBlockBks& eventBks) override;
     bool HandleEvent(CEventPeerBlockNextPrevBlock& eventData) override;
+    bool HandleEvent(CEventPeerBlockPrevBlocks& eventData) override;
 
     bool HandleEvent(CEventPeerCerttxSubscribe& eventSubscribe) override;
     bool HandleEvent(CEventPeerCerttxUnsubscribe& eventUnsubscribe) override;
@@ -162,10 +163,13 @@ protected:
 
 protected:
     INetChannel* pNetChannel;
+    IDelegatedChannel* pDelegatedChannel;
     IBlockChannel* pBlockChannel;
     ICertTxChannel* pCertTxChannel;
     IUserTxChannel* pUserTxChannel;
-    IDelegatedChannel* pDelegatedChannel;
+    IBlockVoteChannel* pBlockVoteChannel;
+    IBlockCrossProveChannel* pBlockCrossProveChannel;
+    ISnapshotDownChannel* pSnapshotDownChannel;
     uint32 nMagicNum;
     uint32 nVersion;
     uint64 nService;
