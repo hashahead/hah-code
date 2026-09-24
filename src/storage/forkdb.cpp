@@ -1311,55 +1311,42 @@ SHP_CACHE_FORK_DATA CForkDB::AddForkContextCache(const uint256& hashBlock, const
     {
         it = mapCacheForkContext.insert(std::make_pair(hashForkContext, MAKE_SHARED_CACHE_FORK_DATA(mapForkCtxtIn))).first;
     }
-    return true;
+    mapCacheForkBlockPtr[hashBlock] = it->second;
+    return it->second;
 }
 
-const CCacheFork* CForkDB::GetCacheForkContext(const uint256& hashBlock)
+const SHP_CACHE_FORK_DATA CForkDB::GetCacheForkContext(const uint256& hashBlock)
 {
     if (hashBlock == 0)
     {
         return nullptr;
     }
-    auto it = mapCacheFork.find(hashBlock);
-    if (it != mapCacheFork.end())
+    auto it = mapCacheForkBlockPtr.find(hashBlock);
+    if (it != mapCacheForkBlockPtr.end())
     {
-        if (it->second.hashRef != 0)
-        {
-            it = mapCacheFork.find(it->second.hashRef);
-            if (it == mapCacheFork.end())
-            {
-                StdLog("CForkDB", "Get Cache Fork Context: Get ref cache fail, block: %s", hashBlock.GetHex().c_str());
-                return nullptr;
-            }
-        }
-        return &(it->second);
+        return it->second;
     }
     return nullptr;
 }
 
-const CCacheFork* CForkDB::LoadCacheForkContext(const uint256& hashBlock)
+const SHP_CACHE_FORK_DATA CForkDB::LoadCacheForkContext(const uint256& hashBlock)
 {
     if (hashBlock == 0)
     {
         return nullptr;
     }
-    const CCacheFork* ptr = GetCacheForkContext(hashBlock);
-    if (ptr == nullptr)
+    const SHP_CACHE_FORK_DATA ptr = GetCacheForkContext(hashBlock);
+    if (ptr)
     {
-        std::map<uint256, CForkContext> mapForkCtxt;
-        if (!ListDbForkContext(hashBlock, mapForkCtxt))
-        {
-            StdLog("CForkDB", "Get Cache Fork Context: List db fork fail, block: %s", hashBlock.GetHex().c_str());
-            return nullptr;
-        }
-        if (mapCacheFork.find(hashBlock) != mapCacheFork.end())
-        {
-            mapCacheFork.erase(hashBlock);
-        }
-        auto it = mapCacheFork.insert(make_pair(hashBlock, CCacheFork(mapForkCtxt))).first;
-        return &(it->second);
+        return ptr;
     }
-    return ptr;
+    std::map<uint256, CForkContext> mapForkCtxt;
+    if (!ListDbForkContext(hashBlock, mapForkCtxt))
+    {
+        StdLog("CForkDB", "Get Cache Fork Context: List db fork fail, block: %s", hashBlock.GetHex().c_str());
+        return nullptr;
+    }
+    return AddForkContextCache(hashBlock, mapForkCtxt);
 }
 
 bool CForkDB::ListDbForkContext(const uint256& hashBlock, std::map<uint256, CForkContext>& mapForkCtxt)
