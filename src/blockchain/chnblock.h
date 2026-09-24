@@ -130,6 +130,7 @@ protected:
     void RequestNextBlockData(const uint256& hashFork, const uint256& hashPrevBlock, const uint64 nNonce);
     void SendNextPrevBlockReq(const uint256& hashFork, const uint256& hashBlock, const uint64 nNonce);
     void SendGetBlockReq(const uint256& hashFork, const uint256& hashBlock, const uint64 nNonce);
+    void SendGetBlockRsp(const uint256& hashFork, const uint256& hashBlock, const bytes& btBlockData, const uint64 nNonce);
 
 protected:
     network::CBbPeerNet* pPeerNet;

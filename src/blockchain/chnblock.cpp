@@ -735,4 +735,31 @@ void CBlockChannel::ClearCacheTimeout()
 }
 
 void CBlockChannel::RequestNextBlockData(const uint256& hashFork, const uint256& hashPrevBlock, const uint64 nNonce)
+{
+    auto it = mapChnFork.find(hashFork);
+    if (it == mapChnFork.end())
+    {
+        return;
+    }
+    CBlockChnFork& chnFork = it->second;
+
+    chnFork.ClearPrevBlockHash(hashPrevBlock);
+
+    uint256 hashPrev = hashPrevBlock;
+    while (true)
+    {
+        uint256 hashNextBlock;
+        if (!chnFork.GetNextBlockHash(hashPrev, hashNextBlock))
+        {
+            break;
+        }
+        chnFork.RemoveBlockHash(hashNextBlock);
+        if (!pBlockChain->Exists(hashNextBlock))
+        {
+            SendGetBlockReq(hashFork, hashNextBlock, nNonce);
+            break;
+        }
+        hashPrev = hashNextBlock;
+    }
+}
 } // namespace hashahead

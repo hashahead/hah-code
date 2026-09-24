@@ -2875,6 +2875,11 @@ bool CBlockChain::PruneHdexData(const uint32 nPruneReserveLastHeight)
 {
     return cntrBlock.PruneHdexData(nPruneReserveLastHeight);
 }
+
+bool CBlockChain::PruneVoteData(const uint32 nPruneReserveLastHeight)
+{
+    return cntrBlock.PruneVoteData(nPruneReserveLastHeight);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
