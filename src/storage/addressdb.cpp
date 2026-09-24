@@ -1933,5 +1933,17 @@ bool CAddressDB::ListContractCreateCodeContext(const uint256& hashFork, const ui
     }
     return false;
 }
+
+bool CAddressDB::VerifyCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->VerifyCodeContext(hashPrevBlock, hashBlock, hashRoot, fVerifyAllNode);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
