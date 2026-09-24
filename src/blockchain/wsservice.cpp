@@ -772,6 +772,12 @@ void CWsService::AddNewBlockSubscribe(const CChainId nChainId, const uint64 nCli
     CWriteLock wlock(rwAccess);
     nSubsId = mapWsSubscribeFork[nChainId].AddSubscribe(nClientConnId, WSCS_SUBS_TYPE_NEW_BLOCK, {}, {});
 }
+
+void CWsService::AddLogsSubscribe(const CChainId nChainId, const uint64 nClientConnId, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics, uint128& nSubsId)
+{
+    CWriteLock wlock(rwAccess);
+    nSubsId = mapWsSubscribeFork[nChainId].AddSubscribe(nClientConnId, WSCS_SUBS_TYPE_LOGS, setSubsAddress, setSubsTopics);
+}
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {

@@ -10718,4 +10718,237 @@ CRPCResultPtr CRPCMod::RPCEthDebugTraceBlockByNumber(const CReqContext& ctxReq, 
 
     return spResult;
 }
+
+CRPCResultPtr CRPCMod::RPCEthDebugTraceCall(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    CDestination destFrom;
+    CDestination destTo;
+    uint256 nGasPrice;
+    uint256 nGas;
+    uint256 nValue;
+    bytes btData;
+    uint256 hashBlock;
+    bool fCallTracer = false;
+    bool fPrestateTracer = false;
+    bool fOnlyTopCall = false;
+
+    {
+        boost::unique_lock<boost::mutex> lock(mutexDec);
+
+        json_spirit::Value valParam;
+        if (!json_spirit::read_string(param->GetParamJson(), valParam, RPC_MAX_DEPTH))
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse Error: request json string error.");
+        }
+        if (valParam.type() != json_spirit::array_type)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must be an array.");
+        }
+        const json_spirit::Array& arrayParam = valParam.get_array();
+        if (arrayParam.size() == 0)
+        {
+            throw CRPCException(RPC_PARSE_ERROR, "Parse error: request must non empty.");
+        }
+
+        for (auto& v : arrayParam)
+        {
+            if (v.type() == json_spirit::obj_type)
+            {
+                const Object& obj = v.get_obj();
+
+                const json_spirit::Value& objFrom = json_spirit::find_value(obj, "from");
+                if (!objFrom.is_null() && objFrom.type() == json_spirit::str_type)
+                {
+                    destFrom.ParseString(objFrom.get_str());
+                }
+                const json_spirit::Value& objTo = json_spirit::find_value(obj, "to");
+                if (!objTo.is_null() && objTo.type() == json_spirit::str_type)
+                {
+                    destTo.ParseString(objTo.get_str());
+                }
+                const json_spirit::Value& objGas = json_spirit::find_value(obj, "gas");
+                if (!objGas.is_null() && objGas.type() == json_spirit::str_type)
+                {
+                    nGas.SetValueHex(objGas.get_str());
+                }
+                const json_spirit::Value& objGasPrice = json_spirit::find_value(obj, "gasPrice");
+                if (!objGasPrice.is_null() && objGasPrice.type() == json_spirit::str_type)
+                {
+                    nGasPrice.SetValueHex(objGasPrice.get_str());
+                }
+                const json_spirit::Value& objValue = json_spirit::find_value(obj, "value");
+                if (!objValue.is_null() && objValue.type() == json_spirit::str_type)
+                {
+                    nValue.SetValueHex(objValue.get_str());
+                }
+                const json_spirit::Value& objData = json_spirit::find_value(obj, "data");
+                if (!objData.is_null() && objData.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objData.get_str());
+                }
+                const json_spirit::Value& objInput = json_spirit::find_value(v.get_obj(), "input");
+                if (!objInput.is_null() && objInput.type() == json_spirit::str_type)
+                {
+                    btData = ParseHexString(objInput.get_str());
+                }
+
+                const json_spirit::Value& vTracer = json_spirit::find_value(obj, "tracer");
+                if (vTracer.type() == json_spirit::str_type)
+                {
+                    const string str = vTracer.get_str();
+                    if (str == "callTracer")
+                    {
+                        if (!fPrestateTracer)
+                        {
+                            fCallTracer = true;
+                        }
+                    }
+                    else if (str == "prestateTracer")
+                    {
+                        if (!fCallTracer)
+                        {
+                            fPrestateTracer = true;
+                        }
+                    }
+                }
+                const json_spirit::Value& vTracerConfig = json_spirit::find_value(obj, "tracerConfig");
+                if (vTracerConfig.type() == json_spirit::obj_type)
+                {
+                    const json_spirit::Value& vOnlyTopCall = json_spirit::find_value(vTracerConfig.get_obj(), "onlyTopCall");
+                    if (vOnlyTopCall.type() == json_spirit::bool_type)
+                    {
+                        fOnlyTopCall = vOnlyTopCall.get_bool();
+                    }
+                }
+            }
+            else if (v.type() == json_spirit::str_type)
+            {
+                if (hashBlock == 0)
+                {
+                    hashBlock = GetRefBlock(ctxReq.hashFork, v.get_str());
+                }
+            }
+            else if (v.type() == json_spirit::int_type)
+            {
+                if (hashBlock == 0)
+                {
+                    hashBlock = GetRefBlock(ctxReq.hashFork, ToHexString((uint64)(v.get_int())));
+                }
+            }
+        }
+    }
+
+    if (nGasPrice == 0)
+    {
+        nGasPrice = pService->GetForkMintMinGasPrice(ctxReq.hashFork);
+    }
+    // No need to handle 0 values
+    // if (nGas == 0)
+    // {
+    //     nGas = DEF_TX_GAS_LIMIT;
+    // }
+    if (hashBlock == 0)
+    {
+        int nLastHeight;
+        if (!pService->GetForkLastBlock(ctxReq.hashFork, nLastHeight, hashBlock))
+        {
+            hashBlock = ctxReq.hashFork;
+        }
+    }
+
+    const uint256& hashFork = ctxReq.hashFork;
+    if (!destTo.IsNull())
+    {
+        CAddressContext ctxAddress;
+        if (!pService->RetrieveAddressContext(hashFork, destTo, ctxAddress))
+        {
+            StdLog("CRPCMod", "Rpc eth trace call: To not is created, to: %s", destTo.ToString().c_str());
+            throw CRPCException(RPC_PARSE_ERROR, "To not is created");
+        }
+        if (!ctxAddress.IsContract())
+        {
+            StdLog("CRPCMod", "Rpc eth trace call: To not is contract, to: %s", destTo.ToString().c_str());
+            throw CRPCException(RPC_PARSE_ERROR, "To not is contract");
+        }
+    }
+
+    CVmCallTx vmCallTx;
+    CVmCallResult vmCallResult;
+
+    vmCallTx.fEthCall = true;
+    vmCallTx.destFrom = destFrom;
+    vmCallTx.destTo = destTo;
+    vmCallTx.nTxNonce = 0;
+    vmCallTx.nGasPrice = nGasPrice;
+    vmCallTx.nGasLimit = nGas;
+    vmCallTx.nAmount = nValue;
+    vmCallTx.btData = btData;
+
+    vmCallResult.ptrContractTraceResult = MAKE_SHARED_CONTRACT_TRACE_RESULT();
+
+    if (fCallTracer)
+    {
+        vmCallResult.ptrContractTraceResult->fTraceReceipt = true;
+    }
+    else if (fPrestateTracer)
+    {
+        vmCallResult.ptrContractTraceResult->fTracePrevState = true;
+    }
+    else
+    {
+        vmCallResult.ptrContractTraceResult->fTraceVmOpLog = true;
+    }
+
+    if (!pService->CallContract(hashFork, hashBlock, vmCallTx, vmCallResult))
+    {
+        string strError;
+        if (GetVmExecResultInfo(vmCallResult.nStatus, vmCallResult.btResult, strError))
+        {
+            StdLog("CRPCMod", "Rpc eth trace call: call execution reverted, err: %s, to: %s", strError.c_str(), destTo.ToString().c_str());
+            throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, std::string("execution reverted: ") + strError, json_spirit::Value(ToHexString(vmCallResult.btResult)));
+        }
+        else
+        {
+            StdLog("CRPCMod", "Rpc eth trace call: call fail, to: %s", destTo.ToString().c_str());
+            throw CRPCException(RPC_ETH_ERROR_EXECUTION_REVERTED, "execution failed");
+        }
+    }
+
+    auto spResult = MakeCEthDebugTraceCallResultPtr();
+
+    if (vmCallResult.ptrContractTraceResult->fTraceReceipt)
+    {
+        std::stringstream ss;
+        if (fOnlyTopCall)
+        {
+            if (vmCallResult.ptrContractTraceResult->vTxcReceipts.empty())
+            {
+                ss << "{}";
+            }
+            else
+            {
+                CTxContractReceiptTrie::ReceiptToJsonStream(vmCallResult.ptrContractTraceResult->vTxcReceipts[0], ss);
+            }
+        }
+        else
+        {
+            CTxContractReceiptTrie trieTcr;
+            trieTcr.AddContractReceiptList(vmCallResult.ptrContractTraceResult->vTxcReceipts);
+            CTxContractReceiptTrie::TrieToJsonStream(trieTcr, ss);
+        }
+        spResult->SetJsonResult(ss.str());
+    }
+    else if (vmCallResult.ptrContractTraceResult->fTracePrevState)
+    {
+        std::stringstream ss;
+        CContractPrevState::TxPrevStateResultToJsonStream(vmCallResult.ptrContractTraceResult->mapContractPrevState, ss);
+        spResult->SetJsonResult(ss.str());
+    }
+    else if (vmCallResult.ptrContractTraceResult->fTraceVmOpLog)
+    {
+        spResult->SetJsonResult(EthVmTraceLogToJSON(vmCallResult.nGasUsed, vmCallResult.nStatus, vmCallResult.btResult, vmCallResult.ptrContractTraceResult->vVmOpTraceLogs));
+    }
+
+    return spResult;
+}
 } // namespace hashahead
