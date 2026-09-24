@@ -1352,5 +1352,16 @@ bool CVoteDB::ClearHeightDelegateEnroll(const uint32 nLastHeight)
     StdDebug("CVoteDB", "Clear height delegate enroll: Remove success, remove block count: %lu, last height: %d", vBlockHash.size(), nLastHeight);
     return true;
 }
+
+bool CVoteDB::GetSnapshotVoteData(const uint256& hashFork, const bool fPrimaryChain, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    return true;
+}
+
+bool CVoteDB::RecoveryVoteData(const bytes& btSnapData)
+{
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead

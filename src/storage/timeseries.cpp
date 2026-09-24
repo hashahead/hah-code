@@ -464,5 +464,128 @@ bool CTimeSeriesSnapshot::Read(const uint32 nFile, const uint32 nOffset, uint8& 
     }
     return true;
 }
+
+bool CTimeSeriesSnapshot::WalkThrough(WalkerSnapshotFunc walker, uint32& nLastFileRet, uint32& nLastPosRet)
+{
+    bool fRet = true;
+    uint32 nFile = 1;
+    uint32 nOffset = 0;
+    nLastFileRet = 0;
+    nLastPosRet = 0;
+    std::string pathFile;
+    const uint32 nHeadSize = sizeof(uint32) + sizeof(uint32) + sizeof(uint32) + 1;
+
+    while (GetFilePath(nFile, pathFile) && fRet)
+    {
+        nLastFileRet = nFile;
+        bool fFileDataError = false;
+        try
+        {
+            hnbase::CFileStream fs(pathFile.c_str());
+            fs.Seek(0);
+            nOffset = 0;
+            std::size_t nFileSize = fs.GetSize();
+            if (nFileSize > MAX_FILE_SIZE)
+            {
+                hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: File size error, nFile: %d, size: %lu", nFile, nFileSize);
+                fFileDataError = true;
+            }
+            else
+            {
+                while (!fs.IsEOF() && fRet && nOffset < (uint32)nFileSize)
+                {
+                    if (nOffset + nHeadSize > (uint32)nFileSize)
+                    {
+                        hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: (nOffset + %d) error, nFile: %d, nFileSize: %lu, nOffset: %d", nHeadSize, nFile, nFileSize, nOffset);
+                        fFileDataError = true;
+                        break;
+                    }
+                    uint32 nMagic, nSize, nCrc;
+                    uint8 nType;
+                    bytes btData;
+                    try
+                    {
+                        fs >> nMagic >> nSize >> nCrc >> nType;
+                    }
+                    catch (std::exception& e)
+                    {
+                        hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: Read nMagic and nSize error, nFile: %d, msg: %s", nFile, e.what());
+                        fFileDataError = true;
+                        break;
+                    }
+                    if (nMagic != nMagicNum)
+                    {
+                        hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: nMagic error, nFile: %d, nOffset: %d, nMagic: %x, right magic: %x",
+                                         nFile, nOffset, nMagic, nMagicNum);
+                        fFileDataError = true;
+                        break;
+                    }
+                    if (nOffset + nHeadSize + nSize > (uint32)nFileSize)
+                    {
+                        hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: (nOffset + %d + nSize) error, nFile: %d, nFileSize: %lu, nOffset: %d, nSize: %d",
+                                         nHeadSize, nFile, nFileSize, nOffset, nSize);
+                        fFileDataError = true;
+                        break;
+                    }
+                    if (nSize > 0)
+                    {
+                        btData.resize(nSize);
+                        try
+                        {
+                            fs.Read((char*)btData.data(), nSize);
+                        }
+                        catch (std::exception& e)
+                        {
+                            hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: Read data error, nFile: %d, msg: %s", nFile, e.what());
+                            fFileDataError = true;
+                            break;
+                        }
+                        if (nCrc != hashahead::crypto::crc24q(btData.data(), nSize))
+                        {
+                            hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: crc error, nFile: %d", nFile);
+                            fFileDataError = true;
+                            break;
+                        }
+                    }
+                    if ((fs.GetCurPos() - nOffset - nHeadSize) != nSize)
+                    {
+                        hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: Read size error, nFile: %d, GetCurPos: %lu, nOffset: %d, nSize: %d",
+                                         nFile, fs.GetCurPos(), nOffset, nSize);
+                        fFileDataError = true;
+                        break;
+                    }
+                    if (!walker(nType, btData))
+                    {
+                        hnbase::StdLog("CTimeSeriesSnapshot", "Walk Through: Walk fail");
+                        fRet = false;
+                        break;
+                    }
+                    nOffset = fs.GetCurPos();
+                }
+                if (fRet && !fFileDataError)
+                {
+                    if (nOffset != (uint32)nFileSize)
+                    {
+                        hnbase::StdLog("CTimeSeriesSnapshot", "Walk Through: nOffset error, nOffset: %d, nFileSize: %lu", nOffset, nFileSize);
+                    }
+                }
+            }
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError("CTimeSeriesSnapshot", "Walk Through: catch error, nFile: %d, msg: %s", nFile, e.what());
+            fRet = false;
+            break;
+        }
+        if (fFileDataError)
+        {
+            break;
+        }
+        nFile++;
+    }
+    nLastPosRet = nOffset;
+    return fRet;
+}
+
 } // namespace storage
 } // namespace hashahead

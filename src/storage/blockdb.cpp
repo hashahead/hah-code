@@ -431,7 +431,23 @@ bool CBlockDB::GetSnapshotBlockVoteData(const std::vector<uint256>& vBlockHash, 
 {
     return dbBlockIndex.GetSnapshotBlockVoteData(vBlockHash, btSnapData);
 }
-bool CBlockDB::AddBlockVerify(const CBlockOutline& outline, const uint32 nRootCrc)
+
+bool CBlockDB::RecoverySnapshotBlockVoteData(bytes& btSnapData)
+{
+    return dbBlockIndex.RecoverySnapshotBlockVoteData(btSnapData);
+}
+
+bool CBlockDB::GetLastConfirmBlock(const uint256& hashFork, uint256& hashLastConfirmBlock)
+{
+    return dbBlockIndex.GetLastConfirmBlock(hashFork, hashLastConfirmBlock);
+}
+
+bool CBlockDB::AddBlockLocalVoteSignFlag(const uint256& hashBlock)
+{
+    return dbBlockIndex.AddBlockLocalVoteSignFlag(hashBlock);
+}
+
+bool CBlockDB::AddBlockVerify(const CBlockIndex& outline, const uint32 nRootCrc)
 {
     return dbVerify.AddBlockVerify(outline, nRootCrc);
 }

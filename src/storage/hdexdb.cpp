@@ -962,6 +962,52 @@ bool CHdexDB::GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId
 
     return GetRecvCrosschainProveDb(nRecvChainId, nSendChainId, hashSendProvePrevBlock, blockProve);
 }
+
+bool CHdexDB::VerifyDexOrder(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode)
+{
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashRoot))
+    {
+        StdLog("CHdexDB", "Verify dex order: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    if (fVerifyAllNode)
+    {
+        std::map<uint256, CTrieValue> mapCacheNode;
+        if (!dbTrie.CheckTrieNode(hashRoot, mapCacheNode))
+        {
+            StdLog("CHdexDB", "Verify dex order: Check trie node fail, root: %s, block: %s", hashRoot.GetHex().c_str(), hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+
+    uint256 hashPrevRoot;
+    if (hashBlock != hashFork)
+    {
+        if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashPrevBlock, hashPrevRoot))
+        {
+            StdLog("CHdexDB", "Verify dex order: Read prev trie root fail, prev block: %s", hashPrevBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+
+    uint256 hashRootPrevDb;
+    uint256 hashBlockLocalDb;
+    if (!GetPrevRoot(DB_HDEX_ROOT_TYPE_TRIE, hashRoot, hashRootPrevDb, hashBlockLocalDb))
+    {
+        StdLog("CHdexDB", "Verify dex order: Get prev root fail, hashRoot: %s, hashPrevRoot: %s, hashBlock: %s",
+               hashRoot.GetHex().c_str(), hashPrevRoot.GetHex().c_str(), hashBlock.GetBhString().c_str());
+        return false;
+    }
+    if (hashRootPrevDb != hashPrevRoot || hashBlockLocalDb != hashBlock)
+    {
+        StdLog("CHdexDB", "Verify dex order: Root error, hashRootPrevDb: %s, hashPrevRoot: %s, hashBlockLocalDb: %s, hashBlock: %s",
+               hashRootPrevDb.GetHex().c_str(), hashPrevRoot.GetHex().c_str(),
+               hashBlockLocalDb.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

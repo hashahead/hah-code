@@ -153,12 +153,16 @@ public:
     bool RecoveryVoteData(const bytes& btSnapData);
 
 protected:
-    bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot, const uint64 nVoteCount);
-    bool ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot, uint64& nVoteCount);
+    bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot);
+    bool RemoveTrieRoot(const uint8 nRootType, const uint256& hashBlock);
+    bool ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot);
     void AddPrevRoot(const uint8 nRootType, const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
     bool GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
     bool GetMoreIncVote(const uint256& hashBeginBlock, const uint256& hashTailBlock, std::map<uint32, std::map<CDestination, CVoteContext>>& mapIncVote);
     bool GetCalcDayVote(const uint256& hashBeginBlock, const uint256& hashTailBlock);
+
+    bool ClearHeightTrieRoot(const uint32 nLastHeight);
+    bool ClearHeightDelegateEnroll(const uint32 nLastHeight);
 
 protected:
     enum
@@ -168,8 +172,9 @@ protected:
     };
 
     hnbase::CRWAccess rwAccess;
-    std::map<uint256, CCacheCalcVoteRewardContext> mapCacheCalcVote; // key: day end block hash, value: a day of voting data
+    std::map<uint256, CCacheCalcVoteRewardContext, CustomBlockHashCompare> mapCacheCalcVote; // key: day end block hash, value: a day of voting data
     CTrieDB dbTrie;
+    bool fPrune;
 
     hnbase::CCache<uint256, std::map<int, std::map<CDestination, CDiskPos>>> cacheDelegate;
 };

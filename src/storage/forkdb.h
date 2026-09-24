@@ -87,6 +87,9 @@ public:
     bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256());
 
     bool SetPruneFlag(const bool fPrune);
+    bool GetSnapshotForkData(const std::map<uint256, uint256>& mapForkLastBlock, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryForkData(const bytes& btSnapData);
+
     bool VerifyForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
 protected:
@@ -96,6 +99,7 @@ protected:
     bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
     bool GetForkLast(const uint256& hashFork, uint256& hashLastBlock);
     bool AddCacheForkContext(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<uint256, CForkContext>& mapNewForkCtxt);
+    SHP_CACHE_FORK_DATA AddForkContextCache(const uint256& hashBlock, const std::map<uint256, CForkContext>& mapForkCtxtIn);
     const CCacheFork* GetCacheForkContext(const uint256& hashBlock);
     const CCacheFork* LoadCacheForkContext(const uint256& hashBlock);
     bool ListDbForkContext(const uint256& hashBlock, std::map<uint256, CForkContext>& mapForkCtxt);

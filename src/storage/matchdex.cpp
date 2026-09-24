@@ -506,5 +506,14 @@ void CMatchDex::UpdatePeerProveLastBlock(const CChainId nPeerChainId, const uint
         }
     }
 }
+
+void CMatchDex::UpdateCompletePrice(const uint256& hashCoinPair, const uint256& nCompletePrice)
+{
+    auto it = mapCoinDex.find(hashCoinPair);
+    if (it != mapCoinDex.end())
+    {
+        it->second.SetPrevCompletePrice(nCompletePrice);
+    }
+}
 } // namespace storage
 } // namespace hashahead

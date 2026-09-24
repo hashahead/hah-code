@@ -1921,5 +1921,17 @@ bool CAddressDB::RetrieveContractCreateCodeContext(const uint256& hashFork, cons
     }
     return false;
 }
+
+bool CAddressDB::ListContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->ListContractCreateCodeContext(hashBlock, mapContractCreateCode);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead

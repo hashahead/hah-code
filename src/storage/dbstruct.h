@@ -336,6 +336,41 @@ protected:
         s.Serialize(proveBlock, opt);
     }
 };
+
+//////////////////////////////
+// CForkHdexRootKv
+
+class CForkHdexRootKv
+{
+    friend class hnbase::CStream;
+
+public:
+    CForkHdexRootKv() {}
+    CForkHdexRootKv(const uint256& hashForkIn, const std::vector<uint256>& vBlockHashIn)
+      : hashFork(hashForkIn), vBlockHash(vBlockHashIn) {}
+
+public:
+    uint256 hashFork;
+    std::vector<uint256> vBlockHash;
+    std::vector<std::pair<uint256, bytesmap>> vKv; // v1: root, v2: inc kv
+    std::map<uint256, CBlockStorageProve> mapBlockCrosschainProve;
+    std::vector<CHdexFirstPrevBlock> vBlockFirstPrevBlock;
+    std::vector<CHdexLastProveBlock> vSendChainLastProveBlock;
+    std::vector<CHdexRecvCrosschainProve> vRecvCrosschainProve; // v1: recv chainid, v2: send chainid, v3: first prev block, v4: block prove
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(vBlockHash, opt);
+        s.Serialize(vKv, opt);
+        s.Serialize(mapBlockCrosschainProve, opt);
+        s.Serialize(vBlockFirstPrevBlock, opt);
+        s.Serialize(vSendChainLastProveBlock, opt);
+        s.Serialize(vRecvCrosschainProve, opt);
+    }
+};
 } // namespace storage
 } // namespace hashahead
 
