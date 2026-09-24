@@ -371,6 +371,34 @@ protected:
         s.Serialize(vRecvCrosschainProve, opt);
     }
 };
+
+//////////////////////////////
+// CForkTraceRootKv
+
+class CForkTraceRootKv
+{
+    friend class hnbase::CStream;
+
+public:
+    CForkTraceRootKv() {}
+    CForkTraceRootKv(const uint256& hashForkIn, const std::vector<uint256>& vBlockHashIn)
+      : hashFork(hashForkIn), vBlockHash(vBlockHashIn) {}
+
+public:
+    uint256 hashFork;
+    std::vector<uint256> vBlockHash;
+    std::vector<std::pair<uint256, bytesmap>> vKv; // v1: root, v2: inc kv
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFork, opt);
+        s.Serialize(vBlockHash, opt);
+        s.Serialize(vKv, opt);
+    }
+};
+
 } // namespace storage
 } // namespace hashahead
 

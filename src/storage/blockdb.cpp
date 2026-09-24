@@ -483,14 +483,20 @@ bool CBlockDB::WalkThroughBlockIndex(CBlockDBWalker& walker)
     return dbBlockIndex.WalkThroughBlockIndex(walker);
 }
 
-bool CBlockDB::RetrieveTxIndex(const uint256& hashFork, const uint256& txid, CTxIndex& txIndex)
+bool CBlockDB::RetrieveTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashTxAtBlock, CTxIndex& txIndex)
 {
-    return dbTxIndex.RetrieveTxIndex(hashFork, txid, txIndex);
+    return dbTxIndex.RetrieveTxIndex(hashFork, txid, hashTxAtBlock, txIndex);
 }
 
 bool CBlockDB::RetrieveTxReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceipt& txReceipt)
 {
     return dbTxIndex.RetrieveTxReceipt(hashFork, txid, txReceipt);
+}
+
+bool CBlockDB::WalkThroughSnapshotTxIndex(const uint256& hashFork, const uint256& hashLastBlock, WalkerTxIndexKvFunc fnWalker)
+{
+    return dbTxIndex.WalkThroughSnapshotTxIndex(hashFork, hashLastBlock, fnWalker);
+}
 }
 
 bool CBlockDB::RetrieveDelegate(const uint256& hash, map<CDestination, uint256>& mapDelegate)
