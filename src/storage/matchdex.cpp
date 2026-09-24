@@ -515,5 +515,126 @@ void CMatchDex::UpdateCompletePrice(const uint256& hashCoinPair, const uint256& 
         it->second.SetPrevCompletePrice(nCompletePrice);
     }
 }
+
+bool CMatchDex::ListDexOrder(const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder)
+{
+    const uint256 hashDexCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolSell, strCoinSymbolBuy);
+    const bool fReverse = (CDexOrderHeader::GetSellCoinSymbolStatic(strCoinSymbolSell, strCoinSymbolBuy) != strCoinSymbolSell);
+
+    auto it = mapCoinDex.find(hashDexCoinPair);
+    if (it == mapCoinDex.end())
+    {
+        StdDebug("CMatchDex", "List dex order: Get dex coin pair fail, symbol sell: %s, symbol buy: %s", strCoinSymbolSell.c_str(), strCoinSymbolBuy.c_str());
+        realDexOrder.strCoinSymbolSell = strCoinSymbolSell;
+        realDexOrder.strCoinSymbolBuy = strCoinSymbolBuy;
+        return true;
+    }
+    const CCoinDexPair& coinDexPair = it->second;
+
+    auto funcGetMsOrder = [&](const CDexOrderKey& key, const CDexOrderValue& value, CMsOrder& msOrder) -> bool {
+        if (fReverse)
+        {
+            msOrder.nPrice = CMatchTools::CalcPeerPrice(key.nPrice, coinDexPair.nSellPriceAnchor);
+        }
+        else
+        {
+            msOrder.nPrice = key.nPrice;
+        }
+        if (value.nOrderAmount > value.nCompleteAmount)
+        {
+            msOrder.nOrderAmount = value.nOrderAmount - value.nCompleteAmount;
+            if (coinDexPair.nSellPriceAnchor == 0)
+            {
+                msOrder.nDealAmount = 0;
+            }
+            else
+            {
+                msOrder.nDealAmount = msOrder.nPrice * msOrder.nOrderAmount / coinDexPair.nSellPriceAnchor;
+            }
+            msOrder.destOrder = value.destOrder;
+            msOrder.nOrderNumber = value.nOrderNumber;
+            msOrder.nOriOrderAmount = value.nOrderAmount;
+            msOrder.nAtHeight = CBlock::GetBlockHeightByHash(value.hashOrderAtBlock);
+            msOrder.nAtSlot = CBlock::GetBlockSlotByHash(value.hashOrderAtBlock);
+            return true;
+        }
+        return false;
+    };
+
+    for (const auto& kv : coinDexPair.mapSellOrder)
+    {
+        const CDexOrderKey& key = kv.first;
+        const CDexOrderValue& value = kv.second;
+
+        CMsOrder msOrder;
+        if (funcGetMsOrder(key, value, msOrder))
+        {
+            if (fReverse)
+            {
+                realDexOrder.vBuy.push_back(msOrder);
+                if (realDexOrder.vBuy.size() >= nGetCount)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                realDexOrder.vSell.push_back(msOrder);
+                if (realDexOrder.vSell.size() >= nGetCount)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    for (const auto& kv : coinDexPair.mapBuyOrder)
+    {
+        const CDexOrderKey& key = kv.first;
+        const CDexOrderValue& value = kv.second;
+
+        CMsOrder msOrder;
+        if (funcGetMsOrder(key, value, msOrder))
+        {
+            if (fReverse)
+            {
+                realDexOrder.vSell.push_back(msOrder);
+                if (realDexOrder.vSell.size() >= nGetCount)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                realDexOrder.vBuy.push_back(msOrder);
+                if (realDexOrder.vBuy.size() >= nGetCount)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    if (fReverse)
+    {
+        realDexOrder.strCoinSymbolSell = coinDexPair.strCoinSymbolBuy;
+        realDexOrder.strCoinSymbolBuy = coinDexPair.strCoinSymbolSell;
+        realDexOrder.nSellChainId = coinDexPair.nBuyChainId;
+        realDexOrder.nBuyChainId = coinDexPair.nSellChainId;
+        realDexOrder.nPrevCompletePrice = CMatchTools::CalcPeerPrice(coinDexPair.nPrevCompletePrice, coinDexPair.nSellPriceAnchor);
+    }
+    else
+    {
+        realDexOrder.strCoinSymbolSell = coinDexPair.strCoinSymbolSell;
+        realDexOrder.strCoinSymbolBuy = coinDexPair.strCoinSymbolBuy;
+        realDexOrder.nSellChainId = coinDexPair.nSellChainId;
+        realDexOrder.nBuyChainId = coinDexPair.nBuyChainId;
+        realDexOrder.nPrevCompletePrice = coinDexPair.nPrevCompletePrice;
+    }
+    realDexOrder.nSellPriceAnchor = coinDexPair.nSellPriceAnchor;
+    realDexOrder.nMaxMatchHeight = CDexOrderKey::GetHeightByHsStatic(coinDexPair.nMatchHeightSlot);
+    realDexOrder.nMaxMatchSlot = CDexOrderKey::GetSlotByHsStatic(coinDexPair.nMatchHeightSlot);
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

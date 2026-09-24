@@ -277,6 +277,7 @@ public:
     bool UpdateMatchCompleteOrder(const uint256& hashCoinPair, const uint256& hashDexOrder, const uint256& nCompleteAmount, const uint64 nCompleteCount);
     void UpdatePeerProveLastBlock(const CChainId nPeerChainId, const uint256& hashLastProveBlock);
     void UpdateCompletePrice(const uint256& hashCoinPair, const uint256& nCompletePrice);
+    bool ListDexOrder(const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder);
     friend bool operator==(const CMatchDex& a, const CMatchDex& b);
 public:
     std::map<CChainId, std::set<uint256>> mapChainIdLinkCoinDexPair; // key: at chain id, value: coin dex pair hash
