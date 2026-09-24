@@ -1008,6 +1008,21 @@ bool CHdexDB::VerifyDexOrder(const uint256& hashFork, const uint256& hashPrevBlo
     }
     return true;
 }
+
+bool CHdexDB::ClearHdexUnavailableNode(const uint32 nClearRefHeight)
+{
+    if (!fPrune)
+    {
+        return false;
+    }
+
+    if (!ClearHeightAuxiliaryData(nClearRefHeight))
+    {
+        StdLog("CHdexDB", "Clear hdex unavailable node: Clear height auxiliary data failed, height: %d", nClearRefHeight);
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

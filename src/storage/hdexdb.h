@@ -120,6 +120,8 @@ public:
     bool GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve);
 
     bool VerifyDexOrder(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+
+    bool ClearHdexUnavailableNode(const uint32 nClearRefHeight);
 protected:
     enum
     {
