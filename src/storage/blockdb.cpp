@@ -547,6 +547,15 @@ bool CBlockDB::GetContractKvPairList(const uint256& hashFork, const uint256& has
     }
     return false;
 }
+
+bool CBlockDB::ClearTraceDbUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.ClearTraceUnavailableNode(hashFork, nClearRefHeight);
+    }
+    return false;
+}
 }
 
 bool CBlockDB::RetrieveDelegate(const uint256& hash, map<CDestination, uint256>& mapDelegate)
