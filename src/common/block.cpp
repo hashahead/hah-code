@@ -1116,4 +1116,42 @@ void CBlockPrevProve::Serialize(hnbase::CStream& s, hnbase::LoadType&)
         }
     }
 }
+
+void CBlockPrevProve::Serialize(hnbase::CStream& s, std::size_t& serSize) const
+{
+    (void)s;
+    hnbase::CBufStream ss;
+
+    // prev block
+    if (hashPrevBlock != 0 && !vPrevBlockMerkleProve.empty())
+    {
+        ss << hnbase::CVarInt(vPrevBlockMerkleProve.size() + 1);
+        ss << hashPrevBlock;
+        for (const auto& provePair : vPrevBlockMerkleProve)
+        {
+            ss << provePair;
+        }
+    }
+    else
+    {
+        ss << hnbase::CVarInt(0);
+    }
+
+    // crosschain
+    if (!proveCrosschain.IsNull() && !vCrosschainMerkleProve.empty())
+    {
+        ss << hnbase::CVarInt(vCrosschainMerkleProve.size() + 1);
+        ss << proveCrosschain;
+        for (const auto& provePair : vCrosschainMerkleProve)
+        {
+            ss << provePair;
+        }
+    }
+    else
+    {
+        ss << hnbase::CVarInt(0);
+    }
+
+    serSize = ss.GetSize();
+}
 } // namespace hashahead

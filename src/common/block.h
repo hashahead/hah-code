@@ -1067,6 +1067,42 @@ protected:
     void Serialize(hnbase::CStream& s, hnbase::LoadType&);
     void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
 };
+
+class CBlockProve
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockProve() {}
+
+    void Save(bytes& btData) const;
+    bool Load(const bytes& btData);
+
+    uint256 GetFirstPrevBlockHash() const;
+    void GetBlockHashList(std::vector<uint256>& vBlockHash) const;
+    bool IsCrossProveEmpty() const;
+
+public:
+    uint256 hashBlock;
+    bytes btAggSigBitmap;
+    bytes btAggSigData;
+
+    uint256 hashRefBlock;
+    hnbase::MERKLE_PROVE_DATA vRefBlockMerkleProve;
+
+    uint256 hashPrevBlock;
+    hnbase::MERKLE_PROVE_DATA vPrevBlockMerkleProve;
+
+    CBlockCrosschainProve proveCrosschain;
+    hnbase::MERKLE_PROVE_DATA vCrosschainMerkleProve;
+
+    std::vector<CBlockPrevProve> vPrevBlockCcProve;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const;
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&);
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
+};
 } // namespace hashahead
 
 #endif //COMMON_BLOCK_H
