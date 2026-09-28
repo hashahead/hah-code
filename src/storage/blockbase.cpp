@@ -4680,6 +4680,33 @@ bool CBlockBase::GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap
     btAggSig = btVoteAggSig;
     return true;
 }
+
+bool CBlockBase::IsBlockConfirm(const uint256& hashBlock)
+{
+    if (hashBlock == 0)
+    {
+        return false;
+    }
+    CBlockIndex outline;
+    if (!dbBlock.RetrieveBlockIndex(hashBlock, outline))
+    {
+        return false;
+    }
+    if (hashBlock == outline.hashOrigin)
+    {
+        return true;
+    }
+    uint256 hashLastConfirmBlock;
+    if (!dbBlock.GetLastConfirmBlock(outline.hashOrigin, hashLastConfirmBlock))
+    {
+        return false;
+    }
+    if (!VerifySameChain(hashBlock, hashLastConfirmBlock))
+    {
+        return false;
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
