@@ -977,6 +977,50 @@ bool CBbPeerNet::HandlePeerRecvMessage(CPeer* pPeer, int nChannel, int nCommand,
             }
         }
         break;
+        case PROTO_CMD_BLOCK_NEXT_PREVBLOCK:
+        {
+            CEventPeerBlockNextPrevBlock* pEvent = new CEventPeerBlockNextPrevBlock(pBbPeer->GetNonce(), hashFork);
+            if (pEvent != nullptr)
+            {
+                ssPayload >> pEvent->data;
+                pBlockChannel->PostEvent(pEvent);
+                return true;
+            }
+        }
+        break;
+        case PROTO_CMD_BLOCK_PREV_BLOCKS:
+        {
+            CEventPeerBlockPrevBlocks* pEvent = new CEventPeerBlockPrevBlocks(pBbPeer->GetNonce(), hashFork);
+            if (pEvent != nullptr)
+            {
+                ssPayload >> pEvent->data;
+                pBlockChannel->PostEvent(pEvent);
+                return true;
+            }
+        }
+        break;
+        case PROTO_CMD_BLOCK_GET_BLOCK_REQ:
+        {
+            CEventPeerBlockGetBlockReq* pEvent = new CEventPeerBlockGetBlockReq(pBbPeer->GetNonce(), hashFork);
+            if (pEvent != nullptr)
+            {
+                ssPayload >> pEvent->data;
+                pBlockChannel->PostEvent(pEvent);
+                return true;
+            }
+        }
+        break;
+        case PROTO_CMD_BLOCK_GET_BLOCK_RSP:
+        {
+            CEventPeerBlockGetBlockRsp* pEvent = new CEventPeerBlockGetBlockRsp(pBbPeer->GetNonce(), hashFork);
+            if (pEvent != nullptr)
+            {
+                ssPayload >> pEvent->data;
+                pBlockChannel->PostEvent(pEvent);
+                return true;
+            }
+        }
+        break;
         }
     }
     else if (nChannel == PROTO_CHN_CERT_TX)
