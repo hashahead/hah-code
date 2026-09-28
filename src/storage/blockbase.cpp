@@ -4645,6 +4645,41 @@ bool CBlockBase::RemoveBlockVoteResult(const uint256& hashBlock)
 {
     return dbBlock.RemoveBlockVoteResult(hashBlock);
 }
+
+bool CBlockBase::RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock)
+{
+    return dbBlock.RetrieveBlockVoteResult(hashBlock, btBitmap, btAggSig, fAtChain, hashAtBlock);
+}
+
+bool CBlockBase::GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap, bytes& btAggSig, uint256& hashVoteBlock)
+{
+    CBlockIndex outline;
+    if (!dbBlock.RetrieveBlockIndex(hashPrevBlock, outline))
+    {
+        return false;
+    }
+    uint256 hashLastVoteBlock;
+    bytes btVoteBitmap;
+    bytes btVoteAggSig;
+    bool fVoteAtChain = false;
+    uint256 hashVoteAtBlock;
+    if (!dbBlock.GetLastBlockVoteResult(outline.hashOrigin, hashLastVoteBlock, btVoteBitmap, btVoteAggSig, fVoteAtChain, hashVoteAtBlock))
+    {
+        return false;
+    }
+    if (fVoteAtChain)
+    {
+        return false;
+    }
+    if (!VerifySameChain(hashLastVoteBlock, hashPrevBlock))
+    {
+        return false;
+    }
+    hashVoteBlock = hashLastVoteBlock;
+    btBitmap = btVoteBitmap;
+    btAggSig = btVoteAggSig;
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
