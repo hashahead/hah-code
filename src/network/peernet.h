@@ -126,6 +126,7 @@ protected:
     bool HandleEvent(CEventPeerBlockNextPrevBlock& eventData) override;
     bool HandleEvent(CEventPeerBlockPrevBlocks& eventData) override;
     bool HandleEvent(CEventPeerBlockGetBlockReq& eventData) override;
+    bool HandleEvent(CEventPeerBlockGetBlockRsp& eventData) override;
 
     bool HandleEvent(CEventPeerCerttxSubscribe& eventSubscribe) override;
     bool HandleEvent(CEventPeerCerttxUnsubscribe& eventUnsubscribe) override;
@@ -134,6 +135,12 @@ protected:
     bool HandleEvent(CEventPeerUsertxSubscribe& eventSubscribe) override;
     bool HandleEvent(CEventPeerUsertxUnsubscribe& eventUnsubscribe) override;
     bool HandleEvent(CEventPeerUsertxTxs& eventTxs) override;
+
+    bool HandleEvent(CEventPeerBlockVoteProtoData& eventBvp) override;
+
+    bool HandleEvent(CEventPeerBlockCrossProveData& eventBcp) override;
+
+    bool HandleEvent(CEventPeerSnapshotDownData& event) override;
 
     bool HandleEvent(CEventPeerBulletin& eventBulletin) override;
     bool HandleEvent(CEventPeerGetDelegated& eventGetDelegated) override;

@@ -1151,24 +1151,15 @@ bool CBbPeerNet::HandlePeerRecvMessage(CPeer* pPeer, int nChannel, int nCommand,
         {
         case PROTO_CMD_SNAPSHOT_DOWN_MSG:
         {
-            CEventPeerPublish* pEvent = new CEventPeerPublish(pBbPeer->GetNonce(), hashAnchor);
+            CEventPeerSnapshotDownData* pEvent = new CEventPeerSnapshotDownData(pBbPeer->GetNonce(), hashFork);
             if (pEvent != nullptr)
             {
                 ssPayload >> pEvent->data;
-
-                CBufStream ss;
-                ss << hashAnchor << (pEvent->data.destDelegate);
-                uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
-                CInv inv(CInv::MSG_PUBLISH, hash);
-                CancelTimer(pBbPeer->Responded(inv));
-
-                pDelegatedChannel->PostEvent(pEvent);
+                pSnapshotDownChannel->PostEvent(pEvent);
                 return true;
             }
-        }
-        break;
-        default:
             break;
+        }
         }
     }
     return false;
