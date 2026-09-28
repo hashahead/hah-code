@@ -762,4 +762,26 @@ void CBlockChannel::RequestNextBlockData(const uint256& hashFork, const uint256&
         hashPrev = hashNextBlock;
     }
 }
+
+void CBlockChannel::SendNextPrevBlockReq(const uint256& hashFork, const uint256& hashBlock, const uint64 nNonce)
+{
+    network::CEventPeerBlockNextPrevBlock eventData(nNonce, hashFork);
+    eventData.data = hashBlock;
+    pPeerNet->DispatchEvent(&eventData);
+}
+
+void CBlockChannel::SendGetBlockReq(const uint256& hashFork, const uint256& hashBlock, const uint64 nNonce)
+{
+    network::CEventPeerBlockGetBlockReq eventData(nNonce, hashFork);
+    eventData.data = hashBlock;
+    pPeerNet->DispatchEvent(&eventData);
+}
+
+void CBlockChannel::SendGetBlockRsp(const uint256& hashFork, const uint256& hashBlock, const bytes& btBlockData, const uint64 nNonce)
+{
+    network::CEventPeerBlockGetBlockRsp eventData(nNonce, hashFork);
+    eventData.data = btBlockData;
+    pPeerNet->DispatchEvent(&eventData);
+}
+
 } // namespace hashahead
