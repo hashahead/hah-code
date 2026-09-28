@@ -194,6 +194,32 @@ protected:
         s.Serialize(mapHisSeq, opt);
     }
 };
+
+class CSnapshotFileInfo
+{
+    friend class hnbase::CStream;
+
+public:
+    CSnapshotFileInfo()
+      : nFileSize(0), nChecksum(0) {}
+    CSnapshotFileInfo(const std::string& strFileNameIn, const uint64 nFileSizeIn, const uint16 nChecksumIn)
+      : strFileName(strFileNameIn), nFileSize(nFileSizeIn), nChecksum(nChecksumIn) {}
+
+public:
+    std::string strFileName;
+    uint64 nFileSize;
+    uint16 nChecksum;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(strFileName, opt);
+        s.Serialize(nFileSize, opt);
+        s.Serialize(nChecksum, opt);
+    }
+};
+
 } // namespace hashahead
 
 #endif // COMMON_CMSTRUCT_H
