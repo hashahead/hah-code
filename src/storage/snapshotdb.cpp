@@ -286,5 +286,36 @@ bool CSnapshotDB::WriteSnapshotDownFileData(const uint256& hashSnapBlock, const 
     }
     return true;
 }
+
+//------------------------------------------
+void CSnapshotDB::GetAllSnapshotBlock(set<uint256, CustomBlockHashCompare>& setBlockHash)
+{
+    try
+    {
+        fs::recursive_directory_iterator it(pathSnapshot);
+        fs::recursive_directory_iterator end;
+
+        for (; it != end; ++it)
+        {
+            const fs::path& current = it->path();
+            if (fs::is_directory(current))
+            {
+                const string strBlock = current.filename().string();
+                if (strBlock.size() == uint256().ToString().size())
+                {
+                    const uint256 hashBlock(strBlock);
+                    if (hashBlock != 0)
+                    {
+                        setBlockHash.insert(hashBlock);
+                    }
+                }
+            }
+        }
+    }
+    catch (const fs::filesystem_error& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+    }
+}
 } // namespace storage
 } // namespace hashahead

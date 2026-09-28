@@ -43,7 +43,9 @@ public:
     bool RemoveSnapshotDownBlock(const uint256& hashSnapBlock);
     uint64 GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName);
     bool WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData);
+
 protected:
+    void GetAllSnapshotBlock(set<uint256, CustomBlockHashCompare>& setBlockHash);
     hnbase::CRWAccess rwAccess;
 
     fs::path pathDataLocation;
