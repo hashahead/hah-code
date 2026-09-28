@@ -556,6 +556,23 @@ bool CBlockDB::ClearTraceDbUnavailableNode(const uint256& hashFork, const uint32
     }
     return false;
 }
+
+bool CBlockDB::GetSnapshotTraceData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.GetSnapshotTraceData(hashFork, vBlockHash, btSnapData);
+    }
+    return false;
+}
+
+bool CBlockDB::RecoveryTraceData(const bytes& btSnapData)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.RecoveryTraceData(btSnapData);
+    }
+    return true;
 }
 
 bool CBlockDB::RetrieveDelegate(const uint256& hash, map<CDestination, uint256>& mapDelegate)

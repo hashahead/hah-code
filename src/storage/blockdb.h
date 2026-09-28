@@ -95,6 +95,8 @@ public:
     bool ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState);
     bool GetContractKvPairList(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, uint256>>& vContractKvPair, uint256& keyNext);
     bool ClearTraceDbUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight);
+    bool GetSnapshotTraceData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryTraceData(const bytes& btSnapData);
     bool RetrieveDelegate(const uint256& hash, std::map<CDestination, uint256>& mapDelegate);
     bool RetrieveRangeEnroll(int height, const std::vector<uint256>& vBlockRange, std::map<CDestination, CDiskPos>& mapEnrollTxPos);
     bool AddBlockVote(const uint256& hashPrev, const uint256& hashBlock, const std::map<CDestination, CVoteContext>& mapBlockVote,
