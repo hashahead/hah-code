@@ -155,6 +155,7 @@ public:
     bool ExistPreVoteSign(const uint384& pubkeyNode);
     bool ExistCommitVoteSign(const uint384& pubkeyNode);
     bool AddPreVoteSign(const uint384& pubkeyNode, const bytes& btSig);
+    bool AddCommitVoteSign(const uint384& pubkeyNode, const bytes& btSig);
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;

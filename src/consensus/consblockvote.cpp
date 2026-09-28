@@ -126,6 +126,39 @@ bool CConsBlock::AddPreVoteSign(const uint384& pubkeyNode, const bytes& btSig)
     return true;
 }
 
+bool CConsBlock::AddCommitVoteSign(const uint384& pubkeyNode, const bytes& btSig)
+{
+    auto it = mapCommitVoteSig.find(pubkeyNode);
+    if (it == mapCommitVoteSig.end())
+    {
+        auto mt = mapCandidateNodeIndex.find(pubkeyNode);
+        if (mt != mapCandidateNodeIndex.end() && mt->second < vCommitVoteCandidateNodePubkey.size())
+        {
+            mapCommitVoteSig.insert(make_pair(pubkeyNode, btSig));
+            bmBlockCommitVoteBitmap.SetBit(mt->second);
+
+            vCommitVoteCandidateNodePubkey[mt->second].SetStatus(CNodePubkey::ES_COMPLETED);
+
+#ifdef CBV_SHOW_DEBUG
+            StdDebug("CConsBlock", "Add commit vote sig: Add commit vote sig success, pubkey: %s, block: %s",
+                     pubkeyNode.GetHex().c_str(), hashBlock.GetBhString().c_str());
+#endif
+        }
+        else
+        {
+            if (mt == mapCandidateNodeIndex.end())
+            {
+                StdLog("CConsBlock", "Add commit vote sig: Pubkey not exist, pubkey: %s", pubkeyNode.GetHex().c_str());
+            }
+            else
+            {
+                StdLog("CConsBlock", "Add commit vote sig: Pubkey index error, index: %d, candidate pubkey count: %lu, pubkey: %s",
+                       mt->second, vPreVoteCandidateNodePubkey.size(), pubkeyNode.GetHex().c_str());
+            }
+        }
+    }
+    return true;
+}
 /////////////////////////////////
 // CConsBlockVote
 
