@@ -1051,6 +1051,47 @@ bool CHdexDB::GetSnapshotHdexData(const uint256& hashFork, const std::vector<uin
     ss.GetData(btSnapData);
     return true;
 }
+
+bool CHdexDB::RecoveryHdexData(const bytes& btSnapData)
+{
+    return true;
+}
+
+//------------------------------------------------------------------------------------
+bool CHdexDB::WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot)
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_ROOT_TYPE_BLOCK_ROOT << nRootType << hashBlock;
+    ssValue << hashTrieRoot;
+    return dbTrie.WriteExtKv(ssKey, ssValue);
+}
+
+bool CHdexDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot)
+{
+    if (hashBlock == 0)
+    {
+        hashTrieRoot = 0;
+        return true;
+    }
+
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_ROOT_TYPE_BLOCK_ROOT << nRootType << hashBlock;
+    if (!dbTrie.ReadExtKv(ssKey, ssValue))
+    {
+        return false;
+    }
+
+    try
+    {
+        ssValue >> hashTrieRoot;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

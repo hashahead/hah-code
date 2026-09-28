@@ -123,6 +123,10 @@ public:
 
     bool ClearHdexUnavailableNode(const uint32 nClearRefHeight);
     bool GetSnapshotHdexData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryHdexData(const bytes& btSnapData);
+
+protected:
+    bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot);
 protected:
     enum
     {
