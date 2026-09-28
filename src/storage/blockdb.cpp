@@ -585,6 +585,11 @@ bool CBlockDB::RetrieveRangeEnroll(int height, const vector<uint256>& vBlockRang
     return dbVote.RetrieveRangeEnroll(height, vBlockRange, mapEnrollTxPos);
 }
 
+bool CBlockDB::RetrieveDelegateEnrollStatus(const std::vector<uint256>& vBlockRange, std::map<CDestination, uint32>& mapDelegateEnrollStatus)
+{
+    return dbVote.RetrieveDelegateEnrollStatus(vBlockRange, mapDelegateEnrollStatus);
+}
+
 bool CBlockDB::AddBlockVote(const uint256& hashPrev, const uint256& hashBlock, const std::map<CDestination, CVoteContext>& mapBlockVote,
                             const std::map<CDestination, std::pair<uint32, uint32>>& mapAddPledgeFinalHeight, const std::map<CDestination, uint32>& mapRemovePledgeFinalHeight, uint256& hashVoteRoot)
 {
