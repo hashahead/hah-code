@@ -87,6 +87,7 @@ public:
 
     bool RetrieveTxContractReceipt(const uint256& hashBlock, const uint256& txid, TxContractReceipts& tcrReceipt);
     bool ListBlockContractReceipt(const uint256& hashBlock, BlockContractReceipts& vContractReceipts);
+    bool RetrieveTxContractPrevState(const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState);
 protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;

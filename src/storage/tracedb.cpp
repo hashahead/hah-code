@@ -348,6 +348,36 @@ bool CForkTraceDB::ListBlockContractReceipt(const uint256& hashBlock, BlockContr
     }
     return false;
 }
+
+bool CForkTraceDB::RetrieveTxContractPrevState(const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState)
+{
+    CReadLock rlock(rwAccess);
+
+    if (cacheTraceData.GetTxContractPrevState(hashBlock, txid, mapContractPrevState))
+    {
+        return true;
+    }
+
+    if (!fUseCacheData)
+    {
+        try
+        {
+            hnbase::CBufStream ssKey, ssValue;
+            ssKey << DB_TRACE_KEY_NAME_CONTRACT_PREV_STATE << hashBlock << txid;
+            if (dbTrie.ReadExtKv(ssKey, ssValue))
+            {
+                ssValue >> mapContractPrevState;
+                return true;
+            }
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            return false;
+        }
+    }
+    return false;
+}
 //////////////////////////////
 // CTraceDB
 
