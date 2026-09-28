@@ -4636,6 +4636,10 @@ uint256 CBlockBase::GetForkMintMinGasPrice(const uint256& hashFork)
     return nMinGasPrice;
 }
 
+bool CBlockBase::AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock)
+{
+    return dbBlock.AddBlockVoteResult(hashBlock, fLongChain, btBitmap, btAggSig, fAtChain, hashAtBlock);
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {

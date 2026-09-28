@@ -237,7 +237,7 @@ public:
     bool GetContractCoinName(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, string& strName);
     bool GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, string& strSymbol);
     bool GetContractCoinDecimals(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, uint8& nDecimals);
-                          const bytes& data, const uint64 nTimeStamp, const uint256& hashPrevBlock, const uint256& hashPrevStateRoot, const uint64 nPrevBlockTime, uint64& nGasLeft, int& nStatus, bytes& btResult);
+    bool GetContractCoinTotalSupply(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, uint256& nTotalSupply);
     bool GetTxContractData(const uint32 nTxFile, const uint32 nTxOffset, CTxContractData& txcdCode, uint256& txidCreate);
     bool GetBlockSourceCodeData(const uint256& hashFork, const uint256& hashBlock, const uint256& hashSourceCode, CTxContractData& txcdCode);
     bool GetBlockContractCreateCodeData(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CTxContractData& txcdCode);
