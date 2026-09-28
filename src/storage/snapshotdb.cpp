@@ -317,5 +317,25 @@ void CSnapshotDB::GetAllSnapshotBlock(set<uint256, CustomBlockHashCompare>& setB
         StdError(__PRETTY_FUNCTION__, e.what());
     }
 }
+
+void CSnapshotDB::RemoveHeightSnapshot(const uint32 nRemoveHeight)
+{
+    set<uint256, CustomBlockHashCompare> setBlockHash;
+    GetAllSnapshotBlock(setBlockHash);
+
+    for (auto it = setBlockHash.begin(); it != setBlockHash.end();)
+    {
+        const uint256& hashBlock = *it;
+        if (CBlock::GetBlockHeightByHash(hashBlock) == nRemoveHeight)
+        {
+            fs::remove_all(pathSnapshot / hashBlock.ToString());
+            setBlockHash.erase(it++);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
 } // namespace storage
 } // namespace hashahead

@@ -46,6 +46,7 @@ public:
 
 protected:
     void GetAllSnapshotBlock(set<uint256, CustomBlockHashCompare>& setBlockHash);
+    void RemoveHeightSnapshot(const uint32 nRemoveHeight);
     hnbase::CRWAccess rwAccess;
 
     fs::path pathDataLocation;
