@@ -591,9 +591,10 @@ bool CBlockDB::RetrieveDelegateEnrollStatus(const std::vector<uint256>& vBlockRa
 }
 
 bool CBlockDB::AddBlockVote(const uint256& hashPrev, const uint256& hashBlock, const std::map<CDestination, CVoteContext>& mapBlockVote,
-                            const std::map<CDestination, std::pair<uint32, uint32>>& mapAddPledgeFinalHeight, const std::map<CDestination, uint32>& mapRemovePledgeFinalHeight, uint256& hashVoteRoot)
+                            const std::map<CDestination, std::pair<uint32, uint32>>& mapAddPledgeFinalHeight, const std::map<CDestination, uint32>& mapRemovePledgeFinalHeight,
+                            const std::map<CDestination, CPledgeVoteContext>& mapPledgeVote, uint256& hashVoteRoot)
 {
-    return dbVote.AddBlockVote(hashPrev, hashBlock, mapBlockVote, mapAddPledgeFinalHeight, mapRemovePledgeFinalHeight, hashVoteRoot);
+    return dbVote.AddBlockVote(hashPrev, hashBlock, mapBlockVote, mapAddPledgeFinalHeight, mapRemovePledgeFinalHeight, mapPledgeVote, hashVoteRoot);
 }
 
 bool CBlockDB::RetrieveAllDelegateVote(const uint256& hashBlock, std::map<CDestination, std::map<CDestination, CVoteContext>>& mapDelegateVote)

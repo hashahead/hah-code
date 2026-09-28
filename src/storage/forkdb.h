@@ -106,6 +106,7 @@ protected:
     bool ListDbCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashRoot);
     void AddMaxDexCoinPair(const uint32 nMaxDexCoinPair, bytesmap& mapKv);
     bool GetMaxForkDexCoinPair(const uint256& hashRoot, uint32& nMaxDexCoinPair);
+    bool GetCoinContextByForkSymbol(const uint256& hashRoot, const std::string& strForkSymbol, CCoinContext& ctxCoin);
 
 protected:
     enum

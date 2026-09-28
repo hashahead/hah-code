@@ -1469,5 +1469,28 @@ bool CForkDB::GetMaxForkDexCoinPair(const uint256& hashRoot, uint32& nMaxDexCoin
     }
     return true;
 }
+
+bool CForkDB::GetCoinContextByForkSymbol(const uint256& hashRoot, const std::string& strForkSymbol, CCoinContext& ctxCoin)
+{
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_FORK_KEY_TYPE_COIN_SYMBOL << strForkSymbol;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> ctxCoin;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead
