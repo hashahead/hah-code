@@ -497,6 +497,11 @@ bool CBlockDB::WalkThroughSnapshotTxIndex(const uint256& hashFork, const uint256
 {
     return dbTxIndex.WalkThroughSnapshotTxIndex(hashFork, hashLastBlock, fnWalker);
 }
+
+bool CBlockDB::WriteTxIndexKvData(const uint256& hashFork, const bytes& btKey, const bytes& btValue)
+{
+    return dbTxIndex.WriteTxIndexKvData(hashFork, btKey, btValue);
+}
 }
 
 bool CBlockDB::RetrieveDelegate(const uint256& hash, map<CDestination, uint256>& mapDelegate)
