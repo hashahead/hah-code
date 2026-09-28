@@ -11081,4 +11081,29 @@ CRPCResultPtr CRPCMod::RPCEthDebugTraceTransaction(const CReqContext& ctxReq, CR
 
     return spResult;
 }
+
+CRPCResultPtr CRPCMod::RPCEthTxpoolContent(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (!pService->HaveFork(ctxReq.hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(ctxReq.hashFork);
+
+    vector<CTxInfo> vTxPool;
+    pService->ListTxPool(ctxReq.hashFork, CDestination(), vTxPool, 0, 0, false);
+
+    map<CDestination, vector<CTxInfo>> mapTxPool;
+    for (auto& tx : vTxPool)
+    {
+        mapTxPool[tx.destFrom].push_back(tx);
+    }
+
+    auto spResult = MakeCEthTxpoolContentResultPtr();
+
+    spResult->SetJsonResult(EthPeedingTxToJSON(nChainId, mapTxPool));
+
+    return spResult;
+}
 } // namespace hashahead
