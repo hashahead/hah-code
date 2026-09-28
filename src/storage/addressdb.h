@@ -219,10 +219,11 @@ public:
     bool RecoveryAddressData(const bytes& btSnapData);
 
 protected:
-    bool fCache;
     boost::filesystem::path pathAddress;
     hnbase::CRWAccess rwAccess;
     std::map<uint256, std::shared_ptr<CForkAddressDB>> mapAddressDB;
+    uint256 hashPrimaryFork;
+    bool fPruneState;
 };
 
 } // namespace storage

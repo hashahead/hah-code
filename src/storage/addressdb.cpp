@@ -1958,5 +1958,25 @@ bool CAddressDB::ClearAddressUnavailableNode(const uint256& hashFork, const uint
     }
     return false;
 }
+
+bool CAddressDB::GetSnapshotAddressData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        CForkAddressRootKv addressRootKv(hashFork, vBlockHash);
+        if (!it->second->GetSnapshotAddressData(vBlockHash, addressRootKv))
+        {
+            return false;
+        }
+        CBufStream ss;
+        ss << addressRootKv;
+        ss.GetData(btSnapData);
+        return true;
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
