@@ -4640,6 +4640,11 @@ bool CBlockBase::AddBlockVoteResult(const uint256& hashBlock, const bool fLongCh
 {
     return dbBlock.AddBlockVoteResult(hashBlock, fLongChain, btBitmap, btAggSig, fAtChain, hashAtBlock);
 }
+
+bool CBlockBase::RemoveBlockVoteResult(const uint256& hashBlock)
+{
+    return dbBlock.RemoveBlockVoteResult(hashBlock);
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
