@@ -159,6 +159,16 @@ bool CConsBlock::AddCommitVoteSign(const uint384& pubkeyNode, const bytes& btSig
     }
     return true;
 }
+
+bool CConsBlock::GetPreVoteBitmap(bytes& btBitmap)
+{
+    if (bmBlockPreVoteBitmap.HasValidBit())
+    {
+        bmBlockPreVoteBitmap.GetBytes(btBitmap);
+        return true;
+    }
+    return false;
+}
 /////////////////////////////////
 // CConsBlockVote
 
