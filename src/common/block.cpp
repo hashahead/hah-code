@@ -1024,4 +1024,29 @@ void CBlockCrosschainProve::GetProveData(std::map<uint8, bytes>& mapProveData) c
         mapProveData.insert(std::make_pair(CP_PROVE_TYPE_CROSS_CONFIRM_RECV_BLOCK_PROVE, ss.GetBytes()));
     }
 }
+
+//-------------------------------------------------------
+void CBlockCrosschainProve::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+{
+    std::map<uint8, bytes> mapProveData;
+    GetProveData(mapProveData);
+    s << nProveVersion << hashPrevProveBlock << mapProveData;
+}
+
+void CBlockCrosschainProve::Serialize(hnbase::CStream& s, hnbase::LoadType&)
+{
+    std::map<uint8, bytes> mapProveData;
+    s >> nProveVersion >> hashPrevProveBlock >> mapProveData;
+    SetProveData(mapProveData);
+}
+
+void CBlockCrosschainProve::Serialize(hnbase::CStream& s, std::size_t& serSize) const
+{
+    (void)s;
+    std::map<uint8, bytes> mapProveData;
+    GetProveData(mapProveData);
+    hnbase::CBufStream ss;
+    ss << nProveVersion << hashPrevProveBlock << mapProveData;
+    serSize = ss.GetSize();
+}
 } // namespace hashahead

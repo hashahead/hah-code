@@ -1011,6 +1011,10 @@ public:
     const uint256& GetPrevProveBlock() const;
     const std::vector<CBlockCoinTransferProve>& GetCoinTransferProve() const;
     const std::map<CDexOrderHeader, CBlockDexOrderProve>& GetDexOrderProve() const;
+    const std::set<uint256>& GetCrossConfirmRecvBlock() const;
+
+    void SetProveData(const std::map<uint8, bytes>& mapProveData);
+    void GetProveData(std::map<uint8, bytes>& mapProveData) const;
 } // namespace hashahead
 
 #endif //COMMON_BLOCK_H
