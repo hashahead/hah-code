@@ -1978,5 +1978,30 @@ bool CAddressDB::GetSnapshotAddressData(const uint256& hashFork, const std::vect
     }
     return false;
 }
+
+bool CAddressDB::RecoveryAddressData(const bytes& btSnapData)
+{
+    CForkAddressRootKv addressRootKv;
+    try
+    {
+        CBufStream ss(btSnapData);
+        ss >> addressRootKv;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(addressRootKv.hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->RecoveryAddressData(addressRootKv);
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead
