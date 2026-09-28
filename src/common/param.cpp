@@ -170,4 +170,14 @@ bool TokenBigFloatToCoin(const std::string& strToken, uint256& nCoin, const uint
     return true;
 }
 
+uint256 TokenBigFloatToCoin(const std::string& strToken, const uint32 nDecimalDigit)
+{
+    uint256 out;
+    if (TokenBigFloatToCoin(strToken, out, nDecimalDigit))
+    {
+        return out;
+    }
+    return 0;
+}
+
 } // namespace hashahead

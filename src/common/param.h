@@ -91,7 +91,10 @@ static const bool fCreateUserForkEnable = true;
 static const int64 MAX_CLOCK_DRIFT = 80;
 
 static const uint256 BBCP_TOKEN_INIT = 100000 * 10000 * COIN;
-static const uint256 BBCP_REWARD_INIT = 357 * COIN;
+static const uint256 BBCP_REWARD_INIT_OLD = 357 * COIN;
+static const uint256 BBCP_REWARD_INIT = 2142 * COIN;
+static const bool SET_OLD_BBCP_REWARD_INIT = true;
+static const uint32 SET_NEW_BBCP_REWARD_INIT_HEIGHT = 315500;
 #define BBCP_REWARD_HALVE_CYCLE (DAY_HEIGHT * 365 * 4)
 
 static const uint256 DELEGATE_PROOF_OF_STAKE_ENROLL_MINIMUM_AMOUNT = 100 * 10000 * COIN;
@@ -111,6 +114,8 @@ static const uint256 DELEGATE_PROOF_OF_STAKE_MIN_VOTE_AMOUNT = COIN;
 #define FUNCTION_TX_GAS_TRANS (2300)
 #define REWARD_TX_GAS_LIMIT (300000)
 #define PLEDGE_REDEEM_TX_GAS_LIMIT (300000)
+#define MAX_COIN_SYMBOL_SIZE (32) // Note: cannot be modified
+#define MAX_FORK_NAME_SIZE (128)
 
 static const int64 MINT_REWARD_PER = 10000;
 static const uint256 CODE_REWARD_USED(50);
@@ -119,6 +124,11 @@ static const uint256 CODE_REWARD_PER(100);
 static const bool fEnableContractCodeVerify = false;
 static const bool fEnableStakeVote = false;
 static const bool fEnableStakePledge = true;
+
+#define VERIFY_FHX_HEIGHT_BRANCH_001(nHeight) (!isRunSysFlag() || ((nHeight) >= GET_TESTMAINNET_PARAM(671180, 0, 0)))
+#define VERIFY_FHX_HEIGHT_BRANCH_002(nHeight) (!isRunSysFlag() || ((nHeight) >= GET_TESTMAINNET_PARAM(760700, 0, 0)))
+#define VERIFY_FHX_HEIGHT_BRANCH_003(nHeight) (!isRunSysFlag() || ((nHeight) >= GET_TESTMAINNET_PARAM(819060, 0, 0)))
+#define VERIFY_FHX_HEIGHT_BRANCH_004(nHeight) (!isRunSysFlag() || ((nHeight) >= GET_TESTMAINNET_PARAM(1190000, 0, 0)))
 
 // pledge reward rule: start height, rule type, days, reward rate(base: 10000)
 // mainnet
