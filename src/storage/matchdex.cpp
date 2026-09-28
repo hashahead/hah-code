@@ -648,5 +648,47 @@ bool CMatchDex::MatchDex(std::map<uint256, CMatchOrderResult>& mapMatchResult)
     }
     return true;
 }
+
+void CMatchDex::ShowDexOrderList()
+{
+    for (const auto& kv : mapCoinDex)
+    {
+        const uint256& hashCoinPair = kv.first;
+        const CCoinDexPair& coinDexPair = kv.second;
+        const uint32 nMatchHeight = CDexOrderKey::GetHeightByHsStatic(coinDexPair.nMatchHeightSlot);
+        const uint16 nMatchSlot = CDexOrderKey::GetSlotByHsStatic(coinDexPair.nMatchHeightSlot);
+
+        StdDebug("MATCHTEST", "++++++++++++++ Coin pair hash: %s ++++++++++++", hashCoinPair.ToString().c_str());
+        StdDebug("MATCHTEST", "Coin symbol sell: %s", coinDexPair.strCoinSymbolSell.c_str());
+        StdDebug("MATCHTEST", "Coin symbol buy: %s", coinDexPair.strCoinSymbolBuy.c_str());
+        StdDebug("MATCHTEST", "Prev complete price: %s", CoinToTokenBigFloat(coinDexPair.nPrevCompletePrice).c_str());
+        StdDebug("MATCHTEST", "Match height slot: [%d-%d]", nMatchHeight, nMatchSlot);
+        StdDebug("MATCHTEST", "Sell chainid: %d", coinDexPair.nSellChainId);
+        StdDebug("MATCHTEST", "Buy chainid: %d", coinDexPair.nBuyChainId);
+
+        for (const auto& kv : coinDexPair.mapSellOrder)
+        {
+            const CDexOrderKey& key = kv.first;
+            const CDexOrderValue& value = kv.second;
+
+            StdDebug("MATCHTEST", "----------- Sell.destOrder: [%d-%d] %s ---------------", key.nHeight, key.nSlot, value.destOrder.ToString().c_str());
+            StdDebug("MATCHTEST", "Sell.nPrice: %s", CoinToTokenBigFloat(key.nPrice).c_str());
+            StdDebug("MATCHTEST", "Sell.nOrderAmount: %s", CoinToTokenBigFloat(value.nOrderAmount).c_str());
+            StdDebug("MATCHTEST", "Sell.nCompleteAmount: %s", CoinToTokenBigFloat(value.nCompleteAmount).c_str());
+            StdDebug("MATCHTEST", "Sell.nSurplusAmount: %s", CoinToTokenBigFloat(value.GetSurplusAmount()).c_str());
+        }
+        for (const auto& kv : coinDexPair.mapBuyOrder)
+        {
+            const CDexOrderKey& key = kv.first;
+            const CDexOrderValue& value = kv.second;
+
+            StdDebug("MATCHTEST", "----------- Buy.destOrder: [%d-%d] %s ---------------", key.nHeight, key.nSlot, value.destOrder.ToString().c_str());
+            StdDebug("MATCHTEST", "Buy.nPrice: %s", CoinToTokenBigFloat(key.nPrice).c_str());
+            StdDebug("MATCHTEST", "Buy.nOrderAmount: %s", CoinToTokenBigFloat(value.nOrderAmount).c_str());
+            StdDebug("MATCHTEST", "Buy.nCompleteAmount: %s", CoinToTokenBigFloat(value.nCompleteAmount).c_str());
+            StdDebug("MATCHTEST", "Buy.nSurplusAmount: %s", CoinToTokenBigFloat(value.GetSurplusAmount()).c_str());
+        }
+    }
+}
 } // namespace storage
 } // namespace hashahead
