@@ -502,6 +502,15 @@ bool CBlockDB::WriteTxIndexKvData(const uint256& hashFork, const bytes& btKey, c
 {
     return dbTxIndex.WriteTxIndexKvData(hashFork, btKey, btValue);
 }
+
+bool CBlockDB::RetrieveTxContractReceipt(const uint256& hashFork, const uint256& hashBlock, const uint256& txid, TxContractReceipts& tcrReceipt)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.RetrieveTxContractReceipt(hashFork, hashBlock, txid, tcrReceipt);
+    }
+    return false;
+}
 }
 
 bool CBlockDB::RetrieveDelegate(const uint256& hash, map<CDestination, uint256>& mapDelegate)
