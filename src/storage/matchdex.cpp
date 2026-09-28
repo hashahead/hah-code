@@ -690,5 +690,31 @@ void CMatchDex::ShowDexOrderList()
         }
     }
 }
+
+bool operator==(const CMatchDex& a, const CMatchDex& b)
+{
+    if (a.mapCoinDex.size() != b.mapCoinDex.size())
+    {
+        StdLog("CMatchDex", "Compare: mapCoinDex size error, a.mapCoinDex.size: %lu, b.mapCoinDex.size: %lu", a.mapCoinDex.size(), b.mapCoinDex.size());
+        return false;
+    }
+    auto it = a.mapCoinDex.begin();
+    auto mt = b.mapCoinDex.begin();
+    for (; it != a.mapCoinDex.end() && mt != b.mapCoinDex.end(); ++it, ++mt)
+    {
+        if (it->first != mt->first)
+        {
+            StdLog("CMatchDex", "Compare: mapCoinDex key error");
+            return false;
+        }
+        if (it->second != mt->second)
+        {
+            StdLog("CMatchDex", "Compare: mapCoinDex value error");
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead

@@ -284,7 +284,13 @@ public:
     void ShowDexOrderList();
 
     friend bool operator==(const CMatchDex& a, const CMatchDex& b);
+    friend inline bool operator!=(const CMatchDex& a, const CMatchDex& b)
+    {
+        return (!(a == b));
+    }
+
 public:
+    std::map<uint256, CCoinDexPair> mapCoinDex;                      // key: coin dex pair hash
     std::map<CChainId, std::set<uint256>> mapChainIdLinkCoinDexPair; // key: at chain id, value: coin dex pair hash
 };
 typedef std::shared_ptr<CMatchDex> SHP_MATCH_DEX;
