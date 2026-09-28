@@ -169,6 +169,16 @@ bool CConsBlock::GetPreVoteBitmap(bytes& btBitmap)
     }
     return false;
 }
+
+bool CConsBlock::GetCommitVoteBitmap(bytes& btBitmap)
+{
+    if (bmBlockCommitVoteBitmap.HasValidBit())
+    {
+        bmBlockCommitVoteBitmap.GetBytes(btBitmap);
+        return true;
+    }
+    return false;
+}
 /////////////////////////////////
 // CConsBlockVote
 

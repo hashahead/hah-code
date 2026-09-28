@@ -157,6 +157,7 @@ public:
     bool AddPreVoteSign(const uint384& pubkeyNode, const bytes& btSig);
     bool AddCommitVoteSign(const uint384& pubkeyNode, const bytes& btSig);
     bool GetPreVoteBitmap(bytes& btBitmap);
+    bool GetCommitVoteBitmap(bytes& btBitmap);
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;
