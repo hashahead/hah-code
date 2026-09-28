@@ -337,5 +337,19 @@ void CSnapshotDB::RemoveHeightSnapshot(const uint32 nRemoveHeight)
         }
     }
 }
+
+void CSnapshotDB::RemoveRedundantSnapshot(const uint32 nMaxSnapshots)
+{
+    set<uint256, CustomBlockHashCompare> setBlockHash;
+    GetAllSnapshotBlock(setBlockHash);
+
+    while (setBlockHash.size() >= nMaxSnapshots && setBlockHash.size() > 0)
+    {
+        const uint256& hashBlock = *setBlockHash.begin();
+        fs::remove_all(pathSnapshot / hashBlock.ToString());
+        setBlockHash.erase(setBlockHash.begin());
+    }
+}
+
 } // namespace storage
 } // namespace hashahead
