@@ -236,7 +236,7 @@ public:
     bool CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult);
     bool GetContractCoinName(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, string& strName);
     bool GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, string& strSymbol);
-                          const CDestination& from, const CDestination& to, const uint256& nGasPrice, const uint256& nGasLimit, const uint256& nAmount,
+    bool GetContractCoinDecimals(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const bool fNeedVerifyConntractAddress, uint8& nDecimals);
                           const bytes& data, const uint64 nTimeStamp, const uint256& hashPrevBlock, const uint256& hashPrevStateRoot, const uint64 nPrevBlockTime, uint64& nGasLeft, int& nStatus, bytes& btResult);
     bool GetTxContractData(const uint32 nTxFile, const uint32 nTxOffset, CTxContractData& txcdCode, uint256& txidCreate);
     bool GetBlockSourceCodeData(const uint256& hashFork, const uint256& hashBlock, const uint256& hashSourceCode, CTxContractData& txcdCode);

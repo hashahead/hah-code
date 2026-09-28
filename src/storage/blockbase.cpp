@@ -4590,6 +4590,17 @@ bool CBlockBase::GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, con
 {
     return dbBlock.GetCrosschainProveForPrevBlock(nRecvChainId, hashRecvPrevBlock, mapBlockCrosschainProve);
 }
+
+bool CBlockBase::AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve)
+{
+    return dbBlock.AddRecvCrosschainProve(nRecvChainId, blockProve);
+}
+
+bool CBlockBase::GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve)
+{
+    return dbBlock.GetRecvCrosschainProve(nRecvChainId, nSendChainId, hashSendProvePrevBlock, blockProve);
+}
+
 bool CBlockBase::AddBlacklistAddress(const CDestination& dest)
 {
     return dbBlock.AddBlacklistAddress(dest);
