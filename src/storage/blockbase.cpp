@@ -4707,6 +4707,16 @@ bool CBlockBase::IsBlockConfirm(const uint256& hashBlock)
     }
     return true;
 }
+
+bool CBlockBase::AddBlockLocalVoteSignFlag(const uint256& hashBlock)
+{
+    return dbBlock.AddBlockLocalVoteSignFlag(hashBlock);
+}
+
+bool CBlockBase::PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight)
+{
+    return dbBlock.ClearStateUnavailableNode(hashFork, nPruneReserveLastHeight);
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {

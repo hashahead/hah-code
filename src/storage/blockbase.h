@@ -280,8 +280,12 @@ public:
     bool UpdateForkMintMinGasPrice(const uint256& hashFork, const uint256& nMinGasPrice);
     uint256 GetForkMintMinGasPrice(const uint256& hashFork);
 
+    bool AddBlockVoteResult(const uint256& hashBlock, const bool fLongChain, const bytes& btBitmap, const bytes& btAggSig, const bool fAtChain, const uint256& hashAtBlock);
+    bool RemoveBlockVoteResult(const uint256& hashBlock);
     bool RetrieveBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig, bool& fAtChain, uint256& hashAtBlock);
     bool GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap, bytes& btAggSig, uint256& hashVoteBlock);
+    bool IsBlockConfirm(const uint256& hashBlock);
+    bool AddBlockLocalVoteSignFlag(const uint256& hashBlock);
 protected:
     CBlockIndex* GetIndex(const uint256& hash) const;
     CBlockIndex* GetForkLastIndex(const uint256& hashFork);
