@@ -520,6 +520,15 @@ bool CBlockDB::ListBlockContractReceipt(const uint256& hashFork, const uint256& 
     }
     return false;
 }
+
+bool CBlockDB::RetrieveTxContractPrevState(const uint256& hashFork, const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.RetrieveTxContractPrevState(hashFork, hashBlock, txid, mapContractPrevState);
+    }
+    return false;
+}
 }
 
 bool CBlockDB::RetrieveDelegate(const uint256& hash, map<CDestination, uint256>& mapDelegate)
