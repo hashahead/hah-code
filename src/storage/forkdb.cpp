@@ -1432,5 +1432,19 @@ bool CForkDB::ListDbCoinContext(std::map<std::string, CCoinContext>& mapSymbolCo
     }
     return true;
 }
+
+void CForkDB::AddMaxDexCoinPair(const uint32 nMaxDexCoinPair, bytesmap& mapKv)
+{
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+
+    ssKey << DB_FORK_KEY_TYPE_SINGLE_VALUE << DB_FORK_KEY_VALUE_MAX_DEX_COINPAIR;
+    ssKey.GetData(btKey);
+
+    ssValue << nMaxDexCoinPair;
+    ssValue.GetData(btValue);
+
+    mapKv.insert(make_pair(btKey, btValue));
+}
 } // namespace storage
 } // namespace hashahead
