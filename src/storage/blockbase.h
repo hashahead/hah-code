@@ -286,6 +286,10 @@ public:
     bool GetMakerVoteBlock(const uint256& hashPrevBlock, bytes& btBitmap, bytes& btAggSig, uint256& hashVoteBlock);
     bool IsBlockConfirm(const uint256& hashBlock);
     bool AddBlockLocalVoteSignFlag(const uint256& hashBlock);
+    uint32 GetAllForkMinLastHeight(std::vector<uint256>* pForkHash = nullptr);
+
+    bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight);
+    bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit);
 protected:
     CBlockIndex* GetIndex(const uint256& hash) const;
     CBlockIndex* GetForkLastIndex(const uint256& hashFork);

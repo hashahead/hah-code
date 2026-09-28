@@ -4717,6 +4717,16 @@ bool CBlockBase::PruneForkStateData(const uint256& hashFork, const uint32 nPrune
 {
     return dbBlock.ClearStateUnavailableNode(hashFork, nPruneReserveLastHeight);
 }
+
+bool CBlockBase::PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit)
+{
+    return dbBlock.ClearContractKvRootUnavailableNode(hashFork, nPruneReserveLastHeight, fExit);
+}
+
+bool CBlockBase::PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight)
+{
+    return dbBlock.ClearAddressDbUnavailableNode(hashFork, nPruneReserveLastHeight);
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
