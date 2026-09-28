@@ -224,8 +224,9 @@ public:
     virtual bool ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState) = 0;
     virtual bool GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext) = 0;
     virtual bool CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult) = 0;
-                              const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult)
-        = 0;
+    virtual bool GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, string& strSymbol) = 0;
+    virtual bool GetContractCoinDecimals(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, uint8& nDecimals) = 0;
+    virtual bool GetContractCoinBalance(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const CDestination& destUser, uint256& nBalance) = 0;
     virtual bool VerifyContractAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract) = 0;
     virtual bool VerifyCreateCodeTx(const uint256& hashFork, const uint256& hashBlock, const CTransaction& tx) = 0;
     virtual bool VerifyDelegateMinVote(const uint256& hashRefBlock, const uint32 nHeight, const CDestination& destDelegate) = 0;

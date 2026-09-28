@@ -2880,6 +2880,11 @@ bool CBlockChain::PruneVoteData(const uint32 nPruneReserveLastHeight)
 {
     return cntrBlock.PruneVoteData(nPruneReserveLastHeight);
 }
+
+bool CBlockChain::PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight)
+{
+    return cntrBlock.PruneTraceData(hashFork, nPruneReserveLastHeight);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

@@ -181,6 +181,7 @@ public:
     bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
     bool PruneHdexData(const uint32 nPruneReserveLastHeight) override;
     bool PruneVoteData(const uint32 nPruneReserveLastHeight) override;
+    bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
 
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
