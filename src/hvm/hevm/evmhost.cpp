@@ -865,5 +865,69 @@ void CEvmHost::AddContractFirstReceipt(const CDestination& from, const CDestinat
 
     dbHost.AddContractRunReceipt(tcr, true);
 }
+
+void CEvmHost::AddContractHostReceipt(const evmc_message& msg, const evmc::result& result, const CDestination& to, const CDestination& destCodeContract)
+{
+    uint256 nValue(msg.value.bytes, sizeof(msg.value.bytes));
+    nValue.reverse();
+
+    CTxContractReceipt tcr;
+
+    switch (msg.kind)
+    {
+    case EVMC_CALL:
+        if (msg.flags == EVMC_STATIC)
+        {
+            tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_STATICCALL;
+        }
+        else
+        {
+            tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CALL;
+        }
+        break;
+    case EVMC_DELEGATECALL:
+        tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_DELEGATECALL;
+        break;
+    case EVMC_CALLCODE:
+        tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CALLCODE;
+        break;
+    case EVMC_CREATE:
+        tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CREATE;
+        break;
+    case EVMC_CREATE2:
+        tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CREATE2;
+        break;
+    default:
+        tcr.nCallType = CTxContractReceipt::TCR_CALL_TYPE_CALL;
+        break;
+    }
+
+    tcr.destFrom = AddressToDestination(msg.sender);
+    tcr.destTo = to;
+    tcr.nValue = nValue;
+    tcr.nGasLimit = msg.gas;
+    tcr.nGasUsed = msg.gas - result.gas_left;
+    if (msg.input_data && msg.input_size > 0)
+    {
+        tcr.btInput.assign(msg.input_data, msg.input_data + msg.input_size);
+    }
+    if (result.output_data && result.output_size > 0)
+    {
+        tcr.btOutput.assign(result.output_data, result.output_data + result.output_size);
+    }
+    tcr.nStatus = result.status_code;
+    if (result.status_code != 0)
+    {
+        tcr.strError = GetStatusInfo(result.status_code);
+        if (result.status_code == EVMC_REVERT)
+        {
+            tcr.strRevertReason = GetRevertInfo(result);
+        }
+    }
+    tcr.destParentCodeContract = dbHost.GetCodeLocalAddress();
+    tcr.destCodeContract = destCodeContract;
+
+    dbHost.AddContractRunReceipt(tcr);
+}
 } // namespace hvm
 } // namespace hashahead
