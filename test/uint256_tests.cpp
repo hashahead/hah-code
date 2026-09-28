@@ -489,4 +489,21 @@ BOOST_AUTO_TEST_CASE(biginttest)
     }
 }
 
+//./build-release/test/test_big --log_level=all --run_test=uint256_tests/uint256tostrtest
+BOOST_AUTO_TEST_CASE(uint256tostrtest)
+{
+    {
+        uint256 a(1234567890123L);
+        std::string str = a.GetMuint256().str();
+        std::cout << str << std::endl;
+    }
+
+    {
+        uint256 coin(10, 18);
+        uint256 a = coin * uint256(1234567890123L);
+        std::string str = a.GetMuint256().str();
+        std::cout << str << std::endl;
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

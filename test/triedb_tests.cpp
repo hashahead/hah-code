@@ -285,11 +285,12 @@ BOOST_AUTO_TEST_CASE(removetest)
     db.Clear();
     db.Deinitialize();
 }
+
 BOOST_AUTO_TEST_CASE(stresstest)
 {
     cout << GetLocalTime() << "  triedb stress test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
 
     CTrieDB db;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
@@ -326,7 +327,7 @@ BOOST_AUTO_TEST_CASE(stresstest)
         }
         BOOST_CHECK(db.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot));
 
-        printf("AddNewTrie success, count: %ld\n", mapKv.size());
+        printf("Add new trie success, count: %ld\n", mapKv.size());
 
         mapRootKv.insert(make_pair(hashNewRoot, mapKv));
 
@@ -403,7 +404,7 @@ BOOST_AUTO_TEST_CASE(walkthroughtest)
 {
     cout << GetLocalTime() << "  triedb walk through test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
 
     CTrieDB db;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
@@ -496,7 +497,7 @@ BOOST_AUTO_TEST_CASE(stresstest2)
 {
     cout << GetLocalTime() << "  triedb stress test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
 
     CTrieDB db;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
@@ -540,7 +541,7 @@ BOOST_AUTO_TEST_CASE(stresstest2)
         BOOST_CHECK(db.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot));
         hashPrevRoot = hashNewRoot;
 
-        printf("AddNewTrie success, count: %ld, total: %d\n", mapKv.size(), (n + 1) * nSingleCount);
+        printf("Add new trie success, count: %ld, total: %d\n", mapKv.size(), (n + 1) * nSingleCount);
     }
 
     //---------------------------------------------------
@@ -551,7 +552,7 @@ BOOST_AUTO_TEST_CASE(stresstest3)
 {
     cout << GetLocalTime() << "  triedb stress test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
 
     CTrieDB db;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
@@ -594,10 +595,204 @@ BOOST_AUTO_TEST_CASE(stresstest3)
         BOOST_CHECK(db.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot));
         hashPrevRoot = hashNewRoot;
 
-        printf("AddNewTrie success, count: %ld, total: %ld\n", mapKv.size(), (n + 1) * nSingleCount);
+        printf("Add new trie success, count: %ld, total: %ld\n", mapKv.size(), (n + 1) * nSingleCount);
     }
 
     //---------------------------------------------------
+    db.Deinitialize();
+}
+
+/////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(stresstest4)
+{
+    cout << GetLocalTime() << "  triedb stress test 4.........." << endl;
+
+    std::string fullpath = GetOutPath("triedb_tests");
+
+    CTrieDB db;
+    BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
+
+    //---------------------------------------------------
+    uint256 hashRoot;
+    int nTotalCount = 10000 * 2;
+    int nSingleCount = 10;
+    bytesmap mapKvTotal;
+    std::map<uint256, bytesmap> mapRootKv;
+    std::queue<std::set<bytes>> qRemoveKeys;
+    std::queue<std::map<int, uint256>> qCacheIndex;
+    int64 nTimestamp = GetTime();
+    uint8 nHeadFlag = 0x12;
+
+    auto funcVerify = [&]() -> bool {
+        std::map<int, uint256> mapCacheIndex;
+        int64 nIndexSize = qCacheIndex.size();
+        for (int64 i = 0; i < nIndexSize; i++)
+        {
+            const std::map<int, uint256> mapIndex = qCacheIndex.front();
+            mapCacheIndex.insert(mapIndex.begin(), mapIndex.end());
+            qCacheIndex.pop();
+            qCacheIndex.push(mapIndex);
+        }
+
+        for (const auto& kv : mapCacheIndex)
+        {
+            const int nIndex = kv.first;
+            const uint256& txid = kv.second;
+
+            hnbase::CBufStream ssKey;
+            bytes btKey, btValue;
+
+            ssKey << nHeadFlag << txid;
+            ssKey.GetData(btKey);
+            if (!db.Retrieve(hashRoot, btKey, btValue))
+            {
+                printf("Find index fail, index: %d, txid: %s\n", nIndex, txid.ToString().c_str());
+            }
+            else
+            {
+                int nIndexDb;
+                uint256 valueTxid;
+                try
+                {
+                    CBufStream ssValue(btValue);
+                    ssValue >> nIndexDb >> valueTxid;
+                }
+                catch (std::exception& e)
+                {
+                    printf("cache error1\n");
+                    return false;
+                }
+                if (nIndexDb != nIndex || valueTxid != txid)
+                {
+                    printf("Find index error, index: %d, txid: %s\n", nIndex, txid.ToString().c_str());
+                    return false;
+                }
+            }
+        }
+
+        std::map<int, uint256> metDbIndex;
+        std::vector<std::pair<bytes, bytes>> vKv;
+        CListOrderTrieDBWalker walker(0, vKv);
+        BOOST_CHECK(db.WalkThroughTrie(hashRoot, walker));
+        for (const auto& vd : vKv)
+        {
+            const bytes& key = vd.first;
+            const bytes& value = vd.second;
+
+            uint8 nHeadFlag;
+            uint256 keyTxid;
+            int nIndex;
+            uint256 valueTxid;
+
+            try
+            {
+                CBufStream ssKey(key);
+                ssKey >> nHeadFlag >> keyTxid;
+                CBufStream ssValue(value);
+                ssValue >> nIndex >> valueTxid;
+            }
+            catch (std::exception& e)
+            {
+                printf("error\n");
+                return false;
+            }
+            if (keyTxid != valueTxid)
+            {
+                printf("keyTxid != valueTxid\n");
+                return false;
+            }
+            if (metDbIndex.find(nIndex) != metDbIndex.end())
+            {
+                printf("nIndex is exist, nIndex: %d\n", nIndex);
+                return false;
+            }
+            metDbIndex.insert(std::make_pair(nIndex, valueTxid));
+        }
+
+        if (mapCacheIndex != metDbIndex)
+        {
+            for (const auto& kv : metDbIndex)
+            {
+                printf("Db index: %d\n", kv.first);
+            }
+            for (const auto& kv : mapCacheIndex)
+            {
+                printf("Cache index: %d\n", kv.first);
+            }
+            printf("Cache index error, cache size: %ld, db size: %ld, kv size: %ld\n", mapCacheIndex.size(), metDbIndex.size(), vKv.size());
+            return false;
+        }
+        printf("Cache index ok!\n");
+        return true;
+    };
+
+    for (int n = 0; n < nTotalCount / nSingleCount; n++)
+    {
+        bytesmap mapKv;
+        std::set<bytes> setRemoveKeys;
+        std::map<int, uint256> mapIndex;
+        for (int i = n * nSingleCount; i < (n + 1) * nSingleCount; i++)
+        {
+            // uint256 txid = crypto::CryptoSHA256(((uint8*)&i), sizeof(i));
+
+            CBufStream ss;
+            ss << nTimestamp++ << GetTimeMillis() << rand();
+            bytes btRandData;
+            ss.GetData(btRandData);
+            uint256 txid = crypto::CryptoSHA256(btRandData.data(), btRandData.size());
+
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << nHeadFlag << txid;
+            ssKey.GetData(btKey);
+
+            ssValue << i << txid;
+            ssValue.GetData(btValue);
+
+            mapKv.insert(make_pair(btKey, btValue));
+            setRemoveKeys.insert(btKey);
+            mapIndex.insert(make_pair(i, txid));
+        }
+        qRemoveKeys.push(setRemoveKeys);
+        qCacheIndex.push(mapIndex);
+
+        setRemoveKeys.clear();
+        if (qRemoveKeys.size() > 30)
+        {
+            setRemoveKeys = qRemoveKeys.front();
+            qRemoveKeys.pop();
+            qCacheIndex.pop();
+        }
+
+        uint256 hashNewRoot;
+        BOOST_CHECK(db.AddNewTrie(hashRoot, mapKv, hashNewRoot));
+        hashRoot = hashNewRoot;
+
+        printf("Add new trie success, count: %ld, total: %d\n", mapKv.size(), (n + 1) * nSingleCount);
+        if (!funcVerify())
+        {
+            printf("Verify index fail, total: %d\n", (n + 1) * nSingleCount);
+            db.Clear();
+            db.Deinitialize();
+            return;
+        }
+    }
+    BOOST_CHECK(funcVerify());
+
+    while (!qRemoveKeys.empty())
+    {
+        std::set<bytes> setRemoveKeys = qRemoveKeys.front();
+        qRemoveKeys.pop();
+
+        uint256 hashNewRoot;
+        BOOST_CHECK(db.AddNewTrie(hashRoot, {}, hashNewRoot));
+        hashRoot = hashNewRoot;
+    }
+    BOOST_CHECK(hashRoot == 0);
+
+    //---------------------------------------------------
+    db.Clear();
     db.Deinitialize();
 }
 
