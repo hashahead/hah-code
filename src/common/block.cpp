@@ -1085,4 +1085,35 @@ void CBlockPrevProve::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
         s << hnbase::CVarInt(0);
     }
 }
+
+void CBlockPrevProve::Serialize(hnbase::CStream& s, hnbase::LoadType&)
+{
+    hnbase::CVarInt varSize;
+
+    // prev block
+    s >> varSize;
+    if (varSize.GetValue() > 0)
+    {
+        s >> hashPrevBlock;
+        for (std::size_t i = 0; i < varSize.GetValue() - 1; i++)
+        {
+            std::pair<uint8, uint256> provePair;
+            s >> provePair;
+            vPrevBlockMerkleProve.push_back(provePair);
+        }
+    }
+
+    // crosschain
+    s >> varSize;
+    if (varSize.GetValue() > 0)
+    {
+        s >> proveCrosschain;
+        for (std::size_t i = 0; i < varSize.GetValue() - 1; i++)
+        {
+            std::pair<uint8, uint256> provePair;
+            s >> provePair;
+            vCrosschainMerkleProve.push_back(provePair);
+        }
+    }
+}
 } // namespace hashahead
