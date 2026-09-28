@@ -1015,6 +1015,34 @@ public:
 
     void SetProveData(const std::map<uint8, bytes>& mapProveData);
     void GetProveData(std::map<uint8, bytes>& mapProveData) const;
+
+public:
+    enum
+    {
+        // v1
+        CP_PROVE_TYPE_COIN_TRANSFER_PROVE = 1,
+        CP_PROVE_TYPE_DEX_ORDER_PROVE = 2,
+        CP_PROVE_TYPE_CROSS_CONFIRM_RECV_BLOCK_PROVE = 3,
+    };
+
+    enum
+    {
+        CP_PROVE_VERSION_1 = 1
+    };
+
+protected:
+    uint8 nProveVersion;
+    uint256 hashPrevProveBlock;
+
+    std::vector<CBlockCoinTransferProve> vCoinTransferProve;
+    std::map<CDexOrderHeader, CBlockDexOrderProve> mapDexOrderProve;
+    std::set<uint256> setCrossConfirmRecvBlock;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const;
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&);
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
+};
 } // namespace hashahead
 
 #endif //COMMON_BLOCK_H

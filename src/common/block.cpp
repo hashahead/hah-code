@@ -1049,4 +1049,40 @@ void CBlockCrosschainProve::Serialize(hnbase::CStream& s, std::size_t& serSize) 
     ss << nProveVersion << hashPrevProveBlock << mapProveData;
     serSize = ss.GetSize();
 }
+
+///////////////////////////////////////////////////
+// CBlockPrevProve
+
+void CBlockPrevProve::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+{
+    // prev block
+    if (hashPrevBlock != 0 && !vPrevBlockMerkleProve.empty())
+    {
+        s << hnbase::CVarInt(vPrevBlockMerkleProve.size() + 1);
+        s << hashPrevBlock;
+        for (const auto& provePair : vPrevBlockMerkleProve)
+        {
+            s << provePair;
+        }
+    }
+    else
+    {
+        s << hnbase::CVarInt(0);
+    }
+
+    // crosschain
+    if (!proveCrosschain.IsNull() && !vCrosschainMerkleProve.empty())
+    {
+        s << hnbase::CVarInt(vCrosschainMerkleProve.size() + 1);
+        s << proveCrosschain;
+        for (const auto& provePair : vCrosschainMerkleProve)
+        {
+            s << provePair;
+        }
+    }
+    else
+    {
+        s << hnbase::CVarInt(0);
+    }
+}
 } // namespace hashahead
