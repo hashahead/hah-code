@@ -860,6 +860,42 @@ protected:
     }
 };
 
+class CContractPrevState;
+using MapContractPrevState = std::map<CDestination, CContractPrevState>;
+using BlockContractPrevState = std::vector<std::pair<uint256, MapContractPrevState>>;
+typedef std::shared_ptr<BlockContractPrevState> SHP_BLOCK_CONTRACT_PREV_STATE;
+#define MAKE_SHARED_BLOCK_CONTRACT_PREV_STATE std::make_shared<BlockContractPrevState>
+
+class CContractPrevState
+{
+    friend class hnbase::CStream;
+
+public:
+    CContractPrevState()
+      : nNonce(0) {}
+    CContractPrevState(const uint256& nBalanceIn, const uint64 nNonceIn, const bytes& btCodeIn)
+      : nBalance(nBalanceIn), nNonce(nNonceIn), btCode(btCodeIn) {}
+
+    static void TxPrevStateResultToJsonStream(const MapContractPrevState& mapContractPrevState, std::stringstream& ss);
+    static void TxPrevStateToJsonStream(const uint256& txid, const MapContractPrevState& mapContractPrevState, std::stringstream& ss);
+    static void BlockPrevStateToJsonStream(const BlockContractPrevState& vBlockContractPrevState, std::stringstream& ss);
+
+public:
+    uint256 nBalance;
+    uint64 nNonce;
+    bytes btCode;
+    std::map<uint256, bytes> mapStorage;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(nBalance, opt);
+        s.Serialize(nNonce, opt);
+        s.Serialize(btCode, opt);
+        s.Serialize(mapStorage, opt);
+    }
+};
 
 static const uint8 CODE_TYPE_TEMPLATE = 0;
 static const uint8 CODE_TYPE_CONTRACT = 1;
