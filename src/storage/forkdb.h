@@ -103,6 +103,7 @@ protected:
     const SHP_CACHE_FORK_DATA GetCacheForkContext(const uint256& hashBlock);
     const SHP_CACHE_FORK_DATA LoadCacheForkContext(const uint256& hashBlock);
     bool ListDbForkContext(const uint256& hashBlock, std::map<uint256, CForkContext>& mapForkCtxt);
+    bool ListDbCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashRoot);
 
 protected:
     enum

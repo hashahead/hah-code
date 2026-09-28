@@ -1377,5 +1377,60 @@ bool CForkDB::ListDbForkContext(const uint256& hashBlock, std::map<uint256, CFor
     return true;
 }
 
+bool CForkDB::ListDbCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashRoot)
+{
+    class CListCoinTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListCoinTrieDBWalker(std::map<std::string, CCoinContext>& mapSymbolCoinIn)
+          : mapSymbolCoin(mapSymbolCoinIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListCoinTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_FORK_KEY_TYPE_COIN_SYMBOL)
+                {
+                    hnbase::CBufStream ssValue(btValue);
+                    std::string strSymbol;
+                    CCoinContext ctxtCoin;
+                    ssKey >> strSymbol;
+                    ssValue >> ctxtCoin;
+                    mapSymbolCoin.insert(std::make_pair(strSymbol, ctxtCoin));
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    protected:
+        std::map<std::string, CCoinContext>& mapSymbolCoin;
+    };
+
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_FORK_KEY_TYPE_COIN_SYMBOL;
+    bytes btKeyPrefix;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListCoinTrieDBWalker walker(mapSymbolCoin);
+    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix))
+    {
+        StdLog("CForkDB", "List db coin context: Walk through trie fail, root: %s", hashRoot.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead
