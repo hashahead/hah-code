@@ -213,6 +213,11 @@ public:
     bool RetrieveContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode);
     bool ListContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode);
     bool VerifyCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
+
+    bool ClearAddressUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight);
+    bool GetSnapshotAddressData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryAddressData(const bytes& btSnapData);
+
 protected:
     bool fCache;
     boost::filesystem::path pathAddress;

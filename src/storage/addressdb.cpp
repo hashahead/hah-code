@@ -1945,5 +1945,18 @@ bool CAddressDB::VerifyCodeContext(const uint256& hashFork, const uint256& hashP
     }
     return false;
 }
+
+////////////////////////////
+bool CAddressDB::ClearAddressUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapAddressDB.find(hashFork);
+    if (it != mapAddressDB.end())
+    {
+        return it->second->ClearAddressUnavailableNode(nClearRefHeight);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
