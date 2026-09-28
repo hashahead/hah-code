@@ -1446,5 +1446,28 @@ void CForkDB::AddMaxDexCoinPair(const uint32 nMaxDexCoinPair, bytesmap& mapKv)
 
     mapKv.insert(make_pair(btKey, btValue));
 }
+
+bool CForkDB::GetMaxForkDexCoinPair(const uint256& hashRoot, uint32& nMaxDexCoinPair)
+{
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+    ssKey << DB_FORK_KEY_TYPE_SINGLE_VALUE << DB_FORK_KEY_VALUE_MAX_DEX_COINPAIR;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        ssValue.Write((char*)(btValue.data()), btValue.size());
+        ssValue >> nMaxDexCoinPair;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead
