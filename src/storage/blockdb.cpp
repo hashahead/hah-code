@@ -538,6 +538,15 @@ bool CBlockDB::ListBlockContractPrevState(const uint256& hashFork, const uint256
     }
     return false;
 }
+
+bool CBlockDB::GetContractKvPairList(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, uint256>>& vContractKvPair, uint256& keyNext)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.GetContractKvPairList(hashFork, hashBlock, destContract, keyStart, nLimit, vContractKvPair, keyNext);
+    }
+    return false;
+}
 }
 
 bool CBlockDB::RetrieveDelegate(const uint256& hash, map<CDestination, uint256>& mapDelegate)
