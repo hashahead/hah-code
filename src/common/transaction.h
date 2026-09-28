@@ -897,6 +897,108 @@ protected:
     }
 };
 
+class CVmOperationTraceLog
+{
+    friend class hnbase::CStream;
+
+public:
+    CVmOperationTraceLog() {}
+
+public:
+    uint32 nDepth = 0;
+    uint32 nSteps = 0;
+    uint32 nPc = 0;
+    std::string strInstr;
+    uint64 nNewMemSize = 0;
+    uint64 nGasCost = 0;
+    uint64 nGas = 0;
+    std::vector<uint256> vStack;
+    std::vector<uint256> vMem;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+    {
+        s << hnbase::CVarInt(nDepth);
+        s << hnbase::CVarInt(nSteps);
+        s << hnbase::CVarInt(nPc);
+        s << strInstr;
+        s << hnbase::CVarInt(nNewMemSize);
+        s << hnbase::CVarInt(nGasCost);
+        s << hnbase::CVarInt(nGas);
+        s << hnbase::CVarInt(vStack.size());
+        for (auto& v : vStack)
+        {
+            s << v.ToValidBigEndianData();
+        }
+        s << hnbase::CVarInt(vMem.size());
+        for (auto& v : vMem)
+        {
+            s << v.ToValidBigEndianData();
+        }
+    }
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&)
+    {
+        hnbase::CVarInt varDepth;
+        hnbase::CVarInt varSteps;
+        hnbase::CVarInt varPc;
+        hnbase::CVarInt varNewMemSize;
+        hnbase::CVarInt varGasCost;
+        hnbase::CVarInt varGas;
+        s >> varDepth >> varSteps >> varPc >> strInstr >> varNewMemSize >> varGasCost >> varGas;
+        nDepth = varDepth.GetValue();
+        nSteps = varSteps.GetValue();
+        nPc = varPc.GetValue();
+        nNewMemSize = varNewMemSize.GetValue();
+        nGasCost = varGasCost.GetValue();
+        nGas = varGas.GetValue();
+
+        hnbase::CVarInt varStackSize;
+        s >> varStackSize;
+        for (std::size_t i = 0; i < varStackSize.GetValue(); i++)
+        {
+            bytes btData;
+            s >> btData;
+            uint256 h;
+            h.FromValidBigEndianData(btData);
+            vStack.push_back(h);
+        }
+
+        hnbase::CVarInt varMemSize;
+        s >> varMemSize;
+        for (std::size_t i = 0; i < varMemSize.GetValue(); i++)
+        {
+            bytes btData;
+            s >> btData;
+            uint256 h;
+            h.FromValidBigEndianData(btData);
+            vMem.push_back(h);
+        }
+    }
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const
+    {
+        (void)s;
+        hnbase::CBufStream ss;
+        ss << hnbase::CVarInt(nDepth);
+        ss << hnbase::CVarInt(nSteps);
+        ss << hnbase::CVarInt(nPc);
+        ss << strInstr;
+        ss << hnbase::CVarInt(nNewMemSize);
+        ss << hnbase::CVarInt(nGasCost);
+        ss << hnbase::CVarInt(nGas);
+        ss << hnbase::CVarInt(vStack.size());
+        for (auto& v : vStack)
+        {
+            ss << v.ToValidBigEndianData();
+        }
+        ss << hnbase::CVarInt(vMem.size());
+        for (auto& v : vMem)
+        {
+            ss << v.ToValidBigEndianData();
+        }
+        serSize = ss.GetSize();
+    }
+};
+using VmOperationTraceLogs = std::vector<CVmOperationTraceLog>;
 static const uint8 CODE_TYPE_TEMPLATE = 0;
 static const uint8 CODE_TYPE_CONTRACT = 1;
 
