@@ -636,5 +636,17 @@ bool CMatchDex::ListDexOrder(const std::string& strCoinSymbolSell, const std::st
     realDexOrder.nMaxMatchSlot = CDexOrderKey::GetSlotByHsStatic(coinDexPair.nMatchHeightSlot);
     return true;
 }
+
+bool CMatchDex::MatchDex(std::map<uint256, CMatchOrderResult>& mapMatchResult)
+{
+    for (auto& kv : mapCoinDex)
+    {
+        if (!kv.second.MatchOrder(mapMatchResult[kv.first]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

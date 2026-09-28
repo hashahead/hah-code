@@ -1023,6 +1023,34 @@ bool CHdexDB::ClearHdexUnavailableNode(const uint32 nClearRefHeight)
     }
     return true;
 }
+
+bool CHdexDB::GetSnapshotHdexData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    CForkHdexRootKv hdexRootKv(hashFork, vBlockHash);
+
+    hdexRootKv.vKv.reserve(vBlockHash.size());
+    for (auto& hashBlock : vBlockHash)
+    {
+        uint256 hashRoot;
+        if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashRoot))
+        {
+            StdLog("CHdexDB", "Get snapshot hdex data: Read trie root failed, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+        hdexRootKv.vKv.push_back(std::make_pair(hashRoot, bytesmap()));
+    }
+
+    if (!GetSnapshotHdexBlockData(hashFork, vBlockHash, hdexRootKv))
+    {
+        StdLog("CHdexDB", "Get snapshot hdex data: Get hdex block data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+
+    CBufStream ss;
+    ss << hdexRootKv;
+    ss.GetData(btSnapData);
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

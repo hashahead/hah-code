@@ -122,6 +122,7 @@ public:
     bool VerifyDexOrder(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, uint256& hashRoot, const bool fVerifyAllNode = true);
 
     bool ClearHdexUnavailableNode(const uint32 nClearRefHeight);
+    bool GetSnapshotHdexData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
 protected:
     enum
     {
