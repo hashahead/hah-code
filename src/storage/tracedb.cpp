@@ -378,6 +378,52 @@ bool CForkTraceDB::RetrieveTxContractPrevState(const uint256& hashBlock, const u
     }
     return false;
 }
+
+bool CForkTraceDB::ListBlockContractPrevState(const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState)
+{
+    CReadLock rlock(rwAccess);
+
+    if (cacheTraceData.GetBlockContractPrevState(hashBlock, vBlockContractPrevState))
+    {
+        return true;
+    }
+
+    if (!fUseCacheData)
+    {
+        auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+            try
+            {
+                uint8 nExtKey;
+                uint8 nKeyType;
+                ssKey >> nExtKey >> nKeyType;
+                if (nKeyType == DB_TRACE_KEY_NAME_CONTRACT_PREV_STATE)
+                {
+                    uint256 hashBlockDb;
+                    uint256 txid;
+                    ssKey >> hashBlockDb >> txid;
+
+                    MapContractPrevState mapConPrevState;
+                    ssValue >> mapConPrevState;
+
+                    vBlockContractPrevState.push_back(std::make_pair(txid, mapConPrevState));
+                }
+                return true;
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            }
+            return false;
+        };
+
+        CBufStream ssKeyBegin, ssKeyPrefix;
+        ssKeyBegin << DB_TRACE_KEY_NAME_CONTRACT_PREV_STATE << hashBlock;
+        ssKeyPrefix << DB_TRACE_KEY_NAME_CONTRACT_PREV_STATE << hashBlock;
+
+        return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
+    }
+    return false;
+}
 //////////////////////////////
 // CTraceDB
 
