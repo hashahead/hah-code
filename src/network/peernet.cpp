@@ -1105,54 +1105,51 @@ bool CBbPeerNet::HandlePeerRecvMessage(CPeer* pPeer, int nChannel, int nCommand,
         break;
         }
     }
-    else if (nChannel == PROTO_CHN_DELEGATE)
+    else if (nChannel == PROTO_CHN_BLOCK_VOTE)
     {
-        uint256 hashAnchor;
-        ssPayload >> hashAnchor;
+        uint256 hashFork;
+        ssPayload >> hashFork;
         switch (nCommand)
         {
-        case PROTO_CMD_BULLETIN:
+        case PROTO_CMD_BLOCKVOTE_DATA:
         {
-            CEventPeerBulletin* pEvent = new CEventPeerBulletin(pBbPeer->GetNonce(), hashAnchor);
+            CEventPeerBlockVoteProtoData* pEvent = new CEventPeerBlockVoteProtoData(pBbPeer->GetNonce(), hashFork);
             if (pEvent != nullptr)
             {
                 ssPayload >> pEvent->data;
-                pDelegatedChannel->PostEvent(pEvent);
+                pBlockVoteChannel->PostEvent(pEvent);
                 return true;
             }
         }
         break;
-        case PROTO_CMD_GETDELEGATED:
+        }
+    }
+    else if (nChannel == PROTO_CHN_BLOCK_CROSS_PROVE)
+    {
+        uint256 hashFork;
+        ssPayload >> hashFork;
+        switch (nCommand)
         {
-            CEventPeerGetDelegated* pEvent = new CEventPeerGetDelegated(pBbPeer->GetNonce(), hashAnchor);
+        case PROTO_CMD_BLOCK_CROSS_PROVE_DATA:
+        {
+            CEventPeerBlockCrossProveData* pEvent = new CEventPeerBlockCrossProveData(pBbPeer->GetNonce(), hashFork);
             if (pEvent != nullptr)
             {
                 ssPayload >> pEvent->data;
-                pDelegatedChannel->PostEvent(pEvent);
+                pBlockCrossProveChannel->PostEvent(pEvent);
                 return true;
             }
         }
         break;
-        case PROTO_CMD_DISTRIBUTE:
-        {
-            CEventPeerDistribute* pEvent = new CEventPeerDistribute(pBbPeer->GetNonce(), hashAnchor);
-            if (pEvent != nullptr)
-            {
-                ssPayload >> pEvent->data;
-
-                CBufStream ss;
-                ss << hashAnchor << (pEvent->data.destDelegate);
-                uint256 hash = crypto::CryptoHash(ss.GetData(), ss.GetSize());
-                CInv inv(CInv::MSG_DISTRIBUTE, hash);
-                CancelTimer(pBbPeer->Responded(inv));
-
-                pDelegatedChannel->PostEvent(pEvent);
-
-                return true;
-            }
         }
-        break;
-        case PROTO_CMD_PUBLISH:
+    }
+    else if (nChannel == PROTO_CHN_SNAPSHOT_SYN)
+    {
+        uint256 hashFork;
+        ssPayload >> hashFork;
+        switch (nCommand)
+        {
+        case PROTO_CMD_SNAPSHOT_DOWN_MSG:
         {
             CEventPeerPublish* pEvent = new CEventPeerPublish(pBbPeer->GetNonce(), hashAnchor);
             if (pEvent != nullptr)

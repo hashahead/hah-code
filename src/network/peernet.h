@@ -125,6 +125,7 @@ protected:
     bool HandleEvent(CEventPeerBlockBks& eventBks) override;
     bool HandleEvent(CEventPeerBlockNextPrevBlock& eventData) override;
     bool HandleEvent(CEventPeerBlockPrevBlocks& eventData) override;
+    bool HandleEvent(CEventPeerBlockGetBlockReq& eventData) override;
 
     bool HandleEvent(CEventPeerCerttxSubscribe& eventSubscribe) override;
     bool HandleEvent(CEventPeerCerttxUnsubscribe& eventUnsubscribe) override;
