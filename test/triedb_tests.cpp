@@ -800,7 +800,7 @@ BOOST_AUTO_TEST_CASE(stattest)
 {
     cout << GetLocalTime() << "  triedb stat node count test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
 
     CTrieDB db;
     BOOST_CHECK(db.Initialize(boost::filesystem::path(fullpath)));
@@ -847,7 +847,7 @@ BOOST_AUTO_TEST_CASE(stattrienode)
 {
     cout << GetLocalTime() << "  triedb stat trie node count test.........." << endl;
 
-    std::string fullpath = boost::filesystem::initial_path<boost::filesystem::path>().string() + "/test/trie";
+    std::string fullpath = GetOutPath("triedb_tests");
     cout << "fullpath: " << fullpath << endl;
 
     CTrieDB db;
@@ -863,9 +863,162 @@ BOOST_AUTO_TEST_CASE(stattrienode)
     db.Deinitialize();
 }
 
+bool ClearNodeTest(int nStartId, int nTotalCount, int nSaveRootCount, int nInitKeyCount, int nMaxKeyCount, uint256& hashPrevRoot, std::queue<uint256>& qRoot)
+{
+    std::string fullpath = GetOutPath("triedb_tests");
+    cout << "fullpath: " << fullpath << endl;
+
+    CTrieDB db;
+    if (!db.Initialize(boost::filesystem::path(fullpath)))
+    {
+        printf("Initialize fail\n");
+        return false;
+    }
+
+    //---------------------------------------------------
+    uint32 nTimestamp = (uint32)GetTime();
+
+    static bytesmap mapCacheKv;
+    if (mapCacheKv.empty())
+    {
+        for (int i = 0; i < nInitKeyCount; i++)
+        {
+            int64 t = GetTimeMillis() + rand();
+            t <<= 32;
+            t += i;
+            uint256 hash = crypto::CryptoSHA256(((uint8*)&t), sizeof(t));
+
+            uint256 txid = uint256(nTimestamp, hash);
+            nTimestamp++;
+
+            hnbase::CBufStream ssKey, ssValue;
+            bytes btKey, btValue;
+
+            ssKey << std::string("txid") << txid;
+            ssKey.GetData(btKey);
+
+            ssValue << hash;
+            ssValue.GetData(btValue);
+
+            mapCacheKv.insert(make_pair(btKey, btValue));
+        }
+    }
+
+    int64 t1 = GetTimeMillis();
+    for (int n = nStartId; n < nStartId + nTotalCount; n++)
+    {
+        bytesmap mapKv;
+
+        int64 g = 0;
+        int64 u = n % (mapCacheKv.size() / 100);
+        for (auto& kv : mapCacheKv)
+        {
+            if (g < u * 100)
+            {
+                g++;
+                continue;
+            }
+
+            int64 t = GetTimeMillis() + rand();
+            t <<= 32;
+            t += nTimestamp;
+            uint256 hash = crypto::CryptoSHA256(((uint8*)&t), sizeof(t));
+            nTimestamp++;
+
+            hnbase::CBufStream ssValue;
+            bytes btValue;
+
+            ssValue << hash;
+            ssValue.GetData(btValue);
+
+            mapKv[kv.first] = btValue;
+
+            if (++g >= (u + 1) * 100)
+            {
+                break;
+            }
+        }
+        if (mapCacheKv.size() < nMaxKeyCount && (n % 3 == 0))
+        {
+            for (int k = 0; k < 10; k++)
+            {
+                int64 t = GetTimeMillis() + rand();
+                t <<= 32;
+                t += k;
+                uint256 hash = crypto::CryptoSHA256(((uint8*)&t), sizeof(t));
+
+                uint256 txid = uint256(nTimestamp, hash);
+                nTimestamp++;
+
+                hnbase::CBufStream ssKey, ssValue;
+                bytes btKey, btValue;
+
+                ssKey << std::string("txid") << txid;
+                ssKey.GetData(btKey);
+
+                ssValue << hash;
+                ssValue.GetData(btValue);
+
+                mapCacheKv.insert(make_pair(btKey, btValue));
+                mapKv.insert(make_pair(btKey, btValue));
+            }
+        }
+
+        uint256 hashNewRoot;
+        if (!db.AddNewTrie(hashPrevRoot, mapKv, hashNewRoot))
+        {
+            printf("Add new trie fail\n");
+            return false;
+        }
+        qRoot.push(hashNewRoot);
+        hashPrevRoot = hashNewRoot;
+
+        if (n != 0 && (n % 100) == 0)
+        {
+            int64 t2 = GetTimeMillis();
+            printf("Add new trie success, n: %d, time: %lu ms, new count: %lu, cache count: %ld\n", n, t2 - t1, mapKv.size(), mapCacheKv.size());
+            t1 = t2;
+        }
+    }
+
+    db.Deinitialize();
+    return true;
+}
+
+BOOST_AUTO_TEST_CASE(clearnodetest)
+{
+    cout << GetLocalTime() << "  triedb clear node test.........." << endl;
+    NointLogOut();
+
+    std::string fullpath = GetOutPath("triedb_tests");
+    if (boost::filesystem::exists(fullpath))
+    {
+        boost::filesystem::remove_all(fullpath);
+    }
+    boost::filesystem::create_directories(fullpath);
+
+    int nTotalCount = 20000;
+    int nSaveRootCount = 128;
+    int nInitKeyCount = 6000;
+    int nMaxKeyCount = 60000;
+    uint256 hashPrevRoot;
+    std::queue<uint256> qRoot;
+
+    for (int i = 0; i < 10; i++)
+    {
+        if (!ClearNodeTest(i * nTotalCount, nTotalCount, nSaveRootCount, nInitKeyCount, nMaxKeyCount, hashPrevRoot, qRoot))
+        {
+            break;
+        }
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
-//./build/test/test_big --log_level=all --run_test=triedb_tests/basetest
-//./build/test/test_big --log_level=all --run_test=triedb_tests/shorttest
-//./build/test/test_big --log_level=all --run_test=triedb_tests/stresstest2
-//./build/test/test_big --log_level=all --run_test=triedb_tests/stattrienode
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/basetest
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/shorttest
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/stresstest2
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/stresstest3
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/stresstest4
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/stattrienode
+//./build-release/test/test_big --log_level=all --run_test=triedb_tests/clearnodetest
