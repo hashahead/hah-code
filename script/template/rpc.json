@@ -10147,5 +10147,198 @@
             "{\"code\":-6,\"message\":\"Invalid number\"}"
         ]
     },
+    "debug_traceCall": {
+        "type": "command",
+        "name": "EthDebugTraceCall",
+        "desc": "[ETH] debug trace call",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "txid"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli debug_traceCall [\"0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f\", {\"tracer\": \"callTracer\"}]",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"debug_traceCall\",\"jsonrpc\":\"2.0\",\"params\":[\"0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f\", {\"tracer\": \"callTracer\"}]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid txid\"}"
+        ]
+    },
+    "debug_traceTransaction": {
+        "type": "command",
+        "name": "EthDebugTraceTransaction",
+        "desc": "[ETH] debug trace transaction",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "txid"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli debug_traceTransaction [\"0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f\", {\"tracer\": \"callTracer\"}]",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"debug_traceTransaction\",\"jsonrpc\":\"2.0\",\"params\":[\"0x240a99ae458ff8114dc8957949f19f5478b39d5cdeb22f4d4280f18aac64d09f\", {\"tracer\": \"callTracer\"}]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid txid\"}"
+        ]
+    },
+    "txpool_content": {
+        "type": "command",
+        "name": "EthTxpoolContent",
+        "desc": "[ETH] Returns all pending and queued transactions",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "param"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli txpool_content []",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"txpool_content\",\"jsonrpc\":\"2.0\",\"params\":[]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
+    },
+    "txpool_inspect": {
+        "type": "command",
+        "name": "EthTxpoolInspect",
+        "desc": "[ETH] Returns a textual summary of all pending and queued transactions",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "param"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli txpool_inspect []",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"txpool_inspect\",\"jsonrpc\":\"2.0\",\"params\":[]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
+    },
+    "txpool_contentFrom": {
+        "type": "command",
+        "name": "EthTxpoolContentFrom",
+        "desc": "[ETH] Retrieves the transactions contained within the txpool, returning pending and queued transactions of this address",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "address"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli txpool_contentFrom [\"0x0004787d8c7c9ca114890b20eb4637221ffa6ff2\"]",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"txpool_contentFrom\",\"jsonrpc\":\"2.0\",\"params\":[\"0x0004787d8c7c9ca114890b20eb4637221ffa6ff2\"]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Invalid paramlist\"}",
+            "{\"code\":-6,\"message\":\"Invalid address\"}",
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
+    },
+    "txpool_status": {
+        "type": "command",
+        "name": "EthTxpoolStatus",
+        "desc": "[ETH] Returns the number of transactions in pending and queued states",
+        "request": {
+            "type": "array",
+            "name": "paramlist",
+            "content": {
+                "param": {
+                    "type": "string",
+                    "desc": "param"
+                }
+            }
+        },
+        "response": {
+            "type": "bool",
+            "name": "result"
+        },
+        "example": [
+            {
+                "request": "hashahead-cli txpool_status []",
+                "response": "true"
+            },
+            {
+                "request": "curl -d '{\"id\":3,\"method\":\"txpool_status\",\"jsonrpc\":\"2.0\",\"params\":[]}' http://127.0.0.1:8812",
+                "response": "{\"id\":3,\"jsonrpc\":\"2.0\",\"result\": true}"
+            }
+        ],
+        "error": [
+            "{\"code\":-6,\"message\":\"Unknown fork\"}"
+        ]
     }
 }
