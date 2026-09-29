@@ -1099,6 +1099,20 @@ bool CHdexDB::RemoveTrieRoot(const uint8 nRootType, const uint256& hashBlock)
     ssKey << DB_HDEX_ROOT_TYPE_BLOCK_ROOT << nRootType << hashBlock;
     return dbTrie.RemoveExtKv(ssKey);
 }
+
+void CHdexDB::AddPrevRoot(const uint8 nRootType, const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv)
+{
+    hnbase::CBufStream ssKey, ssValue;
+    bytes btKey, btValue;
+
+    ssKey << nRootType << DB_HDEX_KEY_ID_PREVROOT;
+    ssKey.GetData(btKey);
+
+    ssValue << hashPrevRoot << hashBlock;
+    ssValue.GetData(btValue);
+
+    mapKv.insert(make_pair(btKey, btValue));
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

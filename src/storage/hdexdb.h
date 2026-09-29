@@ -128,6 +128,7 @@ public:
 protected:
     bool WriteTrieRoot(const uint8 nRootType, const uint256& hashBlock, const uint256& hashTrieRoot);
     bool ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint256& hashTrieRoot);
+    bool RemoveTrieRoot(const uint8 nRootType, const uint256& hashBlock);
 protected:
     enum
     {
