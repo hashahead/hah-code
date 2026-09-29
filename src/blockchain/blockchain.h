@@ -185,6 +185,7 @@ public:
 
     bool IsSnapshotBlock(const uint256& hashBlock) override;
     bool SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash) override;
+    bool SnapshotRecovery(const std::string& strRecoveryDir) override;
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
 

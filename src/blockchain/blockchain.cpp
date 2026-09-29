@@ -2895,6 +2895,11 @@ bool CBlockChain::SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint3
 {
     return cntrBlock.SnapshotBlock(hashPrimaryLastBlock, nMaxSnapshots, vForkHash);
 }
+
+bool CBlockChain::SnapshotRecovery(const std::string& strRecoveryDir)
+{
+    return cntrBlock.SnapshotRecovery(strRecoveryDir);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

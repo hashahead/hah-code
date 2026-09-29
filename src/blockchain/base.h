@@ -268,6 +268,7 @@ public:
     virtual bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
     virtual bool PruneHdexData(const uint32 nPruneReserveLastHeight) = 0;
     virtual bool PruneVoteData(const uint32 nPruneReserveLastHeight) = 0;
+    virtual bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
     {
         return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
     }
@@ -291,7 +292,7 @@ public:
                                      const std::size_t nMaxSize, std::vector<CTransaction>& vtx, uint256& nTotalTxFee)
         = 0;
     virtual bool SynchronizeBlockChain(const CBlockChainUpdate& update) = 0;
-    virtual void GetDestBalance(const uint256& hashFork, const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nNonce, uint256& nAvail,
+    virtual bool GetDestBalance(const uint256& hashFork, const CDestination& dest, uint8& nDestType, uint8& nTemplateType, uint64& nNonce, uint256& nAvail,
                                 uint256& nUnconfirmedIn, uint256& nUnconfirmedOut, CAddressContext& ctxAddress, const uint256& hashBlock = uint256())
         = 0;
     virtual uint64 GetDestNextTxNonce(const uint256& hashFork, const CDestination& dest) = 0;
