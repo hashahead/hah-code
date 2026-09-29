@@ -555,6 +555,11 @@ bool CForkTraceDB::GetSnapshotTraceData(const std::vector<uint256>& vBlockHash, 
     ss.GetData(btSnapData);
     return true;
 }
+
+bool CForkTraceDB::RecoveryTraceData(const CForkTraceRootKv& traceRootKv)
+{
+    return true;
+}
 //////////////////////////////
 // CTraceDB
 

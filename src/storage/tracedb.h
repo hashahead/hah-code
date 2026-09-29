@@ -93,6 +93,7 @@ public:
 
     bool ClearTraceUnavailableNode(const uint32 nClearRefHeight);
     bool GetSnapshotTraceData(const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryTraceData(const CForkTraceRootKv& traceRootKv);
 protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;
