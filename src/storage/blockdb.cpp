@@ -607,6 +607,11 @@ bool CBlockDB::RetrieveDestVoteContext(const uint256& hashBlock, const CDestinat
     return dbVote.RetrieveDestVoteContext(hashBlock, destVote, ctxtVote);
 }
 
+bool CBlockDB::RetrieveDestPledgeVoteContext(const uint256& hashBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote)
+{
+    return dbVote.RetrieveDestPledgeVoteContext(hashBlock, destVote, ctxPledgeVote);
+}
+
 bool CBlockDB::ListPledgeFinalHeight(const uint256& hashBlock, const uint32 nFinalHeight, std::map<CDestination, std::pair<uint32, uint32>>& mapPledgeFinalHeight)
 {
     return dbVote.ListPledgeFinalHeight(hashBlock, nFinalHeight, mapPledgeFinalHeight);
@@ -617,9 +622,9 @@ bool CBlockDB::WalkThroughDayVote(const uint256& hashBeginBlock, const uint256& 
     return dbVote.WalkThroughDayVote(hashBeginBlock, hashTailBlock, walker);
 }
 
-bool CBlockDB::AddBlockState(const uint256& hashFork, const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot)
+bool CBlockDB::AddBlockState(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot)
 {
-    return dbState.AddBlockState(hashFork, hashPrevRoot, statusBlockRoot, mapBlockState, hashBlockRoot);
+    return dbState.AddBlockState(hashFork, nBlockHeight, hashPrevRoot, statusBlockRoot, mapBlockState, hashBlockRoot);
 }
 
 bool CBlockDB::CreateCacheStateTrie(const uint256& hashFork, const uint256& hashPrevRoot, const CBlockRootStatus& statusBlockRoot, const std::map<CDestination, CDestState>& mapBlockState, uint256& hashBlockRoot)
