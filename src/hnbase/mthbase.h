@@ -240,6 +240,89 @@ public:
         }
         return *this;
     }
+    CMthDataBuf& operator+=(const CMthDataBuf& mbuf)
+    {
+        add(mbuf.GetDataBuf(), mbuf.GetDataLen());
+        return *this;
+    }
+
+    void assign(const char* pInBuf, const uint32 ui32InLen)
+    {
+        if (pDataBuf)
+        {
+            delete[] pDataBuf;
+            pDataBuf = NULL;
+        }
+        ui32BufSize = 0;
+        ui32DataLen = 0;
+
+        if (pInBuf && ui32InLen > 0)
+        {
+            ui32BufSize = ui32InLen;
+            ui32DataLen = ui32BufSize;
+            pDataBuf = new char[ui32BufSize];
+            memcpy(pDataBuf, pInBuf, ui32InLen);
+        }
+    }
+    void add(const char* pData, const uint32 nLen)
+    {
+        if (pData && nLen > 0)
+        {
+            reserve(ui32DataLen + nLen);
+            memcpy(pDataBuf + ui32DataLen, pData, nLen);
+            ui32DataLen += nLen;
+        }
+    }
+    void insert(const uint32 pos, const char* pData, const uint32 nLen)
+    {
+        if (pData && nLen > 0)
+        {
+            uint32 posInsert = pos;
+            if (pDataBuf == nullptr)
+            {
+                posInsert = 0;
+            }
+            else if (posInsert > ui32DataLen)
+            {
+                posInsert = ui32DataLen;
+            }
+            ui32BufSize = ui32DataLen + nLen;
+            char* pNewBuf = new char[ui32BufSize];
+            if (pDataBuf && posInsert > 0)
+            {
+                memcpy(pNewBuf, pDataBuf, posInsert);
+            }
+            memcpy(pNewBuf + posInsert, pData, nLen);
+            if (pDataBuf && ui32DataLen > posInsert)
+            {
+                memcpy(pNewBuf + posInsert + nLen, pDataBuf + posInsert, ui32DataLen - posInsert);
+            }
+            if (pDataBuf)
+            {
+                delete[] pDataBuf;
+                pDataBuf = NULL;
+            }
+            pDataBuf = pNewBuf;
+            ui32DataLen += nLen;
+        }
+    }
+    void erase(const uint32 ui32Pos, const uint32 ui32Len)
+    {
+        if (pDataBuf && ui32DataLen > 0 && ui32Len > 0 && ui32Pos < ui32DataLen)
+        {
+            if (ui32Pos + ui32Len >= ui32DataLen)
+            {
+                ui32DataLen = ui32Pos;
+            }
+            else
+            {
+                memmove(pDataBuf + ui32Pos,
+                        pDataBuf + ui32Pos + ui32Len,
+                        ui32DataLen - (ui32Pos + ui32Len));
+                ui32DataLen -= ui32Len;
+            }
+        }
+    }
 protected:
     char* pDataBuf;
     uint32 ui32BufSize;

@@ -172,4 +172,49 @@ CMthWait::~CMthWait()
         }
     }
 }
+
+bool CMthWait::AddEvent(CMthEvent* pEvent, const int iEventFlag)
+{
+    boost::unique_lock<boost::mutex> lock(lockWait);
+    if (pEvent == NULL || iEventFlag < 0)
+    {
+        return false;
+    }
+
+    if (mapEvent.count(pEvent->GetEventId()) == 0)
+    {
+        PNM_EVENT pNmEvent;
+        std::map<uint64, PNM_EVENT>::iterator it;
+
+        for (it = mapEvent.begin(); it != mapEvent.end(); it++)
+        {
+            pNmEvent = it->second;
+            if (pNmEvent && pNmEvent->iEventFlag == iEventFlag)
+            {
+                return false;
+            }
+        }
+
+        if (!pEvent->AddWait(this))
+        {
+            return false;
+        }
+
+        pNmEvent = new NM_EVENT;
+        memset(pNmEvent, 0, sizeof(NM_EVENT));
+
+        pNmEvent->iEventFlag = iEventFlag;
+        pNmEvent->pEvent = pEvent;
+        pNmEvent->fSignalFlag = false;
+
+        if (!mapEvent.insert(make_pair(pEvent->GetEventId(), pNmEvent)).second)
+        {
+            delete pNmEvent;
+            pEvent->DelWait(this);
+            return false;
+        }
+    }
+
+    return true;
+}
 } // namespace hnbase
