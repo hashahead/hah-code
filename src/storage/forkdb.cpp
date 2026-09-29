@@ -1492,5 +1492,85 @@ bool CForkDB::GetCoinContextByForkSymbol(const uint256& hashRoot, const std::str
     }
     return true;
 }
+
+void CForkDB::AddForkDexCoinPair(const uint256& hashPrevBlock, const uint256& hashPrevRoot, const std::map<std::string, CCoinContext>& mapNewSymbolCoin, bytesmap& mapKv)
+{
+    uint32 nMaxDexCoinPair = 0;
+    if (!GetMaxForkDexCoinPair(hashPrevRoot, nMaxDexCoinPair))
+    {
+        nMaxDexCoinPair = 0;
+    }
+
+    std::map<std::string, CCoinContext> mapDbSymbolCoin;
+    if (!ListDbCoinContext(mapDbSymbolCoin, hashPrevRoot))
+    {
+        mapDbSymbolCoin.clear();
+    }
+
+    std::map<uint32, std::pair<std::string, std::string>> mapDexCoinPair; // key: coinpair, value: symbol1, symbol2
+    std::map<std::pair<std::string, std::string>, uint32> mapSymbolPair;  // key: symbol1, symbol2, value: coinpair
+
+    auto funcAddCoinPair = [&](const std::string& strSymbol1, const std::string& strSymbol2) {
+        if (strSymbol1 != strSymbol2)
+        {
+            auto symbolPair = std::make_pair(std::min(strSymbol1, strSymbol2), std::max(strSymbol1, strSymbol2));
+            if (mapSymbolPair.find(symbolPair) == mapSymbolPair.end())
+            {
+                mapDexCoinPair.insert(std::make_pair(++nMaxDexCoinPair, symbolPair));
+                mapSymbolPair.insert(std::make_pair(symbolPair, nMaxDexCoinPair));
+            }
+        }
+    };
+
+    for (auto& kv : mapNewSymbolCoin)
+    {
+        for (auto& nkv : mapDbSymbolCoin)
+        {
+            funcAddCoinPair(kv.first, nkv.first);
+        }
+        for (auto& nkv : mapNewSymbolCoin)
+        {
+            funcAddCoinPair(kv.first, nkv.first);
+        }
+    }
+
+    for (auto& kv : mapDexCoinPair)
+    {
+        const uint32 nCoinPair = kv.first;
+        const std::string& strSymbol1 = kv.second.first;
+        const std::string& strSymbol2 = kv.second.second;
+
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_FORK_KEY_TYPE_DEX_COINPAIR << BSwap32(nCoinPair);
+        ssKey.GetData(btKey);
+
+        ssValue << strSymbol1 << strSymbol2;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+
+    for (auto& kv : mapSymbolPair)
+    {
+        const std::string& strSymbol1 = kv.first.first;
+        const std::string& strSymbol2 = kv.first.second;
+        const uint32 nCoinPair = kv.second;
+
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_FORK_KEY_TYPE_DEX_SYMBOLPAIR << strSymbol1 << strSymbol2;
+        ssKey.GetData(btKey);
+
+        ssValue << nCoinPair;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+
+    AddMaxDexCoinPair(nMaxDexCoinPair, mapKv);
+}
 } // namespace storage
 } // namespace hashahead

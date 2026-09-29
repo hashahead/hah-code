@@ -107,6 +107,7 @@ protected:
     void AddMaxDexCoinPair(const uint32 nMaxDexCoinPair, bytesmap& mapKv);
     bool GetMaxForkDexCoinPair(const uint256& hashRoot, uint32& nMaxDexCoinPair);
     bool GetCoinContextByForkSymbol(const uint256& hashRoot, const std::string& strForkSymbol, CCoinContext& ctxCoin);
+    void AddForkDexCoinPair(const uint256& hashPrevBlock, const uint256& hashPrevRoot, const std::map<std::string, CCoinContext>& mapNewSymbolCoin, bytesmap& mapKv);
 
 protected:
     enum
