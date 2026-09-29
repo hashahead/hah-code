@@ -166,6 +166,12 @@ public:
     void AddLogsSubscribe(const CChainId nChainId, const uint64 nClientConnId, const std::set<CDestination>& setSubsAddress, const std::set<uint256>& setSubsTopics, uint128& nSubsId) override;
     void AddNewPendingTxSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) override;
     void AddSyncingSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId) override;
+    bool RemoveSubscribe(const CChainId nChainId, const uint64 nClientConnId, const uint128& nSubsId) override;
+
+    void SendWsMsg(const CChainId nChainId, const uint64 nNonce, const std::string& strMsg) override;
+
+    void RemoveClientAllSubscribe(const CChainId nChainId, const uint64 nClientConnId);
+
 protected:
     bool HandleInitialize() override;
     void HandleDeinitialize() override;

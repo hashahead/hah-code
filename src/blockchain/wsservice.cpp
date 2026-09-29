@@ -784,6 +784,12 @@ void CWsService::AddNewPendingTxSubscribe(const CChainId nChainId, const uint64 
     CWriteLock wlock(rwAccess);
     nSubsId = mapWsSubscribeFork[nChainId].AddSubscribe(nClientConnId, WSCS_SUBS_TYPE_NEW_PENDING_TX, {}, {});
 }
+
+void CWsService::AddSyncingSubscribe(const CChainId nChainId, const uint64 nClientConnId, uint128& nSubsId)
+{
+    CWriteLock wlock(rwAccess);
+    nSubsId = mapWsSubscribeFork[nChainId].AddSubscribe(nClientConnId, WSCS_SUBS_TYPE_SYNCING, {}, {});
+}
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {
