@@ -4782,6 +4782,133 @@ bool CBlockBase::GetSnapshotForkLastBlock(const uint256& hashPrimaryLastBlock, c
     }
     return true;
 }
+
+bool CBlockBase::SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash)
+{
+    const uint32 nSnapLastHeight = CBlock::GetBlockHeightByHash(hashPrimaryLastBlock);
+    if ((nSnapLastHeight - ((nSnapLastHeight / DAY_HEIGHT) * DAY_HEIGHT)) < MAX_SNAPSHOT_STATE_HEIGHT)
+    {
+        StdLog("CBlockBase", "Snapshot block: Snapshot height not enough, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+        return false;
+    }
+
+    std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare> mapForkLastBlock;
+    if (!GetSnapshotForkLastBlock(hashPrimaryLastBlock, vForkHash, mapForkLastBlock))
+    {
+        StdLog("CBlockBase", "Snapshot block: Get snapshot fork last block failed, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+        return false;
+    }
+
+    int64 t1 = GetTimeMillis();
+    if (!dbBlock.StartSnapshot(hashPrimaryLastBlock, nMaxSnapshots))
+    {
+        StdLog("CBlockBase", "Snapshot block: Start snapshot failed, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+        return false;
+    }
+    StdLog("CBlockBase", "Snapshot block: Start snapshot, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+
+    uint32 nLastFile = 0, nLastOffset = 0;
+    for (auto& kv : mapForkLastBlock)
+    {
+        const uint256& hashBlock = kv.second.first;
+        BlockIndexPtr ptrBlockIndex = RetrieveIndex(hashBlock);
+        if (!ptrBlockIndex)
+        {
+            StdLog("CBlockBase", "Snapshot block: Retrieve index failed, last block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+        if ((nLastFile < ptrBlockIndex->nFile) || (nLastFile == ptrBlockIndex->nFile && nLastOffset < ptrBlockIndex->nOffset))
+        {
+            nLastFile = ptrBlockIndex->nFile;
+            nLastOffset = ptrBlockIndex->nOffset;
+        }
+    }
+
+    if (!dbBlock.SaveBlockFile(hashPrimaryLastBlock, nLastFile, nLastOffset))
+    {
+        StdLog("CBlockBase", "Snapshot block: Save block file failed, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+        return false;
+    }
+    StdLog("CBlockBase", "Snapshot block: Save block file success, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+
+    for (auto& kv : mapForkLastBlock)
+    {
+        const uint256& hashFork = kv.first;
+        const uint256& hashForkLastBlock = kv.second.first;
+        const uint64 nForkLastNumber = kv.second.second;
+        std::vector<uint256> vBlockHash;
+
+        StdLog("CBlockBase", "Snapshot block: Snapshot block index begin, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotBlockIndex(hashPrimaryLastBlock, hashFork, hashForkLastBlock, vBlockHash))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot block index failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot block index success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (hashFork == hashGenesisBlock)
+        {
+            if (!SnapshotFork(hashPrimaryLastBlock, vBlockHash, mapForkLastBlock))
+            {
+                StdLog("CBlockBase", "Snapshot block: Snapshot fork failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot block: Snapshot fork success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot vote begin, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotVote(hashFork, hashPrimaryLastBlock, vBlockHash))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot vote failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot vote success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        StdLog("CBlockBase", "Snapshot block: Snapshot state begin, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotState(hashPrimaryLastBlock, hashFork, hashForkLastBlock, vBlockHash))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot state failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot state success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotAddress(hashPrimaryLastBlock, hashFork, vBlockHash))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot address failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot address success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotHdex(hashPrimaryLastBlock, hashFork, vBlockHash))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot hdex failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot hdex success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotTrace(hashPrimaryLastBlock, hashFork, vBlockHash))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot trace failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot trace success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotTxIndex(hashPrimaryLastBlock, hashFork, hashForkLastBlock))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot tx index failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot tx index success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotAddressTx(hashPrimaryLastBlock, hashFork, hashForkLastBlock, nForkLastNumber))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot address tx failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot address tx success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+        if (!SnapshotTokenTx(hashPrimaryLastBlock, hashFork, hashForkLastBlock, nForkLastNumber))
+        {
+            StdLog("CBlockBase", "Snapshot block: Snapshot token tx failed, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+            return false;
+        }
+        StdLog("CBlockBase", "Snapshot block: Snapshot token tx success, fork last block: %s", hashForkLastBlock.GetBhString().c_str());
+    }
+    int64 t2 = GetTimeMillis();
+    StdLog("CBlockBase", "Snapshot block: Snapshot success, elapsed time: %lu ms, primary last block: %s", t2 - t1, hashPrimaryLastBlock.GetBhString().c_str());
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
