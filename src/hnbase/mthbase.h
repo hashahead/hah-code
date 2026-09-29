@@ -323,10 +323,65 @@ public:
             }
         }
     }
+    void erase(const uint32 ui32Len)
+    {
+        erase(0, ui32Len);
+    }
+    void reserve(const uint32 ui32Size)
+    {
+        if (ui32Size > ui32BufSize || pDataBuf == NULL)
+        {
+            ui32BufSize = ui32Size;
+            char* pNewBuf = new char[ui32BufSize];
+            if (pDataBuf && ui32DataLen > 0)
+            {
+                memcpy(pNewBuf, pDataBuf, ui32DataLen);
+            }
+            if (pDataBuf)
+            {
+                delete[] pDataBuf;
+            }
+            pDataBuf = pNewBuf;
+        }
+    }
+    void clear()
+    {
+        if (pDataBuf)
+        {
+            delete[] pDataBuf;
+            pDataBuf = NULL;
+        }
+        ui32BufSize = 0;
+        ui32DataLen = 0;
+    }
+
 protected:
     char* pDataBuf;
     uint32 ui32BufSize;
     uint32 ui32DataLen;
+};
+
+template <typename T>
+class CMthNvDataBuf : public CMthDataBuf
+{
+public:
+    CMthNvDataBuf() {}
+    CMthNvDataBuf(T v, const char* p, const uint32 n)
+      : CMthDataBuf(p, n), tNv(v) {}
+    CMthNvDataBuf(T v, const std::string s)
+      : CMthDataBuf(s), tNv(v) {}
+
+    T& SetNvData(T& v)
+    {
+        tNv = v;
+    }
+    T& GetNvData()
+    {
+        return tNv;
+    }
+
+private:
+    T tNv;
 };
 } // namespace hnbase
 

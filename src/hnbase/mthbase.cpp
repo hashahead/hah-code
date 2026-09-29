@@ -217,4 +217,25 @@ bool CMthWait::AddEvent(CMthEvent* pEvent, const int iEventFlag)
 
     return true;
 }
+
+void CMthWait::DelEvent(CMthEvent* pEvent)
+{
+    boost::unique_lock<boost::mutex> lock(lockWait);
+    if (pEvent == NULL)
+    {
+        return;
+    }
+
+    if (mapEvent.count(pEvent->GetEventId()))
+    {
+        pEvent->DelWait(this);
+
+        PNM_EVENT pNmEvent = mapEvent[pEvent->GetEventId()];
+        if (pNmEvent)
+        {
+            delete pNmEvent;
+        }
+        mapEvent.erase(pEvent->GetEventId());
+    }
+}
 } // namespace hnbase
