@@ -656,19 +656,25 @@ bool CBlockDB::AddStateKvTrie(const uint256& hashFork, const uint32 nBlockHeight
 {
     return dbState.AddStateKvTrie(hashFork, nBlockHeight, hashPrevRoot, mapKv, hashNewRoot);
 }
-bool CBlockDB::AddBlockTxIndexReceipt(const uint256& hashFork, const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::map<uint256, CTransactionReceipt>& mapBlockTxReceipts)
+
+bool CBlockDB::AddBlockTxIndexReceipt(const uint256& hashFork, const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::vector<CTransactionReceipt>& vTxReceipts)
 {
-    return dbTxIndex.AddBlockTxIndexReceipt(hashFork, hashBlock, mapBlockTxIndex, mapBlockTxReceipts);
+    return dbTxIndex.AddBlockTxIndexReceipt(hashFork, hashBlock, mapBlockTxIndex, vTxReceipts);
 }
 
-bool CBlockDB::UpdateBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx)
+bool CBlockDB::UpdateTxIndexBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveTx, const std::map<uint256, uint256>& mapNewTx)
 {
-    return dbTxIndex.UpdateBlockLongChain(hashFork, vRemoveTx, mapNewTx);
+    return dbTxIndex.UpdateTxIndexBlockLongChain(hashFork, vRemoveTx, mapNewTx);
 }
 
-bool CBlockDB::AddBlockContractKvValue(const uint256& hashFork, const uint256& hashPrevRoot, uint256& hashContractRoot, const std::map<uint256, bytes>& mapContractState)
+bool CBlockDB::AddBlockContractKvValue(const uint256& hashFork, const uint32 nBlockHeight, const uint64 nBlockNumber, const CDestination& destContract, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashContractRoot)
 {
-    return dbContract.AddBlockContractKvValue(hashFork, hashPrevRoot, hashContractRoot, mapContractState);
+    return dbContract.AddBlockContractKvValue(hashFork, nBlockHeight, nBlockNumber, destContract, hashPrevRoot, mapContractState, hashContractRoot);
+}
+
+bool CBlockDB::CreateCacheContractKvTrie(const uint256& hashFork, const uint256& hashPrevRoot, const std::map<uint256, bytes>& mapContractState, uint256& hashNewRoot)
+{
+    return dbContract.CreateCacheContractKvTrie(hashFork, hashPrevRoot, mapContractState, hashNewRoot);
 }
 
 bool CBlockDB::RetrieveContractKvValue(const uint256& hashFork, const uint256& hashContractRoot, const uint256& key, bytes& value)
