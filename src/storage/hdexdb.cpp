@@ -1092,6 +1092,13 @@ bool CHdexDB::ReadTrieRoot(const uint8 nRootType, const uint256& hashBlock, uint
     }
     return true;
 }
+
+bool CHdexDB::RemoveTrieRoot(const uint8 nRootType, const uint256& hashBlock)
+{
+    CBufStream ssKey;
+    ssKey << DB_HDEX_ROOT_TYPE_BLOCK_ROOT << nRootType << hashBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
