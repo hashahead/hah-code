@@ -1443,6 +1443,33 @@ public:
     };
 };
 
+/////////////////////////////
+// WS SUBSCRIBE TYPE
+
+enum
+{
+    WSCS_SUBS_TYPE_NEW_BLOCK = 1,
+    WSCS_SUBS_TYPE_LOGS = 2,
+    WSCS_SUBS_TYPE_NEW_PENDING_TX = 3,
+    WSCS_SUBS_TYPE_SYNCING = 4,
+};
+
+class CDexCoinPairContext
+{
+public:
+    CDexCoinPairContext()
+      : nChainIdMin(0), nChainIdMax(0) {}
+    CDexCoinPairContext(const std::string& strCoinSymbolMinIn, const uint32 nChainIdMinIn,
+                        const std::string& strCoinSymbolMaxIn, const uint32 nChainIdMaxIn)
+      : strCoinSymbolMin(strCoinSymbolMinIn), nChainIdMin(nChainIdMinIn),
+        strCoinSymbolMax(strCoinSymbolMaxIn), nChainIdMax(nChainIdMaxIn) {}
+
+public:
+    std::string strCoinSymbolMin;
+    uint32 nChainIdMin;
+    std::string strCoinSymbolMax;
+    uint32 nChainIdMax;
+};
 } // namespace hashahead
 
 #endif //COMMON_TRANSACTION_H
