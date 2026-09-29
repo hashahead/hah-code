@@ -292,6 +292,7 @@ public:
     bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight);
     bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit);
     bool PruneVoteData(const uint32 nPruneReserveLastHeight);
+    bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight);
 protected:
     CBlockIndex* GetIndex(const uint256& hash) const;
     CBlockIndex* GetForkLastIndex(const uint256& hashFork);

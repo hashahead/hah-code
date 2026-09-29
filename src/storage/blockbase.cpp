@@ -4737,6 +4737,11 @@ bool CBlockBase::PruneVoteData(const uint32 nPruneReserveLastHeight)
 {
     return dbBlock.ClearVoteDbUnavailableNode(nPruneReserveLastHeight);
 }
+
+bool CBlockBase::PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight)
+{
+    return dbBlock.ClearTraceDbUnavailableNode(hashFork, nPruneReserveLastHeight);
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
