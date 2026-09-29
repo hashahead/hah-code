@@ -560,6 +560,15 @@ bool CForkTraceDB::RecoveryTraceData(const CForkTraceRootKv& traceRootKv)
 {
     return true;
 }
+
+///////////////////////////////////
+bool CForkTraceDB::WriteTrieRoot(const uint8 nTrieType, const uint256& hashBlock, const uint256& hashTrieRoot)
+{
+    hnbase::CBufStream ssKey, ssValue;
+    ssKey << DB_TRACE_KEY_TYPE_TRIEROOT << nTrieType << hashBlock;
+    ssValue << hashTrieRoot;
+    return dbTrie.WriteExtKv(ssKey, ssValue);
+}
 //////////////////////////////
 // CTraceDB
 
