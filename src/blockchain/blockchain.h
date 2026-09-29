@@ -184,6 +184,7 @@ public:
     bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
 
     bool IsSnapshotBlock(const uint256& hashBlock) override;
+    bool SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash) override;
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
 

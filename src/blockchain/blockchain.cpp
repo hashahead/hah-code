@@ -2890,6 +2890,11 @@ bool CBlockChain::IsSnapshotBlock(const uint256& hashBlock)
 {
     return cntrBlock.IsSnapshotBlock(hashBlock);
 }
+
+bool CBlockChain::SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash)
+{
+    return cntrBlock.SnapshotBlock(hashPrimaryLastBlock, nMaxSnapshots, vForkHash);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {
@@ -3100,14 +3105,31 @@ bool CBlockChain::CalcEndVoteReward(const uint256& hashPrev, const uint16 nBlock
                 return false;
             }
             auto& v = mapReward[ctxFuncAddress.GetFunctionAddress()];
-            v.first += kv.second.second;
+            v.first += nRewardAmount;
             v.second = false;
         }
         else
         {
-            auto& v = mapReward[kv.second.first];
-            v.first += kv.second.second;
-            v.second = (kv.first != kv.second.first);
+            auto& v = mapReward[destRewardAddress];
+            v.first += nRewardAmount;
+            v.second = (destVoteAddress != destRewardAddress);
+            if (v.second)
+            {
+                CAddressContext ctxAddress;
+                if (!cntrBlock.RetrieveAddressContext(pCoreProtocol->GetGenesisBlockHash(), hashPrevRefBlock, destVoteAddress, ctxAddress))
+                {
+                    StdError("BlockChain", "Calc end vote reward tx: Retrieve ref block address context fail, vote address: %s, prev ref block: %s",
+                             destVoteAddress.ToString().c_str(), hashPrevRefBlock.GetHex().c_str());
+                    return false;
+                }
+                if (!ctxAddress.IsTemplate())
+                {
+                    StdError("BlockChain", "Calc end vote reward tx: Vote address not is template address, vote address: %s, prev ref block: %s",
+                             destVoteAddress.ToString().c_str(), hashPrevRefBlock.GetHex().c_str());
+                    return false;
+                }
+                mapRewardVoteAddress[destRewardAddress][destVoteAddress] = make_pair(nRewardAmount, ctxAddress.GetTemplateType());
+            }
         }
     }
 
