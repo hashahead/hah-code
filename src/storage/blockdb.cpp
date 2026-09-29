@@ -732,6 +732,16 @@ bool CBlockDB::RetrieveAddressContext(const uint256& hashFork, const uint256& ha
     return dbAddress.RetrieveAddressContext(hashFork, hashRefBlock, dest, ctxAddress);
 }
 
+bool CBlockDB::RetrieveTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTokenContractAddressContext& ctxAddress)
+{
+    return dbAddress.RetrieveTokenContractAddressContext(hashFork, hashBlock, dest, ctxAddress);
+}
+
+bool CBlockDB::ListAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CAddressContext>& mapAddress)
+{
+    return dbAddress.ListAddress(hashFork, hashBlock, mapAddress);
+}
+
 bool CBlockDB::ListContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CContractAddressContext>& mapContractAddress)
 {
     return dbAddress.ListContractAddress(hashFork, hashBlock, mapContractAddress);
