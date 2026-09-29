@@ -4742,6 +4742,46 @@ bool CBlockBase::PruneTraceData(const uint256& hashFork, const uint32 nPruneRese
 {
     return dbBlock.ClearTraceDbUnavailableNode(hashFork, nPruneReserveLastHeight);
 }
+
+//----------------------------------------------------------------------------------------------------------
+bool CBlockBase::IsSnapshotBlock(const uint256& hashBlock)
+{
+    return dbBlock.IsSnapshotBlock(hashBlock);
+}
+
+bool CBlockBase::GetSnapshotForkLastBlock(const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vForkHash, std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare>& mapForkLastBlock)
+{
+    const uint32 nPrimaryHeight = CBlock::GetBlockHeightByHash(hashPrimaryLastBlock);
+    mapForkLastBlock.insert(std::make_pair(hashGenesisBlock, std::make_pair(hashPrimaryLastBlock, 0)));
+    for (auto& hashFork : vForkHash)
+    {
+        if (hashFork != hashGenesisBlock)
+        {
+            std::vector<uint256> vBlockHash;
+            if (!GetBlockHashListByHeight(hashFork, nPrimaryHeight, vBlockHash))
+            {
+                StdLog("CBlockBase", "Get snapshot fork last block: Get block hash list by height failed, fork: %s", hashFork.GetBhString().c_str());
+                return false;
+            }
+            for (auto& hashBlock : vBlockHash)
+            {
+                BlockIndexPtr ptrBlockIndex = RetrieveIndex(hashBlock);
+                if (!ptrBlockIndex)
+                {
+                    StdLog("CBlockBase", "Get snapshot fork last block: Retrieve index failed, block: %s", hashBlock.GetBhString().c_str());
+                    return false;
+                }
+                if ((ptrBlockIndex->IsPrimary() || ptrBlockIndex->IsSubsidiary())
+                    && ptrBlockIndex->hashRefBlock == hashPrimaryLastBlock && IsBlockConfirm(hashBlock))
+                {
+                    mapForkLastBlock.insert(std::make_pair(hashFork, std::make_pair(hashBlock, ptrBlockIndex->GetBlockNumber())));
+                    break;
+                }
+            }
+        }
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
