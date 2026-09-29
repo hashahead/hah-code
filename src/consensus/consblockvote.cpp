@@ -215,6 +215,35 @@ void CConsBlock::GetPreVoteSigByBitmap(const bytes& btGetBitmap, map<uint384, by
         }
     }
 }
+
+void CConsBlock::GetCommitVoteSigByBitmap(const CBitmap& bmGetBitmap, map<uint384, bytes>& mapSigOut)
+{
+    vector<uint32> vIndexList;
+    bmGetBitmap.GetIndexList(vIndexList);
+    if (vIndexList.empty())
+    {
+        StdLog("CConsBlock", "Get commit vote sig by bitmap: Index list empty, has bit: %d", bmGetBitmap.GetValidBits());
+        return;
+    }
+
+    for (auto& index : vIndexList)
+    {
+        if (index < (uint32)(vCommitVoteCandidateNodePubkey.size()))
+        {
+            const uint384& pubkeyNode = vCommitVoteCandidateNodePubkey[index].pubkey;
+            auto it = mapCommitVoteSig.find(pubkeyNode);
+            if (it != mapCommitVoteSig.end())
+            {
+                mapSigOut.insert(make_pair(pubkeyNode, it->second));
+            }
+            else
+            {
+                StdLog("CConsBlock", "Get commit vote sig by bitmap: Find commit vote fail, index: %d, commit vote size: %lu, pubkey: %s, block: %s",
+                       index, mapPreVoteSig.size(), pubkeyNode.GetHex().c_str(), hashBlock.GetBhString().c_str());
+            }
+        }
+    }
+}
 /////////////////////////////////
 // CConsBlockVote
 

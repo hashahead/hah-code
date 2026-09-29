@@ -159,6 +159,7 @@ public:
     bool GetPreVoteBitmap(bytes& btBitmap);
     bool GetCommitVoteBitmap(bytes& btBitmap);
     void GetPreVoteSigByBitmap(const bytes& btGetBitmap, map<uint384, bytes>& mapSigOut);
+    void GetCommitVoteSigByBitmap(const CBitmap& bmGetBitmap, map<uint384, bytes>& mapSigOut);
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;
@@ -167,6 +168,9 @@ public:
 
     vector<CNodePubkey> vPreVoteCandidateNodePubkey;
     vector<CNodePubkey> vCommitVoteCandidateNodePubkey;
+
+    map<uint384, bytes> mapPreVoteSig; // key: node pubkey, value: node hash
+    CBitmap bmBlockPreVoteBitmap;
 };
 
 /////////////////////////////////
