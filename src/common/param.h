@@ -243,18 +243,30 @@ static const CDestination FUNCTION_EXTDATA_ADDRESS("0x00000000000000000000000000
 static const CDestination FUNCTION_CONTRACT_ADDRESS("0x00000000000000000000000000000000000000A1");
 static const CDestination FUNCTION_DEX_POOL_ADDRESS("0x00000000000000000000000000000000000000B1");
 
+static const CDestination FUNCTION_DEPLOYMENT_SIGNER_ADDRESS("0x3fab184622dc19b6109349b94811493bf2a45362");
+
 inline bool isFunctionContractAddress(const CDestination& _addr)
 {
     return (_addr == FUNCTION_CONTRACT_ADDRESS);
 }
+inline bool isFunctionExtdataAddress(const CDestination& _addr)
+{
+    return (_addr == FUNCTION_EXTDATA_ADDRESS);
+}
 bytes getFunctionContractCreateCode();
 bytes getFunctionContractRuntimeCode();
+void setRunSysFlag(const uint256& hashGenesisBlock);
+inline bool isRunSysFlag()
+{
+    return RUNSYS_FLAG;
+}
 
 static const uint32 DATA_PAGE_SIZE = 32;
 
 ///////////////////////////////////
-std::string CoinToTokenBigFloat(const uint256& nCoin);
-bool TokenBigFloatToCoin(const std::string& strToken, uint256& nCoin);
+std::string CoinToTokenBigFloat(const uint256& nCoin, const uint32 nDecimalDigit = TOKEN_DECIMAL_DIGIT);
+bool TokenBigFloatToCoin(const std::string& strToken, uint256& nCoin, const uint32 nDecimalDigit = TOKEN_DECIMAL_DIGIT);
+uint256 TokenBigFloatToCoin(const std::string& strToken, const uint32 nDecimalDigit = TOKEN_DECIMAL_DIGIT);
 
 } // namespace hashahead
 
