@@ -2885,6 +2885,11 @@ bool CBlockChain::PruneTraceData(const uint256& hashFork, const uint32 nPruneRes
 {
     return cntrBlock.PruneTraceData(hashFork, nPruneReserveLastHeight);
 }
+
+bool CBlockChain::IsSnapshotBlock(const uint256& hashBlock)
+{
+    return cntrBlock.IsSnapshotBlock(hashBlock);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

@@ -230,6 +230,7 @@ public:
     virtual bool VerifyContractAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract) = 0;
     virtual bool VerifyCreateCodeTx(const uint256& hashFork, const uint256& hashBlock, const CTransaction& tx) = 0;
     virtual bool VerifyDelegateMinVote(const uint256& hashRefBlock, const uint32 nHeight, const CDestination& destDelegate) = 0;
+
     virtual bool ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
                                      const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
         = 0;
@@ -266,6 +267,7 @@ public:
     virtual bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit) = 0;
     virtual bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
     virtual bool PruneHdexData(const uint32 nPruneReserveLastHeight) = 0;
+    virtual bool PruneVoteData(const uint32 nPruneReserveLastHeight) = 0;
     {
         return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
     }

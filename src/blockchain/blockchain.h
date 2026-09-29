@@ -183,6 +183,7 @@ public:
     bool PruneVoteData(const uint32 nPruneReserveLastHeight) override;
     bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) override;
 
+    bool IsSnapshotBlock(const uint256& hashBlock) override;
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
 
