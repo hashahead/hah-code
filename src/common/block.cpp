@@ -1154,4 +1154,28 @@ void CBlockPrevProve::Serialize(hnbase::CStream& s, std::size_t& serSize) const
 
     serSize = ss.GetSize();
 }
+
+///////////////////////////////////////////////////
+// CBlockProve
+
+void CBlockProve::Save(bytes& btData) const
+{
+    hnbase::CBufStream ss;
+    ss << *this;
+    ss.GetData(btData);
+}
+
+bool CBlockProve::Load(const bytes& btData)
+{
+    hnbase::CBufStream ss(btData);
+    try
+    {
+        ss >> *this;
+    }
+    catch (const std::exception& e)
+    {
+        return false;
+    }
+    return true;
+}
 } // namespace hashahead

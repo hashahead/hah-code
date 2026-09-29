@@ -1103,6 +1103,48 @@ protected:
     void Serialize(hnbase::CStream& s, hnbase::LoadType&);
     void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
 };
+
+class CBlockStorageProve
+{
+    friend class hnbase::CStream;
+
+public:
+    CBlockStorageProve() {}
+
+    void SetNull()
+    {
+        btAggSigBitmap.clear();
+        btAggSigData.clear();
+
+        hashRefBlock = 0;
+        vRefBlockMerkleProve.clear();
+
+        hashPrevBlock = 0;
+        vPrevBlockMerkleProve.clear();
+
+        mapCrossProve.clear();
+    }
+
+    void Save(bytes& btData) const;
+    bool Load(const bytes& btData);
+
+public:
+    bytes btAggSigBitmap;
+    bytes btAggSigData;
+
+    uint256 hashRefBlock;
+    hnbase::MERKLE_PROVE_DATA vRefBlockMerkleProve;
+
+    uint256 hashPrevBlock;
+    hnbase::MERKLE_PROVE_DATA vPrevBlockMerkleProve;
+
+    std::map<CChainId, std::pair<CBlockCrosschainProve, hnbase::MERKLE_PROVE_DATA>> mapCrossProve; // key is peer chainid
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const;
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&);
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
+};
 } // namespace hashahead
 
 #endif //COMMON_BLOCK_H
