@@ -929,5 +929,82 @@ void CEvmHost::AddContractHostReceipt(const evmc_message& msg, const evmc::resul
 
     dbHost.AddContractRunReceipt(tcr);
 }
+
+void CEvmHost::onHostOperation(const uint64_t steps,
+                               const uint64_t pc,
+                               const uint8_t instr,
+                               const uint64_t newMemSize,
+                               const uint64_t gasCost,
+                               const uint64_t gas,
+                               const evmc_bytes32 stack[],
+                               const size_t stack_count,
+                               const evmc_bytes32 mem[],
+                               const size_t mem_count)
+{
+    std::string strStack, strMem;
+    for (size_t i = 0; i < stack_count; i++)
+    {
+        uint256 t;
+        t.SetBytes(&(stack[i].bytes[0]), sizeof(stack[i].bytes));
+        t.reverse();
+        std::string str = ToHexString(t.ToValidBigEndianData());
+        if (str.empty())
+        {
+            str = "0x0";
+        }
+        if (i != 0)
+        {
+            strStack += ",";
+        }
+        strStack += str;
+    }
+    for (size_t i = 0; i < mem_count; i++)
+    {
+        uint256 t;
+        t.SetBytes(&(mem[i].bytes[0]), sizeof(mem[i].bytes));
+        t.reverse();
+        std::string str = ToHexString(t.ToValidBigEndianData());
+        if (str.empty())
+        {
+            str = "0x0";
+        }
+        if (i != 0)
+        {
+            strMem += ",";
+        }
+        strMem += str;
+    }
+    StdDebug("CEvmHost", "onHostOperation: depth: %d, steps: %lu, pc: %lu, instr: %u : %s, newMemSize: %lu, gasCost: %lu, gas: %lu, stack: [%s], mem: [%s]",
+             nDepth, steps, pc, instr, getInstrName(instr).c_str(), newMemSize, gasCost, gas, strStack.c_str(), strMem.c_str());
+
+    if (fTraceVmLog)
+    {
+        CVmOperationTraceLog vmOpTraceLog;
+
+        vmOpTraceLog.nDepth = nDepth + 1;
+        vmOpTraceLog.nSteps = steps;
+        vmOpTraceLog.nPc = pc;
+        vmOpTraceLog.strInstr = getInstrName(instr);
+        vmOpTraceLog.nNewMemSize = newMemSize;
+        vmOpTraceLog.nGasCost = gasCost;
+        vmOpTraceLog.nGas = gas;
+        for (size_t i = 0; i < stack_count; i++)
+        {
+            uint256 t;
+            t.SetBytes(&(stack[i].bytes[0]), sizeof(stack[i].bytes));
+            t.reverse();
+            vmOpTraceLog.vStack.push_back(t);
+        }
+        for (size_t i = 0; i < mem_count; i++)
+        {
+            uint256 t;
+            t.SetBytes(&(mem[i].bytes[0]), sizeof(mem[i].bytes));
+            t.reverse();
+            vmOpTraceLog.vMem.push_back(t);
+        }
+        dbHost.AddVmOperationTraceLog(vmOpTraceLog);
+    }
+}
+
 } // namespace hvm
 } // namespace hashahead
