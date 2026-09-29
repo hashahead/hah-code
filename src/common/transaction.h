@@ -999,6 +999,25 @@ protected:
     }
 };
 using VmOperationTraceLogs = std::vector<CVmOperationTraceLog>;
+
+class CContractTraceResult
+{
+public:
+    CContractTraceResult()
+      : fTraceReceipt(false), fTracePrevState(false), fTraceVmOpLog(false) {}
+
+public:
+    bool fTraceReceipt;
+    bool fTracePrevState;
+    bool fTraceVmOpLog;
+
+    TxContractReceipts vTxcReceipts;
+    MapContractPrevState mapContractPrevState;
+    VmOperationTraceLogs vVmOpTraceLogs;
+};
+typedef std::shared_ptr<CContractTraceResult> SHP_CONTRACT_TRACE_RESULT;
+#define MAKE_SHARED_CONTRACT_TRACE_RESULT std::make_shared<CContractTraceResult>
+
 static const uint8 CODE_TYPE_TEMPLATE = 0;
 static const uint8 CODE_TYPE_CONTRACT = 1;
 
