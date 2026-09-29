@@ -1415,18 +1415,18 @@ public:
         return (GetFilterType(nFilterId) == FILTERID_HEADER_TX);
     }
 
-    uint256 CreateFilterId(const uint8 nFilterType, const uint256& hash);
+    uint256 CreateFilterId(const uint8 nFilterType, const uint64 nId, const uint256& hash);
     uint256 CreateLogsFilterId(const uint256& hash)
     {
-        return CreateFilterId(FILTERID_HEADER_LOGS, hash);
+        return CreateFilterId(FILTERID_HEADER_LOGS, nLogsFilterIdCreate++, hash);
     }
     uint256 CreateBlockFilterId(const uint256& hash)
     {
-        return CreateFilterId(FILTERID_HEADER_BLOCK, hash);
+        return CreateFilterId(FILTERID_HEADER_BLOCK, nBlockFilterIdCreate++, hash);
     }
     uint256 CreateTxFilterId(const uint256& hash)
     {
-        return CreateFilterId(FILTERID_HEADER_TX, hash);
+        return CreateFilterId(FILTERID_HEADER_TX, nTxFilterIdCreate++, hash);
     }
 
 protected:
@@ -1439,7 +1439,7 @@ public:
     {
         FILTERID_HEADER_LOGS = 1,
         FILTERID_HEADER_BLOCK = 2,
-        FILTERID_HEADER_TX = 3
+        FILTERID_HEADER_TX = 3,
     };
 };
 
