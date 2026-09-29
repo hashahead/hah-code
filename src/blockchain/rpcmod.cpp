@@ -11129,4 +11129,39 @@ CRPCResultPtr CRPCMod::RPCEthTxpoolInspect(const CReqContext& ctxReq, CRPCParamP
 
     return spResult;
 }
+
+CRPCResultPtr CRPCMod::RPCEthTxpoolContentFrom(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    auto spParam = CastParamPtr<CEthTxpoolContentFromParam>(param);
+    if (!spParam->vecParamlist.IsValid() || spParam->vecParamlist.size() != 1)
+    {
+        throw CRPCException(RPC_PARSE_ERROR, "Request param error");
+    }
+
+    CDestination address;
+    address.ParseString(spParam->vecParamlist.at(0));
+    if (address.IsNull())
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Invalid address");
+    }
+
+    if (!pService->HaveFork(ctxReq.hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(ctxReq.hashFork);
+
+    vector<CTxInfo> vTxPool;
+    pService->ListTxPool(ctxReq.hashFork, address, vTxPool, 0, 0, false);
+
+    map<CDestination, vector<CTxInfo>> mapTxPool;
+    mapTxPool.insert(make_pair(address, vTxPool));
+
+    auto spResult = MakeCEthTxpoolContentFromResultPtr();
+
+    spResult->SetJsonResult(EthPeedingTxToJSON(nChainId, mapTxPool));
+
+    return spResult;
+}
 } // namespace hashahead

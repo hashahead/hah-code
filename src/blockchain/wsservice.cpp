@@ -883,6 +883,10 @@ bool CWsService::HandleInvoke()
 
 void CWsService::HandleHalt()
 {
+    for (auto& kv : mapWsServer)
+    {
+        kv.second->Stop();
+    }
     IWsService::HandleHalt();
 }
 
