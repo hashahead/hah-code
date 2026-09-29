@@ -179,6 +179,42 @@ bool CConsBlock::GetCommitVoteBitmap(bytes& btBitmap)
     }
     return false;
 }
+
+void CConsBlock::GetPreVoteSigByBitmap(const bytes& btGetBitmap, map<uint384, bytes>& mapSigOut)
+{
+    CBitmap btm;
+    if (!btm.ImportBytes(btGetBitmap))
+    {
+        StdLog("CConsBlock", "Get pre vote sig by bitmap: Bitmap error");
+        return;
+    }
+
+    vector<uint32> vIndexList;
+    btm.GetIndexList(vIndexList);
+    if (vIndexList.empty())
+    {
+        StdLog("CConsBlock", "Get pre vote sig by bitmap: Index list empty, max bit: %d, valid bit: %d", btm.GetMaxBits(), btm.HasValidBit());
+        return;
+    }
+
+    for (auto& index : vIndexList)
+    {
+        if (index < (uint32)(vPreVoteCandidateNodePubkey.size()))
+        {
+            const uint384& pubkeyNode = vPreVoteCandidateNodePubkey[index].pubkey;
+            auto it = mapPreVoteSig.find(pubkeyNode);
+            if (it != mapPreVoteSig.end())
+            {
+                mapSigOut.insert(make_pair(pubkeyNode, it->second));
+            }
+            else
+            {
+                StdLog("CConsBlock", "Get pre vote sig by bitmap: Find pre vote fail, index: %d, pre vote size: %lu, pubkey: %s, block: %s",
+                       index, mapPreVoteSig.size(), pubkeyNode.GetHex().c_str(), hashBlock.GetBhString().c_str());
+            }
+        }
+    }
+}
 /////////////////////////////////
 // CConsBlockVote
 
