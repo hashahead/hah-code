@@ -642,6 +642,20 @@ bool CBlockDB::ListDestState(const uint256& hashFork, const uint256& hashBlockRo
     return dbState.ListDestState(hashFork, hashBlockRoot, mapBlockState);
 }
 
+bool CBlockDB::ClearStateUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight)
+{
+    return dbState.ClearStateUnavailableNode(hashFork, nClearRefHeight);
+}
+
+bool CBlockDB::ListStateRootKv(const uint256& hashFork, std::vector<std::pair<uint256, bytesmap>>& vRootKv)
+{
+    return dbState.ListStateRootKv(hashFork, vRootKv);
+}
+
+bool CBlockDB::AddStateKvTrie(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    return dbState.AddStateKvTrie(hashFork, nBlockHeight, hashPrevRoot, mapKv, hashNewRoot);
+}
 bool CBlockDB::AddBlockTxIndexReceipt(const uint256& hashFork, const uint256& hashBlock, const std::map<uint256, CTxIndex>& mapBlockTxIndex, const std::map<uint256, CTransactionReceipt>& mapBlockTxReceipts)
 {
     return dbTxIndex.AddBlockTxIndexReceipt(hashFork, hashBlock, mapBlockTxIndex, mapBlockTxReceipts);
