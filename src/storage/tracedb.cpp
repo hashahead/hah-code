@@ -569,6 +569,33 @@ bool CForkTraceDB::WriteTrieRoot(const uint8 nTrieType, const uint256& hashBlock
     ssValue << hashTrieRoot;
     return dbTrie.WriteExtKv(ssKey, ssValue);
 }
+
+bool CForkTraceDB::ReadTrieRoot(const uint8 nTrieType, const uint256& hashBlock, uint256& hashTrieRoot)
+{
+    if (hashBlock == 0)
+    {
+        hashTrieRoot = 0;
+        return true;
+    }
+
+    hnbase::CBufStream ssKey, ssValue;
+    ssKey << DB_TRACE_KEY_TYPE_TRIEROOT << nTrieType << hashBlock;
+    if (!dbTrie.ReadExtKv(ssKey, ssValue))
+    {
+        return false;
+    }
+
+    try
+    {
+        ssValue >> hashTrieRoot;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 //////////////////////////////
 // CTraceDB
 

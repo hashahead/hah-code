@@ -97,6 +97,8 @@ public:
 
 protected:
     bool WriteTrieRoot(const uint8 nTrieType, const uint256& hashBlock, const uint256& hashTrieRoot);
+    bool ReadTrieRoot(const uint8 nTrieType, const uint256& hashBlock, uint256& hashTrieRoot);
+protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;
     bool fPrune;
