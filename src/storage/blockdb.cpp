@@ -701,10 +701,17 @@ bool CBlockDB::AddContractKvTrie(const uint256& hashFork, const uint32 nBlockHei
 {
     return dbContract.AddContractKvTrie(hashFork, nBlockHeight, hashPrevRoot, mapKv, hashNewRoot);
 }
+
 bool CBlockDB::AddAddressContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapAddress, const uint64 nNewAddressCount,
-                                 const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress, uint256& hashNewRoot)
+                                 const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress,
+                                 const std::map<CDestination, uint384>& mapBlsPubkeyContext, uint256& hashNewRoot)
 {
-    return dbAddress.AddAddressContext(hashFork, hashPrevBlock, hashBlock, mapAddress, nNewAddressCount, mapTimeVault, mapFunctionAddress, hashNewRoot);
+    return dbAddress.AddAddressContext(hashFork, hashPrevBlock, hashBlock, mapAddress, nNewAddressCount, mapTimeVault, mapFunctionAddress, mapBlsPubkeyContext, hashNewRoot);
+}
+
+bool CBlockDB::AddTokenContractAddressContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddressContext, const bool fAll)
+{
+    return dbAddress.AddTokenContractAddressContext(hashFork, hashPrevBlock, hashBlock, mapTokenContractAddressContext, fAll);
 }
 
 bool CBlockDB::RetrieveAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CAddressContext& ctxAddress)
