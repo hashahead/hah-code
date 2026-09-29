@@ -11106,4 +11106,27 @@ CRPCResultPtr CRPCMod::RPCEthTxpoolContent(const CReqContext& ctxReq, CRPCParamP
 
     return spResult;
 }
+
+CRPCResultPtr CRPCMod::RPCEthTxpoolInspect(const CReqContext& ctxReq, CRPCParamPtr param)
+{
+    if (!pService->HaveFork(ctxReq.hashFork))
+    {
+        throw CRPCException(RPC_INVALID_PARAMETER, "Unknown fork");
+    }
+
+    vector<CTxInfo> vTxPool;
+    pService->ListTxPool(ctxReq.hashFork, CDestination(), vTxPool, 0, 0, false);
+
+    map<CDestination, vector<CTxInfo>> mapTxPool;
+    for (auto& tx : vTxPool)
+    {
+        mapTxPool[tx.destFrom].push_back(tx);
+    }
+
+    auto spResult = MakeCEthTxpoolInspectResultPtr();
+
+    spResult->SetJsonResult(EthTxpoolInspectToJSON(mapTxPool));
+
+    return spResult;
+}
 } // namespace hashahead

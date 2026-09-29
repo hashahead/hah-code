@@ -258,6 +258,7 @@ private:
     rpc::CRPCResultPtr RPCEthDebugTraceCall(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthDebugTraceTransaction(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
     rpc::CRPCResultPtr RPCEthTxpoolContent(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
+    rpc::CRPCResultPtr RPCEthTxpoolInspect(const CReqContext& ctxReq, rpc::CRPCParamPtr param);
 
 protected:
     hnbase::IIOProc* pHttpServer;
