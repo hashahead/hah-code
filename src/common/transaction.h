@@ -1330,6 +1330,8 @@ public:
 
 class CLogsFilter
 {
+    friend class hnbase::CStream;
+
 public:
     CLogsFilter() {}
     CLogsFilter(const uint256& hashFromBlockIn, const uint256& hashToBlockIn)
@@ -1342,11 +1344,19 @@ public:
     }
     CLogsFilter addTopic(unsigned _index, uint256 const& _t)
     {
-        if (_index < 4)
+        if (_index < MAX_LOGS_FILTER_TOPIC_COUNT)
         {
             arrayTopics[_index].insert(_t);
         }
         return *this;
+    }
+    bool isTopicEmpty(unsigned _index) const
+    {
+        if (_index < MAX_LOGS_FILTER_TOPIC_COUNT)
+        {
+            return arrayTopics[_index].empty();
+        }
+        return true;
     }
     CLogsFilter withFromBlock(const uint256& from)
     {
@@ -1362,10 +1372,25 @@ public:
     void matchesLogs(CTransactionReceipt const& _m, MatchLogsVec& vLogs) const;
 
 public:
+    enum
+    {
+        MAX_LOGS_FILTER_TOPIC_COUNT = 8
+    };
+
     uint256 hashFromBlock;
     uint256 hashToBlock;
     std::set<CDestination> setAddress;
-    std::array<std::set<uint256>, 4> arrayTopics;
+    std::array<std::set<uint256>, MAX_LOGS_FILTER_TOPIC_COUNT> arrayTopics;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(hashFromBlock, opt);
+        s.Serialize(hashToBlock, opt);
+        s.Serialize(setAddress, opt);
+        s.Serialize(arrayTopics, opt);
+    }
 };
 
 class CFilterId
