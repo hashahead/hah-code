@@ -790,6 +790,31 @@ void CWsService::AddSyncingSubscribe(const CChainId nChainId, const uint64 nClie
     CWriteLock wlock(rwAccess);
     nSubsId = mapWsSubscribeFork[nChainId].AddSubscribe(nClientConnId, WSCS_SUBS_TYPE_SYNCING, {}, {});
 }
+
+bool CWsService::RemoveSubscribe(const CChainId nChainId, const uint64 nClientConnId, const uint128& nSubsId)
+{
+    CWriteLock wlock(rwAccess);
+    mapWsSubscribeFork[nChainId].RemoveSubscribe(nSubsId);
+    return true;
+}
+
+void CWsService::SendWsMsg(const CChainId nChainId, const uint64 nNonce, const std::string& strMsg)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapWsServer.find(nChainId);
+    if (it != mapWsServer.end())
+    {
+        it->second->SendWsMsg(nNonce, strMsg);
+    }
+}
+
+void CWsService::RemoveClientAllSubscribe(const CChainId nChainId, const uint64 nClientConnId)
+{
+    CWriteLock wlock(rwAccess);
+    mapWsSubscribeFork[nChainId].RemoveClientAllSubscribe(nClientConnId);
+}
+
 //----------------------------------------------------------------------------
 bool CWsService::HandleInitialize()
 {
