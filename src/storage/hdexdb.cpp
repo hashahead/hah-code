@@ -1166,6 +1166,36 @@ bool CHdexDB::GetDexOrderDb(const uint256& hashRoot, const CChainId nChainId, co
     }
     return true;
 }
+
+bool CHdexDB::GetPeerDexOrderProveDb(const uint256& hashRoot, const CChainId nChainId, const CDestination& destOrder, const uint256& hashCoinPair, const uint8 nOwnerCoinFlag, const uint64 nOrderNumber, CDexOrderSave& dexOrder)
+{
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_HDEX_KEY_TYPE_TRIE_PEER_DEX_ORDER << DB_HDEX_UNCOMPLETED_MATCH_ORDER << BSwap32(nChainId) << destOrder << hashCoinPair << nOwnerCoinFlag << BSwap64(nOrderNumber);
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue) || btValue.empty())
+    {
+        hnbase::CBufStream ssKeyEx;
+        ssKeyEx << DB_HDEX_KEY_TYPE_TRIE_PEER_DEX_ORDER << DB_HDEX_COMPLETED_MATCH_ORDER << BSwap32(nChainId) << destOrder << hashCoinPair << nOwnerCoinFlag << BSwap64(nOrderNumber);
+        btKey.clear();
+        ssKeyEx.GetData(btKey);
+        if (!dbTrie.Retrieve(hashRoot, btKey, btValue) || btValue.empty())
+        {
+            return false;
+        }
+    }
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> dexOrder;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
