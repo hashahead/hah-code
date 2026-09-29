@@ -108,6 +108,7 @@ protected:
     bool GetMaxForkDexCoinPair(const uint256& hashRoot, uint32& nMaxDexCoinPair);
     bool GetCoinContextByForkSymbol(const uint256& hashRoot, const std::string& strForkSymbol, CCoinContext& ctxCoin);
     void AddForkDexCoinPair(const uint256& hashPrevBlock, const uint256& hashPrevRoot, const std::map<std::string, CCoinContext>& mapNewSymbolCoin, bytesmap& mapKv);
+    void AddTimeVaultWhitelist(const std::set<CDestination>& setTimeVaultWhitelist, bytesmap& mapKv);
 
 protected:
     enum

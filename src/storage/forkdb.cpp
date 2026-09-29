@@ -1572,5 +1572,22 @@ void CForkDB::AddForkDexCoinPair(const uint256& hashPrevBlock, const uint256& ha
 
     AddMaxDexCoinPair(nMaxDexCoinPair, mapKv);
 }
+
+void CForkDB::AddTimeVaultWhitelist(const std::set<CDestination>& setTimeVaultWhitelist, bytesmap& mapKv)
+{
+    for (const auto& address : setTimeVaultWhitelist)
+    {
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_FORK_KEY_TYPE_TV_WHITELIST_ADDRESS << address;
+        ssKey.GetData(btKey);
+
+        ssValue << address;
+        ssValue.GetData(btValue);
+
+        mapKv.insert(make_pair(btKey, btValue));
+    }
+}
 } // namespace storage
 } // namespace hashahead
