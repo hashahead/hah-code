@@ -2900,6 +2900,11 @@ bool CBlockChain::SnapshotRecovery(const std::string& strRecoveryDir)
 {
     return cntrBlock.SnapshotRecovery(strRecoveryDir);
 }
+
+bool CBlockChain::GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist)
+{
+    return cntrBlock.GetSnapshotFileList(hashSnapBlock, vSnapFilelist);
+}
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

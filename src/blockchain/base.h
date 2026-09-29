@@ -269,7 +269,8 @@ public:
     virtual bool PruneHdexData(const uint32 nPruneReserveLastHeight) = 0;
     virtual bool PruneVoteData(const uint32 nPruneReserveLastHeight) = 0;
     virtual bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
-    {
+
+    virtual bool IsSnapshotBlock(const uint256& hashBlock) = 0;
         return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
     }
 };
