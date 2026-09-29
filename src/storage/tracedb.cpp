@@ -518,6 +518,21 @@ bool CForkTraceDB::GetContractKvPairList(const uint256& hashBlock, const CDestin
     }
     return true;
 }
+
+bool CForkTraceDB::ClearTraceUnavailableNode(const uint32 nClearRefHeight)
+{
+    if (!fPrune)
+    {
+        return false;
+    }
+
+    if (!ClearHeightTrieRoot(nClearRefHeight))
+    {
+        StdLog("CForkTraceDB", "Clear trace unavailable node: Clear height trie root failed, height: %d", nClearRefHeight);
+        return false;
+    }
+    return true;
+}
 //////////////////////////////
 // CTraceDB
 

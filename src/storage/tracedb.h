@@ -90,6 +90,8 @@ public:
     bool RetrieveTxContractPrevState(const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState);
     bool ListBlockContractPrevState(const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState);
     bool GetContractKvPairList(const uint256& hashBlock, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, uint256>>& vContractKvPair, uint256& keyNext);
+
+    bool ClearTraceUnavailableNode(const uint32 nClearRefHeight);
 protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;
