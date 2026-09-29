@@ -424,6 +424,100 @@ bool CForkTraceDB::ListBlockContractPrevState(const uint256& hashBlock, BlockCon
     }
     return false;
 }
+
+bool CForkTraceDB::GetContractKvPairList(const uint256& hashBlock, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, uint256>>& vContractKvPair, uint256& keyNext)
+{
+    CReadLock rlock(rwAccess);
+
+    class CListTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListTrieDBWalker(const uint32 nLimitIn, const CDestination destContractIn, std::vector<std::pair<uint256, uint256>>& vContractKvPairOut, uint256& keyNextOut)
+          : nLimit(nLimitIn), destContract(destContractIn), vContractKvPair(vContractKvPairOut), keyNext(keyNextOut) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                StdError("CListTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_TRACE_KEY_NAME_CONTRACT_ADDRESS_KV_PAIR)
+                {
+                    CDestination destContractDb;
+                    uint256 keyDb;
+                    uint256 hashValueDb;
+                    hnbase::CBufStream ssValue(btValue);
+                    ssKey >> destContractDb >> keyDb;
+                    ssValue >> hashValueDb;
+                    if (destContractDb != destContract)
+                    {
+                        fWalkOver = true;
+                        return true;
+                    }
+                    if (vContractKvPair.size() >= nLimit)
+                    {
+                        keyNext = keyDb;
+                        fWalkOver = true;
+                        return true;
+                    }
+                    vContractKvPair.push_back(std::make_pair(keyDb, hashValueDb));
+                }
+                else
+                {
+                    fWalkOver = true;
+                    return true;
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        const uint32 nLimit;
+        const CDestination destContract;
+        std::vector<std::pair<uint256, uint256>>& vContractKvPair;
+        uint256& keyNext;
+    };
+
+    uint256 hashRoot;
+    if (!ReadTrieRoot(DB_TRACE_KEY_TYPE_TRIEROOT_CONTRACT_KV, hashBlock, hashRoot))
+    {
+        StdLog("CForkTraceDB", "Get contract kv pair list: Read trie root fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+
+    bytes btKeyPrefix, btBeginKeyTail;
+
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_TRACE_KEY_NAME_CONTRACT_ADDRESS_KV_PAIR << destContract;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    if (keyStart != 0)
+    {
+        hnbase::CBufStream ssBeginKeyTail;
+        ssBeginKeyTail << keyStart;
+        ssBeginKeyTail.GetData(btBeginKeyTail);
+    }
+
+    CListTrieDBWalker walker(nLimit, destContract, vContractKvPair, keyNext);
+    if (!dbTrie.WalkThroughTrie(hashRoot, walker, btKeyPrefix, btBeginKeyTail))
+    {
+        StdLog("CForkTraceDB", "Get contract kv pair list: Walk through trie fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
+    }
+    return true;
+}
 //////////////////////////////
 // CTraceDB
 
