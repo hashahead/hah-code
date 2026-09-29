@@ -533,6 +533,28 @@ bool CForkTraceDB::ClearTraceUnavailableNode(const uint32 nClearRefHeight)
     }
     return true;
 }
+
+bool CForkTraceDB::GetSnapshotTraceData(const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    CForkTraceRootKv traceRootKv(hashFork, vBlockHash);
+
+    traceRootKv.vKv.reserve(vBlockHash.size());
+    for (const auto& hashBlock : vBlockHash)
+    {
+        uint256 hashRoot;
+        if (!ReadTrieRoot(DB_TRACE_KEY_TYPE_TRIEROOT_CONTRACT_KV, hashBlock, hashRoot))
+        {
+            StdLog("CForkTraceDB", "Get snapshot trace data: Read trie root failed, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+        traceRootKv.vKv.push_back(std::make_pair(hashRoot, bytesmap()));
+    }
+
+    CBufStream ss;
+    ss << traceRootKv;
+    ss.GetData(btSnapData);
+    return true;
+}
 //////////////////////////////
 // CTraceDB
 

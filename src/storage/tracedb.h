@@ -92,6 +92,7 @@ public:
     bool GetContractKvPairList(const uint256& hashBlock, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, uint256>>& vContractKvPair, uint256& keyNext);
 
     bool ClearTraceUnavailableNode(const uint32 nClearRefHeight);
+    bool GetSnapshotTraceData(const std::vector<uint256>& vBlockHash, bytes& btSnapData);
 protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;
