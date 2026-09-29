@@ -682,6 +682,25 @@ bool CBlockDB::RetrieveContractKvValue(const uint256& hashFork, const uint256& h
     return dbContract.RetrieveContractKvValue(hashFork, hashContractRoot, key, value);
 }
 
+bool CBlockDB::ClearContractKvRootUnavailableNode(const uint256& hashFork, const uint32 nRemoveLastHeight, bool& fExit)
+{
+    return dbContract.ClearContractKvRootUnavailableNode(hashFork, nRemoveLastHeight, fExit);
+}
+
+bool CBlockDB::GetContractAddressRoot(const uint256& hashFork, const CDestination& destContract, const uint256& hashRoot, uint256& hashPrevRoot, uint32& nBlockHeight, uint64& nBlockNumber)
+{
+    return dbContract.GetContractAddressRoot(hashFork, destContract, hashRoot, hashPrevRoot, nBlockHeight, nBlockNumber);
+}
+
+bool CBlockDB::CreateCacheContractKvRoot(const uint256& hashFork, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    return dbContract.CreateCacheContractKvRoot(hashFork, hashPrevRoot, mapKv, hashNewRoot);
+}
+
+bool CBlockDB::AddContractKvTrie(const uint256& hashFork, const uint32 nBlockHeight, const uint256& hashPrevRoot, const bytesmap& mapKv, uint256& hashNewRoot)
+{
+    return dbContract.AddContractKvTrie(hashFork, nBlockHeight, hashPrevRoot, mapKv, hashNewRoot);
+}
 bool CBlockDB::AddAddressContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, CAddressContext>& mapAddress, const uint64 nNewAddressCount,
                                  const std::map<CDestination, CTimeVault>& mapTimeVault, const std::map<uint32, CFunctionAddressContext>& mapFunctionAddress, uint256& hashNewRoot)
 {
