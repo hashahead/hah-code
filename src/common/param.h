@@ -228,9 +228,20 @@ static const std::map<uint256, std::map<int, uint256>> mapCheckPointsList_Testne
 };
 #define mapCheckPointsList GET_PARAM(mapCheckPointsList_Mainnet, mapCheckPointsList_Testnet)
 
+static const std::map<std::string, int> mapCodeGrantAddress = {
+    { { "0xe7ee178b1c67114c513126719a798dedf6f69b1b", 0 } }
+};
+
+// "privkey" : "0xa04badf53e4ee1cf566b55c4cf4a84d8fb8a5785f1ebcc841d925cfccbed81f2",
+// "pubkey" : "0xa0fb9bc9b95b6eafb9cea448e46b1f480cd73e86b091cceb8eeeebc195c5d6635934ca0ac109636a1ddaf9e7ecf9ed68bf33732d23ec2ded52b44a7025c15e99",
+// "address" : "0xe7ee178b1c67114c513126719a798dedf6f69b1b"
+
 ///////////////////////////////////
 static const CDestination FUNCTION_BLACKHOLE_ADDRESS("0x0000000000000000000000000000000000000001");
+static const CDestination FUNCTION_CROSSCHAIN_ADDRESS("0x0000000000000000000000000000000000000002");
+static const CDestination FUNCTION_EXTDATA_ADDRESS("0x0000000000000000000000000000000000000003");
 static const CDestination FUNCTION_CONTRACT_ADDRESS("0x00000000000000000000000000000000000000A1");
+static const CDestination FUNCTION_DEX_POOL_ADDRESS("0x00000000000000000000000000000000000000B1");
 
 inline bool isFunctionContractAddress(const CDestination& _addr)
 {
