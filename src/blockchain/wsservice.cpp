@@ -823,6 +823,40 @@ bool CWsService::HandleInitialize()
         Error("Failed to request rpcmod");
         return false;
     }
+
+    const CRPCServerConfig* pSrvCfg = RPCServerConfig();
+    if (!pSrvCfg)
+    {
+        Error("Failed to get config");
+        return false;
+    }
+    boost::asio::ip::address addrListen = pSrvCfg->epRPC.address();
+
+    if (pSrvCfg->nChainId != 0 && pSrvCfg->nWsPort != 0)
+    {
+        auto ptrWs = MAKE_SHARED_WS_SERVER(pSrvCfg->nChainId, pSrvCfg->nWsPort, pSrvCfg->nRPCMaxConnections, addrListen, pRpcModIOModule, this);
+        if (!ptrWs)
+        {
+            Error("Make ws server failed");
+            return false;
+        }
+        mapWsServer.insert(std::make_pair(pSrvCfg->nChainId, ptrWs));
+    }
+    for (const auto& kv : pSrvCfg->mapChainIdRpcPort)
+    {
+        const CChainId nEsChainId = kv.first;
+        const uint16 nEsWsPort = kv.second.second;
+        if (nEsChainId != 0 && nEsWsPort != 0)
+        {
+            auto ptrWs = MAKE_SHARED_WS_SERVER(nEsChainId, nEsWsPort, pSrvCfg->nRPCMaxConnections, addrListen, pRpcModIOModule, this);
+            if (!ptrWs)
+            {
+                Error("Make ws server failed");
+                return false;
+            }
+            mapWsServer.insert(std::make_pair(nEsChainId, ptrWs));
+        }
+    }
     return true;
 }
 
