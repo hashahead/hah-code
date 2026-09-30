@@ -238,4 +238,84 @@ void CMthWait::DelEvent(CMthEvent* pEvent)
         mapEvent.erase(pEvent->GetEventId());
     }
 }
+
+void CMthWait::SetSignal(CMthEvent* pEvent)
+{
+    boost::unique_lock<boost::mutex> lock(lockWait);
+    if (pEvent == NULL)
+    {
+        return;
+    }
+
+    if (mapEvent.count(pEvent->GetEventId()))
+    {
+        PNM_EVENT pNmEvent = mapEvent[pEvent->GetEventId()];
+        if (pNmEvent)
+        {
+            pNmEvent->fSignalFlag = true;
+            condWait.notify_one();
+        }
+    }
+}
+
+int CMthWait::Wait(const uint32 ui32Timeout)
+{
+    boost::unique_lock<boost::mutex> lock(lockWait);
+    PNM_EVENT pNmEvent;
+    std::map<uint64, PNM_EVENT>::iterator it;
+    uint32 ui32TestId;
+    uint64 ui64BeginTime;
+    uint64 ui64WaitTime;
+
+    ui64BeginTime = GetTimeMillis();
+
+    do
+    {
+        for (it = mapEvent.begin(), ui32TestId = 0; it != mapEvent.end(); it++, ui32TestId++)
+        {
+            if (ui32TestId >= ui32WaitPos)
+            {
+                pNmEvent = it->second;
+                if (pNmEvent && pNmEvent->fSignalFlag)
+                {
+                    pNmEvent->fSignalFlag = false;
+                    ui32WaitPos = (ui32WaitPos + 1) % mapEvent.size();
+                    return pNmEvent->iEventFlag;
+                }
+            }
+        }
+
+        for (it = mapEvent.begin(), ui32TestId = 0; it != mapEvent.end(); it++, ui32TestId++)
+        {
+            if (ui32TestId < ui32WaitPos)
+            {
+                pNmEvent = it->second;
+                if (pNmEvent && pNmEvent->fSignalFlag)
+                {
+                    pNmEvent->fSignalFlag = false;
+                    ui32WaitPos = (ui32WaitPos + 1) % mapEvent.size();
+                    return pNmEvent->iEventFlag;
+                }
+            }
+        }
+
+        if (ui32Timeout > 0)
+        {
+            ui64WaitTime = ui32Timeout - (GetTimeMillis() - ui64BeginTime);
+            if (ui64WaitTime <= 0)
+            {
+                return -1;
+            }
+
+            if (!condWait.timed_wait(lock, boost::posix_time::milliseconds(ui64WaitTime)))
+            {
+                return -1;
+            }
+        }
+
+    } while (ui32Timeout > 0);
+
+    return -1;
+}
+
 } // namespace hnbase

@@ -383,6 +383,251 @@ public:
 private:
     T tNv;
 };
-} // namespace hnbase
 
+template <typename T>
+class CMthQueue
+{
+public:
+    CMthQueue()
+      : fAbort(false), eventRead(true, false), eventWrite(true, true), ui32MaxQueueSize(10000) {}
+    CMthQueue(const uint32 ui32QueueSize)
+      : fAbort(false), eventRead(true, false), eventWrite(true, true), ui32MaxQueueSize(ui32QueueSize) {}
+    ~CMthQueue() {}
+
+    /* ui32Timeout is milliseconds */
+    virtual bool SetData(T& data, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(lockQueue);
+        return PrtSetData(lock, data, ui32Timeout);
+    }
+
+    virtual bool SetData(const T& data, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(lockQueue);
+        return PrtSetData(lock, data, ui32Timeout);
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool SetMoreData(const std::vector<T>& vDataList, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(lockQueue);
+        return PrtSetMoreData(lock, vDataList, ui32Timeout);
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool GetData(T& data, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(lockQueue);
+        return PrtGetData(lock, data, ui32Timeout);
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool GetMoreData(std::vector<T>& vDataList, const uint32 nMaxGetCount = 0, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(lockQueue);
+        return PrtGetMoreData(lock, vDataList, nMaxGetCount, ui32Timeout);
+    }
+
+    uint32 GetCount()
+    {
+        boost::unique_lock<boost::mutex> lock(lockQueue);
+        return qData.size();
+    }
+
+    CMthEvent& GetReadEvent()
+    {
+        return eventRead;
+    }
+    CMthEvent& GetWriteEvent()
+    {
+        return eventWrite;
+    }
+    void Interrupt()
+    {
+        boost::unique_lock<boost::mutex> lock(lockQueue);
+        fAbort = true;
+        condQueueRead.notify_all();
+        condQueueWrite.notify_all();
+    }
+
+    void SetQueueSize(const uint32 ui32QueueSize)
+    {
+        if (ui32QueueSize > 0)
+        {
+            boost::unique_lock<boost::mutex> lock(lockQueue);
+            ui32MaxQueueSize = ui32QueueSize;
+        }
+    }
+
+protected:
+    inline bool PrtSetData(boost::unique_lock<boost::mutex>& lock, const T& data, const uint32 ui32Timeout)
+    {
+        if (fAbort)
+        {
+            return false;
+        }
+        uint64 ui64BeginTime = GetTimeMillis();
+        do
+        {
+            if (qData.size() < ui32MaxQueueSize)
+            {
+                qData.push(data);
+                condQueueRead.notify_one();
+                eventRead.SetEvent();
+                if (qData.size() >= ui32MaxQueueSize)
+                {
+                    eventWrite.ResetEvent();
+                }
+                return true;
+            }
+            if (ui32Timeout)
+            {
+                uint64 ui64WaitTime = ui32Timeout - (GetTimeMillis() - ui64BeginTime);
+                if (ui64WaitTime <= 0 || !condQueueWrite.timed_wait(lock, boost::posix_time::milliseconds(ui64WaitTime)))
+                {
+                    break;
+                }
+            }
+        } while (!fAbort && ui32Timeout);
+
+        return false;
+    }
+
+    inline bool PrtSetMoreData(boost::unique_lock<boost::mutex>& lock, const std::vector<T>& vDataList, const uint32 ui32Timeout)
+    {
+        if (fAbort)
+        {
+            return false;
+        }
+        uint64 ui64BeginTime = GetTimeMillis();
+        do
+        {
+            if (qData.size() < ui32MaxQueueSize)
+            {
+                for (auto& vd : vDataList)
+                {
+                    qData.push(vd);
+                }
+                if (vDataList.size() > 1)
+                {
+                    condQueueRead.notify_all();
+                }
+                else
+                {
+                    condQueueRead.notify_one();
+                }
+                eventRead.SetEvent();
+                if (qData.size() >= ui32MaxQueueSize)
+                {
+                    eventWrite.ResetEvent();
+                }
+                return true;
+            }
+            if (ui32Timeout)
+            {
+                uint64 ui64WaitTime = ui32Timeout - (GetTimeMillis() - ui64BeginTime);
+                if (ui64WaitTime <= 0 || !condQueueWrite.timed_wait(lock, boost::posix_time::milliseconds(ui64WaitTime)))
+                {
+                    break;
+                }
+            }
+        } while (!fAbort && ui32Timeout);
+
+        return false;
+    }
+
+    inline bool PrtGetData(boost::unique_lock<boost::mutex>& lock, T& data, const uint32 ui32Timeout)
+    {
+        if (fAbort)
+        {
+            return false;
+        }
+        uint64 ui64BeginTime = GetTimeMillis();
+        do
+        {
+            if (!qData.empty())
+            {
+                data = qData.front();
+                qData.pop();
+                condQueueWrite.notify_one();
+                eventWrite.SetEvent();
+                if (qData.empty())
+                {
+                    eventRead.ResetEvent();
+                }
+                return true;
+            }
+            if (ui32Timeout)
+            {
+                uint64 ui64WaitTime = ui32Timeout - (GetTimeMillis() - ui64BeginTime);
+                if (ui64WaitTime <= 0 || !condQueueRead.timed_wait(lock, boost::posix_time::milliseconds(ui64WaitTime)))
+                {
+                    break;
+                }
+            }
+        } while (!fAbort && ui32Timeout);
+
+        return false;
+    }
+
+    inline bool PrtGetMoreData(boost::unique_lock<boost::mutex>& lock, std::vector<T>& vDataList, const uint32 nMaxGetCount, const uint32 ui32Timeout)
+    {
+        if (fAbort)
+        {
+            return false;
+        }
+        uint64 ui64BeginTime = GetTimeMillis();
+        do
+        {
+            if (!qData.empty())
+            {
+                while (!qData.empty())
+                {
+                    vDataList.push_back(qData.front());
+                    qData.pop();
+                    if (nMaxGetCount != 0 && vDataList.size() >= nMaxGetCount)
+                    {
+                        break;
+                    }
+                }
+                if (vDataList.size() > 1)
+                {
+                    condQueueWrite.notify_all();
+                }
+                else
+                {
+                    condQueueWrite.notify_one();
+                }
+                eventWrite.SetEvent();
+                if (qData.empty())
+                {
+                    eventRead.ResetEvent();
+                }
+                return true;
+            }
+            if (ui32Timeout)
+            {
+                uint64 ui64WaitTime = ui32Timeout - (GetTimeMillis() - ui64BeginTime);
+                if (ui64WaitTime <= 0 || !condQueueRead.timed_wait(lock, boost::posix_time::milliseconds(ui64WaitTime)))
+                {
+                    break;
+                }
+            }
+        } while (!fAbort && ui32Timeout);
+
+        return false;
+    }
+
+protected:
+    boost::mutex lockQueue;
+    boost::condition_variable_any condQueueRead;
+    boost::condition_variable_any condQueueWrite;
+
+    bool fAbort;
+    CMthEvent eventRead;
+    CMthEvent eventWrite;
+
+    std::queue<T> qData;
+    uint32 ui32MaxQueueSize;
+};
 #endif // __HSM_MTHBASE_H
