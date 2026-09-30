@@ -1589,5 +1589,34 @@ void CForkDB::AddTimeVaultWhitelist(const std::set<CDestination>& setTimeVaultWh
         mapKv.insert(make_pair(btKey, btValue));
     }
 }
+
+void CForkDB::AddStopForkInner(const uint256& hashRoot, const std::set<uint256>& setStopFork, const uint32 nBlockHeight, bytesmap& mapKv)
+{
+    for (const auto& hashFork : setStopFork)
+    {
+        CForkCtxStatus forkStatus;
+        if (!GetForkCtxStatusInner(hashRoot, hashFork, forkStatus))
+        {
+            forkStatus = CForkCtxStatus(CForkCtxStatus::FORK_STATUS_RUNNING);
+        }
+        if (forkStatus.IsStopped())
+        {
+            StdLog("CForkDB", "Add stop fork: Fork is stopped, fork: %s", hashFork.ToString().c_str());
+            continue;
+        }
+        forkStatus.SetStopped(nBlockHeight);
+
+        hnbase::CBufStream ssKey, ssValue;
+        bytes btKey, btValue;
+
+        ssKey << DB_FORK_KEY_TYPE_STATUS << hashFork;
+        ssKey.GetData(btKey);
+
+        ssValue << forkStatus;
+        ssValue.GetData(btValue);
+
+        mapKv[btKey] = btValue;
+    }
+}
 } // namespace storage
 } // namespace hashahead

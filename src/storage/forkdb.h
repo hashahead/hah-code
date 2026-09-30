@@ -109,6 +109,7 @@ protected:
     bool GetCoinContextByForkSymbol(const uint256& hashRoot, const std::string& strForkSymbol, CCoinContext& ctxCoin);
     void AddForkDexCoinPair(const uint256& hashPrevBlock, const uint256& hashPrevRoot, const std::map<std::string, CCoinContext>& mapNewSymbolCoin, bytesmap& mapKv);
     void AddTimeVaultWhitelist(const std::set<CDestination>& setTimeVaultWhitelist, bytesmap& mapKv);
+    void AddStopForkInner(const uint256& hashRoot, const std::set<uint256>& setStopFork, const uint32 nBlockHeight, bytesmap& mapKv);
 
 protected:
     enum
