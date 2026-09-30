@@ -161,6 +161,8 @@ public:
     void GetPreVoteSigByBitmap(const bytes& btGetBitmap, map<uint384, bytes>& mapSigOut);
     void GetCommitVoteSigByBitmap(const CBitmap& bmGetBitmap, map<uint384, bytes>& mapSigOut);
     bool GetPreVoteAwaitBitmap(const bytes& btBitmapPeer, bytes& btBitmapOut);
+    bool GetCommitVoteAwaitBitmap(const bytes& btBitmapPeer, bytes& btBitmapOut);
+    bool GetPubkeysByBitmap(const CBitmap& bmBitmap, vector<uint384>& vPubkeys);
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;
@@ -195,6 +197,12 @@ public:
       : nTunnelId(nTunnelIdIn), nEpochDuration(nEpochDurationIn), sendNetData(sendNetDataIn), getVoteBlockCandidatePubkey(getVoteBlockCandidatePubkeyIn), addBlockLocalSignFlag(addBlockLocalSignFlagIn), commitVoteResult(commitVoteResultIn), nPrevCheckPreVoteBitmapTime(0) {}
 
     bool AddConsKey(const uint256& prikey, const uint384& pubkey);
+    bool AddCandidatePubkey(const uint256& hashBlock, const uint32 nBlockEpoch, const int64 nVoteBeginTimeIn, const vector<uint384>& vPubkey);
+    void CheckBlockVoteState(const uint256& hashBlock);
+    void RemoveVoteBlock(const uint256& hashBlock);
+    static uint256 GetPreVoteSignData(const uint256& hashBlock);
+    static uint256 GetCommitVoteSignData(const uint256& hashBlock);
+    static bool GetBitPubkeysByBitmap(const vector<uint384>& vCandidatePubkeys, const bytes& btBitmap, vector<uint384>& vBitmapPubkeys);
 
 private:
     const uint8 nTunnelId;

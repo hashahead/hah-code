@@ -296,6 +296,80 @@ bool CConsBlock::GetPreVoteAwaitBitmap(const bytes& btBitmapPeer, bytes& btBitma
     bmOut.GetBytes(btBitmapOut);
     return true;
 }
+
+bool CConsBlock::GetCommitVoteAwaitBitmap(const bytes& btBitmapPeer, bytes& btBitmapOut)
+{
+    CBitmap btmPeer;
+    if (!btmPeer.ImportBytes(btBitmapPeer))
+    {
+        return false;
+    }
+    if (btmPeer.GetMaxBits() != bmBlockCommitVoteBitmap.GetMaxBits())
+    {
+        return false;
+    }
+    if (btmPeer == bmBlockCommitVoteBitmap)
+    {
+        return false;
+    }
+
+    //(local | peer) ^ local
+    btmPeer |= bmBlockCommitVoteBitmap;
+    btmPeer ^= bmBlockCommitVoteBitmap;
+
+    vector<uint32> vIndexList;
+    btmPeer.GetIndexList(vIndexList);
+
+    CBitmap bmOut;
+    bmOut.Initialize(bmBlockCommitVoteBitmap.GetMaxBits());
+
+    uint32 nAddCount = 0;
+    for (auto& index : vIndexList)
+    {
+        if (index < vCommitVoteCandidateNodePubkey.size())
+        {
+            auto& node = vCommitVoteCandidateNodePubkey[index];
+            node.CheckStatus();
+            if (node.GetStatus() == CNodePubkey::ES_INIT)
+            {
+                bmOut.SetBit(index);
+                node.SetStatus(CNodePubkey::ES_WAITING);
+                if (++nAddCount >= MAX_AWAIT_BIT_COUNT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    if (nAddCount == 0)
+    {
+        return false;
+    }
+    bmOut.GetBytes(btBitmapOut);
+    return true;
+}
+
+bool CConsBlock::GetPubkeysByBitmap(const CBitmap& bmBitmap, vector<uint384>& vPubkeys)
+{
+    vector<uint32> vIndexList;
+    bmBitmap.GetIndexList(vIndexList);
+    for (auto& index : vIndexList)
+    {
+        if (index >= vPreVoteCandidateNodePubkey.size())
+        {
+            StdLog("CConsBlock", "Get pre vote pubkeys by bitmap: Index error, index: %d, block: %s", index, hashBlock.GetBhString().c_str());
+            return false;
+        }
+        vPubkeys.push_back(vPreVoteCandidateNodePubkey[index].pubkey);
+    }
+    if (vPubkeys.size() < (vPreVoteCandidateNodePubkey.size() * 2 / 3))
+    {
+        StdLog("CConsBlock", "Get pre vote pubkeys by bitmap: Sign not enough, sign count: %lu, candidate count: %lu, index count: %lu, block: %s",
+               vPubkeys.size(), vPreVoteCandidateNodePubkey.size(), vIndexList.size(), hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
 /////////////////////////////////
 // CConsBlockVote
 
