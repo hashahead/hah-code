@@ -1217,4 +1217,56 @@ bool CBlockProve::IsCrossProveEmpty() const
     }
     return true;
 }
+
+void CBlockProve::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+{
+    s << hashBlock << btAggSigBitmap << btAggSigData;
+
+    // ref block
+    if (hashRefBlock != 0 && !vRefBlockMerkleProve.empty())
+    {
+        s << hnbase::CVarInt(vRefBlockMerkleProve.size() + 1);
+        s << hashRefBlock;
+        for (const auto& provePair : vRefBlockMerkleProve)
+        {
+            s << provePair;
+        }
+    }
+    else
+    {
+        s << hnbase::CVarInt(0);
+    }
+
+    // prev block
+    if (hashPrevBlock != 0 && !vPrevBlockMerkleProve.empty())
+    {
+        s << hnbase::CVarInt(vPrevBlockMerkleProve.size() + 1);
+        s << hashPrevBlock;
+        for (const auto& provePair : vPrevBlockMerkleProve)
+        {
+            s << provePair;
+        }
+    }
+    else
+    {
+        s << hnbase::CVarInt(0);
+    }
+
+    // crosschain
+    if (!proveCrosschain.IsNull() && !vCrosschainMerkleProve.empty())
+    {
+        s << hnbase::CVarInt(vCrosschainMerkleProve.size() + 1);
+        s << proveCrosschain;
+        for (const auto& provePair : vCrosschainMerkleProve)
+        {
+            s << provePair;
+        }
+    }
+    else
+    {
+        s << hnbase::CVarInt(0);
+    }
+
+    s << vPrevBlockCcProve;
+}
 } // namespace hashahead

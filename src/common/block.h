@@ -1160,4 +1160,4 @@ public:
 
 } // namespace hashahead
 
-#endif //COMMON_BLOCK_H
+#endif // COMMON_BLOCK_H
