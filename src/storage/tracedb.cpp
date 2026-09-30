@@ -640,6 +640,58 @@ bool CForkTraceDB::GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, u
     }
     return true;
 }
+
+bool CForkTraceDB::ClearHeightTrieRoot(const uint32 nLastHeight)
+{
+    std::vector<std::pair<uint8, uint256>> vBlockTrieType;
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_TRACE_KEY_TYPE_TRIEROOT)
+            {
+                uint8 nTrieType;
+                uint256 hashBlock;
+                ssKey >> nTrieType >> hashBlock;
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockTrieType.push_back(std::make_pair(nTrieType, hashBlock));
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_TRACE_KEY_TYPE_TRIEROOT;
+
+    if (!dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker))
+    {
+        StdLog("CForkTraceDB", "Clear height trie root: Walk through ext kv failed, last height: %d", nLastHeight);
+        return false;
+    }
+
+    for (auto& vd : vBlockTrieType)
+    {
+        if (!RemoveTrieRoot(vd.first, vd.second))
+        {
+            StdLog("CForkTraceDB", "Clear height trie root: Remove trie root failed, trie type: %d, block: %s, last height: %d", vd.first, vd.second.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+
+    StdDebug("CForkTraceDB", "Clear height trie root: Remove trie root success, remove block count: %lu, last height: %d", vBlockTrieType.size(), nLastHeight);
+    return true;
+}
+
 //////////////////////////////
 // CTraceDB
 
@@ -664,7 +716,13 @@ bool CTraceDB::Initialize(const boost::filesystem::path& pathData, const bool fU
 void CTraceDB::Deinitialize()
 {
     CWriteLock wlock(rwAccess);
+    mapTraceDB.clear();
 }
 
+bool CTraceDB::ExistFork(const uint256& hashFork)
+{
+    CReadLock rlock(rwAccess);
+    return (mapTraceDB.find(hashFork) != mapTraceDB.end());
+}
 } // namespace storage
 } // namespace hashahead

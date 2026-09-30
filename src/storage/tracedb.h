@@ -120,6 +120,11 @@ public:
     bool Initialize(const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn = false);
     void Deinitialize();
 
+    bool ExistFork(const uint256& hashFork);
+    bool LoadFork(const uint256& hashFork);
+    void RemoveFork(const uint256& hashFork);
+    bool AddNewFork(const uint256& hashFork);
+    void Clear();
     bool RetrieveTxContractPrevState(const uint256& hashFork, const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState);
 protected:
     boost::filesystem::path pathTrace;
