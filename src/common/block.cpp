@@ -1178,4 +1178,43 @@ bool CBlockProve::Load(const bytes& btData)
     }
     return true;
 }
+
+uint256 CBlockProve::GetFirstPrevBlockHash() const
+{
+    for (auto it = vPrevBlockCcProve.rbegin(); it != vPrevBlockCcProve.rend(); ++it)
+    {
+        if (it->proveCrosschain.GetPrevProveBlock() != 0)
+        {
+            return it->proveCrosschain.GetPrevProveBlock();
+        }
+    }
+    return proveCrosschain.GetPrevProveBlock();
+}
+
+void CBlockProve::GetBlockHashList(std::vector<uint256>& vBlockHash) const
+{
+    vBlockHash.push_back(hashBlock);
+    uint256 hashAtBlock = hashPrevBlock;
+    for (const auto& vd : vPrevBlockCcProve)
+    {
+        vBlockHash.push_back(hashAtBlock);
+        hashAtBlock = vd.hashPrevBlock;
+    }
+}
+
+bool CBlockProve::IsCrossProveEmpty() const
+{
+    if (!proveCrosschain.IsCrossProveNull())
+    {
+        return false;
+    }
+    for (const CBlockPrevProve& prevProve : vPrevBlockCcProve)
+    {
+        if (!prevProve.proveCrosschain.IsCrossProveNull())
+        {
+            return false;
+        }
+    }
+    return true;
+}
 } // namespace hashahead

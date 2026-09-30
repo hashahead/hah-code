@@ -1145,6 +1145,19 @@ protected:
     void Serialize(hnbase::CStream& s, hnbase::LoadType&);
     void Serialize(hnbase::CStream& s, std::size_t& serSize) const;
 };
+
+class CBlockBroadcastProve
+{
+public:
+    CBlockBroadcastProve() {}
+    CBlockBroadcastProve(const uint256& hashBlockIn, const std::map<CChainId, CBlockProve>& mapBlockProveIn)
+      : hashBlock(hashBlockIn), mapBlockProve(mapBlockProveIn) {}
+
+public:
+    uint256 hashBlock;
+    std::map<CChainId, CBlockProve> mapBlockProve;
+};
+
 } // namespace hashahead
 
 #endif //COMMON_BLOCK_H
