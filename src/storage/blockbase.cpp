@@ -4995,6 +4995,32 @@ bool CBlockBase::SnapshotBlockIndex(const uint256& hashPrimaryLastBlock, const u
     }
     return true;
 }
+
+bool CBlockBase::SnapshotFork(const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vBlockHash, const std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare>& mapForkLastBlockNumber)
+{
+    if (vBlockHash.empty())
+    {
+        StdLog("CBlockBase", "Snapshot fork: Block list is empty");
+        return false;
+    }
+    std::map<uint256, uint256> mapForkLastBlock;
+    for (auto& kv : mapForkLastBlockNumber)
+    {
+        mapForkLastBlock.insert(std::make_pair(kv.first, kv.second.first));
+    }
+    bytes btSnapData;
+    if (!dbBlock.GetSnapshotForkData(mapForkLastBlock, vBlockHash, btSnapData))
+    {
+        StdLog("CBlockBase", "Snapshot fork: Get snapshot fork data failed");
+        return false;
+    }
+    if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_FORK_KV, (char*)btSnapData.data(), btSnapData.size()))
+    {
+        StdLog("CBlockBase", "Snapshot fork: Save snapshot data failed");
+        return false;
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
