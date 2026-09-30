@@ -903,6 +903,56 @@ bool CBlockDB::GetForkMintMinGasPrice(const uint256& hashFork, uint256& nMinGasP
     return dbMintMinGasPrice.GetForkMintMinGasPrice(hashFork, nMinGasPrice);
 }
 
+bool CBlockDB::IsSnapshotBlock(const uint256& hashBlock)
+{
+    return dbSnapshot.IsSnapshotBlock(hashBlock);
+}
+
+bool CBlockDB::StartSnapshot(const uint256& hashLastBlock, const uint32 nMaxSnapshots)
+{
+    return dbSnapshot.StartSnapshot(hashLastBlock, nMaxSnapshots);
+}
+
+bool CBlockDB::SaveBlockFile(const uint256& hashLastBlock, const uint32 nFile, const uint32 nOffset)
+{
+    return dbSnapshot.SaveBlockFile(hashLastBlock, nFile, nOffset);
+}
+
+bool CBlockDB::SaveSnapshotData(const uint256& hashLastBlock, const uint8 nDataType, const char* pSnapData, const uint32 nSnapDataSize)
+{
+    return dbSnapshot.SaveSnapshotData(hashLastBlock, nDataType, pSnapData, nSnapDataSize);
+}
+
+bool CBlockDB::GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist)
+{
+    return dbSnapshot.GetSnapshotFileList(hashSnapBlock, vSnapFilelist);
+}
+
+bool CBlockDB::ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData)
+{
+    return dbSnapshot.ReadSnapshotFileData(hashSnapBlock, strFileName, nOffset, nReadSize, btReadData);
+}
+
+bool CBlockDB::GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist)
+{
+    return dbSnapshot.GetSnapshotDownFileList(hashSnapBlock, vSnapFilelist);
+}
+
+bool CBlockDB::RemoveSnapshotDownBlock(const uint256& hashSnapBlock)
+{
+    return dbSnapshot.RemoveSnapshotDownBlock(hashSnapBlock);
+}
+
+uint64 CBlockDB::GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName)
+{
+    return dbSnapshot.GetSnapshotDownFileSize(hashSnapBlock, strFileName);
+}
+
+bool CBlockDB::WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData)
+{
+    return dbSnapshot.WriteSnapshotDownFileData(hashSnapBlock, strFileName, nOffset, btWriteData);
+}
+
 bool CBlockDB::VerifyBlockRoot(const bool fPrimary, const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock,
                                const uint256& hashLocalStateRoot, CBlockRoot& localBlockRoot, const bool fVerifyAllNode)
 {

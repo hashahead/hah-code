@@ -163,6 +163,17 @@ public:
     bool UpdateForkMintMinGasPrice(const uint256& hashFork, const uint256& nMinGasPrice);
     bool GetForkMintMinGasPrice(const uint256& hashFork, uint256& nMinGasPrice);
 
+    bool IsSnapshotBlock(const uint256& hashBlock);
+    bool StartSnapshot(const uint256& hashLastBlock, const uint32 nMaxSnapshots);
+    bool SaveBlockFile(const uint256& hashLastBlock, const uint32 nFile, const uint32 nOffset);
+    bool SaveSnapshotData(const uint256& hashLastBlock, const uint8 nDataType, const char* pSnapData, const uint32 nSnapDataSize);
+    bool GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist);
+    bool ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData);
+    bool GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist);
+    bool RemoveSnapshotDownBlock(const uint256& hashSnapBlock);
+    uint64 GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName);
+    bool WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData);
+
     bool VerifyBlockRoot(const bool fPrimary, const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock,
                          const uint256& hashLocalStateRoot, CBlockRoot& localBlockRoot, const bool fVerifyAllNode = true);
 
