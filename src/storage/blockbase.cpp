@@ -5021,6 +5021,103 @@ bool CBlockBase::SnapshotFork(const uint256& hashPrimaryLastBlock, const std::ve
     }
     return true;
 }
+
+bool CBlockBase::SnapshotVote(const uint256& hashFork, const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vBlockHash)
+{
+    if (vBlockHash.empty())
+    {
+        StdLog("CBlockBase", "Snapshot vote: Block list is empty, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+        return false;
+    }
+    bytes btSnapData;
+    if (!dbBlock.GetSnapshotVoteData(hashFork, (hashFork == hashGenesisBlock), vBlockHash, btSnapData))
+    {
+        StdLog("CBlockBase", "Snapshot vote: Get snapshot vote data failed, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+        return false;
+    }
+    if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_VOTE_KV, (char*)btSnapData.data(), btSnapData.size()))
+    {
+        StdLog("CBlockBase", "Snapshot vote: Save snapshot data failed, primary last block: %s", hashPrimaryLastBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CBlockBase::SnapshotState(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, const std::vector<uint256>& vBlockHash)
+{
+    if (vBlockHash.empty())
+    {
+        StdLog("CBlockBase", "Snapshot state: Block hash is empty, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    std::vector<std::pair<uint256, bytesmap>> vRootKv;
+    vRootKv.reserve(vBlockHash.size());
+    for (auto& hashBlock : vBlockHash)
+    {
+        BlockIndexPtr ptrBlockIndex = RetrieveIndex(hashBlock);
+        if (!ptrBlockIndex)
+        {
+            StdLog("CBlockBase", "Snapshot state: Retrieve index failed, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+        vRootKv.push_back(std::make_pair(ptrBlockIndex->hashStateRoot, bytesmap()));
+    }
+    if (!dbBlock.ListStateRootKv(hashFork, vRootKv))
+    {
+        StdLog("CBlockBase", "Snapshot state: List state root kv failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+
+    // create snapshot
+    CForkStateRootKv forkStateRootKv(hashFork, hashForkLastBlock);
+
+    forkStateRootKv.vStateKv.reserve(vBlockHash.size());
+    for (std::size_t i = 0; i < vBlockHash.size(); i++)
+    {
+        forkStateRootKv.vStateKv.push_back(CForkUserStateRootKv(vBlockHash[i], vRootKv[i].first, vRootKv[i].second));
+    }
+    const uint256& hashLastStateRoot = vRootKv[vRootKv.size() - 1].first;
+
+#if 0
+    // verify snapshot
+    {
+        CTrieDB trieMemDb;
+        if (!trieMemDb.MemDbInitialize())
+        {
+            StdLog("CBlockBase", "Snapshot state: Initialize mem kv db failed, fork: %s", hashFork.GetBhString().c_str());
+            return false;
+        }
+        for (auto& kv : forkStateRootKv.mapLastStorageKv)
+        {
+            uint256 hashNewRoot;
+            if (!trieMemDb.AddNewTrie({}, kv.second.mapKv, hashNewRoot))
+            {
+                StdLog("CBlockBase", "Snapshot state: Verify contract kv root: Add new trie failed, fork: %s", hashFork.GetBhString().c_str());
+                trieMemDb.Deinitialize();
+                return false;
+            }
+            if (kv.second.hashRoot != hashNewRoot)
+            {
+                StdLog("CBlockBase", "Snapshot state: Verify contract kv root: New root error, fork: %s", hashFork.GetBhString().c_str());
+                trieMemDb.Deinitialize();
+                return false;
+            }
+        }
+        trieMemDb.Deinitialize();
+    }
+#endif
+
+    // save snapshot
+    CBufStream ss;
+    ss << forkStateRootKv;
+
+    if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_STATE_KV, ss.GetData(), ss.GetSize()))
+    {
+        StdLog("CBlockBase", "Snapshot state: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {

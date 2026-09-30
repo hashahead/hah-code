@@ -278,6 +278,8 @@ public:
     bool ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder);
     bool GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve);
     bool AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve);
+    bool GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve);
+
     bool AddBlacklistAddress(const CDestination& dest);
     void RemoveBlacklistAddress(const CDestination& dest);
     bool IsExistBlacklistAddress(const CDestination& dest);
@@ -296,8 +298,14 @@ public:
 
     bool PruneForkStateData(const uint256& hashFork, const uint32 nPruneReserveLastHeight);
     bool PruneForkContractKvData(const uint256& hashFork, const uint32 nPruneReserveLastHeight, bool& fExit);
+    bool PruneForkAddressData(const uint256& hashFork, const uint32 nPruneReserveLastHeight);
+    bool PruneHdexData(const uint32 nPruneReserveLastHeight);
     bool PruneVoteData(const uint32 nPruneReserveLastHeight);
     bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight);
+    bool RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFork);
+    bool RecoveryFork(const bytes& btRecoveryData);
+    bool RecoveryUserState(const bytes& btRecoveryData);
+    bool RecoveryTxIndex(const bytes& btRecoveryData);
 protected:
     CBlockIndex* GetIndex(const uint256& hash) const;
     CBlockIndex* GetForkLastIndex(const uint256& hashFork);
@@ -337,7 +345,10 @@ protected:
 
     mutable hnbase::CRWAccess rwAccess;
     bool fCfgFullDb;
+    bool fCfgTraceDb;
+    bool fCfgCacheTrace;
     bool fCfgRewardCheck;
+    bool fCfgPrune;
     uint256 hashGenesisBlock;
     CBlockDB dbBlock;
     CTimeSeriesCached tsBlock;
