@@ -718,4 +718,114 @@ protected:
 protected:
     bool fTasking;
 };
+
+template <typename T>
+class CMoreTaskQueue : public CMthQueue<T>
+{
+public:
+    CMoreTaskQueue()
+      : nRunTaskCount(0), nMaxTaskCount(1), nIncCount(1000), CMthQueue<T>() {}
+    CMoreTaskQueue(const uint32 nMaxTaskCountIn, const uint64 nIncCountIn, const uint32 ui32QueueSize)
+      : nRunTaskCount(0), nMaxTaskCount(nMaxTaskCountIn), nIncCount(nIncCountIn), CMthQueue<T>(ui32QueueSize) {}
+    ~CMoreTaskQueue() {}
+
+    /* ui32Timeout is milliseconds */
+    virtual bool SetData(T& data, bool& fOpenTask, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtSetData(lock, data, ui32Timeout))
+        {
+            return false;
+        }
+        fOpenTask = CheckTask();
+        return true;
+    }
+
+    virtual bool SetData(const T& data, bool& fOpenTask, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtSetData(lock, data, ui32Timeout))
+        {
+            return false;
+        }
+        fOpenTask = CheckTask();
+        return true;
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool SetMoreData(const std::vector<T>& vDataList, bool& fOpenTask, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtSetMoreData(lock, vDataList, ui32Timeout))
+        {
+            return false;
+        }
+        fOpenTask = CheckTask();
+        return true;
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool GetData(T& data, const uint32 ui32Timeout = 0) override
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtGetData(lock, data, ui32Timeout))
+        {
+            CancelTask();
+            return false;
+        }
+        return true;
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool GetMoreData(std::vector<T>& vDataList, const uint32 nMaxGetCount = 0, const uint32 ui32Timeout = 0) override
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtGetMoreData(lock, vDataList, nMaxGetCount, ui32Timeout))
+        {
+            CancelTask();
+            return false;
+        }
+        return true;
+    }
+
+    void SetMaxTaskCount(const uint32 nMaxs)
+    {
+        nMaxTaskCount = nMaxs;
+    }
+    uint32 GetMaxTaskCount() const
+    {
+        return nMaxTaskCount;
+    }
+    void SetIncCount(const uint64 nIns)
+    {
+        nIncCount = nIns;
+    }
+    uint64 GetIncCount() const
+    {
+        return nIncCount;
+    }
+
+protected:
+    virtual bool CheckTask()
+    {
+        if (nRunTaskCount < nMaxTaskCount && (uint32)(CMthQueue<T>::qData.size() / nIncCount + 1) > nRunTaskCount)
+        {
+            nRunTaskCount++;
+            return true;
+        }
+        return false;
+    }
+    virtual void CancelTask()
+    {
+        nRunTaskCount--;
+    }
+
+protected:
+    uint32 nRunTaskCount;
+    uint32 nMaxTaskCount;
+    uint64 nIncCount;
+};
+
+} // namespace hnbase
+
 #endif // __HSM_MTHBASE_H
