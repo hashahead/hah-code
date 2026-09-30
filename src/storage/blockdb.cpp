@@ -767,6 +767,36 @@ bool CBlockDB::RetrieveFunctionAddress(const uint256& hashFork, const uint256& h
     return dbAddress.RetrieveFunctionAddress(hashFork, hashBlock, nFuncId, ctxFuncAddress);
 }
 
+bool CBlockDB::RetrieveBlsPubkeyContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint384& blsPubkey)
+{
+    return dbAddress.RetrieveBlsPubkeyContext(hashFork, hashBlock, dest, blsPubkey);
+}
+
+bool CBlockDB::GetOwnerLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destOwner, std::map<CDestination, uint8>& mapTemplateAddress)
+{
+    return dbAddress.GetOwnerLinkTemplateAddress(hashFork, hashBlock, destOwner, mapTemplateAddress);
+}
+
+bool CBlockDB::GetDelegateLinkTemplateAddress(const uint256& hashFork, const uint256& hashBlock, const CDestination& destDelegate, const uint32 nTemplateType, const uint64 nBegin, const uint64 nCount, std::vector<std::pair<CDestination, uint8>>& vTemplateAddress)
+{
+    return dbAddress.GetDelegateLinkTemplateAddress(hashFork, hashBlock, destDelegate, nTemplateType, nBegin, nCount, vTemplateAddress);
+}
+
+bool CBlockDB::ClearAddressDbUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight)
+{
+    return dbAddress.ClearAddressUnavailableNode(hashFork, nClearRefHeight);
+}
+
+bool CBlockDB::GetSnapshotAddressData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    return dbAddress.GetSnapshotAddressData(hashFork, vBlockHash, btSnapData);
+}
+
+bool CBlockDB::RecoveryAddressData(const bytes& btSnapData)
+{
+    return dbAddress.RecoveryAddressData(btSnapData);
+}
+
 bool CBlockDB::AddCodeContext(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock,
                               const std::map<uint256, CContractSourceCodeContext>& mapSourceCode,
                               const std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode,
