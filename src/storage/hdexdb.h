@@ -133,6 +133,7 @@ protected:
     bool GetPrevRoot(const uint8 nRootType, const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
 
     bool GetDexOrderDb(const uint256& hashRoot, const CChainId nChainId, const CDestination& destOrder, const uint256& hashCoinPair, const uint8 nOwnerCoinFlag, const uint64 nOrderNumber, CDexOrderSave& dexOrder);
+    bool GetPeerDexOrderProveDb(const uint256& hashRoot, const CChainId nChainId, const CDestination& destOrder, const uint256& hashCoinPair, const uint8 nOwnerCoinFlag, const uint64 nOrderNumber, CDexOrderSave& dexOrder);
 protected:
     enum
     {

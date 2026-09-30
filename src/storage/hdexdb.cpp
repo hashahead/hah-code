@@ -1196,6 +1196,29 @@ bool CHdexDB::GetPeerDexOrderProveDb(const uint256& hashRoot, const CChainId nCh
     }
     return true;
 }
+
+bool CHdexDB::GetDexCompletePriceDb(const uint256& hashRoot, const uint256& hashCoinPair, uint256& nCompletePrice)
+{
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_HDEX_KEY_TYPE_TRIE_DEX_ORDER_COMPLETE_PRICE << hashCoinPair;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> nCompletePrice;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
