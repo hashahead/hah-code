@@ -112,6 +112,7 @@ protected:
     void AddStopForkInner(const uint256& hashRoot, const std::set<uint256>& setStopFork, const uint32 nBlockHeight, bytesmap& mapKv);
     bool GetForkCtxStatusInner(const uint256& hashRoot, const uint256& hashFork, CForkCtxStatus& forkStatus);
     bool WriteTraceDbFlag();
+    bool ReadTraceDbFlag();
 
 protected:
     enum
@@ -124,9 +125,10 @@ protected:
     CTrieDB dbTrie;
 
     hnbase::CRWAccess rwAccess;
-    std::map<uint256, CCacheFork> mapCacheFork;
-    std::map<uint256, uint256> mapCacheLast;
-    std::map<uint256, uint256> mapCacheRoot;
+    std::map<uint256, SHP_CACHE_FORK_DATA> mapCacheForkContext;      // key: fork context hash
+    std::map<uint256, SHP_CACHE_FORK_DATA> mapCacheForkBlockPtr;     // key: block hash
+    std::map<uint256, uint256> mapCacheLast;                         // key: fork hash
+    std::map<uint256, uint256, CustomBlockHashCompare> mapCacheRoot; // key: block hash
 };
 
 } // namespace storage

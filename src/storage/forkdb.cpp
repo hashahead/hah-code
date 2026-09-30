@@ -1654,5 +1654,27 @@ bool CForkDB::WriteTraceDbFlag()
     }
     return true;
 }
+
+bool CForkDB::ReadTraceDbFlag()
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_FORK_KEY_TYPE_TRACEDB_FLAG << DB_FORK_KEY_ID_TRACEDB_FLAG;
+    if (!dbTrie.ReadExtKv(ssKey, ssValue))
+    {
+        return false;
+    }
+    try
+    {
+        bool fTraceDbFlag;
+        ssValue >> fTraceDbFlag;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
