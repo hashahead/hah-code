@@ -747,9 +747,9 @@ bool CBlockDB::ListContractAddress(const uint256& hashFork, const uint256& hashB
     return dbAddress.ListContractAddress(hashFork, hashBlock, mapContractAddress);
 }
 
-bool CBlockDB::RetrieveTimeVault(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CTimeVault& tv)
+bool CBlockDB::ListTokenContractAddress(const uint256& hashFork, const uint256& hashBlock, std::map<CDestination, CTokenContractAddressContext>& mapTokenContractAddress)
 {
-    return dbAddress.RetrieveTimeVault(hashFork, hashBlock, dest, tv);
+    return dbAddress.ListTokenContractAddress(hashFork, hashBlock, mapTokenContractAddress);
 }
 
 bool CBlockDB::GetAddressCount(const uint256& hashFork, const uint256& hashBlock, uint64& nAddressCount, uint64& nNewAddressCount)
