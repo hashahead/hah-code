@@ -214,6 +214,9 @@ bool CryptoBlsGetPubkey(const uint256& secret, uint384& pubkey);
 bool CryptoBlsSign(const uint256& secret, const bytes& btData, bytes& btSig);
 bool CryptoBlsVerify(const uint384& pubkey, const bytes& btData, const bytes& btSig);
 bool CryptoBlsAggregateSig(const std::vector<bytes>& vSigs, bytes& btAggSig);
+bool CryptoBlsAggregateVerify(const std::vector<uint384>& vPubkeys, const std::vector<bytes>& vDatas, const bytes& btAggSig);
+bool CryptoBlsFastAggregateVerify(const std::vector<uint384>& vPubkeys, const bytes& btData, const bytes& btAggSig);
+
 } // namespace crypto
 } // namespace hashahead
 

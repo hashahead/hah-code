@@ -971,5 +971,56 @@ bool CryptoBlsAggregateSig(const std::vector<bytes>& vSigs, bytes& btAggSig)
     }
     return true;
 }
+
+bool CryptoBlsAggregateVerify(const std::vector<uint384>& vPubkeys, const std::vector<bytes>& vDatas, const bytes& btAggSig)
+{
+    if (vPubkeys.size() == 0 || vDatas.size() != vPubkeys.size() || btAggSig.size() != 96)
+    {
+        StdError(__PRETTY_FUNCTION__, "param error");
+        return false;
+    }
+    try
+    {
+        vector<G1Element> pks;
+        pks.reserve(vPubkeys.size());
+        for (auto const& pk : vPubkeys)
+        {
+            pks.emplace_back(G1Element::FromByteVector(pk.GetBytes()));
+        }
+        return PopSchemeMPL().AggregateVerify(pks, vDatas, G2Element::FromByteVector(btAggSig));
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CryptoBlsFastAggregateVerify(const std::vector<uint384>& vPubkeys, const bytes& btData, const bytes& btAggSig)
+{
+    if (vPubkeys.size() == 0 || btData.size() == 0 || btAggSig.size() != 96)
+    {
+        StdError(__PRETTY_FUNCTION__, "param error");
+        return false;
+    }
+    try
+    {
+        vector<G1Element> pks;
+        pks.reserve(vPubkeys.size());
+        for (auto const& pk : vPubkeys)
+        {
+            pks.emplace_back(G1Element::FromByteVector(pk.GetBytes()));
+        }
+        return PopSchemeMPL().FastAggregateVerify(pks, btData, G2Element::FromByteVector(btAggSig));
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
 } // namespace crypto
 } // namespace hashahead
