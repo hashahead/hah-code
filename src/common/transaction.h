@@ -1470,6 +1470,161 @@ public:
     std::string strCoinSymbolMax;
     uint32 nChainIdMax;
 };
+
+class CDexCompleteStatus
+{
+public:
+    CDexCompleteStatus() {}
+
+public:
+    enum
+    {
+        DCS_DEX_ORDER_UNCOMPLETED = 0,
+        DCS_DEX_ORDER_COMPLETED = 1,
+        DCS_DEX_ORDER_ALL = 2,
+    };
+};
+
+class CDexOrderHeader
+{
+    friend class hnbase::CStream;
+
+public:
+    CDexOrderHeader(const CChainId nChainIdIn, const CDestination& destOrderIn, const std::string& strSymbolOwner, const std::string& strSymbolPeer, const uint64 nOrderNumberIn)
+      : nChainId(nChainIdIn), destOrder(destOrderIn), nOrderNumber(nOrderNumberIn)
+    {
+        nOwnerCoinFlag = GetOwnerCoinFlagStatic(strSymbolOwner, strSymbolPeer);
+        hashCoinPair = GetCoinPairHashStatic(strSymbolOwner, strSymbolPeer);
+    }
+    CDexOrderHeader(const CChainId nChainIdIn, const CDestination& destOrderIn, const uint256& hashCoinPairIn, const uint8 nOwnerCoinFlagIn, const uint64 nOrderNumberIn)
+      : nChainId(nChainIdIn), destOrder(destOrderIn), hashCoinPair(hashCoinPairIn), nOwnerCoinFlag(nOwnerCoinFlagIn), nOrderNumber(nOrderNumberIn)
+    {
+    }
+
+    CChainId GetChainId() const
+    {
+        return nChainId;
+    }
+    const CDestination& GetOrderAddress() const
+    {
+        return destOrder;
+    }
+    const uint256& GetCoinPairHash() const
+    {
+        return hashCoinPair;
+    }
+    uint8 GetOwnerCoinFlag() const
+    {
+        return nOwnerCoinFlag;
+    }
+    uint64 GetOrderNumber() const
+    {
+        return nOrderNumber;
+    }
+    uint256 GetDexOrderHash() const
+    {
+        return GetDexOrderHashStatic(nChainId, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber);
+    }
+
+    static inline uint256 GetCoinPairHashStatic(const std::string& strSymbol1, const std::string& strSymbol2)
+    {
+        hnbase::CBufStream ss;
+        if (strSymbol1 < strSymbol2)
+        {
+            ss << strSymbol1 << strSymbol2;
+        }
+        else
+        {
+            ss << strSymbol2 << strSymbol1;
+        }
+        return crypto::CryptoKeccakHash(ss.GetData(), ss.GetSize());
+    }
+    static inline uint8 GetOwnerCoinFlagStatic(const std::string& strSymbolOwner, const std::string& strSymbolPeer)
+    {
+        return (strSymbolOwner < strSymbolPeer ? 0 : 1);
+    }
+    static inline uint256 GetOrderRandomHashStatic(const uint256& hashBlockIn, const uint256& hashDexOrderIn)
+    {
+        hnbase::CBufStream ss;
+        ss << hashBlockIn << hashDexOrderIn;
+        return crypto::CryptoKeccakHash(ss.GetData(), ss.GetSize());
+    }
+    static inline uint256 GetDexOrderHashStatic(const CChainId nChainIdIn, const CDestination& destOrderIn, const uint256& hashCoinPairIn, const uint8 nOwnerCoinFlagIn, const uint64 nOrderNumberIn)
+    {
+        hnbase::CBufStream ss;
+        ss << nChainIdIn << destOrderIn << hashCoinPairIn << nOwnerCoinFlagIn << nOrderNumberIn;
+        return crypto::CryptoKeccakHash(ss.GetData(), ss.GetSize());
+    }
+    static inline std::string GetSellCoinSymbolStatic(const std::string& strSymbol1, const std::string& strSymbol2)
+    {
+        return std::min(strSymbol1, strSymbol2);
+    }
+    static inline std::string GetBuyCoinSymbolStatic(const std::string& strSymbol1, const std::string& strSymbol2)
+    {
+        return std::max(strSymbol1, strSymbol2);
+    }
+
+protected:
+    CChainId nChainId;
+    CDestination destOrder;
+    uint256 hashCoinPair;
+    uint8 nOwnerCoinFlag; // 0: min, 1: max
+    uint64 nOrderNumber;
+
+public:
+    friend inline bool operator==(const CDexOrderHeader& a, const CDexOrderHeader& b)
+    {
+        return (a.nChainId == b.nChainId && a.destOrder == b.destOrder && a.hashCoinPair == b.hashCoinPair && a.nOwnerCoinFlag == b.nOwnerCoinFlag && a.nOrderNumber == b.nOrderNumber);
+    }
+    friend inline bool operator!=(const CDexOrderHeader& a, const CDexOrderHeader& b)
+    {
+        return (!(a == b));
+    }
+    friend inline bool operator<(const CDexOrderHeader& a, const CDexOrderHeader& b)
+    {
+        if (a.nChainId < b.nChainId)
+        {
+            return true;
+        }
+        if (a.nChainId == b.nChainId)
+        {
+            if (a.destOrder < b.destOrder)
+            {
+                return true;
+            }
+            if (a.destOrder == b.destOrder)
+            {
+                if (a.hashCoinPair < b.hashCoinPair)
+                {
+                    return true;
+                }
+                if (a.hashCoinPair == b.hashCoinPair)
+                {
+                    if (a.nOwnerCoinFlag < b.nOwnerCoinFlag)
+                    {
+                        return true;
+                    }
+                    if (a.nOwnerCoinFlag == b.nOwnerCoinFlag && a.nOrderNumber < b.nOrderNumber)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(nChainId, opt);
+        s.Serialize(destOrder, opt);
+        s.Serialize(hashCoinPair, opt);
+        s.Serialize(nOwnerCoinFlag, opt);
+        s.Serialize(nOrderNumber, opt);
+    }
+};
 } // namespace hashahead
 
 #endif //COMMON_TRANSACTION_H
