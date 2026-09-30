@@ -1618,5 +1618,41 @@ void CForkDB::AddStopForkInner(const uint256& hashRoot, const std::set<uint256>&
         mapKv[btKey] = btValue;
     }
 }
+
+bool CForkDB::GetForkCtxStatusInner(const uint256& hashRoot, const uint256& hashFork, CForkCtxStatus& forkStatus)
+{
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_FORK_KEY_TYPE_STATUS << hashFork;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> forkStatus;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CForkDB::WriteTraceDbFlag()
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_FORK_KEY_TYPE_TRACEDB_FLAG << DB_FORK_KEY_ID_TRACEDB_FLAG;
+    bool fTraceDbFlag = true;
+    ssValue << fTraceDbFlag;
+    if (!dbTrie.WriteExtKv(ssKey, ssValue))
+    {
+        return false;
+    }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead
