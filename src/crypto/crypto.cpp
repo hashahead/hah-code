@@ -893,5 +893,39 @@ bool CryptoBlsMakeNewKey(CCryptoBlsKey& key, const uint256& random)
     }
     return true;
 }
+
+bool CryptoBlsGetPubkey(const uint256& secret, uint384& pubkey)
+{
+    try
+    {
+        PrivateKey sk = PrivateKey::FromByteVector(secret.GetBytes());
+        pubkey.SetBytes(sk.GetG1Element().Serialize());
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CryptoBlsSign(const uint256& secret, const bytes& btData, bytes& btSig)
+{
+    try
+    {
+        btSig = PopSchemeMPL().Sign(PrivateKey::FromByteVector(secret.GetBytes()), btData).Serialize();
+        if (btSig.size() != 96)
+        {
+            StdError(__PRETTY_FUNCTION__, "Sign fail, sig size: %lu", btSig.size());
+            return false;
+        }
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 } // namespace crypto
 } // namespace hashahead

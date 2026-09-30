@@ -210,6 +210,8 @@ struct CCryptoBlsKey
 
 bool CryptoBlsMakeNewKey(CCryptoBlsKey& key);
 bool CryptoBlsMakeNewKey(CCryptoBlsKey& key, const uint256& random);
+bool CryptoBlsGetPubkey(const uint256& secret, uint384& pubkey);
+bool CryptoBlsSign(const uint256& secret, const bytes& btData, bytes& btSig);
 } // namespace crypto
 } // namespace hashahead
 
