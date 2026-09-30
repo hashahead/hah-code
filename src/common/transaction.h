@@ -1722,6 +1722,92 @@ protected:
         serSize = ss.GetSize();
     }
 };
+
+class CDexOrderSave
+{
+    friend class hnbase::CStream;
+
+public:
+    CDexOrderSave()
+      : nAtChainId(0) {}
+    CDexOrderSave(const CDexOrderBody& dexOrderIn, const CChainId nAtChainIdIn, const uint256& hashAtBlockIn)
+      : dexOrder(dexOrderIn), nAtChainId(nAtChainIdIn), hashAtBlock(hashAtBlockIn) {}
+
+public:
+    CDexOrderBody dexOrder;
+    CChainId nAtChainId;
+    uint256 hashAtBlock;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(dexOrder, opt);
+        s.Serialize(nAtChainId, opt);
+        s.Serialize(hashAtBlock, opt);
+    }
+};
+
+class CCompDexOrderRecord
+{
+    friend class hnbase::CStream;
+
+public:
+    CCompDexOrderRecord(const CDestination& destPeerOrderIn, const uint256& nCompleteAmountIn, const uint256& nCompletePriceIn)
+      : destPeerOrder(destPeerOrderIn), nCompleteAmount(nCompleteAmountIn), nCompletePrice(nCompletePriceIn) {}
+
+    void SetNull()
+    {
+        destPeerOrder.SetNull();
+        nCompleteAmount = 0;
+        nCompletePrice = 0;
+    }
+    void Save(bytes& btData) const
+    {
+        hnbase::CBufStream ss;
+        ss << *this;
+        ss.GetData(btData);
+    }
+    bool Load(const bytes& btData)
+    {
+        hnbase::CBufStream ss(btData);
+        try
+        {
+            ss >> *this;
+        }
+        catch (const std::exception& e)
+        {
+            return false;
+        }
+        return true;
+    }
+
+public:
+    CDestination destPeerOrder;
+    uint256 nCompleteAmount;
+    uint256 nCompletePrice;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+    {
+        s << destPeerOrder << nCompleteAmount.ToValidBigEndianData() << nCompletePrice.ToValidBigEndianData();
+    }
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&)
+    {
+        bytes btCompleteAmount;
+        bytes btCompletePrice;
+        s >> destPeerOrder >> btCompleteAmount >> btCompletePrice;
+        nCompleteAmount.FromValidBigEndianData(btCompleteAmount);
+        nCompletePrice.FromValidBigEndianData(btCompletePrice);
+    }
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const
+    {
+        (void)s;
+        hnbase::CBufStream ss;
+        ss << destPeerOrder << nCompleteAmount.ToValidBigEndianData() << nCompletePrice.ToValidBigEndianData();
+        serSize = ss.GetSize();
+    }
+};
 } // namespace hashahead
 
 #endif //COMMON_TRANSACTION_H
