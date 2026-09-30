@@ -212,6 +212,8 @@ bool CryptoBlsMakeNewKey(CCryptoBlsKey& key);
 bool CryptoBlsMakeNewKey(CCryptoBlsKey& key, const uint256& random);
 bool CryptoBlsGetPubkey(const uint256& secret, uint384& pubkey);
 bool CryptoBlsSign(const uint256& secret, const bytes& btData, bytes& btSig);
+bool CryptoBlsVerify(const uint384& pubkey, const bytes& btData, const bytes& btSig);
+bool CryptoBlsAggregateSig(const std::vector<bytes>& vSigs, bytes& btAggSig);
 } // namespace crypto
 } // namespace hashahead
 

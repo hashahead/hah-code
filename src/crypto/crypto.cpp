@@ -927,5 +927,49 @@ bool CryptoBlsSign(const uint256& secret, const bytes& btData, bytes& btSig)
     }
     return true;
 }
+
+bool CryptoBlsVerify(const uint384& pubkey, const bytes& btData, const bytes& btSig)
+{
+    try
+    {
+        return PopSchemeMPL().Verify(G1Element::FromByteVector(pubkey.GetBytes()), btData, G2Element::FromByteVector(btSig));
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CryptoBlsAggregateSig(const std::vector<bytes>& vSigs, bytes& btAggSig)
+{
+    if (vSigs.size() == 0)
+    {
+        StdError(__PRETTY_FUNCTION__, "param error");
+        return false;
+    }
+    try
+    {
+        vector<G2Element> sigs;
+        sigs.reserve(vSigs.size());
+        for (auto const& sig : vSigs)
+        {
+            sigs.emplace_back(G2Element::FromByteVector(sig));
+        }
+        btAggSig = PopSchemeMPL().Aggregate(sigs).Serialize();
+        if (btAggSig.size() != 96)
+        {
+            StdError(__PRETTY_FUNCTION__, "Aggregate fail, agg sig size: %lu", btAggSig.size());
+            return false;
+        }
+    }
+    catch (exception& e)
+    {
+        StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 } // namespace crypto
 } // namespace hashahead
