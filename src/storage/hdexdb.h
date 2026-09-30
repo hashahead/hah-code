@@ -134,6 +134,11 @@ protected:
 
     bool GetDexOrderDb(const uint256& hashRoot, const CChainId nChainId, const CDestination& destOrder, const uint256& hashCoinPair, const uint8 nOwnerCoinFlag, const uint64 nOrderNumber, CDexOrderSave& dexOrder);
     bool GetPeerDexOrderProveDb(const uint256& hashRoot, const CChainId nChainId, const CDestination& destOrder, const uint256& hashCoinPair, const uint8 nOwnerCoinFlag, const uint64 nOrderNumber, CDexOrderSave& dexOrder);
+    bool GetDexCompletePriceDb(const uint256& hashRoot, const uint256& hashCoinPair, uint256& nCompletePrice);
+    bool GetDexOrderMaxNumberDb(const uint256& hashRoot, const CChainId nChainId, const CDestination& destOrder, const uint256& hashCoinPair, const uint8 nOwnerCoinFlag, uint64& nMaxOrderNumber);
+    bool GetPeerCrossLastBlockDb(const uint256& hashRoot, const CChainId nPeerChainId, uint256& hashLastProveBlock);
+    bool GetPeerChainSendPrevBlockDb(const uint256& hashRoot, const CChainId nSendChainId, uint256& hashLastProveBlock);
+    bool ListPeerChainSendLastProveBlockDb(const uint256& hashBlock, std::map<CChainId, uint256>& mapSendLastProveBlock);
 protected:
     enum
     {

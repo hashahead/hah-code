@@ -1219,6 +1219,75 @@ bool CHdexDB::GetDexCompletePriceDb(const uint256& hashRoot, const uint256& hash
     }
     return true;
 }
+
+bool CHdexDB::GetDexOrderMaxNumberDb(const uint256& hashRoot, const CChainId nChainId, const CDestination& destOrder, const uint256& hashCoinPair, const uint8 nOwnerCoinFlag, uint64& nMaxOrderNumber)
+{
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_HDEX_KEY_TYPE_TRIE_DEX_ORDER_MAX_NUMBER << BSwap32(nChainId) << destOrder << hashCoinPair << nOwnerCoinFlag;
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> nMaxOrderNumber;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CHdexDB::GetPeerCrossLastBlockDb(const uint256& hashRoot, const CChainId nPeerChainId, uint256& hashLastProveBlock)
+{
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_HDEX_KEY_TYPE_TRIE_CROSS_SEND_LAST_PROVE_BLOCK << BSwap32(nPeerChainId);
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> hashLastProveBlock;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CHdexDB::GetPeerChainSendPrevBlockDb(const uint256& hashRoot, const CChainId nSendChainId, uint256& hashLastProveBlock)
+{
+    hnbase::CBufStream ssKey;
+    bytes btKey, btValue;
+    ssKey << DB_HDEX_KEY_TYPE_TRIE_CROSS_LAST_PROVE_BLOCK << BSwap32(nSendChainId);
+    ssKey.GetData(btKey);
+    if (!dbTrie.Retrieve(hashRoot, btKey, btValue))
+    {
+        return false;
+    }
+    try
+    {
+        hnbase::CBufStream ssValue(btValue);
+        ssValue >> hashLastProveBlock;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
