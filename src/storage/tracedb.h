@@ -98,6 +98,11 @@ public:
 protected:
     bool WriteTrieRoot(const uint8 nTrieType, const uint256& hashBlock, const uint256& hashTrieRoot);
     bool ReadTrieRoot(const uint8 nTrieType, const uint256& hashBlock, uint256& hashTrieRoot);
+    bool RemoveTrieRoot(const uint8 nTrieType, const uint256& hashBlock);
+    void AddPrevRoot(const uint256& hashPrevRoot, const uint256& hashBlock, bytesmap& mapKv);
+    bool GetPrevRoot(const uint256& hashRoot, uint256& hashPrevRoot, uint256& hashBlock);
+    bool ClearHeightTrieRoot(const uint32 nLastHeight);
+
 protected:
     hnbase::CRWAccess rwAccess;
     uint256 hashFork;
@@ -115,6 +120,7 @@ public:
     bool Initialize(const boost::filesystem::path& pathData, const bool fUseCacheDataIn, const bool fPruneIn = false);
     void Deinitialize();
 
+    bool RetrieveTxContractPrevState(const uint256& hashFork, const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState);
 protected:
     boost::filesystem::path pathTrace;
     hnbase::CRWAccess rwAccess;
