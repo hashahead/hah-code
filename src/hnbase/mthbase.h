@@ -630,4 +630,92 @@ protected:
     std::queue<T> qData;
     uint32 ui32MaxQueueSize;
 };
+
+template <typename T>
+class CTaskQueue : public CMthQueue<T>
+{
+public:
+    CTaskQueue()
+      : fTasking(false), CMthQueue<T>() {}
+    CTaskQueue(const uint32 ui32QueueSize)
+      : fTasking(false), CMthQueue<T>(ui32QueueSize) {}
+    ~CTaskQueue() {}
+
+    /* ui32Timeout is milliseconds */
+    virtual bool SetData(T& data, bool& fOpenTask, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtSetData(lock, data, ui32Timeout))
+        {
+            return false;
+        }
+        fOpenTask = CheckTask();
+        return true;
+    }
+
+    virtual bool SetData(const T& data, bool& fOpenTask, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtSetData(lock, data, ui32Timeout))
+        {
+            return false;
+        }
+        fOpenTask = CheckTask();
+        return true;
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool SetMoreData(const std::vector<T>& vDataList, bool& fOpenTask, const uint32 ui32Timeout = 0)
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtSetMoreData(lock, vDataList, ui32Timeout))
+        {
+            return false;
+        }
+        fOpenTask = CheckTask();
+        return true;
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool GetData(T& data, const uint32 ui32Timeout = 0) override
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtGetData(lock, data, ui32Timeout))
+        {
+            CancelTask();
+            return false;
+        }
+        return true;
+    }
+
+    /* ui32Timeout is milliseconds */
+    virtual bool GetMoreData(std::vector<T>& vDataList, const uint32 nMaxGetCount = 0, const uint32 ui32Timeout = 0) override
+    {
+        boost::unique_lock<boost::mutex> lock(CMthQueue<T>::lockQueue);
+        if (!CMthQueue<T>::PrtGetMoreData(lock, vDataList, nMaxGetCount, ui32Timeout))
+        {
+            CancelTask();
+            return false;
+        }
+        return true;
+    }
+
+protected:
+    virtual bool CheckTask()
+    {
+        if (!fTasking)
+        {
+            fTasking = true;
+            return true;
+        }
+        return false;
+    }
+    virtual void CancelTask()
+    {
+        fTasking = false;
+    }
+
+protected:
+    bool fTasking;
+};
 #endif // __HSM_MTHBASE_H
