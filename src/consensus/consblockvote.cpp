@@ -370,6 +370,122 @@ bool CConsBlock::GetPubkeysByBitmap(const CBitmap& bmBitmap, vector<uint384>& vP
     }
     return true;
 }
+
+bool CConsBlock::GetLocalPreVoteSign(const int64 nEpochDurationIn, CBitmap& bmPreVoteBitmap, vector<uint384>& vPubkeys, vector<bytes>& vSigs)
+{
+    // int64 nWaitTime = nEpochDurationIn / 10;
+    // if (nWaitTime < 500)
+    // {
+    //     nWaitTime = 500;
+    // }
+    // else if (nWaitTime > 3000)
+    // {
+    //     nWaitTime = 3000;
+    // }
+    // if (GetTimeMillis() - nVoteBeginTime < nWaitTime)
+    // {
+    //     return false;
+    // }
+
+#ifdef CBV_SHOW_DEBUG
+    StdDebug("CConsBlock", "Get local pre vote sig: pre vote sig count: %lu, candidate node count: %lu, block: %s",
+             mapPreVoteSig.size(), mapCandidateNodeIndex.size(), hashBlock.GetBhString().c_str());
+#endif
+
+    if (mapPreVoteSig.size() >= (mapCandidateNodeIndex.size() * 2 / 3))
+    {
+        vector<uint32> vIndexList;
+        bmBlockPreVoteBitmap.GetIndexList(vIndexList);
+        if (vIndexList.empty() || vIndexList.size() != mapPreVoteSig.size())
+        {
+            StdLog("CConsBlock", "Get local pre vote sig: Pre vote bitmap bits error, bits: %lu, sigs: %lu, block: %s",
+                   vIndexList.size(), mapPreVoteSig.size(), hashBlock.GetBhString().c_str());
+            return false;
+        }
+        vPubkeys.reserve(vIndexList.size());
+        vSigs.reserve(vIndexList.size());
+        for (auto& index : vIndexList)
+        {
+            if (index >= vPreVoteCandidateNodePubkey.size())
+            {
+                StdLog("CConsBlock", "Get local pre vote sig: Index error, index: %d, block: %s", index, hashBlock.GetBhString().c_str());
+                return false;
+            }
+            auto& pubkey = vPreVoteCandidateNodePubkey[index].pubkey;
+            vPubkeys.push_back(pubkey);
+
+            auto it = mapPreVoteSig.find(pubkey);
+            if (it == mapPreVoteSig.end())
+            {
+                StdLog("CConsBlock", "Get local pre vote sig: Find sig fail, index: %d, pubkey: %s, block: %s",
+                       index, pubkey.GetHex().c_str(), hashBlock.GetBhString().c_str());
+                return false;
+            }
+            vSigs.push_back(it->second);
+        }
+        bmPreVoteBitmap = bmBlockPreVoteBitmap;
+        return true;
+    }
+    return false;
+}
+
+bool CConsBlock::GetLocalCommitVoteSign(const int64 nEpochDurationIn, CBitmap& bmCommitVoteBitmap, vector<uint384>& vPubkeys, vector<bytes>& vSigs)
+{
+    // int64 nWaitTime = nEpochDurationIn / 10;
+    // if (nWaitTime < 500)
+    // {
+    //     nWaitTime = 500;
+    // }
+    // else if (nWaitTime > 3000)
+    // {
+    //     nWaitTime = 3000;
+    // }
+    // if (GetTimeMillis() - nVoteBeginTime < nWaitTime)
+    // {
+    //     return false;
+    // }
+
+#ifdef CBV_SHOW_DEBUG
+    StdDebug("CConsBlock", "Get local commit vote sig: commit vote sig count: %lu, candidate node count: %lu, block: %s",
+             mapCommitVoteSig.size(), mapCandidateNodeIndex.size(), hashBlock.GetBhString().c_str());
+#endif
+
+    if (mapCommitVoteSig.size() >= (mapCandidateNodeIndex.size() * 2 / 3))
+    {
+        vector<uint32> vIndexList;
+        bmBlockCommitVoteBitmap.GetIndexList(vIndexList);
+        if (vIndexList.empty() || vIndexList.size() != mapCommitVoteSig.size())
+        {
+            StdLog("CConsBlock", "Get local commit vote sig: Commit vote bitmap bits error, bits: %lu, sigs: %lu, block: %s",
+                   vIndexList.size(), mapCommitVoteSig.size(), hashBlock.GetBhString().c_str());
+            return false;
+        }
+        vPubkeys.reserve(vIndexList.size());
+        vSigs.reserve(vIndexList.size());
+        for (auto& index : vIndexList)
+        {
+            if (index >= vCommitVoteCandidateNodePubkey.size())
+            {
+                StdLog("CConsBlock", "Get local commit vote sig: Index error, index: %d, block: %s", index, hashBlock.GetBhString().c_str());
+                return false;
+            }
+            auto& pubkey = vCommitVoteCandidateNodePubkey[index].pubkey;
+            vPubkeys.push_back(pubkey);
+
+            auto it = mapCommitVoteSig.find(pubkey);
+            if (it == mapCommitVoteSig.end())
+            {
+                StdLog("CConsBlock", "Get local commit vote sig: Find sig fail, index: %d, pubkey: %s, block: %s",
+                       index, pubkey.GetHex().c_str(), hashBlock.GetBhString().c_str());
+                return false;
+            }
+            vSigs.push_back(it->second);
+        }
+        bmCommitVoteBitmap = bmBlockCommitVoteBitmap;
+        return true;
+    }
+    return false;
+}
 /////////////////////////////////
 // CConsBlockVote
 

@@ -1625,6 +1625,103 @@ protected:
         s.Serialize(nOrderNumber, opt);
     }
 };
+
+class CDexOrderBody
+{
+    friend class hnbase::CStream;
+
+public:
+    CDexOrderBody()
+      : nCoinAtChainIdPeer(0), nCompleteOrderCount(0) {}
+    CDexOrderBody(const std::string& strCoinSymbolOwnerIn, const std::string& strCoinSymbolPeerIn, const CChainId nCoinAtChainIdPeerIn, const uint256& nOrderAmountIn, const uint256& nOrderPriceIn)
+      : strCoinSymbolOwner(strCoinSymbolOwnerIn), strCoinSymbolPeer(strCoinSymbolPeerIn), nCoinAtChainIdPeer(nCoinAtChainIdPeerIn), nOrderAmount(nOrderAmountIn), nOrderPrice(nOrderPriceIn), nCompleteOrderCount(0) {}
+
+    void SetNull()
+    {
+        strCoinSymbolOwner.clear();
+        strCoinSymbolPeer.clear();
+        nCoinAtChainIdPeer = 0;
+        nOrderAmount = 0;
+        nOrderPrice = 0;
+    }
+    void Save(bytes& btData) const
+    {
+        hnbase::CBufStream ss;
+        ss << *this;
+        ss.GetData(btData);
+    }
+    bool Load(const bytes& btData)
+    {
+        hnbase::CBufStream ss(btData);
+        try
+        {
+            ss >> *this;
+        }
+        catch (const std::exception& e)
+        {
+            return false;
+        }
+        return true;
+    }
+    uint256 GetCoinPairHash() const
+    {
+        return CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+    }
+    uint8 GetOwnerCoinFlag() const
+    {
+        return CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+    }
+    std::string GetSellCoinSymbol() const
+    {
+        return CDexOrderHeader::GetSellCoinSymbolStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+    }
+    std::string GetBuyCoinSymbol() const
+    {
+        return CDexOrderHeader::GetBuyCoinSymbolStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+    }
+    bool IsOwnerSell() const
+    {
+        return (CDexOrderHeader::GetSellCoinSymbolStatic(strCoinSymbolOwner, strCoinSymbolPeer) == strCoinSymbolOwner);
+    }
+    bool IsOwnerBuy() const
+    {
+        return (CDexOrderHeader::GetBuyCoinSymbolStatic(strCoinSymbolOwner, strCoinSymbolPeer) == strCoinSymbolOwner);
+    }
+
+public:
+    std::string strCoinSymbolOwner;
+    std::string strCoinSymbolPeer;
+    CChainId nCoinAtChainIdPeer;
+    uint256 nOrderAmount;
+    uint256 nOrderPrice;
+    uint256 nCompleteOrderAmount;
+    uint64 nCompleteOrderCount;
+
+protected:
+    void Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+    {
+        s << strCoinSymbolOwner << strCoinSymbolPeer << nCoinAtChainIdPeer << nOrderAmount.ToValidBigEndianData() << nOrderPrice.ToValidBigEndianData() << nCompleteOrderAmount.ToValidBigEndianData() << hnbase::CVarInt(nCompleteOrderCount);
+    }
+    void Serialize(hnbase::CStream& s, hnbase::LoadType&)
+    {
+        bytes btOrderAmount;
+        bytes btOrderPrice;
+        bytes btCompleteOrderAmount;
+        hnbase::CVarInt varCompleteOrderCount;
+        s >> strCoinSymbolOwner >> strCoinSymbolPeer >> nCoinAtChainIdPeer >> btOrderAmount >> btOrderPrice >> btCompleteOrderAmount >> varCompleteOrderCount;
+        nOrderAmount.FromValidBigEndianData(btOrderAmount);
+        nOrderPrice.FromValidBigEndianData(btOrderPrice);
+        nCompleteOrderAmount.FromValidBigEndianData(btCompleteOrderAmount);
+        nCompleteOrderCount = varCompleteOrderCount.GetValue();
+    }
+    void Serialize(hnbase::CStream& s, std::size_t& serSize) const
+    {
+        (void)s;
+        hnbase::CBufStream ss;
+        ss << strCoinSymbolOwner << strCoinSymbolPeer << nCoinAtChainIdPeer << nOrderAmount.ToValidBigEndianData() << nOrderPrice.ToValidBigEndianData() << nCompleteOrderAmount.ToValidBigEndianData() << hnbase::CVarInt(nCompleteOrderCount);
+        serSize = ss.GetSize();
+    }
+};
 } // namespace hashahead
 
 #endif //COMMON_TRANSACTION_H
