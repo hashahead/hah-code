@@ -244,6 +244,58 @@ void CConsBlock::GetCommitVoteSigByBitmap(const CBitmap& bmGetBitmap, map<uint38
         }
     }
 }
+
+bool CConsBlock::GetPreVoteAwaitBitmap(const bytes& btBitmapPeer, bytes& btBitmapOut)
+{
+    CBitmap btmPeer;
+    if (!btmPeer.ImportBytes(btBitmapPeer))
+    {
+        return false;
+    }
+    if (btmPeer.GetMaxBits() != bmBlockPreVoteBitmap.GetMaxBits())
+    {
+        return false;
+    }
+    if (btmPeer == bmBlockPreVoteBitmap)
+    {
+        return false;
+    }
+
+    //(local | peer) ^ local
+    btmPeer |= bmBlockPreVoteBitmap;
+    btmPeer ^= bmBlockPreVoteBitmap;
+
+    vector<uint32> vIndexList;
+    btmPeer.GetIndexList(vIndexList);
+
+    CBitmap bmOut;
+    bmOut.Initialize(bmBlockPreVoteBitmap.GetMaxBits());
+
+    uint32 nAddCount = 0;
+    for (auto& index : vIndexList)
+    {
+        if (index < vPreVoteCandidateNodePubkey.size())
+        {
+            auto& node = vPreVoteCandidateNodePubkey[index];
+            node.CheckStatus();
+            if (node.GetStatus() == CNodePubkey::ES_INIT)
+            {
+                bmOut.SetBit(index);
+                node.SetStatus(CNodePubkey::ES_WAITING);
+                if (++nAddCount >= MAX_AWAIT_BIT_COUNT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    if (nAddCount == 0)
+    {
+        return false;
+    }
+    bmOut.GetBytes(btBitmapOut);
+    return true;
+}
 /////////////////////////////////
 // CConsBlockVote
 

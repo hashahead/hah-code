@@ -160,6 +160,7 @@ public:
     bool GetCommitVoteBitmap(bytes& btBitmap);
     void GetPreVoteSigByBitmap(const bytes& btGetBitmap, map<uint384, bytes>& mapSigOut);
     void GetCommitVoteSigByBitmap(const CBitmap& bmGetBitmap, map<uint384, bytes>& mapSigOut);
+    bool GetPreVoteAwaitBitmap(const bytes& btBitmapPeer, bytes& btBitmapOut);
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;
@@ -171,6 +172,17 @@ public:
 
     map<uint384, bytes> mapPreVoteSig; // key: node pubkey, value: node hash
     CBitmap bmBlockPreVoteBitmap;
+
+    map<uint384, bytes> mapCommitVoteSig; // key: node pubkey, value: node hash
+    CBitmap bmBlockCommitVoteBitmap;
+
+    CBitmap bmAggPreVoteBitmap;
+    bytes btAggPreVoteSig;
+    bytes btAggCommitVoteBitmap;
+    bytes btAggCommitVoteSig;
+
+    int64 nBeginTimeMillis;
+    uint64 nAddTime;
 };
 
 /////////////////////////////////
