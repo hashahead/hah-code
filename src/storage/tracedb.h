@@ -136,6 +136,7 @@ public:
     bool GetContractKvPairList(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, uint256>>& vContractKvPair, uint256& keyNext);
 
     bool ClearTraceUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight);
+    bool GetSnapshotTraceData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
 protected:
     boost::filesystem::path pathTrace;
     hnbase::CRWAccess rwAccess;

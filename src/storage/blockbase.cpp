@@ -5895,15 +5895,15 @@ bool CBlockBase::VerifyDB()
                          pIndexNew->GetOriginHash().GetHex().c_str(), CBlock::GetBlockHeightByHash(verifyBlock.hashBlock), verifyBlock.hashBlock.GetHex().c_str());
                 return false;
             }
-            CBlockIndex* pIndexFork = GetIndex(it->second);
-            if (pIndexFork == nullptr)
+            BlockIndexPtr pIndexFork = GetIndex(it->second);
+            if (!pIndexFork)
             {
                 StdError("BlockBase", "Verify DB: Get last index fail, fork: %s, block: [%d] %s.",
                          pIndexNew->GetOriginHash().GetHex().c_str(), CBlock::GetBlockHeightByHash(verifyBlock.hashBlock), verifyBlock.hashBlock.GetHex().c_str());
                 return false;
             }
             if (!(pIndexFork->nChainTrust > pIndexNew->nChainTrust
-                  || (pIndexFork->nChainTrust == pIndexNew->nChainTrust && !pIndexNew->IsEquivalent(pIndexFork))))
+                  || (pIndexFork->nChainTrust == pIndexNew->nChainTrust && !IsBlockIndexEquivalent(pIndexNew, pIndexFork))))
             {
                 if (fRepairBlock)
                 {
@@ -5914,7 +5914,6 @@ bool CBlockBase::VerifyDB()
                         return false;
                     }
                 }
-                UpdateBlockNext(pIndexNew);
                 it->second = pIndexNew->GetBlockHash();
             }
         }
@@ -5944,7 +5943,7 @@ bool CBlockBase::VerifyDB()
     return true;
 }
 
-bool CBlockBase::VerifyBlockDB(const CBlockVerify& verifyBlock, CBlockOutline& outline, CBlockRoot& blockRoot, const bool fVerify)
+bool CBlockBase::VerifyBlockDB(const CBlockVerify& verifyBlock, CBlockIndex& outline, CBlockRoot& blockRoot, const bool fVerify)
 {
     if (!dbBlock.RetrieveBlockIndex(verifyBlock.hashBlock, outline))
     {
@@ -5976,7 +5975,7 @@ bool CBlockBase::VerifyBlockDB(const CBlockVerify& verifyBlock, CBlockOutline& o
     return true;
 }
 
-bool CBlockBase::RepairBlockDB(const CBlockVerify& verifyBlock, CBlockRoot& blockRoot, CBlockEx& block, CBlockIndex** ppIndexNew)
+bool CBlockBase::RepairBlockDB(const CBlockVerify& verifyBlock, CBlockRoot& blockRoot, CBlockEx& block, BlockIndexPtr* ppIndexNew)
 {
     //CBlockEx block;
     if (!tsBlock.Read(block, verifyBlock.nFile, verifyBlock.nOffset, true, true))
@@ -6001,7 +6000,7 @@ bool CBlockBase::RepairBlockDB(const CBlockVerify& verifyBlock, CBlockRoot& bloc
     }
     else
     {
-        CBlockIndex* pPrevIndex = GetIndex(block.hashPrev);
+        BlockIndexPtr pPrevIndex = GetIndex(block.hashPrev);
         if (!pPrevIndex)
         {
             StdError("BlockBase", "Repair block DB: Get prev index fail, block: [%d] %s, prev block: [%d] %s.",
@@ -6011,41 +6010,101 @@ bool CBlockBase::RepairBlockDB(const CBlockVerify& verifyBlock, CBlockRoot& bloc
         }
         hashFork = pPrevIndex->GetOriginHash();
     }
+    return true;
+}
 
-    if (!SaveBlock(hashFork, hashBlock, block, ppIndexNew, blockRoot, true))
+bool CBlockBase::GetBlockBranchListNolock(const BlockIndexPtr pIndex, const uint256& hashForkLastBlock, const CBlockEx* pBlockex, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder)
+{
+    if (!pIndex)
     {
-        StdError("BlockBase", "Repair block DB: Save block failed, block: [%d] %s", CBlock::GetBlockHeightByHash(hashBlock), hashBlock.ToString().c_str());
+        StdLog("BlockBase", "Get block branch list: Index is nullptr");
         return false;
+    }
+
+    BlockIndexPtr pForkLast;
+    if (hashForkLastBlock == 0)
+    {
+        pForkLast = GetForkLastIndex(pIndex->GetOriginHash());
+    }
+    else
+    {
+        pForkLast = GetIndex(hashForkLastBlock);
+    }
+    if (!pForkLast)
+    {
+        StdLog("BlockBase", "Get block branch list: Fork last is nullptr");
+        return false;
+    }
+
+    vector<BlockIndexPtr> vPath;
+    BlockIndexPtr pBranch = GetBranch(pForkLast, pIndex, vPath);
+    if (!pBranch)
+    {
+        StdLog("BlockBase", "Get block branch list: Get branch fail");
+        return false;
+    }
+
+    for (BlockIndexPtr p = pForkLast; p && p->GetBlockHash() != pBranch->GetBlockHash(); p = GetPrevBlockIndex(p))
+    {
+        CBlockEx block;
+        if (!tsBlock.Read(block, p->nFile, p->nOffset, true, true))
+        {
+            StdLog("BlockBase", "Get block branch list: Read block fail1");
+            return false;
+        }
+        vRemoveBlockInvertedOrder.push_back(block);
+    }
+
+    for (int i = vPath.size() - 1; i >= 0; i--)
+    {
+        if (pBlockex && vPath[i]->GetBlockHash() == pIndex->GetBlockHash())
+        {
+            vAddBlockPositiveOrder.push_back(*pBlockex);
+        }
+        else
+        {
+            CBlockEx block;
+            if (!tsBlock.Read(block, vPath[i]->nFile, vPath[i]->nOffset, true, true))
+            {
+                StdLog("BlockBase", "Get block branch list: Read block fail2");
+                return false;
+            }
+            vAddBlockPositiveOrder.push_back(block);
+        }
     }
     return true;
 }
 
-bool CBlockBase::LoadBlockIndex(CBlockOutline& outline, CBlockIndex** ppIndexNew)
+bool CBlockBase::GetTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContractAddress, CTokenContractAddressContext& ctxTokenContractAddress)
 {
-    uint256 hashBlock = outline.GetBlockHash();
-
-    if (mapIndex.find(hashBlock) != mapIndex.end())
+    if (isFunctionContractAddress(destContractAddress))
     {
-        StdError("BlockBase", "Load block index: Block index exist, block: %s", hashBlock.ToString().c_str());
         return false;
     }
-
-    CBlockIndex* pIndexNew = new CBlockIndex(static_cast<CBlockIndex&>(outline));
-    if (pIndexNew == nullptr)
+    if (!GetContractCoinSymbol(hashFork, hashBlock, destContractAddress, false, ctxTokenContractAddress.strCoinSymbol))
     {
-        StdError("BlockBase", "Load block index: New block index fail, block: %s", hashBlock.ToString().c_str());
+        StdLog("BlockBase", "Get token contract address context: Get contract coin symbol fail, contract address: %s, block: %s", destContractAddress.ToString().c_str(), hashBlock.ToString().c_str());
         return false;
     }
-    auto mi = mapIndex.insert(make_pair(hashBlock, pIndexNew)).first;
-    if (mi == mapIndex.end())
+    if (!GetContractCoinDecimals(hashFork, hashBlock, destContractAddress, false, ctxTokenContractAddress.nCoinDecimals))
     {
-        StdError("BlockBase", "Load block index: Block index insert fail, block: %s", hashBlock.ToString().c_str());
+        StdLog("BlockBase", "Get token contract address context: Get contract coin cecimals fail, contract address: %s, block: %s", destContractAddress.ToString().c_str(), hashBlock.ToString().c_str());
         return false;
     }
-
-    pIndexNew->phashBlock = &(mi->first);
-    pIndexNew->pPrev = nullptr;
-    pIndexNew->pOrigin = nullptr;
+    if (!GetContractCoinName(hashFork, hashBlock, destContractAddress, false, ctxTokenContractAddress.strCoinName))
+    {
+        ctxTokenContractAddress.strCoinName = "";
+    }
+    if (!GetContractCoinTotalSupply(hashFork, hashBlock, destContractAddress, false, ctxTokenContractAddress.nCoinTotalSupply))
+    {
+        ctxTokenContractAddress.nCoinTotalSupply = 0;
+    }
+    StdLog("BlockBase", "Get token contract address context: Get success, name: %s, symbol: %s, decimals: %d, totalSupply: %s, contract address: %s, block: %s",
+           ctxTokenContractAddress.strCoinName.c_str(), ctxTokenContractAddress.strCoinSymbol.c_str(), ctxTokenContractAddress.nCoinDecimals,
+           CoinToTokenBigFloat(ctxTokenContractAddress.nCoinTotalSupply, ctxTokenContractAddress.nCoinDecimals).c_str(),
+           destContractAddress.ToString().c_str(), hashBlock.ToString().c_str());
+    return true;
+}
 
     if (outline.hashPrev != 0)
     {

@@ -153,6 +153,17 @@ protected:
 
     bool AddLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock, const uint256& hashFirstPrevBlock);
     bool RemoveLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock);
+    bool GetLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock, uint256& hashFirstPrevBlock);
+
+    bool UpdateDexOrderCache(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDexOrderHeader, CDexOrderBody>& mapAddNewOrder,
+                             const std::map<CDexOrderHeader, std::tuple<CDexOrderBody, CChainId, uint256>>& mapAddBlockProveOrder,
+                             const std::map<uint256, uint256>& mapCoinPairCompletePrice,
+                             const std::map<uint256, std::tuple<uint256, uint256, uint64>>& mapUpdateCompOrder,
+                             const std::map<CChainId, uint256>& mapPeerProveLastBlock);
+    bool GetBlockProveDb(const uint256& hashBlock, const CBlockStorageProve& proveCrosschain, std::map<CChainId, CBlockProve>& mapBlockProve);
+
+    bool AddSendChainProveLastBlockDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& nLastProveBlock);
+    bool GetSendChainProveLastBlockDb(const CChainId nRecvChainId, const CChainId nSendChainId, uint256& nLastProveBlock);
 protected:
     enum
     {

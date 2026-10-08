@@ -879,5 +879,17 @@ bool CTraceDB::ClearTraceUnavailableNode(const uint256& hashFork, const uint32 n
     }
     return false;
 }
+
+bool CTraceDB::GetSnapshotTraceData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->GetSnapshotTraceData(vBlockHash, btSnapData);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
