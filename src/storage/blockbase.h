@@ -310,6 +310,13 @@ public:
     bool SnapshotFork(const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vBlockHash, const std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare>& mapForkLastBlockNumber);
     bool SnapshotVote(const uint256& hashFork, const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vBlockHash);
     bool SnapshotState(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, const std::vector<uint256>& vBlockHash);
+    bool SnapshotAddress(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const std::vector<uint256>& vBlockHash);
+    bool SnapshotHdex(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const std::vector<uint256>& vBlockHash);
+    bool SnapshotTrace(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const std::vector<uint256>& vBlockHash);
+    bool SnapshotTxIndex(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock);
+    bool SnapshotAddressTx(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, const uint64 nForkLastBlockNumber);
+    bool SnapshotTokenTx(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, const uint64 nForkLastBlockNumber);
+
     bool SnapshotRecovery(const std::string& strRecoveryDir);
     bool RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFork);
     bool RecoveryFork(const bytes& btRecoveryData);

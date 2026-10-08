@@ -219,6 +219,11 @@ private:
     void OnNetMsgSubscribeReq(const uint64 nNetId, const uint8* pData, const size_t nDataLen);
     void OnNetMsgSubscribeRsp(const uint64 nNetId, const uint8* pData, const size_t nDataLen);
     void OnNetMsgPreVoteBitmapReq(const uint64 nNetId, const uint8* pData, const size_t nDataLen);
+
+    bool MakeSubscribeReq(bytes& btMsg, const uint32 nVersion);
+    bool MakeSubscribeRsp(bytes& btMsg, const uint32 nVersion, const uint32 nResult);
+    bool MakePreVoteSignReq(bytes& btMsg, const uint256& hashBlock, const bytes& btGetBitmap);
+    bool MakePreVoteSignPush(bytes& btMsg, const uint256& hashBlock, const map<uint384, bytes>& mapPreVoteSigIn);
     void RemoveVoteBlock(const uint256& hashBlock);
     static uint256 GetPreVoteSignData(const uint256& hashBlock);
     static uint256 GetCommitVoteSignData(const uint256& hashBlock);

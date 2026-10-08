@@ -5325,7 +5325,137 @@ bool CBlockBase::SnapshotTokenTx(const uint256& hashPrimaryLastBlock, const uint
     }
     return true;
 }
+
 //----------------------------------------------------------------------------
+bool CBlockBase::SnapshotRecovery(const std::string& strRecoveryDir)
+{
+    auto funcWalker = [&](const uint8 nType, const bytes& btSnapData) -> bool {
+        switch (nType)
+        {
+        case SNAP_DATA_TYPE_FORK_BLOCK_INDEX:
+        {
+            StdLog("CBlockBase", "Snapshot recovery: Recovery block index begin, snapshot size: %lu", btSnapData.size());
+            uint256 hashFork;
+            if (!RecoveryBlockIndex(btSnapData, hashFork))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery block index failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery block index success, fork: %s", hashFork.GetBhString().c_str());
+            break;
+        }
+        case SNAP_DATA_TYPE_FORK_FORK_KV:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery fork begin, snapshot size: %lu", btSnapData.size());
+            if (!RecoveryFork(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery fork data failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery fork success");
+            break;
+        case SNAP_DATA_TYPE_FORK_VOTE_KV:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery vote begin, snapshot size: %lu", btSnapData.size());
+            if (!dbBlock.RecoveryVoteData(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery vote data failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery vote success");
+            break;
+        case SNAP_DATA_TYPE_FORK_STATE_KV:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery state begin, snapshot size: %lu", btSnapData.size());
+            if (!RecoveryUserState(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery state failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery state success");
+            break;
+        case SNAP_DATA_TYPE_FORK_ADDRESS_KV:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery address begin, snapshot size: %lu", btSnapData.size());
+            if (!dbBlock.RecoveryAddressData(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery address data failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery address success");
+            break;
+        case SNAP_DATA_TYPE_FORK_HDEX_KV:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery hdex begin, snapshot size: %lu", btSnapData.size());
+            if (!dbBlock.RecoveryHdexData(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery hdex data failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery hdex success");
+            break;
+        case SNAP_DATA_TYPE_FORK_TRACE_KV:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery trace begin, snapshot size: %lu", btSnapData.size());
+            if (!dbBlock.RecoveryTraceData(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery trace data failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery trace success");
+            break;
+        case SNAP_DATA_TYPE_FORK_TX_INDEX:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery tx index begin, snapshot size: %lu", btSnapData.size());
+            if (!RecoveryTxIndex(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery tx index failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery tx index success");
+            break;
+        case SNAP_DATA_TYPE_FORK_ADDRESS_TX:
+            StdLog("CBlockBase", "Snapshot recovery: Recovery address tx begin, snapshot size: %lu", btSnapData.size());
+            if (!RecoveryAddressTx(btSnapData))
+            {
+                StdLog("CBlockBase", "Snapshot recovery: Recovery address tx failed, recovery dir: %s", strRecoveryDir.c_str());
+                return false;
+            }
+            StdLog("CBlockBase", "Snapshot recovery: Recovery address tx success");
+            break;
+        default:
+            StdLog("CBlockBase", "Snapshot recovery: Type error, type: %d, recovery dir: %s", nType, strRecoveryDir.c_str());
+            return false;
+        }
+        return true;
+    };
+
+    do
+    {
+        StdLog("CBlockBase", "Snapshot recovery: Start recovery snapshot, recovery dir: %s", strRecoveryDir.c_str());
+        if (!tsBlock.RecoveryFile(strRecoveryDir))
+        {
+            StdLog("CBlockBase", "Snapshot recovery: Recovery block file failed, recovery dir: %s", strRecoveryDir.c_str());
+            break;
+        }
+        StdLog("CBlockBase", "Snapshot recovery: Recovery block file success");
+
+        CTimeSeriesSnapshot tss;
+        if (!tss.Initialize(fs::path(strRecoveryDir), SNAPSHOTFILE_PREFIX))
+        {
+            StdLog("CBlockBase", "Snapshot recovery: Initialize failed, recovery dir: %s", strRecoveryDir.c_str());
+            break;
+        }
+
+        uint32 nLastFileRet = 0, nLastPosRet = 0;
+        if (!tss.WalkThrough(funcWalker, nLastFileRet, nLastPosRet))
+        {
+            StdLog("CBlockBase", "Snapshot recovery: Walk through failed, recovery dir: %s", strRecoveryDir.c_str());
+            tss.Deinitialize();
+            break;
+        }
+
+        tss.Deinitialize();
+
+        StdLog("CBlockBase", "Snapshot recovery: Recovery all success");
+        return true;
+    } while (0);
+    // tsBlock.ClearAllFile();
+    return false;
+}
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
     if (hashFork == 0)

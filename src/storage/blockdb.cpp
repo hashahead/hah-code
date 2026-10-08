@@ -944,12 +944,33 @@ bool CBlockDB::AddBlockContractKvData(const uint256& hashFork, const uint256& ha
 bool CBlockDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight,
                              const std::map<CDestination, uint256>& mapVoteReward, const CDestination& destMint, const uint8 nMintTemplateType, const uint256& nMintReward, uint256& hashNewRoot)
 {
-    return dbVote.AddVoteReward(hashFork, nChainId, hashPrevBlock, hashBlock, nBlockHeight, mapVoteReward, hashNewRoot);
+    return dbVote.AddVoteReward(hashFork, nChainId, hashPrevBlock, hashBlock, nBlockHeight, mapVoteReward, destMint, nMintTemplateType, nMintReward, hashNewRoot);
 }
 
 bool CBlockDB::ListVoteReward(const uint32 nChainId, const uint256& hashBlock, const CDestination& dest, const uint32 nGetCount, std::vector<std::pair<uint32, uint256>>& vVoteReward)
 {
     return dbVote.ListVoteReward(nChainId, hashBlock, dest, nGetCount, vVoteReward);
+}
+
+bool CBlockDB::RetrieveMintReward(const uint256& hashFork, const uint256& hashBlock, const CDestination& destMint, uint8& nMintTemplateType, uint256& nMintReward)
+{
+    return dbVote.RetrieveMintReward(hashFork, hashBlock, destMint, nMintTemplateType, nMintReward);
+}
+
+bool CBlockDB::ClearVoteDbUnavailableNode(const uint32 nClearRefHeight)
+{
+    return dbVote.ClearVoteUnavailableNode(nClearRefHeight);
+}
+
+bool CBlockDB::GetSnapshotVoteData(const uint256& hashFork, const bool fPrimaryChain, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    return dbVote.GetSnapshotVoteData(hashFork, fPrimaryChain, vBlockHash, btSnapData);
+}
+
+bool CBlockDB::RecoveryVoteData(const bytes& btSnapData)
+{
+    return dbVote.RecoveryVoteData(btSnapData);
+}
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)

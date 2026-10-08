@@ -628,5 +628,50 @@ void CConsBlockVote::OnTimer()
         CheckLocalVote();
     }
 }
+
+void CConsBlockVote::OnEventNetData(const uint64 nNetId, const bytes& btData)
+{
+    if (mapNetNode.find(nNetId) == mapNetNode.end())
+    {
+        StdError("CConsBlockVote", "On net data req: Net node not existed, net id: 0x%lx", nNetId);
+        mapNetNode.insert(make_pair(nNetId, CNetNode()));
+        SendSubscribeReq(nNetId);
+    }
+
+    const uint8* pData = btData.data();
+    size_t nDataLen = btData.size();
+    if (pData == nullptr || nDataLen <= 1)
+    {
+        StdLog("CConsBlockVote", "On net data req: Net data error, net id: 0x%lx", nNetId);
+        return;
+    }
+    uint8 nFuncId = *pData;
+    pData++;
+    nDataLen--;
+
+    switch (nFuncId)
+    {
+    case PS_MSGID_BLOCKVOTE_SUBSCRIBE_REQ:
+        OnNetMsgSubscribeReq(nNetId, pData, nDataLen);
+        break;
+    case PS_MSGID_BLOCKVOTE_SUBSCRIBE_RSP:
+        OnNetMsgSubscribeRsp(nNetId, pData, nDataLen);
+        break;
+
+    default:
+        StdLog("CConsBlockVote", "On net data req: msg id error, id: %d, net id: 0x%lx", nFuncId, nNetId);
+        break;
+    }
+}
+
+bool CConsBlockVote::VerifyCommitVoteAggSig(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const vector<uint384>& vCandidatePubkeys)
+{
+    vector<uint384> vBitmapPubkeys;
+    if (!GetBitPubkeysByBitmap(vCandidatePubkeys, btBitmap, vBitmapPubkeys))
+    {
+        return false;
+    }
+    return CryptoBlsFastAggregateVerify(vBitmapPubkeys, GetCommitVoteSignData(hashBlock).GetBytes(), btAggSig);
+}
 } // namespace consblockvote
 } // namespace consensus
