@@ -520,5 +520,47 @@ bool CConsBlockVote::AddConsKey(const uint256& prikey, const uint384& pubkey)
     }
     return true;
 }
+
+bool CConsBlockVote::AddCandidatePubkey(const uint256& hashBlock, const uint32 nBlockEpoch, const int64 nVoteBeginTimeIn, const vector<uint384>& vPubkey)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it == mapConsBlock.end())
+    {
+        while (mapConsBlock.size() >= MAX_CONS_HEIGHT_COUNT && !mapAddTime.empty())
+        {
+            for (auto& hash : mapAddTime.begin()->second)
+            {
+                mapConsBlock.erase(hash);
+            }
+            mapAddTime.erase(mapAddTime.begin());
+        }
+        uint64 nCurTime = ((GetTime() << 32) | (GetTimeMillis() & 0xFFFFFFFF));
+        it = mapConsBlock.insert(make_pair(hashBlock, CConsBlock(hashBlock, nBlockEpoch, nVoteBeginTimeIn, nCurTime))).first;
+
+        CConsBlock& consHeight = it->second;
+        if (!consHeight.SetCandidateNodeList(vPubkey))
+        {
+            StdLog("CConsBlockVote", "Add candidate pubkey: Set candidate node list fail, block: %s", hashBlock.GetBhString().c_str());
+            mapConsBlock.erase(it);
+            return false;
+        }
+
+        if (!AddLocalPreVoteSign(hashBlock, consHeight))
+        {
+            StdLog("CConsBlockVote", "Add candidate pubkey: Add local pre vote sign fail, block: %s", hashBlock.GetBhString().c_str());
+            mapConsBlock.erase(it);
+            return false;
+        }
+
+        mapAddTime[nCurTime].insert(hashBlock);
+
+        StdLog("CConsBlockVote", "Add candidate pubkey: Add candidate pubkey success, cons block count: %lu, block: %s", mapConsBlock.size(), hashBlock.GetBhString().c_str());
+    }
+    else
+    {
+        StdLog("CConsBlockVote", "Add candidate pubkey: Block already exists, block: %s", hashBlock.GetBhString().c_str());
+    }
+    return true;
+}
 } // namespace consblockvote
 } // namespace consensus

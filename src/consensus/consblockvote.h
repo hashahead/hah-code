@@ -205,6 +205,7 @@ public:
     bool AddConsKey(const uint256& prikey, const uint384& pubkey);
     bool AddCandidatePubkey(const uint256& hashBlock, const uint32 nBlockEpoch, const int64 nVoteBeginTimeIn, const vector<uint384>& vPubkey);
     void CheckBlockVoteState(const uint256& hashBlock);
+    bool GetBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig);
     void RemoveVoteBlock(const uint256& hashBlock);
     static uint256 GetPreVoteSignData(const uint256& hashBlock);
     static uint256 GetCommitVoteSignData(const uint256& hashBlock);

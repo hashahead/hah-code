@@ -5181,6 +5181,45 @@ bool CBlockBase::SnapshotTrace(const uint256& hashPrimaryLastBlock, const uint25
     }
     return true;
 }
+
+bool CBlockBase::SnapshotTxIndex(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock)
+{
+    CBufStream ssOut;
+
+    auto funcWalker = [&](const bytes& btKey, const bytes& btValue) -> bool {
+        if (ssOut.GetSize() == 0)
+        {
+            ssOut << hashFork;
+        }
+        ssOut << btKey << btValue;
+        if (ssOut.GetSize() >= 1024 * 1024 * 20)
+        {
+            if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_TX_INDEX, ssOut.GetData(), ssOut.GetSize()))
+            {
+                StdLog("CBlockBase", "Snapshot tx index: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+                return false;
+            }
+            ssOut.Clear();
+        }
+        return true;
+    };
+
+    if (!dbBlock.WalkThroughSnapshotTxIndex(hashFork, hashForkLastBlock, funcWalker))
+    {
+        StdLog("CBlockBase", "Snapshot tx index: Walk through snapshot tx index failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+
+    if (ssOut.GetSize() > 0)
+    {
+        if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_TX_INDEX, ssOut.GetData(), ssOut.GetSize()))
+        {
+            StdLog("CBlockBase", "Snapshot tx index: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {

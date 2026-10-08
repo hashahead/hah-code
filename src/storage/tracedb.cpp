@@ -724,5 +724,46 @@ bool CTraceDB::ExistFork(const uint256& hashFork)
     CReadLock rlock(rwAccess);
     return (mapTraceDB.find(hashFork) != mapTraceDB.end());
 }
+
+bool CTraceDB::LoadFork(const uint256& hashFork)
+{
+    CWriteLock wlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return true;
+    }
+
+    std::shared_ptr<CForkTraceDB> spDb(new CForkTraceDB());
+    if (spDb == nullptr)
+    {
+        return false;
+    }
+    if (!spDb->Initialize(hashFork, pathTrace / hashFork.GetHex(), fUseCacheData, fPrune))
+    {
+        return false;
+    }
+    mapTraceDB.insert(make_pair(hashFork, spDb));
+    return true;
+}
+
+void CTraceDB::RemoveFork(const uint256& hashFork)
+{
+    CWriteLock wlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        it->second->RemoveAll();
+        mapTraceDB.erase(it);
+    }
+
+    boost::filesystem::path forkPath = pathTrace / hashFork.GetHex();
+    if (boost::filesystem::exists(forkPath))
+    {
+        boost::filesystem::remove_all(forkPath);
+    }
+}
 } // namespace storage
 } // namespace hashahead

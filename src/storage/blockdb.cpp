@@ -841,29 +841,29 @@ bool CBlockDB::UpdateAddressTxInfoBlockLongChain(const uint256& hashFork, const 
     return false;
 }
 
-bool CBlockDB::GetAddressTxCount(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, uint64& nTxCount)
+bool CBlockDB::GetAddressTxCount(const uint256& hashFork, const CDestination& dest, uint64& nTxCount)
 {
     if (fCfgFullDb)
     {
-        return dbAddressTxInfo.GetAddressTxCount(hashFork, hashBlock, dest, nTxCount);
+        return dbAddressTxInfo.GetAddressTxCount(hashFork, dest, nTxCount);
     }
     return false;
 }
 
-bool CBlockDB::RetrieveAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo)
+bool CBlockDB::RetrieveAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo)
 {
     if (fCfgFullDb)
     {
-        return dbAddressTxInfo.RetrieveAddressTxInfo(hashFork, hashBlock, dest, nTxIndex, ctxtAddressTxInfo);
+        return dbAddressTxInfo.RetrieveAddressTxInfo(hashFork, dest, nTxIndex, ctxtAddressTxInfo);
     }
     return false;
 }
 
-bool CBlockDB::ListAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
+bool CBlockDB::ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo)
 {
     if (fCfgFullDb)
     {
-        return dbAddressTxInfo.ListAddressTxInfo(hashFork, hashBlock, dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
+        return dbAddressTxInfo.ListAddressTxInfo(hashFork, dest, nBeginTxIndex, nGetTxCount, fReverse, vAddressTxInfo);
     }
     return false;
 }

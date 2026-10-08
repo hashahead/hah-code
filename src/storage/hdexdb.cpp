@@ -1375,6 +1375,28 @@ bool CHdexDB::RemoveBlockCrosschainProveDb(const uint256& hashBlock)
     ssKey << DB_HDEX_KEY_TYPE_EXT_BLOCK_CROSSCHAIN_PROVE << hashBlock;
     return dbTrie.RemoveExtKv(ssKey);
 }
+
+bool CHdexDB::GetBlockCrosschainProveDb(const uint256& hashBlock, CBlockStorageProve& proveBlockCrosschain)
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_BLOCK_CROSSCHAIN_PROVE << hashBlock;
+
+    if (!dbTrie.ReadExtKv(ssKey, ssValue))
+    {
+        return false;
+    }
+
+    try
+    {
+        ssValue >> proveBlockCrosschain;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

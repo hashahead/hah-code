@@ -306,6 +306,7 @@ public:
     bool IsSnapshotBlock(const uint256& hashBlock);
     bool GetSnapshotForkLastBlock(const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vForkHash, std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare>& mapForkLastBlock);
     bool SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash);
+    bool SnapshotBlockIndex(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, std::vector<uint256>& vBlockHash);
     bool RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFork);
     bool RecoveryFork(const bytes& btRecoveryData);
     bool RecoveryUserState(const bytes& btRecoveryData);
