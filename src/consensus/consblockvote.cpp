@@ -872,5 +872,27 @@ void CConsBlockVote::RemoveVoteBlock(const uint256& hashBlock)
         mapConsBlock.erase(it);
     }
 }
+
+bool CConsBlockVote::AddLocalPreVoteSign(const uint256& hashBlock, CConsBlock& consHeight)
+{
+    if (addBlockLocalSignFlag(hashBlock))
+    {
+        map<uint384, bytes> mapSigList;
+        if (!GetLocalKeySignData(consHeight, GetPreVoteSignData(hashBlock), mapSigList))
+        {
+            StdLog("CConsBlockVote", "Add local pre vote sign: Get local sig fail, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+        for (auto& kv : mapSigList)
+        {
+            if (!consHeight.AddPreVoteSign(kv.first, kv.second))
+            {
+                StdLog("CConsBlockVote", "Add local pre vote sign: Add pre vote sig fail, block: %s", hashBlock.GetBhString().c_str());
+                return false;
+            }
+        }
+    }
+    return true;
+}
 } // namespace consblockvote
 } // namespace consensus

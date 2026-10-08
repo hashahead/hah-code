@@ -238,6 +238,7 @@ private:
     bool AddLocalPreVoteSign(const uint256& hashBlock, CConsBlock& consHeight);
     bool VerifyPreVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
     bool VerifyCommitVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
+    bool VerifyPreVoteAggSign(const uint256& hashBlock, const CBitmap& bmPreVoteBitmap, const bytes& btPreVoteAggSig);
 
 private:
     const uint8 nTunnelId;

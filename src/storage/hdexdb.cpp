@@ -2393,5 +2393,203 @@ bool CHdexDB::GetCrosschainProveForPrevBlockDb(const CChainId nRecvChainId, cons
     // }
     return true;
 }
+
+bool CHdexDB::ListAddressDexOrderDb(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                                    const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
+{
+    class CListAddressDexOrderTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListAddressDexOrderTrieDBWalker(const CChainId nChainIdIn, const CDestination& destOrderIn, const uint256& hashCoinPairIn, const uint8 nOwnerCoinFlagIn,
+                                         const uint32 nGetCountIn, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrderIn)
+          : nChainId(nChainIdIn), destOrder(destOrderIn), hashCoinPair(hashCoinPairIn), nOwnerCoinFlag(nOwnerCoinFlagIn), nGetCount(nGetCountIn), mapDexOrderOut(mapDexOrderIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListAddressDexOrderTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_HDEX_KEY_TYPE_TRIE_LOCAL_DEX_ORDER)
+                {
+                    uint8 nCompleteFlagDb;
+                    CChainId nChainIdDb;
+                    CDestination destOrderDb;
+                    uint256 hashCoinPairDb;
+                    uint8 nOwnerCoinFlagDb;
+                    uint64 nOrderNumberDb;
+
+                    ssKey >> nCompleteFlagDb >> nChainIdDb >> destOrderDb >> hashCoinPairDb >> nOwnerCoinFlagDb >> nOrderNumberDb;
+
+                    nChainIdDb = BSwap32(nChainIdDb);
+                    nOrderNumberDb = BSwap64(nOrderNumberDb);
+
+                    if (nChainIdDb == nChainId && destOrderDb == destOrder
+                        && (hashCoinPair == 0 || (hashCoinPair == hashCoinPairDb && nOwnerCoinFlag == nOwnerCoinFlagDb)))
+                    {
+                        CDexOrderSave dexOrderSave;
+
+                        hnbase::CBufStream ssValue(btValue);
+                        ssValue >> dexOrderSave;
+
+                        mapDexOrderOut.insert(std::make_pair(CDexOrderHeader(nChainIdDb, destOrderDb, hashCoinPairDb, nOwnerCoinFlagDb, nOrderNumberDb), dexOrderSave));
+                        if (nGetCount > 0 && mapDexOrderOut.size() >= nGetCount)
+                        {
+                            fWalkOver = true;
+                        }
+                    }
+                    else
+                    {
+                        fWalkOver = true;
+                    }
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        const CChainId nChainId;
+        const CDestination destOrder;
+        const uint256 hashCoinPair;
+        const uint8 nOwnerCoinFlag;
+        const uint32 nGetCount;
+        std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrderOut;
+    };
+
+    if (hashBlock == 0)
+    {
+        return true;
+    }
+
+    CChainId nChainId;
+    uint256 hashCoinPair;
+    uint8 nOwnerCoinFlag = 0;
+
+    nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+    if (!strCoinSymbolOwner.empty() && !strCoinSymbolPeer.empty())
+    {
+        hashCoinPair = CDexOrderHeader::GetCoinPairHashStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+        nOwnerCoinFlag = CDexOrderHeader::GetOwnerCoinFlagStatic(strCoinSymbolOwner, strCoinSymbolPeer);
+    }
+
+    uint256 hashTrieRoot;
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashBlock, hashTrieRoot))
+    {
+        StdLog("CHdexDB", "List dex order: Read trie root fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    uint8 nOrderStatus = 0;
+    switch (nGetStatus)
+    {
+    case CDexCompleteStatus::DCS_DEX_ORDER_UNCOMPLETED:
+        nOrderStatus = DB_HDEX_UNCOMPLETED_MATCH_ORDER;
+        break;
+    case CDexCompleteStatus::DCS_DEX_ORDER_COMPLETED:
+        nOrderStatus = DB_HDEX_COMPLETED_MATCH_ORDER;
+        break;
+    case CDexCompleteStatus::DCS_DEX_ORDER_ALL:
+    default:
+        StdLog("CHdexDB", "List dex order: Get status error, get status: %d, block: %s", nGetStatus, hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    bytes btKeyPrefix;
+    hnbase::CBufStream ssKeyPrefix;
+    if (hashCoinPair == 0)
+    {
+        ssKeyPrefix << DB_HDEX_KEY_TYPE_TRIE_LOCAL_DEX_ORDER << nOrderStatus << BSwap32(nChainId) << destOrder;
+    }
+    else
+    {
+        ssKeyPrefix << DB_HDEX_KEY_TYPE_TRIE_LOCAL_DEX_ORDER << nOrderStatus << BSwap32(nChainId) << destOrder << hashCoinPair << nOwnerCoinFlag;
+    }
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    bytes btBeginKeyTail;
+    if (hashCoinPair != 0 && nBeginOrderNumber > 0)
+    {
+        hnbase::CBufStream ss;
+        ss << BSwap64(nBeginOrderNumber);
+        ss.GetData(btBeginKeyTail);
+    }
+
+    uint64 nGetCountInner = 0;
+    if (nGetCount == 0 || nGetCount > MAX_FETCH_DEX_ORDER_COUNT)
+    {
+        nGetCountInner = MAX_FETCH_DEX_ORDER_COUNT;
+    }
+    else
+    {
+        nGetCountInner = nGetCount;
+    }
+
+    CListAddressDexOrderTrieDBWalker walker(nChainId, destOrder, hashCoinPair, nOwnerCoinFlag, nGetCountInner, mapDexOrder);
+    if (!dbTrie.WalkThroughTrie(hashTrieRoot, walker, btKeyPrefix, btBeginKeyTail))
+    {
+        StdLog("CHdexDB", "List dex order: Walk through trie, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+#ifdef HDEX_OUT_TEST_LOG
+    if (nOrderStatus == DB_HDEX_UNCOMPLETED_MATCH_ORDER)
+    {
+        StdDebug("TEST", "====================== MATCHTEST: nChainId: %d =======================", nChainId);
+        SHP_CACHE_BLOCK_DEX_ORDER ptrDexOrderCache = LoadBlockDexOrderCache(hashBlock);
+        if (ptrDexOrderCache)
+        {
+            ptrDexOrderCache->GetMatchDex()->ShowDexOrderList();
+
+            std::map<uint256, CMatchOrderResult> mapMatchResult;
+            if (!ptrDexOrderCache->GetMatchDex()->MatchDex(mapMatchResult))
+            {
+                StdDebug("MATCHTEST", "MatchDex fail");
+            }
+            else
+            {
+                for (const auto& kv : mapMatchResult)
+                {
+                    const CMatchOrderResult& result = kv.second;
+                    StdDebug("MATCHTEST", "######################### MATCH RESULT: symbol sell: %s, symbol buy: %s #########################",
+                             result.strCoinSymbolSell.c_str(), result.strCoinSymbolBuy.c_str());
+                    for (const CMatchOrderRecord& record : result.vMatchOrderRecord)
+                    {
+                        StdDebug("MATCHTEST", "MatchDex result: sell address: %s, buy address: %s", record.destSellOrder.ToString().c_str(), record.destBuyOrder.ToString().c_str());
+                        StdDebug("MATCHTEST", "MatchDex result: sell complete amount: %s", CoinToTokenBigFloat(record.nSellCompleteAmount).c_str());
+                        StdDebug("MATCHTEST", "MatchDex result: buy complete amount: %s", CoinToTokenBigFloat(record.nBuyCompleteAmount).c_str());
+                    }
+                }
+            }
+        }
+
+        StdDebug("TEST", "++++++++++++++++++ ListRecvCrosschainProveDb: nChainId: %d +++++++++++++++++++++++++", nChainId);
+        std::vector<std::tuple<CChainId, uint256, CBlockProve>> vRecvCrossProve;
+        if (ListRecvCrosschainProveDb(nChainId, vRecvCrossProve))
+        {
+            for (const auto& vd : vRecvCrossProve)
+            {
+                const CChainId nSendChainId = std::get<0>(vd);
+                const uint256& hashFirstPrevProveBlock = std::get<1>(vd);
+                const CBlockProve& blockProve = std::get<2>(vd);
+
+                StdDebug("TEST", "ListRecvCrosschainProveDb: List: nRecvChainId: %d, nSendChainId: %d, hashFirstPrevProveBlock: %s, prove block: %s",
+                         nChainId, nSendChainId, hashFirstPrevProveBlock.GetBhString().c_str(), blockProve.hashBlock.GetBhString().c_str());
+            }
+        }
+    }
+#endif
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

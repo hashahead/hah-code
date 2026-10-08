@@ -891,5 +891,30 @@ bool CTraceDB::GetSnapshotTraceData(const uint256& hashFork, const std::vector<u
     }
     return false;
 }
+
+bool CTraceDB::RecoveryTraceData(const bytes& btSnapData)
+{
+    CForkTraceRootKv traceRootKv;
+    try
+    {
+        CBufStream ss(btSnapData);
+        ss >> traceRootKv;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(traceRootKv.hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->RecoveryTraceData(traceRootKv);
+    }
+    return false;
+}
+
 } // namespace storage
 } // namespace hashahead

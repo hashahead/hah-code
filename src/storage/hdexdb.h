@@ -169,6 +169,7 @@ protected:
     bool AddBlockRecvCrosschainProveDb(const CChainId nRecvChainId, const CBlockProve& blockProve);
     bool AddRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock, const CBlockProve& blockProve);
     bool RemoveRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock);
+    bool GetRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock, CBlockProve& blockProve);
 protected:
     enum
     {

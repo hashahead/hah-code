@@ -137,6 +137,8 @@ public:
 
     bool ClearTraceUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight);
     bool GetSnapshotTraceData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
+    bool RecoveryTraceData(const bytes& btSnapData);
+
 protected:
     boost::filesystem::path pathTrace;
     hnbase::CRWAccess rwAccess;
