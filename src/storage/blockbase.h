@@ -348,8 +348,8 @@ protected:
     bool UpdateVote(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block,
                     const std::map<CDestination, CAddressContext>& mapAddressContext, const std::map<CDestination, CDestState>& mapAccStateIn,
                     const std::map<CDestination, std::pair<uint32, uint32>>& mapBlockModifyPledgeFinalHeightIn, uint256& hashVoteRoot);
-    bool IsValidBlock(CBlockIndex* pForkLast, const uint256& hashBlock);
-    bool VerifyValidBlock(CBlockIndex* pIndexGenesisLast, const CBlockIndex* pIndex);
+    bool IsValidBlock(const BlockIndexPtr& pForkLast, const uint256& hashBlock);
+    bool VerifyValidBlock(const BlockIndexPtr& pIndexGenesisLast, const BlockIndexPtr& pIndex);
     bool VerifyBlockConfirmChain(const BlockIndexPtr& pNewIndex);
     CBlockIndex* GetLongChainLastBlock(const uint256& hashFork, int nStartHeight, CBlockIndex* pIndexGenesisLast, const std::set<uint256>& setInvalidHash);
     bool GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex);

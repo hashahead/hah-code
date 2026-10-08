@@ -987,6 +987,22 @@ bool CBlockDB::GetDexCompletePrice(const uint256& hashBlock, const uint256& hash
 {
     return dbHdex.GetDexCompletePrice(hashBlock, hashCoinPair, nCompletePrice);
 }
+
+bool CBlockDB::GetCompleteOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, uint256& nCompleteAmount, uint64& nCompleteOrderCount)
+{
+    return dbHdex.GetCompleteOrder(hashBlock, destOrder, nChainIdOwner, strCoinSymbolOwner, strCoinSymbolPeer, nOrderNumber, nCompleteAmount, nCompleteOrderCount);
+}
+
+bool CBlockDB::ListAddressDexOrder(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                                   const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder)
+{
+    return dbHdex.ListAddressDexOrder(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nBeginOrderNumber, nGetStatus, nGetCount, mapDexOrder);
+}
+
+bool CBlockDB::GetDexOrderMaxNumber(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, uint64& nMaxOrderNumber)
+{
+    return dbHdex.GetDexOrderMaxNumber(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nMaxOrderNumber);
+}
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)

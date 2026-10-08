@@ -740,5 +740,55 @@ void CConsBlockVote::OnNetMsgPreVoteBitmapReq(const uint64 nNetId, const uint8* 
     StdDebug("CConsBlockVote", "On pre vote bitmap req, net id: 0x%lx, block: %s", nNetId, hashBlock.GetBhString().c_str());
 #endif
 }
+
+//---------------------------
+bool CConsBlockVote::MakeSubscribeReq(bytes& btMsg, const uint32 nVersion)
+{
+    msgblockvote::SubscribeReq pbmsg;
+
+    pbmsg.set_version(nVersion);
+
+    PSD_SET_MSG(PS_MSGID_BLOCKVOTE_SUBSCRIBE_REQ, pbmsg, btMsg)
+    return true;
+}
+
+bool CConsBlockVote::MakeSubscribeRsp(bytes& btMsg, const uint32 nVersion, const uint32 nResult)
+{
+    msgblockvote::SubscribeRsp pbmsg;
+
+    pbmsg.set_version(nVersion);
+    pbmsg.set_result(nResult);
+
+    PSD_SET_MSG(PS_MSGID_BLOCKVOTE_SUBSCRIBE_RSP, pbmsg, btMsg)
+    return true;
+}
+
+//---------------------------
+bool CConsBlockVote::SendNetData(const uint64 nNetId, const bytes& btData)
+{
+    if (!sendNetData(nNetId, nTunnelId, btData))
+    {
+        StdLog("CConsBlockVote", "Send net data: Send fail, net id: 0x%lx", nNetId);
+        RemoveNetNode(nNetId);
+        return false;
+    }
+    return true;
+}
+
+void CConsBlockVote::SendSubscribeReq(const uint64 nNetId)
+{
+    bytes btMsg;
+    if (MakeSubscribeReq(btMsg, BLOCK_VOTE_PRO_VER_1))
+    {
+        if (!SendNetData(nNetId, btMsg))
+        {
+            StdLog("CConsBlockVote", "Send subscribe req: Send subscribe req net data fail, net id: 0x%lx", nNetId);
+            return;
+        }
+#ifdef CBV_SHOW_DEBUG
+        StdDebug("CConsBlockVote", "Send subscribe req: subscribe req, node id: 0x%lx", nNetId);
+#endif
+    }
+}
 } // namespace consblockvote
 } // namespace consensus

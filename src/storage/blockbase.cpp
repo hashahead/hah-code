@@ -5529,6 +5529,81 @@ bool CBlockBase::RecoveryFork(const bytes& btRecoveryData)
     }
     return true;
 }
+
+bool CBlockBase::RecoveryUserState(const bytes& btRecoveryData)
+{
+    CForkStateRootKv forkStateRootKv;
+    try
+    {
+        CBufStream ss(btRecoveryData);
+        ss >> forkStateRootKv;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+
+    uint256 hashPrevRoot;
+    for (auto& userState : forkStateRootKv.vStateKv)
+    {
+        uint256 hashNewRoot;
+        if (!dbBlock.AddStateKvTrie(forkStateRootKv.hashFork, CBlock::GetBlockHeightByHash(userState.hashBlock), hashPrevRoot, userState.mapKv, hashNewRoot))
+        {
+            StdLog("CBlockBase", "Recovery user state: Add state kv trie failed, block: %s", userState.hashBlock.GetBhString().c_str());
+            return false;
+        }
+        if (hashNewRoot != userState.hashRoot)
+        {
+            StdLog("CBlockBase", "Recovery user state: Add state kv trie new root error, block: %s", userState.hashBlock.GetBhString().c_str());
+            return false;
+        }
+        hashPrevRoot = hashNewRoot;
+    }
+
+    for (auto& kv : forkStateRootKv.mapLastStorageKv)
+    {
+        uint256 hashNewRoot;
+        if (!dbBlock.AddContractKvTrie(forkStateRootKv.hashFork, kv.second.nBlockHeight, {}, kv.second.mapKv, hashNewRoot))
+        {
+            StdLog("CBlockBase", "Recovery user state: Add contract kv trie failed, fork: %s", forkStateRootKv.hashFork.ToString().c_str());
+            return false;
+        }
+        if (hashNewRoot != kv.second.hashRoot)
+        {
+            StdLog("CBlockBase", "Recovery user state: Add contract kv trie new root error, fork: %s", forkStateRootKv.hashFork.ToString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CBlockBase::RecoveryTxIndex(const bytes& btRecoveryData)
+{
+    try
+    {
+        uint64 nTxCount = 0;
+        CBufStream ssIn(btRecoveryData);
+        uint256 hashFork;
+        ssIn >> hashFork;
+        while (ssIn.GetSize() > 0)
+        {
+            bytes btKey, btValue;
+            ssIn >> btKey >> btValue;
+            if (!dbBlock.WriteTxIndexKvData(hashFork, btKey, btValue))
+            {
+                StdLog("CBlockBase", "Recovery tx index: Write tx index kv data failed, fork: %s", hashFork.ToString().c_str());
+                return false;
+            }
+        }
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
     if (hashFork == 0)

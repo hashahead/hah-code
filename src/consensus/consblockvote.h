@@ -234,6 +234,9 @@ private:
     static uint256 GetPreVoteSignData(const uint256& hashBlock);
     static uint256 GetCommitVoteSignData(const uint256& hashBlock);
     static bool GetBitPubkeysByBitmap(const vector<uint384>& vCandidatePubkeys, const bytes& btBitmap, vector<uint384>& vBitmapPubkeys);
+    bool GetLocalKeySignData(const CConsBlock& consHeight, const uint256& hash, map<uint384, bytes>& mapSigList);
+    bool AddLocalPreVoteSign(const uint256& hashBlock, CConsBlock& consHeight);
+    bool VerifyPreVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
 
 private:
     const uint8 nTunnelId;
