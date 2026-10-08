@@ -214,6 +214,11 @@ public:
     void OnEventNetData(const uint64 nNetId, const bytes& btData);
 
     static bool VerifyCommitVoteAggSig(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const vector<uint384>& vCandidatePubkeys);
+
+private:
+    void OnNetMsgSubscribeReq(const uint64 nNetId, const uint8* pData, const size_t nDataLen);
+    void OnNetMsgSubscribeRsp(const uint64 nNetId, const uint8* pData, const size_t nDataLen);
+    void OnNetMsgPreVoteBitmapReq(const uint64 nNetId, const uint8* pData, const size_t nDataLen);
     void RemoveVoteBlock(const uint256& hashBlock);
     static uint256 GetPreVoteSignData(const uint256& hashBlock);
     static uint256 GetCommitVoteSignData(const uint256& hashBlock);

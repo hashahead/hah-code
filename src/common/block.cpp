@@ -1435,4 +1435,39 @@ void CBlockStorageProve::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
 
     s << mapCrossProve;
 }
+
+void CBlockStorageProve::Serialize(hnbase::CStream& s, hnbase::LoadType&)
+{
+    hnbase::CVarInt varSize;
+
+    s >> btAggSigBitmap >> btAggSigData;
+
+    // ref block
+    s >> varSize;
+    if (varSize.GetValue() > 0)
+    {
+        s >> hashRefBlock;
+        for (std::size_t i = 0; i < varSize.GetValue() - 1; i++)
+        {
+            std::pair<uint8, uint256> provePair;
+            s >> provePair;
+            vRefBlockMerkleProve.push_back(provePair);
+        }
+    }
+
+    // prev block
+    s >> varSize;
+    if (varSize.GetValue() > 0)
+    {
+        s >> hashPrevBlock;
+        for (std::size_t i = 0; i < varSize.GetValue() - 1; i++)
+        {
+            std::pair<uint8, uint256> provePair;
+            s >> provePair;
+            vPrevBlockMerkleProve.push_back(provePair);
+        }
+    }
+
+    s >> mapCrossProve;
+}
 } // namespace hashahead

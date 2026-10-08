@@ -308,6 +308,8 @@ public:
     bool SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash);
     bool SnapshotBlockIndex(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, std::vector<uint256>& vBlockHash);
     bool SnapshotFork(const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vBlockHash, const std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare>& mapForkLastBlockNumber);
+    bool SnapshotVote(const uint256& hashFork, const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vBlockHash);
+    bool SnapshotState(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, const std::vector<uint256>& vBlockHash);
     bool SnapshotRecovery(const std::string& strRecoveryDir);
     bool RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFork);
     bool RecoveryFork(const bytes& btRecoveryData);
@@ -323,10 +325,12 @@ public:
     bool WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData);
 
 protected:
-    CBlockIndex* GetIndex(const uint256& hash) const;
-    CBlockIndex* GetForkLastIndex(const uint256& hashFork);
-    CBlockIndex* GetOrCreateIndex(const uint256& hash);
-    CBlockIndex* GetBranch(CBlockIndex* pIndexRef, CBlockIndex* pIndex, std::vector<CBlockIndex*>& vPath);
+    BlockIndexPtr GetIndex(const uint256& hash);
+    void AddCacheBlockIndex(const BlockIndexPtr pIndex);
+    void RemoveCacheBlockIndex(const uint256& hashBlock);
+    BlockIndexPtr GetCacheBlockIndex(const uint256& hashBlock);
+    BlockIndexPtr GetForkLastIndex(const uint256& hashFork);
+    BlockIndexPtr GetBranch(BlockIndexPtr pIndexRef, BlockIndexPtr pIndex, std::vector<BlockIndexPtr>& vPath);
     CBlockIndex* GetOriginIndex(const uint256& txidMint);
     void UpdateBlockHeightIndex(const uint256& hashFork, const uint256& hashBlock, const uint64 nBlockTimeStamp, const CDestination& destMint, const uint256& hashRefBlock);
     void RemoveBlockIndex(const uint256& hashFork, const uint256& hashBlock);
@@ -349,16 +353,15 @@ protected:
     void ClearCache();
     bool LoadDB();
     bool VerifyDB();
-    bool VerifyBlockDB(const CBlockVerify& verifyBlock, CBlockOutline& outline, CBlockRoot& blockRoot, const bool fVerify);
-    bool RepairBlockDB(const CBlockVerify& verifyBlock, CBlockRoot& blockRoot, CBlockEx& block, CBlockIndex** ppIndexNew);
-    bool LoadBlockIndex(CBlockOutline& outline, CBlockIndex** ppIndexNew);
+    bool VerifyBlockDB(const CBlockVerify& verifyBlock, CBlockIndex& outline, CBlockRoot& blockRoot, const bool fVerify);
+    bool RepairBlockDB(const CBlockVerify& verifyBlock, CBlockRoot& blockRoot, CBlockEx& block, BlockIndexPtr* ppIndexNew);
+    bool GetBlockBranchListNolock(const BlockIndexPtr pIndex, const uint256& hashForkLastBlock, const CBlockEx* pBlockex, std::vector<CBlockEx>& vRemoveBlockInvertedOrder, std::vector<CBlockEx>& vAddBlockPositiveOrder);
+    bool GetTokenContractAddressContext(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContractAddress, CTokenContractAddressContext& ctxTokenContractAddress);
+    bool SaveTokenContractAddress(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock);
+    bool LoadAllForkLastHeight();
+    void AddForkLastHeight(const uint256& hashFork, const uint32 nLastHeight);
 
 protected:
-    enum
-    {
-        MAX_CACHE_BLOCK_STATE = 64
-    };
-
     mutable hnbase::CRWAccess rwAccess;
     bool fCfgFullDb;
     bool fCfgTraceDb;
@@ -368,9 +371,13 @@ protected:
     uint256 hashGenesisBlock;
     CBlockDB dbBlock;
     CTimeSeriesCached tsBlock;
-    std::map<uint256, CBlockIndex*> mapIndex;
-    std::map<uint256, CForkHeightIndex> mapForkHeightIndex;
-    CBlockFilter blockFilter;
+    CCacheBlockReceipt blockReceiptCache;
+
+    mutable hnbase::CRWAccess rwCacheBlockIndexAccess;
+    std::map<uint256, BlockIndexPtr> mapCacheBlockIndex;
+
+    mutable hnbase::CRWAccess rwForkHeightAccess;
+    std::map<uint256, uint32> mapForkLastHeight;
 };
 
 } // namespace storage

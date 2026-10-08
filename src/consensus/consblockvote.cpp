@@ -602,5 +602,31 @@ bool CConsBlockVote::AddNetNode(const uint64 nNetId)
     }
     return true;
 }
+
+void CConsBlockVote::RemoveNetNode(const uint64 nNetId)
+{
+    StdLog("CConsBlockVote", "Remove net node, net id: 0x%lx", nNetId);
+    mapNetNode.erase(nNetId);
+}
+
+void CConsBlockVote::OnTimer()
+{
+    int64 nWaitTime = nEpochDuration / 5;
+    if (nWaitTime < 1000)
+    {
+        nWaitTime = 1000;
+    }
+    else if (nWaitTime > 5000)
+    {
+        nWaitTime = 5000;
+    }
+    int64 nCurTime = GetTimeMillis();
+    if (nCurTime - nPrevCheckPreVoteBitmapTime >= nWaitTime)
+    {
+        nPrevCheckPreVoteBitmapTime = nCurTime;
+
+        CheckLocalVote();
+    }
+}
 } // namespace consblockvote
 } // namespace consensus

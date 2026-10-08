@@ -904,7 +904,45 @@ bool CBlockDB::WriteSnapshotAddressTxKvData(const uint256& hashFork, const bytes
     }
     return false;
 }
-bool CBlockDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight, const std::map<CDestination, uint256>& mapVoteReward, uint256& hashNewRoot)
+
+bool CBlockDB::WriteSnapshotAddressTxCount(const uint256& hashFork, const uint256& hashLastBlock, const std::map<CDestination, uint64>& mapAddressTxCount)
+{
+    if (fCfgFullDb)
+    {
+        return dbAddressTxInfo.WriteSnapshotAddressTxCount(hashFork, hashLastBlock, mapAddressTxCount);
+    }
+    return false;
+}
+
+bool CBlockDB::WriteSnapshotTokenTxCount(const uint256& hashFork, const std::map<CDestination, std::map<CDestination, uint64>>& mapTokenTxCount)
+{
+    if (fCfgFullDb)
+    {
+        return dbAddressTxInfo.WriteSnapshotTokenTxCount(hashFork, mapTokenTxCount);
+    }
+    return false;
+}
+
+bool CBlockDB::AddBlockContractTraceData(const uint256& hashFork, const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.AddBlockContractTraceData(hashFork, hashBlock, vContractReceipts, vContractPrevAddressState);
+    }
+    return false;
+}
+
+bool CBlockDB::AddBlockContractKvData(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, std::map<uint256, bytes>>& mapTraceContractKvData)
+{
+    if (fCfgTraceDb)
+    {
+        return dbTrace.AddBlockContractKvData(hashFork, hashPrevBlock, hashBlock, mapTraceContractKvData);
+    }
+    return false;
+}
+
+bool CBlockDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight,
+                             const std::map<CDestination, uint256>& mapVoteReward, const CDestination& destMint, const uint8 nMintTemplateType, const uint256& nMintReward, uint256& hashNewRoot)
 {
     return dbVote.AddVoteReward(hashFork, nChainId, hashPrevBlock, hashBlock, nBlockHeight, mapVoteReward, hashNewRoot);
 }

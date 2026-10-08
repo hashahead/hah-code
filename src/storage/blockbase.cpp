@@ -5273,6 +5273,58 @@ bool CBlockBase::SnapshotAddressTx(const uint256& hashPrimaryLastBlock, const ui
 
     return true;
 }
+
+bool CBlockBase::SnapshotTokenTx(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, const uint64 nForkLastBlockNumber)
+{
+    std::map<CDestination, std::map<CDestination, uint64>> mapTokenTxCount;
+    CBufStream ssOut;
+
+    auto funcWalker = [&](const CDestination& destContract, const CDestination& destUserAddress, const uint64 nTxIndex, const bytes& btKey, const bytes& btValue) -> bool {
+        auto& nTxCount = mapTokenTxCount[destContract][destUserAddress];
+        if (nTxCount < nTxIndex + 1)
+        {
+            nTxCount = nTxIndex + 1;
+        }
+        if (ssOut.GetSize() == 0)
+        {
+            ssOut << SNAP_SUB_TYPE_TOKEN_TX_INDEX << hashFork;
+        }
+        ssOut << btKey << btValue;
+        if (ssOut.GetSize() >= 1024 * 1024 * 20)
+        {
+            if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_ADDRESS_TX, ssOut.GetData(), ssOut.GetSize()))
+            {
+                StdLog("CBlockBase", "Snapshot token tx: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+                return false;
+            }
+            ssOut.Clear();
+        }
+        return true;
+    };
+    if (!dbBlock.WalkThroughSnapshotTokenTxKv(hashFork, nForkLastBlockNumber, funcWalker))
+    {
+        StdLog("CBlockBase", "Snapshot token tx: Walk through snapshot address tx failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    if (ssOut.GetSize() > 0)
+    {
+        if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_ADDRESS_TX, ssOut.GetData(), ssOut.GetSize()))
+        {
+            StdLog("CBlockBase", "Snapshot token tx: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+            return false;
+        }
+    }
+
+    // write token tx count
+    ssOut.Clear();
+    ssOut << SNAP_SUB_TYPE_TOKEN_TX_COUNT << hashFork << hashForkLastBlock << mapTokenTxCount;
+    if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_ADDRESS_TX, ssOut.GetData(), ssOut.GetSize()))
+    {
+        StdLog("CBlockBase", "Snapshot token tx: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {

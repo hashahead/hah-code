@@ -161,6 +161,10 @@ public:
     bool ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize, const bool fReverse,
                      uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord);
     bool WalkThroughSnapshotAddressTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker);
+    bool WalkThroughSnapshotTokenTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerTokenTxKvFunc fnWalker);
+    bool WriteSnapshotAddressTxKvData(const uint256& hashFork, const bytes& btKey, const bytes& btValue);
+    bool WriteSnapshotAddressTxCount(const uint256& hashFork, const uint256& hashLastBlock, const std::map<CDestination, uint64>& mapAddressTxCount);
+    bool WriteSnapshotTokenTxCount(const uint256& hashFork, const std::map<CDestination, std::map<CDestination, uint64>>& mapTokenTxCount);
 
     bool AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight, const std::map<CDestination, uint256>& mapVoteReward, uint256& hashNewRoot);
     bool ListVoteReward(const uint32 nChainId, const uint256& hashBlock, const CDestination& dest, const uint32 nGetCount, std::vector<std::pair<uint32, uint256>>& vVoteReward);
