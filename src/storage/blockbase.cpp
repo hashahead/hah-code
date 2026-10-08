@@ -6106,36 +6106,126 @@ bool CBlockBase::GetTokenContractAddressContext(const uint256& hashFork, const u
     return true;
 }
 
-    if (outline.hashPrev != 0)
+bool CBlockBase::SaveTokenContractAddress(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock)
+{
+    std::map<CDestination, uint256> mapNewAddress;
+
+    std::map<CDestination, CContractAddressContext> mapContractAddress;
+    if (!dbBlock.ListContractAddress(hashFork, hashBlock, mapContractAddress))
     {
-        pIndexNew->pPrev = GetIndex(outline.hashPrev);
-        if (pIndexNew->pPrev == nullptr)
-        {
-            StdError("BlockBase", "Load block index: Get prev index fail, block: %s, prev block: %s",
-                     hashBlock.ToString().c_str(), outline.hashPrev.GetHex().c_str());
-            return false;
-        }
+        StdLog("BlockBase", "Save token contract address: Get contract address list failed, block: %s", hashBlock.ToString().c_str());
+        return false;
     }
 
-    if (pIndexNew->IsOrigin())
+    bool fAll = false;
+    if (hashFork != hashBlock)
     {
-        pIndexNew->pOrigin = pIndexNew;
+        std::map<CDestination, CContractAddressContext> mapPrevContractAddress;
+        if (!dbBlock.ListContractAddress(hashFork, hashPrevBlock, mapPrevContractAddress))
+        {
+            StdLog("BlockBase", "Save token contract address: Get prev contract address list failed, prev block: %s", hashPrevBlock.ToString().c_str());
+            return false;
+        }
+        for (auto& kv : mapContractAddress)
+        {
+            if (mapPrevContractAddress.find(kv.first) == mapPrevContractAddress.end())
+            {
+                mapNewAddress.insert(std::make_pair(kv.first, kv.second.hashCreateTxid));
+            }
+        }
     }
     else
     {
-        pIndexNew->pOrigin = GetIndex(outline.hashOrigin);
-        if (pIndexNew->pOrigin == nullptr)
+        fAll = true;
+        for (auto& kv : mapContractAddress)
         {
-            StdError("BlockBase", "Load block index: Get origin index fail, block: %s, origin block: %s",
-                     hashBlock.ToString().c_str(), outline.hashOrigin.GetHex().c_str());
-            return false;
+            mapNewAddress.insert(std::make_pair(kv.first, kv.second.hashCreateTxid));
         }
     }
 
-    UpdateBlockHeightIndex(pIndexNew->GetOriginHash(), hashBlock, pIndexNew->nTimeStamp, CDestination(), pIndexNew->GetRefBlock());
+    std::map<CDestination, CTokenContractAddressContext> mapTokenContractAddressContext;
+    for (auto& kv : mapNewAddress)
+    {
+        const CDestination& destContractAddress = kv.first;
+        CTokenContractAddressContext ctxTokenContractAddress;
+        if (GetTokenContractAddressContext(hashFork, hashBlock, destContractAddress, ctxTokenContractAddress))
+        {
+            const uint256& hashCreateTxid = kv.second;
 
-    *ppIndexNew = pIndexNew;
+            CTransaction tx;
+            uint256 hashAtFork;
+            uint256 hashTxAtBlock;
+            CTxIndex txIndex;
+            if (!RetrieveTxAndIndex(hashFork, hashCreateTxid, tx, hashAtFork, hashTxAtBlock, txIndex))
+            {
+                StdLog("BlockBase", "Save token contract address: Get tx failed, create txid: %s, fork: %s, block: %s",
+                       hashCreateTxid.ToString().c_str(), hashFork.ToString().c_str(), hashBlock.ToString().c_str());
+                continue;
+            }
+
+            ctxTokenContractAddress.hashCreateTxid = hashCreateTxid;
+            ctxTokenContractAddress.nAtBlockNumber = txIndex.nBlockNumber;
+            ctxTokenContractAddress.destCreate = tx.GetFromAddress();
+
+            mapTokenContractAddressContext.insert(std::make_pair(destContractAddress, ctxTokenContractAddress));
+        }
+    }
+
+    if (!dbBlock.AddTokenContractAddressContext(hashFork, hashPrevBlock, hashBlock, mapTokenContractAddressContext, fAll))
+    {
+        StdLog("BlockBase", "Save token contract address: Add coin contract address failed, block: %s", hashBlock.ToString().c_str());
+        return false;
+    }
     return true;
+}
+
+bool CBlockBase::LoadAllForkLastHeight()
+{
+    std::map<uint256, CForkContext> mapForkCtxt;
+    if (!dbBlock.ListForkContext(mapForkCtxt, {}))
+    {
+        return false;
+    }
+    for (auto& kv : mapForkCtxt)
+    {
+        uint256 hashLastBlock;
+        if (!dbBlock.RetrieveForkLast(kv.first, hashLastBlock))
+        {
+            return false;
+        }
+        AddForkLastHeight(kv.first, CBlock::GetBlockHeightByHash(hashLastBlock));
+    }
+    return true;
+}
+
+void CBlockBase::AddForkLastHeight(const uint256& hashFork, const uint32 nLastHeight)
+{
+    CWriteLock wlock(rwForkHeightAccess);
+
+    uint32& nForkHeight = mapForkLastHeight[hashFork];
+    if (nForkHeight < nLastHeight)
+    {
+        nForkHeight = nLastHeight;
+    }
+}
+
+uint32 CBlockBase::GetAllForkMinLastHeight(std::vector<uint256>* pForkHash)
+{
+    CReadLock rlock(rwForkHeightAccess);
+
+    uint32 nMinHeight = 0xFFFFFFFF;
+    for (auto& kv : mapForkLastHeight)
+    {
+        if (nMinHeight > kv.second)
+        {
+            nMinHeight = kv.second;
+        }
+        if (pForkHash)
+        {
+            pForkHash->push_back(kv.first);
+        }
+    }
+    return nMinHeight;
 }
 
 } // namespace storage
