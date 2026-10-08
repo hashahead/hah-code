@@ -5703,7 +5703,7 @@ bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint25
         for (const auto& kv : mapForkCtxt)
         {
             const uint256& hashGetFork = kv.first;
-            if (dbBlock.RetrieveTxIndex(hashGetFork, txid, txIndex))
+            if (dbBlock.RetrieveTxIndex(hashGetFork, txid, hashTxAtBlock, txIndex))
             {
                 hashAtFork = hashGetFork;
                 return true;
@@ -5712,7 +5712,7 @@ bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint25
     }
     else
     {
-        if (dbBlock.RetrieveTxIndex(hashFork, txid, txIndex))
+        if (dbBlock.RetrieveTxIndex(hashFork, txid, hashTxAtBlock, txIndex))
         {
             hashAtFork = hashFork;
             return true;
@@ -5723,35 +5723,35 @@ bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint25
 
 void CBlockBase::ClearCache()
 {
-    map<uint256, CBlockIndex*>::iterator mi;
-    for (mi = mapIndex.begin(); mi != mapIndex.end(); ++mi)
-    {
-        delete (*mi).second;
-    }
-    mapIndex.clear();
-    mapForkHeightIndex.clear();
 }
 
 bool CBlockBase::LoadDB()
 {
     CWriteLock wlock(rwAccess);
 
-    ClearCache();
+    // ClearCache();
 
     /*CBlockWalker walker(this);
     if (!dbBlock.WalkThroughBlockIndex(walker))
     {
-        StdLog("BlockBase", "LoadDB: Walk Through Block Index fail");
+        StdLog("BlockBase", "Load DB: Walk Through Block Index fail");
         ClearCache();
         return false;
     }*/
-    StdLog("BlockBase", "Start verify db.");
-    if (!VerifyDB())
+
+    // StdLog("BlockBase", "Start verify db.");
+    // if (!VerifyDB())
+    // {
+    //     StdError("BlockBase", "Load DB: Verify DB fail.");
+    //     return false;
+    // }
+    // StdLog("BlockBase", "Verify db success!");
+
+    if (!LoadAllForkLastHeight())
     {
-        StdError("BlockBase", "Load DB: Verify DB fail.");
+        StdLog("BlockBase", "Load DB: Load all fork last height failed");
         return false;
     }
-    StdLog("BlockBase", "Verify db success!");
     return true;
 }
 

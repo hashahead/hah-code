@@ -790,5 +790,87 @@ void CConsBlockVote::SendSubscribeReq(const uint64 nNetId)
 #endif
     }
 }
+
+void CConsBlockVote::SendSubscribeRsp(const uint64 nNetId, const bool fResult)
+{
+    bytes btMsg;
+    if (MakeSubscribeRsp(btMsg, BLOCK_VOTE_PRO_VER_1, (fResult ? 1 : 0)))
+    {
+        if (!SendNetData(nNetId, btMsg))
+        {
+            StdLog("CConsBlockVote", "Send subscribe rsp: Send subscribe rsp net data fail, net id: 0x%lx", nNetId);
+            return;
+        }
+#ifdef CBV_SHOW_DEBUG
+        StdDebug("CConsBlockVote", "Send subscribe rsp: subscribe rsp, node id: 0x%lx", nNetId);
+#endif
+    }
+}
+
+void CConsBlockVote::BroadcastData(const uint64 nExcludeNetId, const bytes& btMsg)
+{
+    for (auto& kv : mapNetNode)
+    {
+        if (kv.second.IsSubscribe() && (nExcludeNetId == 0 || kv.first != nExcludeNetId))
+        {
+            if (!SendNetData(kv.first, btMsg))
+            {
+                StdLog("CConsBlockVote", "Broadcast data: Send net data fail, net id: 0x%lx", kv.first);
+                return;
+            }
+        }
+    }
+}
+
+CConsBlock* CConsBlockVote::LoadVoteBlock(const uint256& hashBlock, const uint64 nNetId)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it == mapConsBlock.end())
+    {
+        uint32 nBlockEpoch = 0;
+        int64 nBlockTime = 0;
+        vector<uint384> vPubkey;
+        bytes btAggBitmap;
+        bytes btAggSig;
+        if (!getVoteBlockCandidatePubkey(hashBlock, nBlockEpoch, nBlockTime, vPubkey, btAggBitmap, btAggSig))
+        {
+            return nullptr;
+        }
+
+        if (!AddCandidatePubkey(hashBlock, nBlockEpoch, nBlockTime, vPubkey))
+        {
+            StdLog("CConsBlockVote", "Load vote block: Add candidate pubkey fail, block: %s", hashBlock.GetBhString().c_str());
+            return nullptr;
+        }
+        it = mapConsBlock.find(hashBlock);
+        if (it == mapConsBlock.end())
+        {
+            StdLog("CConsBlockVote", "Load vote block: Get cons block fail, block: %s", hashBlock.GetBhString().c_str());
+            return nullptr;
+        }
+    }
+    return &(it->second);
+}
+
+void CConsBlockVote::RemoveVoteBlock(const uint256& hashBlock)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it != mapConsBlock.end())
+    {
+        if (it->second.nAddTime != 0)
+        {
+            auto mt = mapAddTime.find(it->second.nAddTime);
+            if (mt != mapAddTime.end())
+            {
+                mt->second.erase(hashBlock);
+                if (mt->second.empty())
+                {
+                    mapAddTime.erase(mt);
+                }
+            }
+        }
+        mapConsBlock.erase(it);
+    }
+}
 } // namespace consblockvote
 } // namespace consensus

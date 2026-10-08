@@ -237,6 +237,7 @@ private:
     bool GetLocalKeySignData(const CConsBlock& consHeight, const uint256& hash, map<uint384, bytes>& mapSigList);
     bool AddLocalPreVoteSign(const uint256& hashBlock, CConsBlock& consHeight);
     bool VerifyPreVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
+    bool VerifyCommitVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
 
 private:
     const uint8 nTunnelId;

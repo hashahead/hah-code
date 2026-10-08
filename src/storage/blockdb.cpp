@@ -1033,6 +1033,35 @@ bool CBlockDB::GetBlockCrosschainProve(const uint256& hashBlock, CBlockStoragePr
 {
     return dbHdex.GetBlockCrosschainProve(hashBlock, proveBlockCrosschain);
 }
+
+bool CBlockDB::GetCrosschainProveForPrevBlock(const CChainId nRecvChainId, const uint256& hashRecvPrevBlock, std::map<CChainId, CBlockProve>& mapBlockCrosschainProve)
+{
+    return dbHdex.GetCrosschainProveForPrevBlock(nRecvChainId, hashRecvPrevBlock, mapBlockCrosschainProve);
+}
+
+bool CBlockDB::AddRecvCrosschainProve(const CChainId nRecvChainId, const CBlockProve& blockProve)
+{
+    return dbHdex.AddRecvCrosschainProve(nRecvChainId, blockProve);
+}
+
+bool CBlockDB::GetRecvCrosschainProve(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashSendProvePrevBlock, CBlockProve& blockProve)
+{
+    return dbHdex.GetRecvCrosschainProve(nRecvChainId, nSendChainId, hashSendProvePrevBlock, blockProve);
+}
+
+bool CBlockDB::ClearHdexDbUnavailableNode(const uint32 nClearRefHeight)
+{
+    return dbHdex.ClearHdexUnavailableNode(nClearRefHeight);
+}
+
+bool CBlockDB::GetSnapshotHdexData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, bytes& btSnapData)
+{
+    return dbHdex.GetSnapshotHdexData(hashFork, vBlockHash, btSnapData);
+}
+
+bool CBlockDB::RecoveryHdexData(const bytes& btSnapData)
+{
+    return dbHdex.RecoveryHdexData(btSnapData);
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)
