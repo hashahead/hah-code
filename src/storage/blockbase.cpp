@@ -5498,6 +5498,37 @@ bool CBlockBase::RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFo
     }
     return true;
 }
+
+bool CBlockBase::RecoveryFork(const bytes& btRecoveryData)
+{
+    if (!dbBlock.RecoveryForkData(btRecoveryData))
+    {
+        StdLog("CBlockBase", "Recovery fork: Recovery fork data failed");
+        return false;
+    }
+
+    CSnapForkRootKv forkRootKv;
+    try
+    {
+        CBufStream ss(btRecoveryData);
+        ss >> forkRootKv;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    for (auto& kv : forkRootKv.mapForkLastBlock)
+    {
+        const uint256& hashFork = kv.first;
+        if (!dbBlock.LoadFork(hashFork))
+        {
+            StdError("BlockBase", "Recovery fork: Add new fork failed, fork: %s", hashFork.ToString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
     if (hashFork == 0)

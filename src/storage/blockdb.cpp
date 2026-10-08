@@ -971,6 +971,22 @@ bool CBlockDB::RecoveryVoteData(const bytes& btSnapData)
 {
     return dbVote.RecoveryVoteData(btSnapData);
 }
+
+bool CBlockDB::AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDexOrderHeader, CDexOrderBody>& mapDexOrder, const std::map<CChainId, std::vector<CBlockCoinTransferProve>>& mapCrossTransferProve,
+                           const std::map<uint256, uint256>& mapCoinPairCompletePrice, const std::set<CChainId>& setPeerCrossChainId, const std::map<CDexOrderHeader, std::vector<CCompDexOrderRecord>>& mapCompDexOrderRecord, const std::map<CChainId, CBlockProve>& mapBlockProve, uint256& hashNewRoot)
+{
+    return dbHdex.AddDexOrder(hashFork, hashRefBlock, hashPrevBlock, hashBlock, mapDexOrder, mapCrossTransferProve, mapCoinPairCompletePrice, setPeerCrossChainId, mapCompDexOrderRecord, mapBlockProve, hashNewRoot);
+}
+
+bool CBlockDB::GetDexOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, CDexOrderBody& dexOrder)
+{
+    return dbHdex.GetDexOrder(hashBlock, destOrder, nChainIdOwner, strCoinSymbolOwner, strCoinSymbolPeer, nOrderNumber, dexOrder);
+}
+
+bool CBlockDB::GetDexCompletePrice(const uint256& hashBlock, const uint256& hashCoinPair, uint256& nCompletePrice)
+{
+    return dbHdex.GetDexCompletePrice(hashBlock, hashCoinPair, nCompletePrice);
+}
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)

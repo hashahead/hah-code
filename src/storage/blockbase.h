@@ -340,9 +340,8 @@ protected:
     BlockIndexPtr GetBranch(BlockIndexPtr pIndexRef, BlockIndexPtr pIndex, std::vector<BlockIndexPtr>& vPath);
     void RemoveBlockIndex(const uint256& hashFork, const uint256& hashBlock);
     bool UpdateBlockLongChain(const uint256& hashFork, const std::vector<CBlockEx>& vBlockRemove, const std::vector<CBlockEx>& vBlockAddNew);
-    void UpdateBlockNext(CBlockIndex* pIndexLast);
-    CBlockIndex* AddNewIndex(const uint256& hash, const CBlock& block, const uint32 nFile, const uint32 nOffset, const uint32 nCrc, const uint256& nChainTrust, const uint256& hashNewStateRoot);
-    bool LoadForkProfile(const CBlockIndex* pIndexOrigin, CProfile& profile);
+    BlockIndexPtr AddNewIndex(const uint256& hashFork, const uint256& hashBlock, const CBlock& block, const uint32 nFile, const uint32 nOffset, const uint32 nCrc, const uint256& nChainTrust, const uint256& hashNewStateRoot);
+    bool LoadForkProfile(const BlockIndexPtr pIndexOrigin, CProfile& profile);
     bool UpdateDelegate(const uint256& hashFork, const uint256& hashBlock, const CBlockEx& block, const uint32 nFile, const uint32 nOffset,
                         const uint256& nMinEnrollAmount, const std::map<CDestination, CAddressContext>& mapAddressContext,
                         const std::map<CDestination, CDestState>& mapAccStateIn, uint256& hashDelegateRoot);

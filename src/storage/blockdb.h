@@ -177,6 +177,10 @@ public:
     bool GetSnapshotVoteData(const uint256& hashFork, const bool fPrimaryChain, const std::vector<uint256>& vBlockHash, bytes& btSnapData);
     bool RecoveryVoteData(const bytes& btSnapData);
 
+    bool AddDexOrder(const uint256& hashFork, const uint256& hashRefBlock, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDexOrderHeader, CDexOrderBody>& mapDexOrder, const std::map<CChainId, std::vector<CBlockCoinTransferProve>>& mapCrossTransferProve,
+                     const std::map<uint256, uint256>& mapCoinPairCompletePrice, const std::set<CChainId>& setPeerCrossChainId, const std::map<CDexOrderHeader, std::vector<CCompDexOrderRecord>>& mapCompDexOrderRecord, const std::map<CChainId, CBlockProve>& mapBlockProve, uint256& hashNewRoot);
+    bool GetDexOrder(const uint256& hashBlock, const CDestination& destOrder, const CChainId nChainIdOwner, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer, const uint64 nOrderNumber, CDexOrderBody& dexOrder);
+    bool GetDexCompletePrice(const uint256& hashBlock, const uint256& hashCoinPair, uint256& nCompletePrice);
     bool AddBlacklistAddress(const CDestination& dest);
     void RemoveBlacklistAddress(const CDestination& dest);
     bool IsExistBlacklistAddress(const CDestination& dest);

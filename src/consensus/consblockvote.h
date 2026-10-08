@@ -227,6 +227,9 @@ private:
 
     bool SendNetData(const uint64 nNetId, const bytes& btData);
     void SendSubscribeReq(const uint64 nNetId);
+    void SendSubscribeRsp(const uint64 nNetId, const bool fResult);
+    void BroadcastData(const uint64 nExcludeNetId, const bytes& btMsg);
+    CConsBlock* LoadVoteBlock(const uint256& hashBlock, const uint64 nNetId = 0);
     void RemoveVoteBlock(const uint256& hashBlock);
     static uint256 GetPreVoteSignData(const uint256& hashBlock);
     static uint256 GetCommitVoteSignData(const uint256& hashBlock);

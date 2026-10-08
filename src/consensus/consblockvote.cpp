@@ -691,5 +691,54 @@ void CConsBlockVote::OnNetMsgSubscribeReq(const uint64 nNetId, const uint8* pDat
 
     SendSubscribeRsp(nNetId, true);
 }
+
+void CConsBlockVote::OnNetMsgSubscribeRsp(const uint64 nNetId, const uint8* pData, const size_t nDataLen)
+{
+    msgblockvote::SubscribeRsp msg;
+    if (!msg.ParseFromArray(pData, nDataLen))
+    {
+        StdLog("CConsBlockVote", "On subscribe rsp: Parse message fail, net id: 0x%lx", nNetId);
+        return;
+    }
+    uint32 version = msg.version();
+    uint32 result = msg.result();
+    if (result == 0)
+    {
+        StdLog("CConsBlockVote", "On subscribe rsp: Subscribe fail, result: %d, net id: 0x%lx", result, nNetId);
+    }
+}
+
+void CConsBlockVote::OnNetMsgPreVoteBitmapReq(const uint64 nNetId, const uint8* pData, const size_t nDataLen)
+{
+    msgblockvote::PreVoteBitmapReq msg;
+    if (!msg.ParseFromArray(pData, nDataLen))
+    {
+        StdLog("CConsBlockVote", "On pre vote bitmap req: Parse message fail, net id: 0x%lx", nNetId);
+        return;
+    }
+
+    uint256 hashBlock;
+    if (!msg.blockhash().empty())
+    {
+        hashBlock.SetBytes(msg.blockhash());
+    }
+    if (hashBlock == 0)
+    {
+        StdLog("CConsBlockVote", "On pre vote bitmap req: Block is null, net id: 0x%lx", nNetId);
+        return;
+    }
+
+    CConsBlock* pConsBlock = LoadVoteBlock(hashBlock, nNetId);
+    if (pConsBlock == nullptr)
+    {
+#ifdef CBV_SHOW_DEBUG
+        StdDebug("CConsBlockVote", "On pre vote bitmap req: Block not exist, net id: 0x%lx, block: %s", nNetId, hashBlock.GetBhString().c_str());
+#endif
+        return;
+    }
+#ifdef CBV_SHOW_DEBUG
+    StdDebug("CConsBlockVote", "On pre vote bitmap req, net id: 0x%lx, block: %s", nNetId, hashBlock.GetBhString().c_str());
+#endif
+}
 } // namespace consblockvote
 } // namespace consensus
