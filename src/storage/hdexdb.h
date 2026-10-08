@@ -148,6 +148,9 @@ protected:
     bool LoadLastDexOrderCache(const uint256& hashLastBlock, const std::map<uint256, uint256>& mapCompPriceCache, SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder);
     void AddBlockDexOrderCache(const uint256& hashBlock, const SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder);
     void RemoveBlockDexOrderCache(const uint256& hashBlock);
+    bool LoadLastBlockProveCache(const uint256& hashLastBlock, const std::map<uint256, uint256>& mapCompPriceCache, SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder);
+    SHP_CACHE_BLOCK_DEX_ORDER LoadBlockDexOrderCache(const uint256& hashBlock);
+
 protected:
     enum
     {

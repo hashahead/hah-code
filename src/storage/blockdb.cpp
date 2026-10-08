@@ -1176,14 +1176,9 @@ bool CBlockDB::VerifyBlockRoot(const bool fPrimary, const uint256& hashFork, con
         StdError("CBlockDB", "Verify block root: Verify address context fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
-    if (!dbContract.VerifyCodeContext(hashFork, hashPrevBlock, hashBlock, localBlockRoot.hashCodeRoot, fVerifyAllNode))
+    if (!dbAddress.VerifyCodeContext(hashFork, hashPrevBlock, hashBlock, localBlockRoot.hashCodeRoot, fVerifyAllNode))
     {
         StdError("CBlockDB", "Verify block root: Verify code context fail, block: %s", hashBlock.GetHex().c_str());
-        return false;
-    }
-    if (!dbBlockIndex.VerifyBlockNumberContext(hashFork, hashPrevBlock, hashBlock, localBlockRoot.hashBlockNumberRoot, fVerifyAllNode))
-    {
-        StdError("CBlockDB", "Verify block root: Verify blocknumber fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
     if (!dbTxIndex.VerifyTxIndex(hashFork, hashPrevBlock, hashBlock, localBlockRoot.hashTxIndexRoot, fVerifyAllNode))
@@ -1196,14 +1191,10 @@ bool CBlockDB::VerifyBlockRoot(const bool fPrimary, const uint256& hashFork, con
         StdError("CBlockDB", "Verify block root: Verify reward lock fail, block: %s", hashBlock.GetHex().c_str());
         return false;
     }
-    if (fCfgFullDb)
+    if (!dbHdex.VerifyDexOrder(hashFork, hashPrevBlock, hashBlock, localBlockRoot.hashDexOrderRoot, fVerifyAllNode))
     {
-        uint256 hashAddressTxInfoRoot;
-        if (!dbAddressTxInfo.VerifyAddressTxInfo(hashFork, hashPrevBlock, hashBlock, hashAddressTxInfoRoot, fVerifyAllNode))
-        {
-            StdError("CBlockDB", "Verify block root: Verify address tx info fail, block: %s", hashBlock.GetHex().c_str());
-            return false;
-        }
+        StdError("CBlockDB", "Verify block root: Verify dev order fail, block: %s", hashBlock.GetHex().c_str());
+        return false;
     }
     return true;
 }

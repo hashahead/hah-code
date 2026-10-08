@@ -5761,6 +5761,24 @@ bool CBlockBase::VerifyDB()
     bool fAllVerify = false;
     std::map<uint256, uint256> mapForkLast;
     std::size_t nVerifyCount = dbBlock.GetBlockVerifyCount();
+
+    if (fCfgTraceDb)
+    {
+        if (nVerifyCount > 0 && !dbBlock.GetTraceDbFlag())
+        {
+            StdLog("BlockBase", "Verify DB: Open trace db error! Please clear the data and resynchronize the block.");
+            return false;
+        }
+    }
+    else
+    {
+        if (dbBlock.GetTraceDbFlag())
+        {
+            StdLog("BlockBase", "Verify DB: Tracedb configuration parameter error, please configure tracedb=true.");
+            return false;
+        }
+    }
+
     if (nVerifyCount > nNeedVerifyCount)
     {
         for (std::size_t i = nVerifyCount - nNeedVerifyCount; i < nVerifyCount; i++)
@@ -5771,7 +5789,7 @@ bool CBlockBase::VerifyDB()
                 StdError("BlockBase", "Verify DB: Get block verify fail, pos: %ld.", i);
                 return false;
             }
-            CBlockOutline outline;
+            CBlockIndex outline;
             CBlockRoot blockRoot;
             if (!VerifyBlockDB(verifyBlock, outline, blockRoot, true))
             {
@@ -5780,6 +5798,7 @@ bool CBlockBase::VerifyDB()
             }
         }
     }
+
     for (std::size_t i = 0; i < nVerifyCount; i++)
     {
         CBlockVerify verifyBlock;
@@ -5804,14 +5823,15 @@ bool CBlockBase::VerifyDB()
             }
         }
 
-        CBlockOutline outline;
+        CBlockIndex outline;
         CBlockRoot blockRoot;
-        CBlockIndex* pIndexNew = nullptr;
+        BlockIndexPtr pIndexNew;
         CBlockEx blockex;
         bool fRepairBlock = false;
         if (VerifyBlockDB(verifyBlock, outline, blockRoot, fVerify))
         {
-            if (!LoadBlockIndex(outline, &pIndexNew))
+            pIndexNew = LoadBlockIndex(outline);
+            if (!pIndexNew)
             {
                 StdError("BlockBase", "Verify DB: Load block index fail, pos: %ld, block: [%d] %s.", i, CBlock::GetBlockHeightByHash(verifyBlock.hashBlock), verifyBlock.hashBlock.GetHex().c_str());
                 return false;
@@ -5832,15 +5852,15 @@ bool CBlockBase::VerifyDB()
             fRepairBlock = true;
         }
 
-        auto funcUpdateLongChain = [&](const uint256& hashForkIn, const uint256& hashForkLastBlockIn, const uint256& hashBlockIn, const CBlockEx& blockIn, const CBlockIndex* pIndexIn) -> bool {
-            CBlockChainUpdate update = CBlockChainUpdate(pIndexIn);
+        auto funcUpdateLongChain = [&](const uint256& hashForkIn, const uint256& hashForkLastBlockIn, const uint256& hashBlockIn, const CBlockEx& blockIn, const BlockIndexPtr pIndexIn) -> bool {
+            CBlockChainUpdate update = CBlockChainUpdate(pIndexIn, {});
             if (blockIn.IsOrigin())
             {
                 update.vBlockAddNew.push_back(blockIn);
             }
             else
             {
-                if (!GetBlockBranchListNolock(hashBlockIn, hashForkLastBlockIn, &blockIn, update.vBlockRemove, update.vBlockAddNew))
+                if (!GetBlockBranchListNolock(GetIndex(hashBlockIn), hashForkLastBlockIn, &blockIn, update.vBlockRemove, update.vBlockAddNew))
                 {
                     StdLog("BlockBase", "Verify DB: Get block branch list fail, block: [%d] %s", CBlock::GetBlockHeightByHash(hashBlockIn), hashBlockIn.ToString().c_str());
                     return false;

@@ -1762,5 +1762,80 @@ bool CHdexDB::LoadLastBlockProveCache(const uint256& hashLastBlock, const std::m
     return true;
 }
 
+SHP_CACHE_BLOCK_DEX_ORDER CHdexDB::LoadBlockDexOrderCache(const uint256& hashBlock)
+{
+    CChainId nChainId = CBlock::GetBlockChainIdByHash(hashBlock);
+
+#ifdef HDEX_CACHE_DEX_ENABLE
+    auto it = mapCacheForkLastDexOrder.find(nChainId);
+    if (it != mapCacheForkLastDexOrder.end() && it->second && it->second->GetLastBlock() == hashBlock)
+    {
+        //StdDebug("CHdexDB", "Load block dex order: Load cache dex order success, block: %s", hashBlock.GetBhString().c_str());
+        return it->second;
+    }
+
+    auto mt = mapCacheBlockDexOrder.find(hashBlock);
+    if (mt != mapCacheBlockDexOrder.end())
+    {
+        return mt->second;
+    }
+#endif
+
+    std::map<uint256, uint256> mapCompPriceCache; // key: coin pair hash, value: complete price
+    if (!GetCoinPairCompletePriceCache(hashBlock, mapCompPriceCache))
+    {
+        StdLog("CHdexDB", "Load block dex order: Get coin pair complete price fail, block: %s", hashBlock.GetBhString().c_str());
+        return nullptr;
+    }
+
+    SHP_CACHE_BLOCK_DEX_ORDER ptrCacheBlockDexOrder = MAKE_SHARED_CACHE_BLOCK_DEX_ORDER();
+    if (!LoadLastDexOrderCache(hashBlock, mapCompPriceCache, ptrCacheBlockDexOrder))
+    {
+        StdLog("CHdexDB", "Load block dex order: Load last dex order fail, block: %s", hashBlock.GetBhString().c_str());
+        return nullptr;
+    }
+    if (!LoadLastBlockProveCache(hashBlock, mapCompPriceCache, ptrCacheBlockDexOrder))
+    {
+        StdLog("CHdexDB", "Load block dex order: Load last block prove fail, block: %s", hashBlock.GetBhString().c_str());
+        return nullptr;
+    }
+    ptrCacheBlockDexOrder->SetLastBlock(hashBlock);
+
+#ifdef HDEX_OUT_TEST_LOG
+    {
+        auto it = mapCacheForkLastDexOrder.find(nChainId);
+        if (it != mapCacheForkLastDexOrder.end() && it->second)
+        {
+            if (it->second->GetLastBlock() == hashBlock)
+            {
+                if (*ptrCacheBlockDexOrder != *(it->second))
+                {
+                    StdLog("CHdexDB", "Load block dex order: Cache dex order error, block: %s", hashBlock.GetBhString().c_str());
+                    StdDebug("CHdexDB", "Load data: +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                    ptrCacheBlockDexOrder->GetMatchDex()->ShowDexOrderList();
+                    StdDebug("CHdexDB", "Cache data: +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                    it->second->GetMatchDex()->ShowDexOrderList();
+                    StdDebug("CHdexDB", "End data: +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                    mapCacheForkLastDexOrder.erase(it);
+                }
+                else
+                {
+                    StdDebug("CHdexDB", "Load block dex order: Cache dex order success, block: %s", hashBlock.GetBhString().c_str());
+                }
+            }
+            else
+            {
+                StdLog("CHdexDB", "Load block dex order: Cache dex order block error, cache block: %s, block: %s", it->second->GetLastBlock().GetBhString().c_str(), hashBlock.GetBhString().c_str());
+                //mapCacheForkLastDexOrder.erase(it);
+            }
+        }
+    }
+#endif
+
+#ifdef HDEX_CACHE_DEX_ENABLE
+    AddBlockDexOrderCache(hashBlock, ptrCacheBlockDexOrder);
+#endif
+    return ptrCacheBlockDexOrder;
+}
 } // namespace storage
 } // namespace hashahead
