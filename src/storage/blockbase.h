@@ -338,10 +338,7 @@ protected:
     BlockIndexPtr GetCacheBlockIndex(const uint256& hashBlock);
     BlockIndexPtr GetForkLastIndex(const uint256& hashFork);
     BlockIndexPtr GetBranch(BlockIndexPtr pIndexRef, BlockIndexPtr pIndex, std::vector<BlockIndexPtr>& vPath);
-    CBlockIndex* GetOriginIndex(const uint256& txidMint);
-    void UpdateBlockHeightIndex(const uint256& hashFork, const uint256& hashBlock, const uint64 nBlockTimeStamp, const CDestination& destMint, const uint256& hashRefBlock);
     void RemoveBlockIndex(const uint256& hashFork, const uint256& hashBlock);
-    void UpdateBlockRef(const uint256& hashFork, const uint256& hashBlock, const uint256& hashRefBlock);
     bool UpdateBlockLongChain(const uint256& hashFork, const std::vector<CBlockEx>& vBlockRemove, const std::vector<CBlockEx>& vBlockAddNew);
     void UpdateBlockNext(CBlockIndex* pIndexLast);
     CBlockIndex* AddNewIndex(const uint256& hash, const CBlock& block, const uint32 nFile, const uint32 nOffset, const uint32 nCrc, const uint256& nChainTrust, const uint256& hashNewStateRoot);

@@ -5456,6 +5456,48 @@ bool CBlockBase::SnapshotRecovery(const std::string& strRecoveryDir)
     // tsBlock.ClearAllFile();
     return false;
 }
+
+bool CBlockBase::RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFork)
+{
+    std::vector<CBlockIndex> vBlockIndex;
+    bytes btBlockVoteData;
+    try
+    {
+        CBufStream ss(btRecoveryData);
+        ss >> hashFork >> vBlockIndex >> btBlockVoteData;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+
+    std::vector<std::pair<uint64, uint256>> vNewNumberBlock;
+    for (auto& outline : vBlockIndex)
+    {
+        if (!dbBlock.AddNewBlockIndex(outline))
+        {
+            StdLog("CBlockBase", "Recovery block index: Add new block index failed, block: %s", outline.GetBlockHash().ToString().c_str());
+            return false;
+        }
+        vNewNumberBlock.push_back(std::make_pair(outline.GetBlockNumber(), outline.GetBlockHash()));
+    }
+    if (!dbBlock.UpdateBlockNumberBlockLongChain(hashFork, {}, vNewNumberBlock))
+    {
+        StdLog("CBlockBase", "Recovery block index: Update block number long chain fail, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+
+    if (!btBlockVoteData.empty())
+    {
+        if (!dbBlock.RecoverySnapshotBlockVoteData(btBlockVoteData))
+        {
+            StdLog("CBlockBase", "Recovery block index: Recovery snapshot block vote data failed, fork: %s", hashFork.GetBhString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
     if (hashFork == 0)
