@@ -1003,6 +1003,21 @@ bool CBlockDB::GetDexOrderMaxNumber(const uint256& hashBlock, const CDestination
 {
     return dbHdex.GetDexOrderMaxNumber(hashBlock, destOrder, strCoinSymbolOwner, strCoinSymbolPeer, nMaxOrderNumber);
 }
+
+bool CBlockDB::GetPeerCrossLastBlock(const uint256& hashBlock, const CChainId nPeerChainId, uint256& hashLastProveBlock)
+{
+    return dbHdex.GetPeerCrossLastBlock(hashBlock, nPeerChainId, hashLastProveBlock);
+}
+
+bool CBlockDB::GetMatchDexData(const uint256& hashBlock, std::map<uint256, CMatchOrderResult>& mapMatchResult)
+{
+    return dbHdex.GetMatchDexData(hashBlock, mapMatchResult);
+}
+
+bool CBlockDB::ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder)
+{
+    return dbHdex.ListMatchDexOrder(hashBlock, strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
+}
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)

@@ -351,6 +351,7 @@ protected:
     bool IsValidBlock(const BlockIndexPtr& pForkLast, const uint256& hashBlock);
     bool VerifyValidBlock(const BlockIndexPtr& pIndexGenesisLast, const BlockIndexPtr& pIndex);
     bool VerifyBlockConfirmChain(const BlockIndexPtr& pNewIndex);
+    bool VerifyBlockConfirmNoLock(const uint256& hashFork, const uint256& hashBlock, const uint256& hashLastConfirmBlock);
     CBlockIndex* GetLongChainLastBlock(const uint256& hashFork, int nStartHeight, CBlockIndex* pIndexGenesisLast, const std::set<uint256>& setInvalidHash);
     bool GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex);
     void ClearCache();

@@ -142,6 +142,9 @@ protected:
     bool WriteBlockCrosschainProveDb(const uint256& hashBlock, const CBlockStorageProve& proveBlockCrosschain);
     bool RemoveBlockCrosschainProveDb(const uint256& hashBlock);
     bool GetBlockCrosschainProveDb(const uint256& hashBlock, CBlockStorageProve& proveBlockCrosschain);
+
+    bool GetCoinPairCompletePriceCache(const uint256& hashLastBlock, std::map<uint256, uint256>& mapCompPriceCache);
+    bool GetRecvConfirmBlockListCache(const uint256& hashLastBlock, std::map<CChainId, std::pair<uint256, uint256>>& mapRecvConfirmBlock);
 protected:
     enum
     {

@@ -1397,6 +1397,77 @@ bool CHdexDB::GetBlockCrosschainProveDb(const uint256& hashBlock, CBlockStorageP
     }
     return true;
 }
+
+bool CHdexDB::GetCoinPairCompletePriceCache(const uint256& hashLastBlock, std::map<uint256, uint256>& mapCompPriceCache)
+{
+    class CListCoinPairCompPriceTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListCoinPairCompPriceTrieDBWalker(std::map<uint256, uint256>& mapCompPriceCacheIn)
+          : mapCompPriceCache(mapCompPriceCacheIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListCoinPairCompPriceTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_HDEX_KEY_TYPE_TRIE_DEX_ORDER_COMPLETE_PRICE)
+                {
+                    uint256 hashCoinPair;
+                    uint256 nCompletePrice;
+
+                    ssKey >> hashCoinPair;
+
+                    hnbase::CBufStream ssValue(btValue);
+                    ssValue >> nCompletePrice;
+
+                    mapCompPriceCache.insert(std::make_pair(hashCoinPair, nCompletePrice));
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        std::map<uint256, uint256>& mapCompPriceCache;
+    };
+
+    if (hashLastBlock == 0)
+    {
+        return true;
+    }
+
+    uint256 hashTrieRoot;
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashLastBlock, hashTrieRoot))
+    {
+        StdLog("CHdexDB", "Get coin pair complete price: Read trie root fail, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+
+    bytes btKeyPrefix;
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_TRIE_DEX_ORDER_COMPLETE_PRICE;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListCoinPairCompPriceTrieDBWalker walker(mapCompPriceCache);
+    if (!dbTrie.WalkThroughTrie(hashTrieRoot, walker, btKeyPrefix))
+    {
+        StdLog("CHdexDB", "Get coin pair complete price: Walk through trie, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

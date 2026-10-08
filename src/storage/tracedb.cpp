@@ -765,5 +765,23 @@ void CTraceDB::RemoveFork(const uint256& hashFork)
         boost::filesystem::remove_all(forkPath);
     }
 }
+
+bool CTraceDB::AddNewFork(const uint256& hashFork)
+{
+    RemoveFork(hashFork);
+    return LoadFork(hashFork);
+}
+
+void CTraceDB::Clear()
+{
+    CWriteLock wlock(rwAccess);
+
+    auto it = mapTraceDB.begin();
+    while (it != mapTraceDB.end())
+    {
+        it->second->RemoveAll();
+        mapTraceDB.erase(it++);
+    }
+}
 } // namespace storage
 } // namespace hashahead

@@ -5604,6 +5604,60 @@ bool CBlockBase::RecoveryTxIndex(const bytes& btRecoveryData)
     }
     return true;
 }
+
+bool CBlockBase::RecoveryAddressTx(const bytes& btRecoveryData)
+{
+    try
+    {
+        CBufStream ssIn(btRecoveryData);
+        uint8 nSubType;
+        uint256 hashFork;
+        ssIn >> nSubType >> hashFork;
+        if (nSubType == SNAP_SUB_TYPE_ADDRESS_TX_INDEX || nSubType == SNAP_SUB_TYPE_TOKEN_TX_INDEX)
+        {
+            while (ssIn.GetSize() > 0)
+            {
+                bytes btKey, btValue;
+                ssIn >> btKey >> btValue;
+                if (!dbBlock.WriteSnapshotAddressTxKvData(hashFork, btKey, btValue))
+                {
+                    StdLog("CBlockBase", "Recovery address tx: Write address tx kv data failed, fork: %s", hashFork.ToString().c_str());
+                    return false;
+                }
+            }
+        }
+        else if (nSubType == SNAP_SUB_TYPE_ADDRESS_TX_COUNT)
+        {
+            uint256 hashForkLastBlock;
+            std::map<CDestination, uint64> mapAddressTxCount;
+            ssIn >> hashForkLastBlock >> mapAddressTxCount;
+
+            if (!dbBlock.WriteSnapshotAddressTxCount(hashFork, hashForkLastBlock, mapAddressTxCount))
+            {
+                StdLog("CBlockBase", "Recovery address tx: Write address tx count failed, fork: %s", hashFork.ToString().c_str());
+                return false;
+            }
+        }
+        else if (nSubType == SNAP_SUB_TYPE_TOKEN_TX_COUNT)
+        {
+            uint256 hashForkLastBlock;
+            std::map<CDestination, std::map<CDestination, uint64>> mapTokenTxCount;
+            ssIn >> hashForkLastBlock >> mapTokenTxCount;
+
+            if (!dbBlock.WriteSnapshotTokenTxCount(hashFork, mapTokenTxCount))
+            {
+                StdLog("CBlockBase", "Recovery address tx: Write token tx count failed, fork: %s", hashFork.ToString().c_str());
+                return false;
+            }
+        }
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
     if (hashFork == 0)
