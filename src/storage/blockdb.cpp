@@ -804,34 +804,39 @@ bool CBlockDB::AddCodeContext(const uint256& hashFork, const uint256& hashPrevBl
                               const std::map<uint256, CTemplateContext>& mapTemplateData,
                               uint256& hashCodeRoot)
 {
-    return dbContract.AddCodeContext(hashFork, hashPrevBlock, hashBlock, mapSourceCode, mapContractCreateCode, mapContractRunCode, mapTemplateData, hashCodeRoot);
+    return dbAddress.AddCodeContext(hashFork, hashPrevBlock, hashBlock, mapSourceCode, mapContractCreateCode, mapContractRunCode, mapTemplateData, hashCodeRoot);
 }
 
 bool CBlockDB::RetrieveSourceCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashSourceCode, CContractSourceCodeContext& ctxtCode)
 {
-    return dbContract.RetrieveSourceCodeContext(hashFork, hashBlock, hashSourceCode, ctxtCode);
+    return dbAddress.RetrieveSourceCodeContext(hashFork, hashBlock, hashSourceCode, ctxtCode);
 }
 
 bool CBlockDB::RetrieveContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractCreateCode, CContractCreateCodeContext& ctxtCode)
 {
-    return dbContract.RetrieveContractCreateCodeContext(hashFork, hashBlock, hashContractCreateCode, ctxtCode);
-}
-
-bool CBlockDB::RetrieveContractRunCodeContext(const uint256& hashFork, const uint256& hashBlock, const uint256& hashContractRunCode, CContractRunCodeContext& ctxtCode)
-{
-    return dbContract.RetrieveContractRunCodeContext(hashFork, hashBlock, hashContractRunCode, ctxtCode);
+    return dbAddress.RetrieveContractCreateCodeContext(hashFork, hashBlock, hashContractCreateCode, ctxtCode);
 }
 
 bool CBlockDB::ListContractCreateCodeContext(const uint256& hashFork, const uint256& hashBlock, std::map<uint256, CContractCreateCodeContext>& mapContractCreateCode)
 {
-    return dbContract.ListContractCreateCodeContext(hashFork, hashBlock, mapContractCreateCode);
+    return dbAddress.ListContractCreateCodeContext(hashFork, hashBlock, mapContractCreateCode);
 }
 
-bool CBlockDB::AddAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber, const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, uint256& hashNewRoot)
+bool CBlockDB::AddAddressTxInfo(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const uint64 nBlockNumber,
+                                const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, const std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord)
 {
     if (fCfgFullDb)
     {
-        return dbAddressTxInfo.AddAddressTxInfo(hashFork, hashPrevBlock, hashBlock, nBlockNumber, mapAddressTxInfo, hashNewRoot);
+        return dbAddressTxInfo.AddAddressTxInfo(hashFork, hashPrevBlock, hashBlock, nBlockNumber, mapAddressTxInfo, mapTokenRecord);
+    }
+    return false;
+}
+
+bool CBlockDB::UpdateAddressTxInfoBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveBlock, const std::vector<uint256>& vAddBlock)
+{
+    if (fCfgFullDb)
+    {
+        return dbAddressTxInfo.UpdateAddressTxInfoBlockLongChain(hashFork, vRemoveBlock, vAddBlock);
     }
     return false;
 }

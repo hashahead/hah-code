@@ -139,6 +139,8 @@ protected:
     bool GetPeerCrossLastBlockDb(const uint256& hashRoot, const CChainId nPeerChainId, uint256& hashLastProveBlock);
     bool GetPeerChainSendPrevBlockDb(const uint256& hashRoot, const CChainId nSendChainId, uint256& hashLastProveBlock);
     bool ListPeerChainSendLastProveBlockDb(const uint256& hashBlock, std::map<CChainId, uint256>& mapSendLastProveBlock);
+    bool WriteBlockCrosschainProveDb(const uint256& hashBlock, const CBlockStorageProve& proveBlockCrosschain);
+    bool RemoveBlockCrosschainProveDb(const uint256& hashBlock);
 protected:
     enum
     {

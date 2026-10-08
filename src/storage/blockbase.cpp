@@ -5139,6 +5139,48 @@ bool CBlockBase::SnapshotAddress(const uint256& hashPrimaryLastBlock, const uint
     }
     return true;
 }
+
+bool CBlockBase::SnapshotHdex(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const std::vector<uint256>& vBlockHash)
+{
+    if (vBlockHash.empty())
+    {
+        StdLog("CBlockBase", "Snapshot hdex: Block list is empty, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    bytes btSnapData;
+    if (!dbBlock.GetSnapshotHdexData(hashFork, vBlockHash, btSnapData))
+    {
+        StdLog("CBlockBase", "Snapshot hdex: Get snapshot hdex data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_HDEX_KV, (char*)btSnapData.data(), btSnapData.size()))
+    {
+        StdLog("CBlockBase", "Snapshot hdex: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CBlockBase::SnapshotTrace(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const std::vector<uint256>& vBlockHash)
+{
+    if (vBlockHash.empty())
+    {
+        StdLog("CBlockBase", "Snapshot trace: Block list is empty, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    bytes btSnapData;
+    if (!dbBlock.GetSnapshotTraceData(hashFork, vBlockHash, btSnapData))
+    {
+        StdLog("CBlockBase", "Snapshot trace: Get snapshot trace data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_TRACE_KV, (char*)btSnapData.data(), btSnapData.size()))
+    {
+        StdLog("CBlockBase", "Snapshot trace: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {

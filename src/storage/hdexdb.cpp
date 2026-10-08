@@ -1360,6 +1360,21 @@ bool CHdexDB::ListPeerChainSendLastProveBlockDb(const uint256& hashBlock, std::m
     }
     return true;
 }
+
+bool CHdexDB::WriteBlockCrosschainProveDb(const uint256& hashBlock, const CBlockStorageProve& proveBlockCrosschain)
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_BLOCK_CROSSCHAIN_PROVE << hashBlock;
+    ssValue << proveBlockCrosschain;
+    return dbTrie.WriteExtKv(ssKey, ssValue);
+}
+
+bool CHdexDB::RemoveBlockCrosschainProveDb(const uint256& hashBlock)
+{
+    CBufStream ssKey;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_BLOCK_CROSSCHAIN_PROVE << hashBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {
