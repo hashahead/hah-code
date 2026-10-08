@@ -795,5 +795,41 @@ bool CTraceDB::AddBlockContractTraceData(const uint256& hashFork, const uint256&
     }
     return false;
 }
+
+bool CTraceDB::AddBlockContractKvData(const uint256& hashFork, const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDestination, std::map<uint256, bytes>>& mapTraceContractKvData)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->AddBlockContractKvData(hashPrevBlock, hashBlock, mapTraceContractKvData);
+    }
+    return false;
+}
+
+bool CTraceDB::RetrieveTxContractReceipt(const uint256& hashFork, const uint256& hashBlock, const uint256& txid, TxContractReceipts& tcrReceipt)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->RetrieveTxContractReceipt(hashBlock, txid, tcrReceipt);
+    }
+    return false;
+}
+
+bool CTraceDB::ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->ListBlockContractReceipt(hashBlock, vContractReceipts);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead

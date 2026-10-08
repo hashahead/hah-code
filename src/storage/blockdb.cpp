@@ -1028,6 +1028,11 @@ bool CBlockDB::UpdateBlockAggSign(const uint256& hashBlock, const bytes& btAggBi
 {
     return dbHdex.UpdateBlockAggSign(hashBlock, btAggBitmap, btAggSig, mapBlockProve);
 }
+
+bool CBlockDB::GetBlockCrosschainProve(const uint256& hashBlock, CBlockStorageProve& proveBlockCrosschain)
+{
+    return dbHdex.GetBlockCrosschainProve(hashBlock, proveBlockCrosschain);
+}
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)

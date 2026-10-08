@@ -1643,7 +1643,122 @@ bool CHdexDB::LoadLastDexOrderCache(const uint256& hashLastBlock, const std::map
     }
     return true;
 }
-    dexOrder = dexOrderDb.dexOrder;
+
+void CHdexDB::AddBlockDexOrderCache(const uint256& hashBlock, const SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder)
+{
+    while (mapCacheBlockDexOrder.size() >= MAX_CACHE_BLOCK_DEX_ORDER_COUNT)
+    {
+        mapCacheBlockDexOrder.erase(mapCacheBlockDexOrder.begin());
+    }
+    mapCacheBlockDexOrder[hashBlock] = ptrCacheDexOrder;
+}
+
+void CHdexDB::RemoveBlockDexOrderCache(const uint256& hashBlock)
+{
+    mapCacheBlockDexOrder.erase(hashBlock);
+}
+
+bool CHdexDB::LoadLastBlockProveCache(const uint256& hashLastBlock, const std::map<uint256, uint256>& mapCompPriceCache, SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder)
+{
+    class CListBlockProveTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListBlockProveTrieDBWalker(const std::map<uint256, uint256>& mapCompPriceCacheIn, SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrderIn)
+          : mapCompPriceCache(mapCompPriceCacheIn), ptrCacheDexOrder(ptrCacheDexOrderIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListBlockProveTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_HDEX_KEY_TYPE_TRIE_PEER_DEX_ORDER)
+                {
+                    uint8 nCompleteFlagDb;
+                    CChainId nPeerChainIdDb;
+                    CDestination destOrderDb;
+                    uint256 hashCoinPairDb;
+                    uint8 nOwnerCoinFlagDb;
+                    uint64 nOrderNumberDb;
+
+                    ssKey >> nCompleteFlagDb >> nPeerChainIdDb >> destOrderDb >> hashCoinPairDb >> nOwnerCoinFlagDb >> nOrderNumberDb;
+
+                    nPeerChainIdDb = BSwap32(nPeerChainIdDb);
+                    nOrderNumberDb = BSwap64(nOrderNumberDb);
+
+                    hnbase::CBufStream ssValue(btValue);
+                    CDexOrderSave dexOrderSave;
+                    ssValue >> dexOrderSave;
+
+                    uint256 hashDexOrder = CDexOrderHeader::GetDexOrderHashStatic(nPeerChainIdDb, destOrderDb, hashCoinPairDb, nOwnerCoinFlagDb, nOrderNumberDb);
+
+                    uint256 nPrevCompletePrice;
+                    auto nt = mapCompPriceCache.find(hashCoinPairDb);
+                    if (nt != mapCompPriceCache.end())
+                    {
+                        nPrevCompletePrice = nt->second;
+                    }
+
+                    if (!ptrCacheDexOrder->AddDexOrderCache(hashDexOrder, destOrderDb, nOrderNumberDb, dexOrderSave.dexOrder, dexOrderSave.nAtChainId, dexOrderSave.hashAtBlock, nPrevCompletePrice))
+                    {
+                        fWalkOver = true;
+                    }
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        const std::map<uint256, uint256>& mapCompPriceCache;
+        SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder;
+    };
+
+    if (hashLastBlock == 0)
+    {
+        return true;
+    }
+
+    uint256 hashTrieRoot;
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashLastBlock, hashTrieRoot))
+    {
+        StdLog("CHdexDB", "Load block prove: Read trie root fail, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+
+    bytes btKeyPrefix;
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_TRIE_PEER_DEX_ORDER << DB_HDEX_UNCOMPLETED_MATCH_ORDER;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListBlockProveTrieDBWalker walker(mapCompPriceCache, ptrCacheDexOrder);
+    if (!dbTrie.WalkThroughTrie(hashTrieRoot, walker, btKeyPrefix))
+    {
+        StdLog("CHdexDB", "Load block prove: Walk through trie, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+
+    std::map<CChainId, uint256> mapPeerLastProveBlock; // key: peer chainid, value: last prove block hash
+    if (!ListPeerChainSendLastProveBlockDb(hashLastBlock, mapPeerLastProveBlock))
+    {
+        StdLog("CHdexDB", "Load block prove: List send last prove block fail, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+
+    for (const auto& kv : mapPeerLastProveBlock)
+    {
+        ptrCacheDexOrder->UpdatePeerProveLastBlock(kv.first, kv.second);
+    }
     return true;
 }
 
