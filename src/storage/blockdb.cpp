@@ -1018,6 +1018,11 @@ bool CBlockDB::ListMatchDexOrder(const uint256& hashBlock, const std::string& st
 {
     return dbHdex.ListMatchDexOrder(hashBlock, strCoinSymbolSell, strCoinSymbolBuy, nGetCount, realDexOrder);
 }
+
+bool CBlockDB::AddBlockCrosschainProve(const uint256& hashBlock, const CBlockStorageProve& proveBlockCrosschain)
+{
+    return dbHdex.AddBlockCrosschainProve(hashBlock, proveBlockCrosschain);
+}
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)

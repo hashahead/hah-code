@@ -1468,6 +1468,79 @@ bool CHdexDB::GetCoinPairCompletePriceCache(const uint256& hashLastBlock, std::m
     }
     return true;
 }
+
+bool CHdexDB::GetRecvConfirmBlockListCache(const uint256& hashLastBlock, std::map<CChainId, std::pair<uint256, uint256>>& mapRecvConfirmBlock)
+{
+    class CListRecvConfirmBlockTrieDBWalker : public CTrieDBWalker
+    {
+    public:
+        CListRecvConfirmBlockTrieDBWalker(std::map<CChainId, std::pair<uint256, uint256>>& mapRecvConfirmBlockIn)
+          : mapRecvConfirmBlock(mapRecvConfirmBlockIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListRecvConfirmBlockTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_HDEX_KEY_TYPE_TRIE_CROSS_RECV_CONFIRM_BLOCK)
+                {
+                    CChainId nPeerChainIdDb;
+                    uint256 hashPeerAtBlockDb;
+                    uint256 hashConfirmLocalBlockDb;
+
+                    ssKey >> nPeerChainIdDb;
+                    nPeerChainIdDb = BSwap32(nPeerChainIdDb);
+
+                    hnbase::CBufStream ssValue(btValue);
+                    ssValue >> hashPeerAtBlockDb >> hashConfirmLocalBlockDb;
+
+                    mapRecvConfirmBlock.insert(std::make_pair(nPeerChainIdDb, std::make_pair(hashPeerAtBlockDb, hashConfirmLocalBlockDb)));
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        std::map<CChainId, std::pair<uint256, uint256>>& mapRecvConfirmBlock; // key: chainid, value: 1: peer at block, 2: confirm local block
+    };
+
+    if (hashLastBlock == 0)
+    {
+        return true;
+    }
+
+    uint256 hashTrieRoot;
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashLastBlock, hashTrieRoot))
+    {
+        StdLog("CHdexDB", "Get recv confirm block list: Read trie root fail, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+
+    bytes btKeyPrefix;
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_TRIE_CROSS_RECV_CONFIRM_BLOCK;
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListRecvConfirmBlockTrieDBWalker walker(mapRecvConfirmBlock);
+    if (!dbTrie.WalkThroughTrie(hashTrieRoot, walker, btKeyPrefix))
+    {
+        StdLog("CHdexDB", "Get recv confirm block list: Walk through trie, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
     CDexOrderSave dexOrderDb;
     if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
     {

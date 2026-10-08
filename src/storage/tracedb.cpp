@@ -783,5 +783,17 @@ void CTraceDB::Clear()
         mapTraceDB.erase(it++);
     }
 }
+
+bool CTraceDB::AddBlockContractTraceData(const uint256& hashFork, const uint256& hashBlock, const BlockContractReceipts& vContractReceipts, const BlockContractPrevState& vContractPrevAddressState)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->AddBlockContractTraceData(hashBlock, vContractReceipts, vContractPrevAddressState);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
