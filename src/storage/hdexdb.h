@@ -170,6 +170,12 @@ protected:
     bool AddRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock, const CBlockProve& blockProve);
     bool RemoveRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock);
     bool GetRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock, CBlockProve& blockProve);
+    bool ListRecvCrosschainProveDb(const CChainId nRecvChainId, std::vector<std::tuple<CChainId, uint256, CBlockProve>>& vRecvCrossProve);
+    bool GetCrosschainProveForPrevBlockDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashLastProveBlock, const uint32 nLastHeight, const uint16 nLastSlot, CBlockProve& blockProve);
+
+    bool ListAddressDexOrderDb(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
+                               const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder);
+
 protected:
     enum
     {

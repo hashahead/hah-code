@@ -239,6 +239,7 @@ private:
     bool VerifyPreVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
     bool VerifyCommitVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
     bool VerifyPreVoteAggSign(const uint256& hashBlock, const CBitmap& bmPreVoteBitmap, const bytes& btPreVoteAggSig);
+    bool VerifyCommitVoteAggSign(const uint256& hashBlock, const CBitmap& bmCommitVoteBitmap, const bytes& btCommitVoteAggSig);
 
 private:
     const uint8 nTunnelId;

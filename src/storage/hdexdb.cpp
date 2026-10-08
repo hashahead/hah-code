@@ -2591,5 +2591,219 @@ bool CHdexDB::ListAddressDexOrderDb(const uint256& hashBlock, const CDestination
 #endif
     return true;
 }
+
+//-----------------------------------------------------------------
+bool CHdexDB::ClearHeightTrieRoot(const uint32 nLastHeight)
+{
+    std::vector<std::pair<uint8, uint256>> vBlockRootType;
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_HDEX_ROOT_TYPE_BLOCK_ROOT)
+            {
+                uint8 nRootType;
+                uint256 hashBlock;
+                ssKey >> nRootType >> hashBlock;
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockRootType.push_back(std::make_pair(nRootType, hashBlock));
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_ROOT_TYPE_BLOCK_ROOT;
+
+    if (!dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker))
+    {
+        StdLog("CHdexDB", "Clear height trie root: Walk through ext kv failed, last height: %d", nLastHeight);
+        return false;
+    }
+
+    for (auto& vd : vBlockRootType)
+    {
+        if (!RemoveTrieRoot(vd.first, vd.second))
+        {
+            StdLog("CHdexDB", "Clear height trie root: Remove trie root failed, root type: %d, block: %s, last height: %d", vd.first, vd.second.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+
+    StdDebug("CHdexDB", "Clear height trie root: Remove trie root success, remove block count: %lu, last height: %d", vBlockRootType.size(), nLastHeight);
+    return true;
+}
+
+bool CHdexDB::ClearHeightBlockCrosschainProve(const uint32 nLastHeight)
+{
+    std::vector<uint256> vBlockHash;
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_HDEX_KEY_TYPE_EXT_BLOCK_CROSSCHAIN_PROVE)
+            {
+                uint256 hashBlock;
+                ssKey >> hashBlock;
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockHash.push_back(hashBlock);
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_EXT_BLOCK_CROSSCHAIN_PROVE;
+
+    if (!dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker))
+    {
+        StdLog("CHdexDB", "Clear height block crosschain prove: Walk through ext kv failed, last height: %d", nLastHeight);
+        return false;
+    }
+
+    for (auto& hashBlock : vBlockHash)
+    {
+        if (!RemoveBlockCrosschainProveDb(hashBlock))
+        {
+            StdLog("CHdexDB", "Clear height block crosschain prove: Remove failed, block: %s, last height: %d", hashBlock.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+
+    StdDebug("CHdexDB", "Clear height block crosschain prove: Remove success, remove block count: %lu, last height: %d", vBlockHash.size(), nLastHeight);
+    return true;
+}
+
+bool CHdexDB::ClearHeightBlockForFirstPrevBlock(const uint32 nLastHeight)
+{
+    std::vector<std::tuple<uint32, uint32, uint256>> vBlockData;
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_HDEX_KEY_TYPE_EXT_BLOCK_FOR_FIRST_PREV_BLOCK)
+            {
+                uint32 nRecvChainId, nSendChainId;
+                uint256 hashBlock;
+                ssKey >> nRecvChainId >> nSendChainId >> hashBlock;
+                nRecvChainId = BSwap32(nRecvChainId);
+                nSendChainId = BSwap32(nSendChainId);
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockData.push_back(std::make_tuple(nRecvChainId, nSendChainId, hashBlock));
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_EXT_BLOCK_FOR_FIRST_PREV_BLOCK;
+
+    if (!dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker))
+    {
+        StdLog("CHdexDB", "Clear height block for first prev block: Walk through ext kv failed, last height: %d", nLastHeight);
+        return false;
+    }
+
+    for (auto& vd : vBlockData)
+    {
+        const uint32 nRecvChainId = std::get<0>(vd);
+        const uint32 nSendChainId = std::get<1>(vd);
+        const uint256 hashBlock = std::get<2>(vd);
+        if (!RemoveLinkFirstPrevBlock(nRecvChainId, nSendChainId, hashBlock))
+        {
+            StdLog("CHdexDB", "Clear height block for first prev block: Remove failed, block: %s, last height: %d", hashBlock.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+
+    StdDebug("CHdexDB", "Clear height block for first prev block: Remove success, remove block count: %lu, last height: %d", vBlockData.size(), nLastHeight);
+    return true;
+}
+
+bool CHdexDB::ClearHeightBlockRecvCrosschainProve(const uint32 nLastHeight)
+{
+    std::vector<std::tuple<uint32, uint32, uint256>> vBlockData;
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            if (nKeyType == DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE)
+            {
+                uint32 nRecvChainId, nSendChainId;
+                uint256 hashBlock;
+                ssKey >> nRecvChainId >> nSendChainId >> hashBlock;
+                nRecvChainId = BSwap32(nRecvChainId);
+                nSendChainId = BSwap32(nSendChainId);
+                if (CBlock::GetBlockHeightByHash(hashBlock) < nLastHeight)
+                {
+                    vBlockData.push_back(std::make_tuple(nRecvChainId, nSendChainId, hashBlock));
+                }
+            }
+            return true;
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE;
+
+    if (!dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker))
+    {
+        StdLog("CHdexDB", "Clear height block recv crosschain prove: Walk through ext kv failed, last height: %d", nLastHeight);
+        return false;
+    }
+
+    for (auto& vd : vBlockData)
+    {
+        const uint32 nRecvChainId = std::get<0>(vd);
+        const uint32 nSendChainId = std::get<1>(vd);
+        const uint256 hashBlock = std::get<2>(vd);
+        if (!RemoveRecvCrosschainProveDb(nRecvChainId, nSendChainId, hashBlock))
+        {
+            StdLog("CHdexDB", "Clear height block recv crosschain prove: Remove failed, block: %s, last height: %d", hashBlock.ToString().c_str(), nLastHeight);
+            return false;
+        }
+    }
+
+    StdDebug("CHdexDB", "Clear height block recv crosschain prove: Remove success, remove block count: %lu, last height: %d", vBlockData.size(), nLastHeight);
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

@@ -894,5 +894,48 @@ bool CConsBlockVote::AddLocalPreVoteSign(const uint256& hashBlock, CConsBlock& c
     }
     return true;
 }
+
+uint256 CConsBlockVote::GetPreVoteSignData(const uint256& hashBlock)
+{
+    hnbase::CBufStream ms;
+    ms << string("prevote") << hashBlock;
+    return CryptoHash(ms.GetData(), ms.GetSize());
+}
+
+uint256 CConsBlockVote::GetCommitVoteSignData(const uint256& hashBlock)
+{
+    hnbase::CBufStream ms;
+    ms << string("commitvote") << hashBlock;
+    return CryptoHash(ms.GetData(), ms.GetSize());
+}
+
+bool CConsBlockVote::GetBitPubkeysByBitmap(const vector<uint384>& vCandidatePubkeys, const bytes& btBitmap, vector<uint384>& vBitmapPubkeys)
+{
+    CBitmap bmBitmap;
+    if (!bmBitmap.ImportBytes(btBitmap))
+    {
+        StdLog("CConsBlockVote", "Get bit pubkey by bitmap: Import bitmap fail, btBitmap: %s", ToHexString(btBitmap).c_str());
+        return false;
+    }
+    vector<uint32> vIndexList;
+    bmBitmap.GetIndexList(vIndexList);
+    for (auto& index : vIndexList)
+    {
+        if (index >= vCandidatePubkeys.size())
+        {
+            StdLog("CConsBlockVote", "Get bit pubkey by bitmap: Index error, index: %d, size: %lu", index, vCandidatePubkeys.size());
+            return false;
+        }
+        vBitmapPubkeys.push_back(vCandidatePubkeys[index]);
+    }
+    if (vBitmapPubkeys.size() < (vCandidatePubkeys.size() * 2 / 3))
+    {
+#ifdef CBV_SHOW_DEBUG
+        StdDebug("CConsBlockVote", "Get bit pubkey by bitmap: Less than two-thirds, vote count: %lu, candidate count: %lu", vBitmapPubkeys.size(), vCandidatePubkeys.size());
+#endif
+        return false;
+    }
+    return true;
+}
 } // namespace consblockvote
 } // namespace consensus
