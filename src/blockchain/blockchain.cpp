@@ -2905,6 +2905,32 @@ bool CBlockChain::GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<
 {
     return cntrBlock.GetSnapshotFileList(hashSnapBlock, vSnapFilelist);
 }
+
+bool CBlockChain::ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData)
+{
+    return cntrBlock.ReadSnapshotFileData(hashSnapBlock, strFileName, nOffset, nReadSize, btReadData);
+}
+
+bool CBlockChain::GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist)
+{
+    return cntrBlock.GetSnapshotDownFileList(hashSnapBlock, vSnapFilelist);
+}
+
+bool CBlockChain::RemoveSnapshotDownBlock(const uint256& hashSnapBlock)
+{
+    return cntrBlock.RemoveSnapshotDownBlock(hashSnapBlock);
+}
+
+uint64 CBlockChain::GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName)
+{
+    return cntrBlock.GetSnapshotDownFileSize(hashSnapBlock, strFileName);
+}
+
+bool CBlockChain::WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData)
+{
+    return cntrBlock.WriteSnapshotDownFileData(hashSnapBlock, strFileName, nOffset, btWriteData);
+}
+
 //------------------------------------------------------------------------------------------
 bool CBlockChain::VerifyVoteRewardTx(const CBlock& block, size_t& nRewardTxCount)
 {

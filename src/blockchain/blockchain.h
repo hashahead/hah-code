@@ -187,6 +187,12 @@ public:
     bool SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash) override;
     bool SnapshotRecovery(const std::string& strRecoveryDir) override;
     bool GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist) override;
+    bool ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData) override;
+    bool GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist) override;
+    bool RemoveSnapshotDownBlock(const uint256& hashSnapBlock) override;
+    uint64 GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName) override;
+    bool WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData) override;
+
 public:
     static int64 GetBlockInvestRewardTxMaxCount();
 

@@ -271,8 +271,14 @@ public:
     virtual bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight) = 0;
 
     virtual bool IsSnapshotBlock(const uint256& hashBlock) = 0;
-        return dynamic_cast<const CStorageConfig*>(hnbase::IBase::Config());
-    }
+    virtual bool SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash) = 0;
+    virtual bool SnapshotRecovery(const std::string& strRecoveryDir) = 0;
+    virtual bool GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist) = 0;
+    virtual bool ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData) = 0;
+    virtual bool GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist) = 0;
+    virtual bool RemoveSnapshotDownBlock(const uint256& hashSnapBlock) = 0;
+    virtual uint64 GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName) = 0;
+    virtual bool WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData) = 0;
 };
 
 class ITxPool : public hnbase::IBase
