@@ -2199,5 +2199,199 @@ bool CHdexDB::ListSendChainProveLastBlockDb(const CChainId nRecvChainId, std::ma
 
     return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
 }
+
+bool CHdexDB::AddBlockRecvCrosschainProveDb(const CChainId nRecvChainId, const CBlockProve& blockProve)
+{
+    const CChainId nSendChainId = CBlock::GetBlockChainIdByHash(blockProve.hashBlock);
+    const uint256 hashFirstPrevBlock = blockProve.GetFirstPrevBlockHash();
+    if (hashFirstPrevBlock == 0)
+    {
+        StdLog("CHdexDB", "Add block crosschain prove db: prev prove block is 0, send chainid: %d, recv chainid: %d, prove block: %s",
+               nSendChainId, nRecvChainId, blockProve.hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    std::vector<uint256> vAtBlockHash;
+    blockProve.GetBlockHashList(vAtBlockHash);
+
+    for (const auto& hashAtBlock : vAtBlockHash)
+    {
+        uint256 hashFirstBlock;
+        if (GetLinkFirstPrevBlock(nRecvChainId, nSendChainId, hashAtBlock, hashFirstBlock))
+        {
+            return true;
+        }
+    }
+
+    if (!AddRecvCrosschainProveDb(nRecvChainId, nSendChainId, hashFirstPrevBlock, blockProve))
+    {
+        StdLog("CHdexDB", "Add block crosschain prove db: Add recv crosschain prove fail, recv chainid: %d, send chainid: %d, first prev block: %s, prove block: %s",
+               nRecvChainId, nSendChainId, hashFirstPrevBlock.GetBhString().c_str(), blockProve.hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    for (const auto& hashAtBlock : vAtBlockHash)
+    {
+        if (!AddLinkFirstPrevBlock(nRecvChainId, nSendChainId, hashAtBlock, hashFirstPrevBlock))
+        {
+            StdLog("CHdexDB", "Add block crosschain prove db: Add list first prev block fail, recv chainid: %d, send chainid: %d, first prev block: %s, prove block: %s",
+                   nRecvChainId, nSendChainId, hashFirstPrevBlock.GetBhString().c_str(), blockProve.hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+
+    uint256 nLastProveBlock;
+    if (!GetSendChainProveLastBlockDb(nRecvChainId, nSendChainId, nLastProveBlock))
+    {
+        if (!AddSendChainProveLastBlockDb(nRecvChainId, nSendChainId, hashFirstPrevBlock))
+        {
+            StdLog("CHdexDB", "Add block crosschain prove db: Add send chain prove last block fail, recv chainid: %d, send chainid: %d, first prev block: %s, prove block: %s",
+                   nRecvChainId, nSendChainId, hashFirstPrevBlock, blockProve.hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CHdexDB::AddRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock, const CBlockProve& blockProve)
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE << BSwap32(nRecvChainId) << BSwap32(nSendChainId) << hashFirstPrevBlock;
+    ssValue << blockProve;
+    return dbTrie.WriteExtKv(ssKey, ssValue);
+}
+
+bool CHdexDB::RemoveRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock)
+{
+    CBufStream ssKey;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE << BSwap32(nRecvChainId) << BSwap32(nSendChainId) << hashFirstPrevBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
+
+bool CHdexDB::GetRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock, CBlockProve& blockProve)
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE << BSwap32(nRecvChainId) << BSwap32(nSendChainId) << hashFirstPrevBlock;
+
+    if (!dbTrie.ReadExtKv(ssKey, ssValue))
+    {
+        return false;
+    }
+
+    try
+    {
+        ssValue >> blockProve;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CHdexDB::ListRecvCrosschainProveDb(const CChainId nRecvChainId, std::vector<std::tuple<CChainId, uint256, CBlockProve>>& vRecvCrossProve)
+{
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            CChainId nRecvChainIdDb;
+            CChainId nSendChainIdDb;
+            uint256 hashFirstPrevBlockDb;
+
+            ssKey >> nExtKey >> nKeyType >> nRecvChainIdDb >> nSendChainIdDb >> hashFirstPrevBlockDb;
+            nRecvChainIdDb = BSwap32(nRecvChainIdDb);
+            nSendChainIdDb = BSwap32(nSendChainIdDb);
+
+            if (nKeyType == DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE && nRecvChainIdDb == nRecvChainId)
+            {
+                CBlockProve blockProve;
+                ssValue >> blockProve;
+
+                vRecvCrossProve.push_back(std::tuple(nSendChainIdDb, hashFirstPrevBlockDb, blockProve));
+                return true;
+            }
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        }
+        return false;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    ssKeyBegin << DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE << BSwap32(nRecvChainId);
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE << BSwap32(nRecvChainId);
+
+    return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
+bool CHdexDB::GetCrosschainProveForPrevBlockDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashLastProveBlock, const uint32 nLastHeight, const uint16 nLastSlot, CBlockProve& blockProve)
+{
+    if (!GetRecvCrosschainProveDb(nRecvChainId, nSendChainId, hashLastProveBlock, blockProve))
+    {
+        return false;
+    }
+
+    const uint32 nProveBlockHeight = CBlock::GetBlockHeightByHash(blockProve.hashBlock);
+    const uint16 nProveBlockSlot = CBlock::GetBlockSlotByHash(blockProve.hashBlock);
+    if (nProveBlockHeight > nLastHeight || (nProveBlockHeight == nLastHeight && nProveBlockSlot > nLastSlot))
+    {
+        StdDebug("CHdexDB", "Get crosschain prove for prev block db: height out, prove height: %d, last height: %d", nProveBlockHeight, nLastHeight);
+        return false;
+    }
+
+    // std::vector<CBlockProve> vProve;
+    // uint256 hashPrevBlock = hashLastProveBlock;
+    // while (true)
+    // {
+    //     CBlockProve getProve;
+    //     if (!GetRecvCrosschainProveDb(nRecvChainId, nSendChainId, hashPrevBlock, getProve))
+    //     {
+    //         break;
+    //     }
+
+    //     const uint32 nProveBlockHeight = CBlock::GetBlockHeightByHash(getProve.hashBlock);
+    //     const uint16 nProveBlockSlot = CBlock::GetBlockSlotByHash(getProve.hashBlock);
+    //     if (nProveBlockHeight > nLastHeight || (nProveBlockHeight == nLastHeight && nProveBlockSlot > nLastSlot))
+    //     {
+    //         StdDebug("CHdexDB", "Get crosschain prove for prev block db: height out, prove height: %d, last height: %d", nProveBlockHeight, nLastHeight);
+    //         break;
+    //     }
+
+    //     uint256 hashFirstPrevBlock = getProve.hashPrevBlock;
+    //     if (!getProve.vPrevBlockCcProve.empty())
+    //     {
+    //         hashFirstPrevBlock = getProve.vPrevBlockCcProve[getProve.vPrevBlockCcProve.size() - 1].hashPrevBlock;
+    //     }
+    //     if (hashFirstPrevBlock != hashPrevBlock)
+    //     {
+    //         StdDebug("CHdexDB", "Get crosschain prove for prev block db: prove block discontinuous, first prev block: %s, prev block: %s, last prove block: %s",
+    //                  hashFirstPrevBlock.GetBhString().c_str(), hashPrevBlock.GetBhString().c_str(), hashLastProveBlock.GetBhString().c_str());
+    //         break;
+    //     }
+
+    //     vProve.push_back(getProve);
+    //     hashPrevBlock = getProve.hashBlock;
+    // }
+    // if (vProve.empty())
+    // {
+    //     return false;
+    // }
+
+    // blockProve = vProve[vProve.size() - 1];
+    // for (int64 i = vProve.size() - 2; i >= 0; i--)
+    // {
+    //     const CBlockProve& proveCurr = vProve[i];
+    //     blockProve.vPrevBlockCcProve.push_back(CBlockPrevProve(proveCurr.hashPrevBlock, proveCurr.vPrevBlockMerkleProve, proveCurr.proveCrosschain, proveCurr.vCrosschainMerkleProve));
+    //     if (!proveCurr.vPrevBlockCcProve.empty())
+    //     {
+    //         blockProve.vPrevBlockCcProve.insert(blockProve.vPrevBlockCcProve.end(), proveCurr.vPrevBlockCcProve.begin(), proveCurr.vPrevBlockCcProve.end());
+    //     }
+    // }
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

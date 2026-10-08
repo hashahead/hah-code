@@ -164,6 +164,11 @@ protected:
 
     bool AddSendChainProveLastBlockDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& nLastProveBlock);
     bool GetSendChainProveLastBlockDb(const CChainId nRecvChainId, const CChainId nSendChainId, uint256& nLastProveBlock);
+    bool ListSendChainProveLastBlockDb(const CChainId nRecvChainId, std::map<CChainId, uint256>& mapSendLastBlock);
+
+    bool AddBlockRecvCrosschainProveDb(const CChainId nRecvChainId, const CBlockProve& blockProve);
+    bool AddRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock, const CBlockProve& blockProve);
+    bool RemoveRecvCrosschainProveDb(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashFirstPrevBlock);
 protected:
     enum
     {

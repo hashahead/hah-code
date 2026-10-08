@@ -1239,6 +1239,14 @@ bool CBlockDB::LoadAllFork()
                 return false;
             }
         }
+        if (fCfgTraceDb)
+        {
+            if (!dbTrace.LoadFork(kv.first))
+            {
+                StdLog("CBlockDB", "Load all fork: dbTrace LoadFork fail");
+                return false;
+            }
+        }
     }
     return true;
 }
