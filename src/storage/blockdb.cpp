@@ -1023,6 +1023,11 @@ bool CBlockDB::AddBlockCrosschainProve(const uint256& hashBlock, const CBlockSto
 {
     return dbHdex.AddBlockCrosschainProve(hashBlock, proveBlockCrosschain);
 }
+
+bool CBlockDB::UpdateBlockAggSign(const uint256& hashBlock, const bytes& btAggBitmap, const bytes& btAggSig, std::map<CChainId, CBlockProve>& mapBlockProve)
+{
+    return dbHdex.UpdateBlockAggSign(hashBlock, btAggBitmap, btAggSig, mapBlockProve);
+}
 }
 
 bool CBlockDB::AddBlacklistAddress(const CDestination& dest)

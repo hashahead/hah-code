@@ -188,6 +188,7 @@ public:
     bool GetPeerCrossLastBlock(const uint256& hashBlock, const CChainId nPeerChainId, uint256& hashLastProveBlock);
     bool GetMatchDexData(const uint256& hashBlock, std::map<uint256, CMatchOrderResult>& mapMatchResult);
     bool ListMatchDexOrder(const uint256& hashBlock, const std::string& strCoinSymbolSell, const std::string& strCoinSymbolBuy, const uint64 nGetCount, CRealtimeDexOrder& realDexOrder);
+    bool AddBlockCrosschainProve(const uint256& hashBlock, const CBlockStorageProve& proveBlockCrosschain);
     bool AddBlacklistAddress(const CDestination& dest);
     void RemoveBlacklistAddress(const CDestination& dest);
     bool IsExistBlacklistAddress(const CDestination& dest);

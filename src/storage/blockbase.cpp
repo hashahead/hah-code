@@ -5658,7 +5658,40 @@ bool CBlockBase::RecoveryAddressTx(const bytes& btRecoveryData)
     }
     return true;
 }
-bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
+
+//----------------------------------------------------------------------------
+bool CBlockBase::GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist)
+{
+    return dbBlock.GetSnapshotFileList(hashSnapBlock, vSnapFilelist);
+}
+
+bool CBlockBase::ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData)
+{
+    return dbBlock.ReadSnapshotFileData(hashSnapBlock, strFileName, nOffset, nReadSize, btReadData);
+}
+
+bool CBlockBase::GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist)
+{
+    return dbBlock.GetSnapshotDownFileList(hashSnapBlock, vSnapFilelist);
+}
+
+bool CBlockBase::RemoveSnapshotDownBlock(const uint256& hashSnapBlock)
+{
+    return dbBlock.RemoveSnapshotDownBlock(hashSnapBlock);
+}
+
+uint64 CBlockBase::GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName)
+{
+    return dbBlock.GetSnapshotDownFileSize(hashSnapBlock, strFileName);
+}
+
+bool CBlockBase::WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData)
+{
+    return dbBlock.WriteSnapshotDownFileData(hashSnapBlock, strFileName, nOffset, btWriteData);
+}
+
+//----------------------------------------------------------------------------
+bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, uint256& hashTxAtBlock, CTxIndex& txIndex)
 {
     if (hashFork == 0)
     {

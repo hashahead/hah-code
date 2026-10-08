@@ -1541,11 +1541,108 @@ bool CHdexDB::GetRecvConfirmBlockListCache(const uint256& hashLastBlock, std::ma
     }
     return true;
 }
-    CDexOrderSave dexOrderDb;
-    if (!GetDexOrderDb(hashRoot, nChainIdOwner, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber, dexOrderDb))
+
+bool CHdexDB::LoadLastDexOrderCache(const uint256& hashLastBlock, const std::map<uint256, uint256>& mapCompPriceCache, SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder)
+{
+    class CListBlockDexOrderTrieDBWalker : public CTrieDBWalker
     {
+    public:
+        CListBlockDexOrderTrieDBWalker(const CChainId nChainIdIn, const std::map<uint256, uint256>& mapCompPriceCacheIn, SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrderIn)
+          : nChainId(nChainIdIn), mapCompPriceCache(mapCompPriceCacheIn), ptrCacheDexOrder(ptrCacheDexOrderIn) {}
+
+        bool Walk(const bytes& btKey, const bytes& btValue, const uint32 nDepth, bool& fWalkOver) override
+        {
+            if (btKey.size() == 0 || btValue.size() == 0)
+            {
+                hnbase::StdError("CListBlockDexOrderTrieDBWalker", "btKey.size() = %ld, btValue.size() = %ld", btKey.size(), btValue.size());
+                return false;
+            }
+            try
+            {
+                hnbase::CBufStream ssKey(btKey);
+                uint8 nKeyType;
+                ssKey >> nKeyType;
+                if (nKeyType == DB_HDEX_KEY_TYPE_TRIE_LOCAL_DEX_ORDER)
+                {
+                    uint8 nCompleteFlagDb;
+                    CChainId nChainIdDb;
+                    CDestination destOrderDb;
+                    uint256 hashCoinPairDb;
+                    uint8 nOwnerCoinFlagDb;
+                    uint64 nOrderNumberDb;
+
+                    ssKey >> nCompleteFlagDb >> nChainIdDb >> destOrderDb >> hashCoinPairDb >> nOwnerCoinFlagDb >> nOrderNumberDb;
+
+                    nChainIdDb = BSwap32(nChainIdDb);
+                    nOrderNumberDb = BSwap64(nOrderNumberDb);
+
+                    if (nChainIdDb == nChainId)
+                    {
+                        hnbase::CBufStream ssValue(btValue);
+                        CDexOrderSave dexOrderSave;
+                        ssValue >> dexOrderSave;
+
+                        uint256 hashDexOrder = CDexOrderHeader::GetDexOrderHashStatic(nChainId, destOrderDb, hashCoinPairDb, nOwnerCoinFlagDb, nOrderNumberDb);
+
+                        uint256 nPrevCompletePrice;
+                        auto mt = mapCompPriceCache.find(hashCoinPairDb);
+                        if (mt != mapCompPriceCache.end())
+                        {
+                            nPrevCompletePrice = mt->second;
+                        }
+
+                        if (!ptrCacheDexOrder->AddDexOrderCache(hashDexOrder, destOrderDb, nOrderNumberDb, dexOrderSave.dexOrder, dexOrderSave.nAtChainId, dexOrderSave.hashAtBlock, nPrevCompletePrice))
+                        {
+                            fWalkOver = true;
+                        }
+                    }
+                    else
+                    {
+                        fWalkOver = true;
+                    }
+                }
+            }
+            catch (std::exception& e)
+            {
+                hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        const CChainId nChainId;
+        const std::map<uint256, uint256>& mapCompPriceCache;
+        SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder;
+    };
+
+    if (hashLastBlock == 0)
+    {
+        return true;
+    }
+
+    CChainId nChainId = CBlock::GetBlockChainIdByHash(hashLastBlock);
+
+    uint256 hashTrieRoot;
+    if (!ReadTrieRoot(DB_HDEX_ROOT_TYPE_TRIE, hashLastBlock, hashTrieRoot))
+    {
+        StdLog("CHdexDB", "Load dex order: Read trie root fail, block: %s", hashLastBlock.GetBhString().c_str());
         return false;
     }
+
+    bytes btKeyPrefix;
+    hnbase::CBufStream ssKeyPrefix;
+    ssKeyPrefix << DB_HDEX_KEY_TYPE_TRIE_LOCAL_DEX_ORDER << DB_HDEX_UNCOMPLETED_MATCH_ORDER << BSwap32(nChainId);
+    ssKeyPrefix.GetData(btKeyPrefix);
+
+    CListBlockDexOrderTrieDBWalker walker(nChainId, mapCompPriceCache, ptrCacheDexOrder);
+    if (!dbTrie.WalkThroughTrie(hashTrieRoot, walker, btKeyPrefix))
+    {
+        StdLog("CHdexDB", "Load dex order: Walk through trie, block: %s", hashLastBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
     dexOrder = dexOrderDb.dexOrder;
     return true;
 }
