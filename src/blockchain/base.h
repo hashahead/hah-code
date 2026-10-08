@@ -449,9 +449,16 @@ public:
     virtual bool GetForkCtxStatus(const uint256& hashFork, CForkCtxStatus& forkStatus, const uint256& hashMainChainRefBlock = uint256()) = 0;
     virtual bool VerifyForkFlag(const uint256& hashNewFork, const CChainId nChainIdIn, const std::string& strForkSymbol, const std::string& strForkName, const uint256& hashBlock = uint256()) = 0;
     virtual bool GetForkCoinCtxByForkSymbol(const std::string& strForkSymbol, CCoinContext& ctxCoin, const uint256& hashMainChainRefBlock = uint256()) = 0;
-    virtual bool GetForkGenealogy(const uint256& hashFork, std::vector<std::pair<uint256, int>>& vAncestry,
-                                  std::vector<std::pair<int, uint256>>& vSubline)
-        = 0;
+    virtual bool GetForkHashByChainId(const CChainId nChainIdIn, uint256& hashFork) = 0;
+    virtual bool GetCoinContext(const std::string& strCoinSymbol, CCoinContext& ctxCoin, const uint256& hashLastBlock = uint256()) = 0;
+    virtual bool ListCoinContext(std::map<std::string, CCoinContext>& mapSymbolCoin, const uint256& hashLastBlock = uint256()) = 0;
+    virtual bool GetDexCoinPairBySymbolPair(const std::string& strSymbol1, const std::string& strSymbol2, uint32& nCoinPair, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool GetSymbolPairByDexCoinPair(const uint32 nCoinPair, std::string& strSymbol1, std::string& strSymbol2, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool ListDexCoinPair(const uint32 nCoinPair, const std::string& strCoinSymbol, std::map<uint32, std::pair<std::string, std::string>>& mapDexCoinPair, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool IsTimeVaultWhitelistAddressExist(const CDestination& address, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool ListTimeVaultWhitelist(std::set<CDestination>& setTimeVaultWhitelist, const uint256& hashMainChainRefBlock = uint256()) = 0;
+    virtual bool GetPrimaryForkOwnerAddress(CDestination& destForkOwner, const uint256& hashRefBlock = uint256()) = 0;
+    virtual bool GetForkGenealogy(const uint256& hashFork, std::vector<std::pair<uint256, int>>& vAncestry, std::vector<std::pair<int, uint256>>& vSubline) = 0;
     virtual bool GetBlockLocation(const uint256& hashBlock, CChainId& nChainId, uint256& hashFork, int& nHeight) = 0;
     virtual int GetBlockCount(const uint256& hashFork) = 0;
     virtual bool GetBlockHashByHeightSlot(const uint256& hashFork, const uint256& hashRefBlock, const uint32 nHeight, const uint16 nSlot, uint256& hashBlock) = 0;
@@ -462,22 +469,35 @@ public:
     virtual bool GetLastBlockOfHeight(const uint256& hashFork, const int nHeight, uint256& hashBlock, uint64& nTime) = 0;
     virtual bool GetBlockStatus(const uint256& hashBlock, CBlockStatus& status) = 0;
     virtual bool GetLastBlockStatus(const uint256& hashFork, CBlockStatus& status) = 0;
-    virtual void GetTxPool(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool) = 0;
-    virtual void ListTxPool(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0) = 0;
+    virtual bool IsBlockConfirm(const uint256& hashBlock) = 0;
+    virtual void GetTxPool(const uint256& hashFork, std::vector<std::pair<uint256, std::size_t>>& vTxPool, const bool fContainCertTx = true) = 0;
+    virtual void ListTxPool(const uint256& hashFork, const CDestination& dest, std::vector<CTxInfo>& vTxPool, const int64 nGetOffset = 0, const int64 nGetCount = 0, const bool fContainCertTx = true) = 0;
     virtual bool GetTransactionAndPosition(const uint256& hashRefFork, const uint256& txid, CTransaction& tx, uint256& hashAtFork, uint256& hashAtBlock, uint64& nBlockNumber, uint16& nTxSeq) = 0;
-    virtual bool GetTransactionByIndex(const uint256& hashBlock, const uint64 nTxIndex, CTransaction& tx, uint64& nBlockNumber) = 0;
+    virtual bool GetEthTransactionByIndex(const uint256& hashBlock, const uint64 nTxIndex, CTransaction& tx, uint64& nBlockNumber) = 0;
     virtual Errno SendTransaction(const uint256& hashFork, CTransaction& tx) = 0;
     //virtual bool RemovePendingTx(const uint256& txid) = 0;
     virtual bool GetVotes(const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes, string& strFailCause) = 0;
     virtual bool ListDelegate(const uint256& hashRefBlock, const uint32 nStartIndex, const uint32 nCount, std::multimap<uint256, CDestination>& mapVotes) = 0;
     virtual bool GetDelegateVotes(const uint256& hashRefBlock, const CDestination& destDelegate, uint256& nVotes) = 0;
+    virtual bool RetrieveDelegateEnrollStatus(const uint256& hashBlock, std::map<CDestination, std::pair<uint32, uint64>>& mapDelegateEnrollStatus) = 0;
+    virtual bool RetrieveDelegateRewardApy(const uint256& hashBlock, std::map<CDestination, std::pair<uint256, double>>& mapDelegateRewardApy) = 0;
+    virtual bool RetrieveDestDelegateVote(const uint256& hashBlock, const CDestination& destDelegate, uint256& nVoteAmount) = 0;
+    virtual bool RetrieveDestVoteContext(const uint256& hashBlock, const CDestination& destVote, CVoteContext& ctxtVote) = 0;
     virtual bool GetUserVotes(const uint256& hashRefBlock, const CDestination& destVote, uint32& nTemplateType, uint256& nVotes, uint32& nUnlockHeight) = 0;
+    virtual bool GetPledgeVotes(const uint256& hashRefBlock, const CDestination& destVote, CPledgeVoteContext& ctxPledgeVote) = 0;
+    virtual bool RetrieveDestState(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, CDestState& state) = 0;
     virtual bool GetTransactionReceipt(const uint256& hashFork, const uint256& txid, CTransactionReceiptEx& receiptex) = 0;
-    virtual bool CallContract(const bool fEthCall, const uint256& hashFork, const uint256& hashBlock, const CDestination& from, const CDestination& to, const uint256& nAmount, const uint256& nGasPrice,
-                              const uint256& nGas, const bytes& btContractParam, uint256& nUsedGas, uint64& nGasLeft, int& nStatus, bytes& btResult)
-        = 0;
-    virtual bool GetForkHashByChainId(const CChainId nChainIdIn, uint256& hashFork) = 0;
+    virtual bool RetrieveTxContractReceipt(const uint256& hashFork, const uint256& txid, TxContractReceipts& tcrReceipt) = 0;
+    virtual bool ListBlockContractReceipt(const uint256& hashFork, const uint256& hashBlock, BlockContractReceipts& vContractReceipts) = 0;
+    virtual bool RetrieveTxContractPrevState(const uint256& hashFork, const uint256& txid, MapContractPrevState& mapContractPrevState) = 0;
+    virtual bool ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState) = 0;
+    virtual bool GetContractKvList(const uint256& hashFork, const uint256& hashBlock, const uint32 nTxIndex, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, bytes>>& vContractKv, uint256& keyNext) = 0;
+    virtual bool CallContract(const uint256& hashFork, const uint256& hashBlock, const CVmCallTx& vmCallTx, CVmCallResult& vmCallResult) = 0;
+    virtual bool GetContractCoinSymbol(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, string& strSymbol) = 0;
+    virtual bool GetContractCoinDecimals(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, uint8& nDecimals) = 0;
+    virtual bool GetContractCoinBalance(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const CDestination& destUser, uint256& nBalance) = 0;
     virtual bool RetrieveContractKvValue(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint256& key, bytes& value) = 0;
+    virtual bool GetBlockRewardList(const uint256& hashLastBlock, const uint32 nBlockCount, std::vector<uint256>& vBlockRewardList, std::vector<std::pair<uint256, uint256>>& vBlockGasUsedList) = 0;
     virtual uint256 AddLogsFilter(const uint256& hashClient, const uint256& hashFork, const CLogsFilter& logsFilter) = 0;
     virtual void RemoveFilter(const uint256& nFilterId) = 0;
     virtual bool GetTxReceiptLogsByFilterId(const uint256& nFilterId, const bool fAll, ReceiptLogsVec& receiptLogs) = 0;

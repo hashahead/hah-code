@@ -3340,14 +3340,15 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
         }
         else
         {
-            if (pIndex->IsPrimary() && pIndex->nMintType == CTransaction::TX_WORK && pIndex->GetBlockReward() > 0)
+            if (pIndex->IsPrimary() && pIndex->nMintType == CTransaction::TX_POA && pIndex->GetBlockReward() > 0)
             {
                 auto& destroyReward = mapVoteReward[PLEDGE_SURPLUS_REWARD_ADDRESS];
                 destroyReward.first = PLEDGE_SURPLUS_REWARD_ADDRESS;
                 destroyReward.second += pIndex->GetBlockReward();
             }
         }
-        pIndex = pIndex->pPrev;
+        pIndex = pPrevIndex;
+        pPrevIndex = cntrBlock.GetPrevBlockIndex(pPrevIndex);
     }
 
     // Obtain the main chain block hash, which is used to obtain voting data
@@ -3355,18 +3356,19 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
     uint256 hashPrimaryTailBlock;
     if (pTailIndex->IsPrimary())
     {
-        hashPrimaryTailBlock = pTailIndex->pPrev->GetBlockHash();
+        hashPrimaryTailBlock = pTailIndex->GetPrevHash();
     }
     else
     {
-        if (!GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), pTailIndex->GetBlockHeight() - 1, 0, hashPrimaryTailBlock))
+        BlockIndexPtr pPrimaryTailIndex = cntrBlock.RetrieveIndex(pTailIndex->GetRefBlock());
+        if (!pPrimaryTailIndex)
         {
-            StdLog("BlockChain", "Calculate block vote reward: Get primary tail block hash fail, height: %d, tail block:%s",
-                   pTailIndex->GetBlockHeight() - 1, pTailIndex->GetBlockHash().GetHex().c_str());
+            StdLog("BlockChain", "Calculate distribute vote reward: Retrieve primary tail index fail, primary block: %s", pTailIndex->GetRefBlock().GetHex().c_str());
             return false;
         }
+        hashPrimaryTailBlock = pPrimaryTailIndex->GetPrevHash();
     }
-    if (!GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), nBeginHeight - 1, 0, hashPrimaryBeginBlock))
+    if (!cntrBlock.GetBlockHashByHeightSlot(pCoreProtocol->GetGenesisBlockHash(), hashPrimaryTailBlock, nBeginHeight - 1, 0, hashPrimaryBeginBlock))
     {
         StdLog("BlockChain", "Calculate block vote reward: Get primary begin block hash fail, height: %d, tail block:%s",
                nBeginHeight - 1, pTailIndex->GetBlockHash().GetHex().c_str());
@@ -3448,7 +3450,7 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
                                 uint256 nDestReward = nBlockReward * kv.second.nVoteAmount / nDelegateTotalVoteAmount;
                                 auto& voteReward = mapVoteReward[kv.first];
                                 const CVoteContext& ctxtVote = kv.second;
-                                if (ctxtVote.nRewardMode == CVoteContext::REWARD_MODE_VOTE)
+                                if (ctxtVote.GetRewardModeFlag() == CVoteContext::REWARD_MODE_VOTE)
                                 {
                                     voteReward.first = kv.first;
                                 }
@@ -3496,7 +3498,7 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
                                     auto& destVote = mapDestVote.begin()->first;
                                     auto& voteReward = mapVoteReward[destVote];
                                     const CVoteContext& ctxtVote = mapDestVote.begin()->second;
-                                    if (ctxtVote.nRewardMode == CVoteContext::REWARD_MODE_VOTE)
+                                    if (ctxtVote.GetRewardModeFlag() == CVoteContext::REWARD_MODE_VOTE)
                                     {
                                         voteReward.first = destVote;
                                     }
@@ -3528,6 +3530,22 @@ bool CBlockChain::CalcDistributeVoteReward(const uint256& hashCalcEndBlock, std:
     {
         StdLog("BlockChain", "Calculate block vote reward: Walk through day vote fail, hashCalcEndBlock: %s", hashCalcEndBlock.GetHex().c_str());
         return false;
+    }
+
+    if (VERIFY_FHX_HEIGHT_BRANCH_002(CBlock::GetBlockHeightByHash(hashCalcEndBlock)))
+    {
+        for (auto& kv : mapVoteReward)
+        {
+            if (kv.first == kv.second.first)
+            {
+                CVoteContext ctxVote;
+                if (cntrBlock.RetrieveDestVoteContext(hashPrimaryTailBlock, kv.first, ctxVote)
+                    && (ctxVote.GetStopReVoteFlag() || ctxVote.nVoteAmount == 0))
+                {
+                    kv.second.first = ctxVote.destOwner;
+                }
+            }
+        }
     }
     return true;
 }

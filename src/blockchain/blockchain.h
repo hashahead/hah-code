@@ -210,6 +210,8 @@ protected:
                       uint256& nReward, CDelegateAgreement& agreement, uint256& nEnrollTrust, BlockIndexPtr& ppIndexRef);
     bool VerifyBlockCertTx(const uint256& hashBlock, const CBlock& block);
     bool VerifyBlockVoteResult(const uint256& hashBlock, const CBlock& block);
+    bool VerifyBlockCrosschainProve(const uint256& hashBlock, const CBlock& block);
+    bool GetBlockTrust(const CBlock& block, uint256& nChainTrust, const BlockIndexPtr pIndexPrev = nullptr, const CDelegateAgreement& agreement = CDelegateAgreement(), const BlockIndexPtr pIndexRef = nullptr, const uint256& nEnrollTrust = uint256());
 
     void InitCheckPoints();
     void InitCheckPoints(const uint256& hashFork, const std::map<int, uint256>& mapCheckPointsIn);

@@ -1808,6 +1808,41 @@ protected:
         serSize = ss.GetSize();
     }
 };
+
+class CDexOrderData
+{
+    friend class hnbase::CStream;
+
+public:
+    CDexOrderData()
+      : nOrderNumber(0), nCompleteCount(0) {}
+    CDexOrderData(const CDestination& destOrderIn, const uint64 nOrderNumberIn, const CDexOrderBody& dexOrderIn,
+                  const uint256& hashOrderAtBlockIn, const uint256& nCompleteAmountIn, const uint64 nCompleteCountIn)
+      : destOrder(destOrderIn), nOrderNumber(nOrderNumberIn), dexOrder(dexOrderIn), hashOrderAtBlock(hashOrderAtBlockIn),
+        nCompleteAmount(nCompleteAmountIn), nCompleteCount(nCompleteCountIn) {}
+
+public:
+    CDestination destOrder;
+    uint64 nOrderNumber;
+    CDexOrderBody dexOrder;
+    uint256 hashOrderAtBlock;
+    uint256 nCompleteAmount;
+    uint64 nCompleteCount;
+
+protected:
+    template <typename O>
+    void Serialize(hnbase::CStream& s, O& opt)
+    {
+        s.Serialize(destOrder, opt);
+        s.Serialize(nOrderNumber, opt);
+        s.Serialize(dexOrder, opt);
+        s.Serialize(hashOrderAtBlock, opt);
+        s.Serialize(nCompleteAmount, opt);
+        s.Serialize(nCompleteCount, opt);
+    }
+};
+typedef std::shared_ptr<CDexOrderData> SHP_DEX_ORDER_DATA;
+#define MAKE_SHARED_DEX_ORDER_DATA std::make_shared<CDexOrderData>
 } // namespace hashahead
 
 #endif //COMMON_TRANSACTION_H
