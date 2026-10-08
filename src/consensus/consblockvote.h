@@ -224,6 +224,9 @@ private:
     bool MakeSubscribeRsp(bytes& btMsg, const uint32 nVersion, const uint32 nResult);
     bool MakePreVoteSignReq(bytes& btMsg, const uint256& hashBlock, const bytes& btGetBitmap);
     bool MakePreVoteSignPush(bytes& btMsg, const uint256& hashBlock, const map<uint384, bytes>& mapPreVoteSigIn);
+
+    bool SendNetData(const uint64 nNetId, const bytes& btData);
+    void SendSubscribeReq(const uint64 nNetId);
     void RemoveVoteBlock(const uint256& hashBlock);
     static uint256 GetPreVoteSignData(const uint256& hashBlock);
     static uint256 GetCommitVoteSignData(const uint256& hashBlock);

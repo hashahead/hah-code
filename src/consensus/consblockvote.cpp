@@ -673,5 +673,23 @@ bool CConsBlockVote::VerifyCommitVoteAggSig(const uint256& hashBlock, const byte
     }
     return CryptoBlsFastAggregateVerify(vBitmapPubkeys, GetCommitVoteSignData(hashBlock).GetBytes(), btAggSig);
 }
+
+//------------------------------
+void CConsBlockVote::OnNetMsgSubscribeReq(const uint64 nNetId, const uint8* pData, const size_t nDataLen)
+{
+    msgblockvote::SubscribeReq msg;
+    if (!msg.ParseFromArray(pData, nDataLen))
+    {
+        StdLog("CConsBlockVote", "On subscribe req: Parse message fail, net id: 0x%lx", nNetId);
+        return;
+    }
+    uint32 version = msg.version();
+    mapNetNode[nNetId].SetPeerVersion(version);
+#ifdef CBV_SHOW_DEBUG
+    StdDebug("CConsBlockVote", "On subscribe req, version: %d, net id: 0x%lx", version, nNetId);
+#endif
+
+    SendSubscribeRsp(nNetId, true);
+}
 } // namespace consblockvote
 } // namespace consensus
