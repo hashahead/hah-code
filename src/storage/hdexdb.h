@@ -151,6 +151,8 @@ protected:
     bool LoadLastBlockProveCache(const uint256& hashLastBlock, const std::map<uint256, uint256>& mapCompPriceCache, SHP_CACHE_BLOCK_DEX_ORDER ptrCacheDexOrder);
     SHP_CACHE_BLOCK_DEX_ORDER LoadBlockDexOrderCache(const uint256& hashBlock);
 
+    bool AddLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock, const uint256& hashFirstPrevBlock);
+    bool RemoveLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock);
 protected:
     enum
     {

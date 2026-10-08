@@ -1837,5 +1837,175 @@ SHP_CACHE_BLOCK_DEX_ORDER CHdexDB::LoadBlockDexOrderCache(const uint256& hashBlo
 #endif
     return ptrCacheBlockDexOrder;
 }
+
+bool CHdexDB::AddLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock, const uint256& hashFirstPrevBlock)
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_BLOCK_FOR_FIRST_PREV_BLOCK << BSwap32(nRecvChainId) << BSwap32(nSendChainId) << hashBlock;
+    ssValue << hashFirstPrevBlock;
+    return dbTrie.WriteExtKv(ssKey, ssValue);
+}
+
+bool CHdexDB::RemoveLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock)
+{
+    CBufStream ssKey;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_BLOCK_FOR_FIRST_PREV_BLOCK << BSwap32(nRecvChainId) << BSwap32(nSendChainId) << hashBlock;
+    return dbTrie.RemoveExtKv(ssKey);
+}
+
+bool CHdexDB::GetLinkFirstPrevBlock(const CChainId nRecvChainId, const CChainId nSendChainId, const uint256& hashBlock, uint256& hashFirstPrevBlock)
+{
+    CBufStream ssKey, ssValue;
+    ssKey << DB_HDEX_KEY_TYPE_EXT_BLOCK_FOR_FIRST_PREV_BLOCK << BSwap32(nRecvChainId) << BSwap32(nSendChainId) << hashBlock;
+
+    if (!dbTrie.ReadExtKv(ssKey, ssValue))
+    {
+        return false;
+    }
+
+    try
+    {
+        ssValue >> hashFirstPrevBlock;
+    }
+    catch (std::exception& e)
+    {
+        hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+        return false;
+    }
+    return true;
+}
+
+bool CHdexDB::UpdateDexOrderCache(const uint256& hashPrevBlock, const uint256& hashBlock, const std::map<CDexOrderHeader, CDexOrderBody>& mapAddNewOrder,
+                                  const std::map<CDexOrderHeader, std::tuple<CDexOrderBody, CChainId, uint256>>& mapAddBlockProveOrder,
+                                  const std::map<uint256, uint256>& mapCoinPairCompletePrice,
+                                  const std::map<uint256, std::tuple<uint256, uint256, uint64>>& mapUpdateCompOrder,
+                                  const std::map<CChainId, uint256>& mapPeerProveLastBlock)
+{
+    if (hashPrevBlock == 0 || CBlock::GetBlockChainIdByHash(hashPrevBlock) != CBlock::GetBlockChainIdByHash(hashBlock))
+    {
+        StdLog("CHdexDB", "Update dext order cache: Prev block is null, prev: %s, block: %s", hashPrevBlock.GetBhString().c_str(), hashBlock.GetBhString().c_str());
+        return true;
+    }
+
+    SHP_CACHE_BLOCK_DEX_ORDER ptrCacheBlockDexOrder = nullptr;
+    const CChainId nChainId = CBlock::GetBlockChainIdByHash(hashPrevBlock);
+
+    auto it = mapCacheForkLastDexOrder.find(nChainId);
+    if (it != mapCacheForkLastDexOrder.end() && it->second && it->second->GetLastBlock() == hashPrevBlock)
+    {
+        ptrCacheBlockDexOrder = it->second;
+    }
+    else
+    {
+        if (it != mapCacheForkLastDexOrder.end())
+        {
+            if (it->second)
+            {
+                AddBlockDexOrderCache(it->second->GetLastBlock(), it->second);
+            }
+            mapCacheForkLastDexOrder.erase(it);
+        }
+
+        ptrCacheBlockDexOrder = LoadBlockDexOrderCache(hashPrevBlock);
+        if (!ptrCacheBlockDexOrder)
+        {
+            StdLog("CHdexDB", "Update dext order cache: Load block dex order cache fail, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+        mapCacheForkLastDexOrder.insert(std::make_pair(nChainId, ptrCacheBlockDexOrder));
+
+        RemoveBlockDexOrderCache(hashPrevBlock);
+    }
+
+    std::map<uint256, uint256> mapCompPriceCache; // key: coin pair hash, value: complete price
+    if (!GetCoinPairCompletePriceCache(hashBlock, mapCompPriceCache))
+    {
+        StdLog("CHdexDB", "Update dext order cache: Get coin pair complete price fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    for (const auto& kv : mapCoinPairCompletePrice)
+    {
+        mapCompPriceCache[kv.first] = kv.second;
+    }
+
+    for (const auto& kv : mapAddNewOrder)
+    {
+        // key: order header, value: 1: order body, 2: complete amount, 3: complete count
+        const CDestination& destOrder = kv.first.GetOrderAddress();
+        const uint256& hashCoinPair = kv.first.GetCoinPairHash();
+        const uint8 nOwnerCoinFlag = kv.first.GetOwnerCoinFlag();
+        const uint64 nOrderNumber = kv.first.GetOrderNumber();
+        const CDexOrderBody& dexOrder = kv.second;
+
+        uint256 hashDexOrder = kv.first.GetDexOrderHash();
+
+        uint256 nPrevCompletePrice;
+        auto mt = mapCompPriceCache.find(hashCoinPair);
+        if (mt != mapCompPriceCache.end())
+        {
+            nPrevCompletePrice = mt->second;
+        }
+
+        if (!ptrCacheBlockDexOrder->AddDexOrderCache(hashDexOrder, destOrder, nOrderNumber, dexOrder, nChainId, hashBlock, nPrevCompletePrice))
+        {
+            StdLog("CHdexDB", "Update dext order cache: Add dex order cache fail, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+    for (const auto& kv : mapAddBlockProveOrder)
+    {
+        //key: order header, value: 1: order body, 2: complete amount, 3: complete count, 4: at chainid, 5: at block
+        //std::map<CDexOrderHeader, std::tuple<CDexOrderBody, CChainId, uint256>> mapAddBlockProveOrder;
+        const CDestination& destOrder = kv.first.GetOrderAddress();
+        const uint256& hashCoinPair = kv.first.GetCoinPairHash();
+        const uint8 nOwnerCoinFlag = kv.first.GetOwnerCoinFlag();
+        const uint64 nOrderNumber = kv.first.GetOrderNumber();
+        const CDexOrderBody& dexOrder = std::get<0>(kv.second);
+        const CChainId nAtChainId = std::get<1>(kv.second);
+        const uint256& hashAtBlock = std::get<2>(kv.second);
+
+        uint256 hashDexOrder = CDexOrderHeader::GetDexOrderHashStatic(nAtChainId, destOrder, hashCoinPair, nOwnerCoinFlag, nOrderNumber);
+
+        uint256 nPrevCompletePrice;
+        auto mt = mapCompPriceCache.find(hashCoinPair);
+        if (mt != mapCompPriceCache.end())
+        {
+            nPrevCompletePrice = mt->second;
+        }
+
+        if (!ptrCacheBlockDexOrder->AddDexOrderCache(hashDexOrder, destOrder, nOrderNumber, dexOrder, nAtChainId, hashAtBlock, nPrevCompletePrice))
+        {
+            StdLog("CHdexDB", "Update dext order cache: Add dex order cache fail, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+
+    for (const auto& kv : mapUpdateCompOrder)
+    {
+        const uint256& hashDexOrder = kv.first;
+        const uint256& hashCoinPair = std::get<0>(kv.second);
+        const uint256& nCompleteAmount = std::get<1>(kv.second);
+        const uint64 nCompleteCount = std::get<2>(kv.second);
+
+        if (!ptrCacheBlockDexOrder->UpdateCompleteOrderCache(hashCoinPair, hashDexOrder, nCompleteAmount, nCompleteCount))
+        {
+            StdLog("CHdexDB", "Update dext order cache: Update complete order cache fail, block: %s", hashBlock.GetBhString().c_str());
+            return false;
+        }
+    }
+
+    for (const auto& kv : mapPeerProveLastBlock)
+    {
+        ptrCacheBlockDexOrder->UpdatePeerProveLastBlock(kv.first, kv.second);
+    }
+
+    for (const auto& kv : mapCoinPairCompletePrice)
+    {
+        ptrCacheBlockDexOrder->UpdateCompletePrice(kv.first, kv.second);
+    }
+
+    ptrCacheBlockDexOrder->SetLastBlock(hashBlock);
+    return true;
+}
 } // namespace storage
 } // namespace hashahead

@@ -831,5 +831,53 @@ bool CTraceDB::ListBlockContractReceipt(const uint256& hashFork, const uint256& 
     }
     return false;
 }
+
+bool CTraceDB::RetrieveTxContractPrevState(const uint256& hashFork, const uint256& hashBlock, const uint256& txid, MapContractPrevState& mapContractPrevState)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->RetrieveTxContractPrevState(hashBlock, txid, mapContractPrevState);
+    }
+    return false;
+}
+
+bool CTraceDB::ListBlockContractPrevState(const uint256& hashFork, const uint256& hashBlock, BlockContractPrevState& vBlockContractPrevState)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->ListBlockContractPrevState(hashBlock, vBlockContractPrevState);
+    }
+    return false;
+}
+
+bool CTraceDB::GetContractKvPairList(const uint256& hashFork, const uint256& hashBlock, const CDestination& destContract, const uint256& keyStart, const uint32 nLimit, std::vector<std::pair<uint256, uint256>>& vContractKvPair, uint256& keyNext)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->GetContractKvPairList(hashBlock, destContract, keyStart, nLimit, vContractKvPair, keyNext);
+    }
+    return false;
+}
+
+bool CTraceDB::ClearTraceUnavailableNode(const uint256& hashFork, const uint32 nClearRefHeight)
+{
+    CReadLock rlock(rwAccess);
+
+    auto it = mapTraceDB.find(hashFork);
+    if (it != mapTraceDB.end())
+    {
+        return it->second->ClearTraceUnavailableNode(nClearRefHeight);
+    }
+    return false;
+}
 } // namespace storage
 } // namespace hashahead
