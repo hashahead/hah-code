@@ -240,6 +240,10 @@ private:
     bool VerifyCommitVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig);
     bool VerifyPreVoteAggSign(const uint256& hashBlock, const CBitmap& bmPreVoteBitmap, const bytes& btPreVoteAggSig);
     bool VerifyCommitVoteAggSign(const uint256& hashBlock, const CBitmap& bmCommitVoteBitmap, const bytes& btCommitVoteAggSig);
+    void GetMaxConsBlockHash(set<uint256>& setMaxBlockHash);
+    void CheckPreVote(const uint256& hashBlock);
+    void CheckCommitVote(const uint256& hashBlock);
+    void CheckLocalVote();
 
 private:
     const uint8 nTunnelId;

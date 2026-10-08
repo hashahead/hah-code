@@ -937,5 +937,205 @@ bool CConsBlockVote::GetBitPubkeysByBitmap(const vector<uint384>& vCandidatePubk
     }
     return true;
 }
+
+bool CConsBlockVote::GetLocalKeySignData(const CConsBlock& consHeight, const uint256& hash, map<uint384, bytes>& mapSigList)
+{
+    for (auto& kv : mapConsKey)
+    {
+        if (consHeight.IsExistCandidateNodePubkey(kv.second.pubkey))
+        {
+            bytes btSig;
+            if (!kv.second.Sign(hash, btSig))
+            {
+                StdLog("CConsBlockVote", "Get local key sig data: Sign fail, pubkey: %s", kv.second.pubkey.GetHex().c_str());
+                return false;
+            }
+            mapSigList.insert(make_pair(kv.second.pubkey, btSig));
+        }
+    }
+    return true;
+}
+
+bool CConsBlockVote::VerifyPreVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig)
+{
+    return CryptoBlsVerify(pubkeyNode, GetPreVoteSignData(hashBlock).GetBytes(), btSig);
+}
+
+bool CConsBlockVote::VerifyCommitVoteSign(const uint256& hashBlock, const uint384& pubkeyNode, const bytes& btSig)
+{
+    return CryptoBlsVerify(pubkeyNode, GetCommitVoteSignData(hashBlock).GetBytes(), btSig);
+}
+
+bool CConsBlockVote::VerifyPreVoteAggSign(const uint256& hashBlock, const CBitmap& bmPreVoteBitmap, const bytes& btPreVoteAggSig)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it == mapConsBlock.end())
+    {
+#ifdef CBV_SHOW_DEBUG
+        StdDebug("CConsBlockVote", "Verify pre vote agg sig: Find block fail, block: %s", hashBlock.GetBhString().c_str());
+#endif
+        return false;
+    }
+
+    vector<uint384> vPubkeys;
+    if (!it->second.GetPubkeysByBitmap(bmPreVoteBitmap, vPubkeys))
+    {
+        StdLog("CConsBlockVote", "Verify pre vote agg sig: Get pre vote pubkey fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    if (!CryptoBlsFastAggregateVerify(vPubkeys, GetPreVoteSignData(hashBlock).GetBytes(), btPreVoteAggSig))
+    {
+        StdLog("CConsBlockVote", "Verify pre vote agg sig: Aggregate verify fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
+bool CConsBlockVote::VerifyCommitVoteAggSign(const uint256& hashBlock, const CBitmap& bmCommitVoteBitmap, const bytes& btCommitVoteAggSig)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it == mapConsBlock.end())
+    {
+#ifdef CBV_SHOW_DEBUG
+        StdDebug("CConsBlockVote", "Verify commit vote agg sig: Find block fail, block: %s", hashBlock.GetBhString().c_str());
+#endif
+        return false;
+    }
+
+    vector<uint384> vPubkeys;
+    if (!it->second.GetPubkeysByBitmap(bmCommitVoteBitmap, vPubkeys))
+    {
+        StdLog("CConsBlockVote", "Verify commit vote agg sig: Get vote pubkey fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+
+    if (!CryptoBlsFastAggregateVerify(vPubkeys, GetCommitVoteSignData(hashBlock).GetBytes(), btCommitVoteAggSig))
+    {
+        StdLog("CConsBlockVote", "Verify commit vote agg sig: Aggregate verify fail, block: %s", hashBlock.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
+
+void CConsBlockVote::GetMaxConsBlockHash(set<uint256>& setMaxBlockHash)
+{
+    uint32 nMaxHeight = 0;
+    uint64 nMaxBlockTime = 0;
+    for (auto& kv : mapConsBlock)
+    {
+        if (kv.second.nBlockEpoch > nMaxHeight || (kv.second.nBlockEpoch == nMaxHeight && kv.second.nVoteBeginTime > nMaxBlockTime))
+        {
+            nMaxHeight = kv.second.nBlockEpoch;
+            nMaxBlockTime = kv.second.nVoteBeginTime;
+        }
+    }
+    for (auto& kv : mapConsBlock)
+    {
+        if (kv.second.nBlockEpoch == nMaxHeight && kv.second.nVoteBeginTime == nMaxBlockTime)
+        {
+            setMaxBlockHash.insert(kv.first);
+        }
+    }
+    if (!mapAddTime.empty())
+    {
+        for (auto& hash : mapAddTime.rbegin()->second)
+        {
+            setMaxBlockHash.insert(hash);
+        }
+    }
+}
+
+void CConsBlockVote::CheckPreVote(const uint256& hashBlock)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it != mapConsBlock.end() && it->second.bmAggPreVoteBitmap.IsNull())
+    {
+        CBitmap bmPreVoteBitmap;
+        vector<uint384> vPreVotePubkeys;
+        vector<bytes> vPreVoteSigs;
+        if (it->second.GetLocalPreVoteSign(nEpochDuration, bmPreVoteBitmap, vPreVotePubkeys, vPreVoteSigs))
+        {
+            bytes btPreVoteAggSig;
+            if (!CryptoBlsAggregateSig(vPreVoteSigs, btPreVoteAggSig))
+            {
+                StdLog("CConsBlockVote", "Check pre vote: Aggregate sig fail, block: %s", hashBlock.GetBhString().c_str());
+                return;
+            }
+            it->second.bmAggPreVoteBitmap = bmPreVoteBitmap;
+            it->second.btAggPreVoteSig = btPreVoteAggSig;
+
+            map<uint384, bytes> mapBroadcastSig;
+            if (!GetLocalKeySignData(it->second, GetCommitVoteSignData(hashBlock), mapBroadcastSig))
+            {
+                StdLog("CConsBlockVote", "Check pre vote: Get local sig fail, block: %s", hashBlock.GetBhString().c_str());
+                return;
+            }
+            for (auto& kv : mapBroadcastSig)
+            {
+                if (!it->second.AddCommitVoteSign(kv.first, kv.second))
+                {
+                    StdLog("CConsBlockVote", "Check pre vote: Add commit vote sig fail, block: %s", hashBlock.GetBhString().c_str());
+                    return;
+                }
+            }
+        }
+    }
+}
+
+void CConsBlockVote::CheckCommitVote(const uint256& hashBlock)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it != mapConsBlock.end() && !it->second.IsHasAggCommitVoteSign())
+    {
+        CBitmap bmCommitVoteBitmap;
+        vector<uint384> vCommitVotePubkeys;
+        vector<bytes> vCommitVoteSigs;
+        if (it->second.GetLocalCommitVoteSign(nEpochDuration, bmCommitVoteBitmap, vCommitVotePubkeys, vCommitVoteSigs))
+        {
+            bytes btCommitVoteAggSig;
+            if (!CryptoBlsAggregateSig(vCommitVoteSigs, btCommitVoteAggSig))
+            {
+                StdLog("CConsBlockVote", "Check commit vote: Aggregate sig fail, block: %s", hashBlock.GetBhString().c_str());
+                return;
+            }
+            if (bmCommitVoteBitmap.IsNull())
+            {
+                StdLog("CConsBlockVote", "Check commit vote: Agg bitmap is null, block: %s", hashBlock.GetBhString().c_str());
+                return;
+            }
+            bytes btAggBitmap;
+            bmCommitVoteBitmap.GetBytes(btAggBitmap);
+            it->second.SetAggCommitVoteSign(btAggBitmap, btCommitVoteAggSig);
+
+            commitVoteResult(hashBlock, btAggBitmap, btCommitVoteAggSig);
+
+#ifdef CBV_SHOW_DEBUG
+            StdDebug("CConsBlockVote", "Check commit vote: ##################################, epoch: %d, commit vote bitmap: %s, commit agg sig: %s, vote duration: %lu ms, block: %s",
+                     it->second.nBlockEpoch, bmCommitVoteBitmap.GetBitmapString().c_str(), ToHexString(btCommitVoteAggSig).c_str(),
+                     GetTimeMillis() - it->second.nBeginTimeMillis, hashBlock.GetBhString().c_str());
+#endif
+
+            RemoveVoteBlock(hashBlock);
+        }
+    }
+}
+
+void CConsBlockVote::CheckLocalVote()
+{
+    set<uint256> setMaxBlockHash;
+    GetMaxConsBlockHash(setMaxBlockHash);
+
+    for (auto& hashBlock : setMaxBlockHash)
+    {
+        auto it = mapConsBlock.find(hashBlock);
+        if (it != mapConsBlock.end())
+        {
+            CheckPreVote(hashBlock);
+            CheckCommitVote(hashBlock);
+        }
+    }
+}
+
 } // namespace consblockvote
 } // namespace consensus

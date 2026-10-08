@@ -176,6 +176,15 @@ protected:
     bool ListAddressDexOrderDb(const uint256& hashBlock, const CDestination& destOrder, const std::string& strCoinSymbolOwner, const std::string& strCoinSymbolPeer,
                                const uint64 nBeginOrderNumber, const uint8 nGetStatus, const uint32 nGetCount, std::map<CDexOrderHeader, CDexOrderSave>& mapDexOrder);
 
+    bool ClearHeightTrieRoot(const uint32 nLastHeight);
+    bool ClearHeightBlockCrosschainProve(const uint32 nLastHeight);
+    bool ClearHeightBlockForFirstPrevBlock(const uint32 nLastHeight);
+    bool ClearHeightBlockRecvCrosschainProve(const uint32 nLastHeight);
+    bool ClearHeightAuxiliaryData(const uint32 nLastHeight);
+
+    bool GetSnapshotHdexBlockData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, CForkHdexRootKv& hdexRootKv);
+    bool RecoverySnapshotHdexBlockData(CForkHdexRootKv& hdexRootKv);
+
 protected:
     enum
     {

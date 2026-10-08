@@ -2805,5 +2805,165 @@ bool CHdexDB::ClearHeightBlockRecvCrosschainProve(const uint32 nLastHeight)
     StdDebug("CHdexDB", "Clear height block recv crosschain prove: Remove success, remove block count: %lu, last height: %d", vBlockData.size(), nLastHeight);
     return true;
 }
+
+bool CHdexDB::ClearHeightAuxiliaryData(const uint32 nLastHeight)
+{
+    if (!ClearHeightTrieRoot(nLastHeight))
+    {
+        StdLog("CHdexDB", "Clear height auxiliary data: Clear height trie root failed, last height: %d", nLastHeight);
+        return false;
+    }
+    if (!ClearHeightBlockCrosschainProve(nLastHeight))
+    {
+        StdLog("CHdexDB", "Clear height auxiliary data: Clear height block crosschain prove failed, last height: %d", nLastHeight);
+        return false;
+    }
+    if (!ClearHeightBlockForFirstPrevBlock(nLastHeight))
+    {
+        StdLog("CHdexDB", "Clear height auxiliary data: Clear height block for first prev block failed, last height: %d", nLastHeight);
+        return false;
+    }
+    if (!ClearHeightBlockRecvCrosschainProve(nLastHeight))
+    {
+        StdLog("CHdexDB", "Clear height auxiliary data: Clear height block recv consschain prove failed, last height: %d", nLastHeight);
+        return false;
+    }
+    return true;
+}
+
+bool CHdexDB::GetSnapshotHdexBlockData(const uint256& hashFork, const std::vector<uint256>& vBlockHash, CForkHdexRootKv& hdexRootKv)
+{
+    std::set<uint256> setBlockHash;
+    setBlockHash.insert(vBlockHash.begin(), vBlockHash.end());
+
+    auto funcWalker = [&](CBufStream& ssKey, CBufStream& ssValue) -> bool {
+        try
+        {
+            uint8 nExtKey;
+            uint8 nKeyType;
+            ssKey >> nExtKey >> nKeyType;
+            switch (nKeyType)
+            {
+            case DB_HDEX_KEY_TYPE_EXT_BLOCK_CROSSCHAIN_PROVE:
+            {
+                uint256 hashBlock;
+                ssKey >> hashBlock;
+
+                CBlockStorageProve proveBlockCrosschain;
+                ssValue >> proveBlockCrosschain;
+
+                if (setBlockHash.count(hashBlock) > 0)
+                {
+                    hdexRootKv.mapBlockCrosschainProve.insert(std::make_pair(hashBlock, proveBlockCrosschain));
+                }
+                break;
+            }
+            case DB_HDEX_KEY_TYPE_EXT_BLOCK_FOR_FIRST_PREV_BLOCK:
+            {
+                CChainId nRecvChainIdDb;
+                CChainId nSendChainIdDb;
+                uint256 hashBlock;
+
+                ssKey >> nRecvChainIdDb >> nSendChainIdDb >> hashBlock;
+                nRecvChainIdDb = BSwap32(nRecvChainIdDb);
+                nSendChainIdDb = BSwap32(nSendChainIdDb);
+
+                uint256 hashFirstPrevBlock;
+                ssValue >> hashFirstPrevBlock;
+
+                if (setBlockHash.count(hashBlock) > 0)
+                {
+                    hdexRootKv.vBlockFirstPrevBlock.push_back(CHdexFirstPrevBlock(nRecvChainIdDb, nSendChainIdDb, hashBlock, hashFirstPrevBlock));
+                }
+                break;
+            }
+            case DB_HDEX_KEY_TYPE_EXT_SEND_CHAIN_LAST_PROVE_BLOCK:
+            {
+                CChainId nRecvChainIdDb;
+                CChainId nSendChainIdDb;
+
+                ssKey >> nRecvChainIdDb >> nSendChainIdDb;
+                nRecvChainIdDb = BSwap32(nRecvChainIdDb);
+                nSendChainIdDb = BSwap32(nSendChainIdDb);
+
+                uint256 nLastProveBlock;
+                ssValue >> nLastProveBlock;
+
+                if (setBlockHash.count(nLastProveBlock) > 0)
+                {
+                    hdexRootKv.vSendChainLastProveBlock.push_back(CHdexLastProveBlock(nRecvChainIdDb, nSendChainIdDb, nLastProveBlock));
+                }
+                break;
+            }
+            case DB_HDEX_KEY_TYPE_EXT_RECV_CROSSCHAIN_PROVE:
+            {
+                CChainId nRecvChainIdDb;
+                CChainId nSendChainIdDb;
+                uint256 hashFirstPrevBlock;
+
+                ssKey >> nRecvChainIdDb >> nSendChainIdDb >> hashFirstPrevBlock;
+                nRecvChainIdDb = BSwap32(nRecvChainIdDb);
+                nSendChainIdDb = BSwap32(nSendChainIdDb);
+
+                CBlockProve blockProve;
+                ssValue >> blockProve;
+
+                if (setBlockHash.count(hashFirstPrevBlock) > 0)
+                {
+                    hdexRootKv.vRecvCrosschainProve.push_back(CHdexRecvCrosschainProve(nRecvChainIdDb, nSendChainIdDb, hashFirstPrevBlock, blockProve));
+                }
+                break;
+            }
+            }
+        }
+        catch (std::exception& e)
+        {
+            hnbase::StdError(__PRETTY_FUNCTION__, e.what());
+            return false;
+        }
+        return true;
+    };
+
+    CBufStream ssKeyBegin, ssKeyPrefix;
+    return dbTrie.WalkThroughExtKv(ssKeyBegin, ssKeyPrefix, funcWalker);
+}
+
+bool CHdexDB::RecoverySnapshotHdexBlockData(CForkHdexRootKv& hdexRootKv)
+{
+    for (const auto& kv : hdexRootKv.mapBlockCrosschainProve)
+    {
+        if (!WriteBlockCrosschainProveDb(kv.first, kv.second))
+        {
+            StdLog("CHdexDB", "Recovery Snapshot hdex block data: Write block crosschain prove failed");
+            return false;
+        }
+    }
+    for (const auto& vd : hdexRootKv.vBlockFirstPrevBlock)
+    {
+        if (!AddLinkFirstPrevBlock(vd.nRecvChainId, vd.nSendChainId, vd.hashBlock, vd.hashFirstPrevBlock))
+        {
+            StdLog("CHdexDB", "Recovery Snapshot hdex block data: Add link first prev block failed");
+            return false;
+        }
+    }
+    for (const auto& vd : hdexRootKv.vSendChainLastProveBlock)
+    {
+        if (!AddSendChainProveLastBlockDb(vd.nRecvChainId, vd.nSendChainId, vd.nLastProveBlock))
+        {
+            StdLog("CHdexDB", "Recovery Snapshot hdex block data: Add send chain prove last block failed");
+            return false;
+        }
+    }
+    for (const auto& vd : hdexRootKv.vRecvCrosschainProve)
+    {
+        if (!AddRecvCrosschainProveDb(vd.nRecvChainId, vd.nSendChainId, vd.nLastProveBlock, vd.proveBlock))
+        {
+            StdLog("CHdexDB", "Recovery Snapshot hdex block data: Add recv crosschain prove failed");
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace storage
 } // namespace hashahead
