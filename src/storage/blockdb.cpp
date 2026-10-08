@@ -868,6 +868,42 @@ bool CBlockDB::ListAddressTxInfo(const uint256& hashFork, const CDestination& de
     return false;
 }
 
+bool CBlockDB::ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize,
+                           const bool fReverse, uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord)
+{
+    if (fCfgFullDb)
+    {
+        return dbAddressTxInfo.ListTokenTx(hashFork, destContractAddress, destUserAddress, nPageNumber, nPageSize, fReverse, nTotalRecordCount, nPageCount, vTokenTxRecord);
+    }
+    return false;
+}
+
+bool CBlockDB::WalkThroughSnapshotAddressTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker)
+{
+    if (fCfgFullDb)
+    {
+        return dbAddressTxInfo.WalkThroughSnapshotAddressTxKv(hashFork, nLastBlockNumber, fnWalker);
+    }
+    return false;
+}
+
+bool CBlockDB::WalkThroughSnapshotTokenTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerTokenTxKvFunc fnWalker)
+{
+    if (fCfgFullDb)
+    {
+        return dbAddressTxInfo.WalkThroughSnapshotTokenTxKv(hashFork, nLastBlockNumber, fnWalker);
+    }
+    return false;
+}
+
+bool CBlockDB::WriteSnapshotAddressTxKvData(const uint256& hashFork, const bytes& btKey, const bytes& btValue)
+{
+    if (fCfgFullDb)
+    {
+        return dbAddressTxInfo.WriteSnapshotAddressTxKvData(hashFork, btKey, btValue);
+    }
+    return false;
+}
 bool CBlockDB::AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight, const std::map<CDestination, uint256>& mapVoteReward, uint256& hashNewRoot)
 {
     return dbVote.AddVoteReward(hashFork, nChainId, hashPrevBlock, hashBlock, nBlockHeight, mapVoteReward, hashNewRoot);

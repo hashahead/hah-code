@@ -562,5 +562,45 @@ bool CConsBlockVote::AddCandidatePubkey(const uint256& hashBlock, const uint32 n
     }
     return true;
 }
+
+void CConsBlockVote::CheckBlockVoteState(const uint256& hashBlock)
+{
+    CheckPreVote(hashBlock);
+    CheckCommitVote(hashBlock);
+}
+
+bool CConsBlockVote::GetBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig)
+{
+    auto it = mapConsBlock.find(hashBlock);
+    if (it == mapConsBlock.end())
+    {
+        uint32 nBlockEpoch = 0;
+        int64 nBlockTime = 0;
+        vector<uint384> vPubkey;
+        if (getVoteBlockCandidatePubkey(hashBlock, nBlockEpoch, nBlockTime, vPubkey, btBitmap, btAggSig) && !btBitmap.empty() && !btAggSig.empty())
+        {
+            return true;
+        }
+        return false;
+    }
+    return it->second.GetAggCommitVoteSign(btBitmap, btAggSig);
+}
+
+bool CConsBlockVote::AddNetNode(const uint64 nNetId)
+{
+    auto it = mapNetNode.find(nNetId);
+    if (it == mapNetNode.end())
+    {
+        StdLog("CConsBlockVote", "Add net node, net id: 0x%lx", nNetId);
+
+        mapNetNode.insert(make_pair(nNetId, CNetNode()));
+        SendSubscribeReq(nNetId);
+    }
+    else
+    {
+        StdLog("CConsBlockVote", "Add net node: Node existed, net id: 0x%lx", nNetId);
+    }
+    return true;
+}
 } // namespace consblockvote
 } // namespace consensus

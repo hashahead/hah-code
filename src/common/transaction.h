@@ -1877,6 +1877,44 @@ public:
 
     std::vector<CMatchOrderRecord> vMatchOrderRecord;
 };
+
+class CMsOrder
+{
+public:
+    CMsOrder()
+      : nOrderNumber(0), nAtHeight(0), nAtSlot(0) {}
+
+public:
+    uint256 nPrice;
+    uint256 nOrderAmount;
+    uint256 nDealAmount;
+    CDestination destOrder;
+    uint64 nOrderNumber;
+    uint256 nOriOrderAmount;
+    uint32 nAtHeight;
+    uint16 nAtSlot;
+};
+
+class CRealtimeDexOrder
+{
+public:
+    CRealtimeDexOrder()
+      : nSellChainId(0), nBuyChainId(0), nMaxMatchHeight(0), nMaxMatchSlot(0) {}
+
+public:
+    std::string strCoinSymbolSell;
+    std::string strCoinSymbolBuy;
+    uint256 nSellPriceAnchor;
+    uint256 nPrevCompletePrice;
+    CChainId nSellChainId;
+    CChainId nBuyChainId;
+    uint32 nMaxMatchHeight;
+    uint16 nMaxMatchSlot;
+
+    std::vector<CMsOrder> vSell;
+    std::vector<CMsOrder> vBuy;
+};
+
 } // namespace hashahead
 
 #endif //COMMON_TRANSACTION_H

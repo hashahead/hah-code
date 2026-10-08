@@ -156,8 +156,11 @@ public:
                           const std::map<CDestination, std::vector<CDestTxInfo>>& mapAddressTxInfo, const std::map<CDestination, std::vector<CTokenTransRecord>>& mapTokenRecord);
     bool UpdateAddressTxInfoBlockLongChain(const uint256& hashFork, const std::vector<uint256>& vRemoveBlock, const std::vector<uint256>& vAddBlock);
     bool GetAddressTxCount(const uint256& hashFork, const CDestination& dest, uint64& nTxCount);
-    bool RetrieveAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo);
-    bool ListAddressTxInfo(const uint256& hashFork, const uint256& hashBlock, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo);
+    bool RetrieveAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nTxIndex, CDestTxInfo& ctxtAddressTxInfo);
+    bool ListAddressTxInfo(const uint256& hashFork, const CDestination& dest, const uint64 nBeginTxIndex, const uint64 nGetTxCount, const bool fReverse, std::vector<CDestTxInfo>& vAddressTxInfo);
+    bool ListTokenTx(const uint256& hashFork, const CDestination& destContractAddress, const CDestination& destUserAddress, const uint64 nPageNumber, const uint64 nPageSize, const bool fReverse,
+                     uint64& nTotalRecordCount, uint64& nPageCount, std::vector<std::pair<uint64, CTokenTransRecord>>& vTokenTxRecord);
+    bool WalkThroughSnapshotAddressTxKv(const uint256& hashFork, const uint64 nLastBlockNumber, WalkerAddressTxKvFunc fnWalker);
 
     bool AddVoteReward(const uint256& hashFork, const uint32 nChainId, const uint256& hashPrevBlock, const uint256& hashBlock, const uint32 nBlockHeight, const std::map<CDestination, uint256>& mapVoteReward, uint256& hashNewRoot);
     bool ListVoteReward(const uint32 nChainId, const uint256& hashBlock, const CDestination& dest, const uint32 nGetCount, std::vector<std::pair<uint32, uint256>>& vVoteReward);
@@ -189,19 +192,25 @@ protected:
 
 protected:
     bool fCfgFullDb;
+    bool fCfgTraceDb;
+    bool fCfgCacheTrace;
+    bool fCfgPrune;
 
     CForkDB dbFork;
     CBlockIndexDB dbBlockIndex;
     CTxIndexDB dbTxIndex;
     CVoteDB dbVote;
+    CHdexDB dbHdex;
     CStateDB dbState;
     CAddressDB dbAddress;
     CVerifyDB dbVerify;
     CContractDB dbContract;
     CAddressBlacklistDB dbAddressBlacklist;
     CCfgMintMinGasPriceDB dbMintMinGasPrice;
+    CSnapshotDB dbSnapshot;
 
     CAddressTxInfoDB dbAddressTxInfo;
+    CTraceDB dbTrace;
 };
 
 } // namespace storage

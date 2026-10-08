@@ -206,6 +206,14 @@ public:
     bool AddCandidatePubkey(const uint256& hashBlock, const uint32 nBlockEpoch, const int64 nVoteBeginTimeIn, const vector<uint384>& vPubkey);
     void CheckBlockVoteState(const uint256& hashBlock);
     bool GetBlockVoteResult(const uint256& hashBlock, bytes& btBitmap, bytes& btAggSig);
+
+    bool AddNetNode(const uint64 nNetId);
+    void RemoveNetNode(const uint64 nNetId);
+
+    void OnTimer();
+    void OnEventNetData(const uint64 nNetId, const bytes& btData);
+
+    static bool VerifyCommitVoteAggSig(const uint256& hashBlock, const bytes& btBitmap, const bytes& btAggSig, const vector<uint384>& vCandidatePubkeys);
     void RemoveVoteBlock(const uint256& hashBlock);
     static uint256 GetPreVoteSignData(const uint256& hashBlock);
     static uint256 GetCommitVoteSignData(const uint256& hashBlock);

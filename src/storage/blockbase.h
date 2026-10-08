@@ -307,10 +307,21 @@ public:
     bool GetSnapshotForkLastBlock(const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vForkHash, std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare>& mapForkLastBlock);
     bool SnapshotBlock(const uint256& hashPrimaryLastBlock, const uint32 nMaxSnapshots, const std::vector<uint256>& vForkHash);
     bool SnapshotBlockIndex(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const uint256& hashForkLastBlock, std::vector<uint256>& vBlockHash);
+    bool SnapshotFork(const uint256& hashPrimaryLastBlock, const std::vector<uint256>& vBlockHash, const std::map<uint256, std::pair<uint256, uint64>, CustomBlockHashCompare>& mapForkLastBlockNumber);
+    bool SnapshotRecovery(const std::string& strRecoveryDir);
     bool RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFork);
     bool RecoveryFork(const bytes& btRecoveryData);
     bool RecoveryUserState(const bytes& btRecoveryData);
     bool RecoveryTxIndex(const bytes& btRecoveryData);
+    bool RecoveryAddressTx(const bytes& btRecoveryData);
+
+    bool GetSnapshotFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist);
+    bool ReadSnapshotFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const uint64 nReadSize, bytes& btReadData);
+    bool GetSnapshotDownFileList(const uint256& hashSnapBlock, std::vector<CSnapshotFileInfo>& vSnapFilelist);
+    bool RemoveSnapshotDownBlock(const uint256& hashSnapBlock);
+    uint64 GetSnapshotDownFileSize(const uint256& hashSnapBlock, const std::string& strFileName);
+    bool WriteSnapshotDownFileData(const uint256& hashSnapBlock, const std::string& strFileName, const uint64 nOffset, const bytes& btWriteData);
+
 protected:
     CBlockIndex* GetIndex(const uint256& hash) const;
     CBlockIndex* GetForkLastIndex(const uint256& hashFork);

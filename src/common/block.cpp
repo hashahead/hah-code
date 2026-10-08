@@ -1374,4 +1374,65 @@ void CBlockProve::Serialize(hnbase::CStream& s, std::size_t& serSize) const
 
     serSize = ss.GetSize();
 }
+
+///////////////////////////////////////////////////
+// CBlockStorageProve
+
+void CBlockStorageProve::Save(bytes& btData) const
+{
+    hnbase::CBufStream ss;
+    ss << *this;
+    ss.GetData(btData);
+}
+
+bool CBlockStorageProve::Load(const bytes& btData)
+{
+    hnbase::CBufStream ss(btData);
+    try
+    {
+        ss >> *this;
+    }
+    catch (const std::exception& e)
+    {
+        return false;
+    }
+    return true;
+}
+
+void CBlockStorageProve::Serialize(hnbase::CStream& s, hnbase::SaveType&) const
+{
+    s << btAggSigBitmap << btAggSigData;
+
+    // ref block
+    if (hashRefBlock != 0 && !vRefBlockMerkleProve.empty())
+    {
+        s << hnbase::CVarInt(vRefBlockMerkleProve.size() + 1);
+        s << hashRefBlock;
+        for (const auto& provePair : vRefBlockMerkleProve)
+        {
+            s << provePair;
+        }
+    }
+    else
+    {
+        s << hnbase::CVarInt(0);
+    }
+
+    // prev block
+    if (hashPrevBlock != 0 && !vPrevBlockMerkleProve.empty())
+    {
+        s << hnbase::CVarInt(vPrevBlockMerkleProve.size() + 1);
+        s << hashPrevBlock;
+        for (const auto& provePair : vPrevBlockMerkleProve)
+        {
+            s << provePair;
+        }
+    }
+    else
+    {
+        s << hnbase::CVarInt(0);
+    }
+
+    s << mapCrossProve;
+}
 } // namespace hashahead
