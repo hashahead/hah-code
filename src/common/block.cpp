@@ -1317,4 +1317,61 @@ void CBlockProve::Serialize(hnbase::CStream& s, hnbase::LoadType&)
 
     s >> vPrevBlockCcProve;
 }
+
+void CBlockProve::Serialize(hnbase::CStream& s, std::size_t& serSize) const
+{
+    (void)s;
+    hnbase::CBufStream ss;
+
+    ss << hashBlock << btAggSigBitmap << btAggSigData;
+
+    // ref block
+    if (hashRefBlock != 0 && !vRefBlockMerkleProve.empty())
+    {
+        ss << hnbase::CVarInt(vRefBlockMerkleProve.size() + 1);
+        ss << hashRefBlock;
+        for (const auto& provePair : vRefBlockMerkleProve)
+        {
+            ss << provePair;
+        }
+    }
+    else
+    {
+        ss << hnbase::CVarInt(0);
+    }
+
+    // prev block
+    if (hashPrevBlock != 0 && !vPrevBlockMerkleProve.empty())
+    {
+        ss << hnbase::CVarInt(vPrevBlockMerkleProve.size() + 1);
+        ss << hashPrevBlock;
+        for (const auto& provePair : vPrevBlockMerkleProve)
+        {
+            ss << provePair;
+        }
+    }
+    else
+    {
+        ss << hnbase::CVarInt(0);
+    }
+
+    // crosschain
+    if (!proveCrosschain.IsNull() && !vCrosschainMerkleProve.empty())
+    {
+        ss << hnbase::CVarInt(vCrosschainMerkleProve.size() + 1);
+        ss << proveCrosschain;
+        for (const auto& provePair : vCrosschainMerkleProve)
+        {
+            ss << provePair;
+        }
+    }
+    else
+    {
+        ss << hnbase::CVarInt(0);
+    }
+
+    ss << vPrevBlockCcProve;
+
+    serSize = ss.GetSize();
+}
 } // namespace hashahead

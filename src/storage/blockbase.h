@@ -302,6 +302,8 @@ public:
     bool PruneHdexData(const uint32 nPruneReserveLastHeight);
     bool PruneVoteData(const uint32 nPruneReserveLastHeight);
     bool PruneTraceData(const uint256& hashFork, const uint32 nPruneReserveLastHeight);
+
+    bool IsSnapshotBlock(const uint256& hashBlock);
     bool RecoveryBlockIndex(const bytes& btRecoveryData, uint256& hashFork);
     bool RecoveryFork(const bytes& btRecoveryData);
     bool RecoveryUserState(const bytes& btRecoveryData);

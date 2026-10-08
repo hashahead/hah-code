@@ -165,6 +165,10 @@ public:
     bool GetPubkeysByBitmap(const CBitmap& bmBitmap, vector<uint384>& vPubkeys);
     bool GetLocalPreVoteSign(const int64 nEpochDurationIn, CBitmap& bmPreVoteBitmap, vector<uint384>& vPubkeys, vector<bytes>& vSigs);
     bool GetLocalCommitVoteSign(const int64 nEpochDurationIn, CBitmap& bmCommitVoteBitmap, vector<uint384>& vPubkeys, vector<bytes>& vSigs);
+    void SetAggCommitVoteSign(const bytes& btAggCommitVoteBitmapIn, const bytes& btAggCommitVoteSigIn);
+    bool GetAggCommitVoteSign(bytes& btAggCommitVoteBitmapOut, bytes& btAggCommitVoteSigOut);
+    bool IsHasAggCommitVoteSign();
+
 public:
     const uint256 hashBlock;
     const uint32 nBlockEpoch;

@@ -486,6 +486,29 @@ bool CConsBlock::GetLocalCommitVoteSign(const int64 nEpochDurationIn, CBitmap& b
     }
     return false;
 }
+
+void CConsBlock::SetAggCommitVoteSign(const bytes& btAggCommitVoteBitmapIn, const bytes& btAggCommitVoteSigIn)
+{
+    btAggCommitVoteBitmap = btAggCommitVoteBitmapIn;
+    btAggCommitVoteSig = btAggCommitVoteSigIn;
+}
+
+bool CConsBlock::GetAggCommitVoteSign(bytes& btAggCommitVoteBitmapOut, bytes& btAggCommitVoteSigOut)
+{
+    if (btAggCommitVoteBitmap.empty())
+    {
+        return false;
+    }
+    btAggCommitVoteBitmapOut = btAggCommitVoteBitmap;
+    btAggCommitVoteSigOut = btAggCommitVoteSig;
+    return true;
+}
+
+bool CConsBlock::IsHasAggCommitVoteSign()
+{
+    return !(btAggCommitVoteBitmap.empty());
+}
+
 /////////////////////////////////
 // CConsBlockVote
 

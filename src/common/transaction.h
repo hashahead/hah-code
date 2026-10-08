@@ -1843,6 +1843,40 @@ protected:
 };
 typedef std::shared_ptr<CDexOrderData> SHP_DEX_ORDER_DATA;
 #define MAKE_SHARED_DEX_ORDER_DATA std::make_shared<CDexOrderData>
+
+class CMatchOrderRecord
+{
+public:
+    CMatchOrderRecord() {}
+
+public:
+    CDestination destSellOrder;
+    uint64 nSellOrderNumber;
+    uint256 nSellCompleteAmount;
+    uint256 nSellCompletePrice;
+    CChainId nSellOrderAtChainId;
+
+    CDestination destBuyOrder;
+    uint64 nBuyOrderNumber;
+    uint256 nBuyCompleteAmount;
+    uint256 nBuyCompletePrice;
+    CChainId nBuyOrderAtChainId;
+
+    uint256 nCompletePrice;
+};
+
+class CMatchOrderResult
+{
+public:
+    CMatchOrderResult() {}
+
+public:
+    std::string strCoinSymbolSell;
+    std::string strCoinSymbolBuy;
+    uint256 nSellPriceAnchor;
+
+    std::vector<CMatchOrderRecord> vMatchOrderRecord;
+};
 } // namespace hashahead
 
 #endif //COMMON_TRANSACTION_H

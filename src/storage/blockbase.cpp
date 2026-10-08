@@ -5118,6 +5118,27 @@ bool CBlockBase::SnapshotState(const uint256& hashPrimaryLastBlock, const uint25
     }
     return true;
 }
+
+bool CBlockBase::SnapshotAddress(const uint256& hashPrimaryLastBlock, const uint256& hashFork, const std::vector<uint256>& vBlockHash)
+{
+    if (vBlockHash.empty())
+    {
+        StdLog("CBlockBase", "Snapshot address: Block list is empty, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    bytes btSnapData;
+    if (!dbBlock.GetSnapshotAddressData(hashFork, vBlockHash, btSnapData))
+    {
+        StdLog("CBlockBase", "Snapshot address: Get snapshot address data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    if (!dbBlock.SaveSnapshotData(hashPrimaryLastBlock, SNAP_DATA_TYPE_FORK_ADDRESS_KV, (char*)btSnapData.data(), btSnapData.size()))
+    {
+        StdLog("CBlockBase", "Snapshot address: Save snapshot data failed, fork: %s", hashFork.GetBhString().c_str());
+        return false;
+    }
+    return true;
+}
 //----------------------------------------------------------------------------
 bool CBlockBase::GetTxIndex(const uint256& hashFork, const uint256& txid, uint256& hashAtFork, CTxIndex& txIndex)
 {
